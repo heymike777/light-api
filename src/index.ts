@@ -13,6 +13,9 @@ import cron from 'node-cron';
 import { MigrationManager } from './services/MigrationManager';
 import { messagesRouter } from './routes/v1/Notifications';
 import { BotManager } from './services/BotManager';
+import { User } from './entities/User';
+import { Message } from './entities/Message';
+import { Wallet } from './entities/Wallet';
 
 const app = express();
 app.use(json());
@@ -32,7 +35,9 @@ const start = async () => {
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
     console.log('Connected to mongodb!');
 
-    // await Auth.syncIndexes();
+    await User.syncIndexes();
+    await Message.syncIndexes();
+    await Wallet.syncIndexes();
 
     await MigrationManager.migrate();
 

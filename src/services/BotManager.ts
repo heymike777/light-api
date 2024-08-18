@@ -1,5 +1,9 @@
 import { Bot } from "grammy";
-import { kStartMessage } from "../constants/Messages";
+import { kAddWalletReplyMessage, kStartCommandReplyMessage } from "../constants/Messages";
+import { IMessage, Message } from "../entities/Message";
+import { kAddWalletCommand, kRemoveWalletCommand, kStartCommand } from "../constants/Commands";
+import { WalletManager } from "../managers/WalletManager";
+import { SolanaManager } from "./solana/SolanaManager";
 
 export interface TgMessage {
     message_id: number;
@@ -7,6 +11,7 @@ export interface TgMessage {
         id: number;
         is_bot: boolean;
         first_name: string;
+        last_name: string;
         username: string;
         language_code: string;
         is_premium: boolean;
@@ -31,31 +36,130 @@ export class BotManager {
         console.log('Starting bot...');
         this.bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
     
-        this.bot.command("start", (ctx) => {
-            console.log('Got start command! ctx', ctx);
-            console.log('Got start command! message', JSON.stringify(ctx.update.message));
-            // this.onMessage(ctx.update.message as TgMessage);
-            ctx.reply(kStartMessage.text);
-        });
+        // this.bot.command('start', (ctx) => {
+        //     this.onCommand('start', ctx);
+        // });
 
-        this.bot.on("message", (ctx) => {
-            console.log('Got message! ctx', ctx);
-            console.log('Got message! message', JSON.stringify(ctx.update.message));
-            // this.onMessage(ctx.message as TgMessage);
+        // this.bot.command('add_wallet', (ctx) => {
+        //     this.onCommand('add_wallet', ctx);
+        // });
 
-            // ctx.reply("Hi, how can I help you?");
+        // this.bot.command('remove_wallet', (ctx) => {
+        //     this.onCommand('remove_wallet', ctx);
+        // });
+
+        this.bot.on('message', (ctx) => {
+            this.onMessage(ctx.update.message as TgMessage, ctx);
         });
     
         this.bot.start();
         console.log('Bot started!');    
     }
 
-    // async onStart({}){
-    // }
+    async onCommand(command: string, ctx: any){
+        if (command == 'start'){
+            ctx.reply(kStartCommandReplyMessage.text);
+        }
+        else if (command == 'add_wallet'){
+            ctx.reply(kAddWalletReplyMessage.text);
+        }
+        else if (command == 'remove_wallet'){
+            ctx.reply(kAddWalletReplyMessage.text);
+        }
+    }
 
-    // async onMessage(msg: TgMessage){
-    //     console.log('onMessage', msg);
-    // }
+    async onMessage(message: TgMessage, ctx: any){
+        console.log('onMessage', message);
+
+        const lastMessage = await Message.findOne({chatId: message.chat.id}).sort({createdAt: -1});
+
+        await this.saveMessageToDB(message);        
+
+        if (message.text == '/' + kStartCommand){
+            this.onCommand(kStartCommand, ctx);
+            return;
+        }
+        else if (message.text == '/' + kAddWalletCommand){
+            this.onCommand(kAddWalletCommand, ctx);
+            return;
+        }
+        else if (message.text == '/' + kRemoveWalletCommand){
+            this.onCommand(kRemoveWalletCommand, ctx);
+            return;
+        }
+
+        if (!lastMessage){
+            // do nothing?
+            return;
+        }
+
+        console.log('lastMessage', lastMessage.data.text);
+
+        if (lastMessage.data.text == '/' + kAddWalletCommand){
+            console.log('add wallets', message.text);
+
+            const lines = message.text.split('\n');
+            const wallets: {address: string, title?: string}[] = [];
+            for (let line of lines) {
+                line = line.trim();
+                if (line.length == 0){
+                    continue;
+                }
+                const parts = line.split(' ');
+                const walletAddress = parts.shift();
+                let title = parts.length>0 ? parts.join(' ') : undefined;
+                title = title?.trim();
+                if (title?.length == 0){
+                    title = undefined;
+                }
+
+                if (!walletAddress){
+                    continue;
+                }
+
+                if (SolanaManager.isValidPublicKey(walletAddress) == false){
+                    ctx.reply('Invalid wallet address: ' + walletAddress);
+                    continue;
+                }
+
+                wallets.push({address: walletAddress, title: title});                
+            }
+
+            for (const wallet of wallets) {
+                await WalletManager.addWallet(message.chat.id, wallet.address, wallet.title);
+            }
+
+            if (wallets.length == 0){
+                ctx.reply('No wallets found!');
+                return;
+            }
+            else if (wallets.length == 1){
+                ctx.reply('Wallet saved! We will start tracking it in 2-3 minutes.');
+                return;
+            }
+            else {
+                ctx.reply(`${wallets.length} wallets saved! We will start tracking them in 2-3 minutes.`);
+                return;
+            }
+        }
+
+    }
+
+    async saveMessageToDB(message: TgMessage): Promise<IMessage> {
+        const newMessage = new Message();
+        newMessage.chatId = message.chat.id;
+        newMessage.firstName = message.from.first_name;
+        newMessage.lastName = message.from.last_name;
+        newMessage.username = message.from.username;
+        newMessage.isPremium = message.from.is_premium;
+        newMessage.isBot = message.from.is_bot;
+        newMessage.languageCode = message.from.language_code;
+        newMessage.data = message;
+        newMessage.createdAt = new Date();
+        await newMessage.save();
+
+        return newMessage;
+    }
 
     async sendTextMessage(chatId: number, text: string){
         console.log('sendTextMessage', chatId, text);
