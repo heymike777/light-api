@@ -1,0 +1,7 @@
+node_modules/
+build/
+.env
+.env.production
+.env.development
+.env.devnet
+files/
