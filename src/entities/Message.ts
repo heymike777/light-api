@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { TgMessage } from '../services/BotManager';
+import { TgMessage } from '../managers/bot/BotManager';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;

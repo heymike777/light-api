@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { validateRequest } from "../../middlewares/ValidateRequest";
 import { body } from "express-validator";
-import { BotManager } from "../../services/BotManager";
+import { BotManager } from "../../managers/bot/BotManager";
 
 const router = express.Router();
 

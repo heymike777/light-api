@@ -12,7 +12,7 @@ import { errorHandler } from './middlewares/ErrorHandler';
 import cron from 'node-cron';
 import { MigrationManager } from './services/MigrationManager';
 import { messagesRouter } from './routes/v1/Notifications';
-import { BotManager } from './services/BotManager';
+import { BotManager } from './managers/bot/BotManager';
 import { User } from './entities/User';
 import { Message } from './entities/Message';
 import { Wallet } from './entities/Wallet';

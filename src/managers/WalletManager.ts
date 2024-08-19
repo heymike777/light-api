@@ -1,4 +1,4 @@
-import { Wallet } from "../entities/Wallet";
+import { IWallet, Wallet } from "../entities/Wallet";
 
 export class WalletManager {
 
@@ -18,6 +18,14 @@ export class WalletManager {
             });
             await wallet.save();    
         }
+    }
+
+    static async removeWallets(chatId: number, walletAddresses: string[]){
+        await Wallet.deleteMany({chatId: chatId, walletAddress: {$in: walletAddresses}});
+    }
+
+    static async getWalletsByChatId(chatId: number): Promise<IWallet[]> {
+        return Wallet.find({chatId: chatId});
     }
 
 }
