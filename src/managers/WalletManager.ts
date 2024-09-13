@@ -114,6 +114,10 @@ export class WalletManager {
                     }
                 }
             }
+
+            if (chats.length > 0){
+                console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
+            }
             
             for (let chat of chats){
                 let message = `[<a href="https://solscan.io/tx/${signature}">NEW TRANSACTION</a>]\n\n`;
@@ -123,9 +127,10 @@ export class WalletManager {
                     const walletTitle = wallet.title || wallet.walletAddress;
                     message += `<a href="https://solscan.io/account/${wallet.walletAddress}">${walletTitle}</a>\n`;                    
                 }
-                // message += `Transaction: <a href="https://solscan.io/tx/${signature}">${signature}</a>`;
 
-                BotManager.sendMessage(wallet.chatId, message);
+                //TODO: add info about token and BUY/SELL buttons
+
+                BotManager.sendMessage(chat.id, message);
             }
             
         }
