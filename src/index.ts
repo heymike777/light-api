@@ -20,6 +20,7 @@ import { JitoWebsocketManager } from './services/solana/JitoWebsocketManager';
 import { JitoManager } from './services/solana/JitoManager';
 import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager';
 import { WalletManager } from './managers/WalletManager';
+import { Program } from './entities/Program';
 
 const app = express();
 app.use(json());
@@ -42,6 +43,7 @@ const start = async () => {
     await User.syncIndexes();
     await Message.syncIndexes();
     await Wallet.syncIndexes();
+    await Program.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {

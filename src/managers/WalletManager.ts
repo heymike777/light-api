@@ -2,10 +2,13 @@ import { ConfirmedTransaction } from "@triton-one/yellowstone-grpc/dist/grpc/sol
 import { IWallet, Wallet } from "../entities/Wallet";
 import base58 from "bs58";
 import { BotManager } from "./bot/BotManager";
+import { Program } from "../entities/Program";
+import { ProgramManager } from "./ProgramManager";
 
 export class WalletManager {
 
     static walletsMap: Map<string, IWallet[]> = new Map();
+    static programIds: string[] = [];
 
     static async addWallet(chatId: number, walletAddress: string, title?: string){
         const existingWallet = await Wallet.findOne({chatId: chatId, walletAddress: walletAddress});
@@ -90,8 +93,14 @@ export class WalletManager {
             }
 
             const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i));
+            const instructions = transaction.message.instructions;
             const logMessages: string[] = meta.logMessages;
             
+            for (const instruction of instructions) {
+                const programId = accounts[instruction.programIdIndex];
+                ProgramManager.addProgram(programId);
+            }
+
             const wallets: IWallet[] = [];
             for (const walletInvolved of accounts) {
                 const tmpWallets = this.walletsMap.get(walletInvolved);
@@ -115,10 +124,14 @@ export class WalletManager {
                 }
             }
 
-            if (chats.length > 0){
-                console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
+            if (chats.length == 0){
+                return;
             }
+
+
             
+            console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
+
             for (let chat of chats){
                 let message = `[<a href="https://solscan.io/tx/${signature}">NEW TRANSACTION</a>]\n\n`;
 
