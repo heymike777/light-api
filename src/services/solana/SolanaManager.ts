@@ -3,15 +3,13 @@ import * as web3 from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
 import { getRpc, newConnection } from "./lib/solana";
 import axios from "axios";
-import { WalletModel } from "./types";
+import { Priority, WalletModel } from "./types";
 import base58 from "bs58";
 import { HeliusManager } from "./HeliusManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { SPL_ACCOUNT_LAYOUT, TOKEN_PROGRAM_ID, TokenAccount } from "@raydium-io/raydium-sdk";
 import { TransactionMessage } from "@solana/web3.js";
 import { JitoManager } from "./JitoManager";
 import { Keypair } from "@solana/web3.js";
-import { SendThrough } from "./radium/RaydiumManager";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -23,6 +21,13 @@ export interface TokenBalance {
     uiAmount: number;
     decimals?: number;
     ataPubKey?: web3.PublicKey;
+}
+
+export type SendThrough = {
+    priority?: Priority;
+    useJito?: boolean,
+    useHelius?: boolean,
+    useTriton?: boolean,
 }
 
 export class SolanaManager {
@@ -367,28 +372,6 @@ export class SolanaManager {
         if (blockhash) { transaction.recentBlockhash = blockhash; }
         if (addPriorityFee) { transaction = await this.addPriorityFeeToTransaction(transaction); }
         return transaction;
-    }
-
-    static mainWalletTokenAccounts: TokenAccount[] = [];
-    static async getWalletTokenAccounts(connection: web3.Connection, wallet: web3.PublicKey, force = false): Promise<TokenAccount[]> {
-        if (wallet.toBase58()==process.env.WALLET_PUBLIC_KEY && !force && this.mainWalletTokenAccounts.length > 0){
-            return this.mainWalletTokenAccounts;
-        }
-
-        const walletTokenAccount = await connection.getTokenAccountsByOwner(wallet, {
-            programId: TOKEN_PROGRAM_ID,
-        });
-        const tokenAccounts = walletTokenAccount.value.map((i) => ({
-            pubkey: i.pubkey,
-            programId: i.account.owner,
-            accountInfo: SPL_ACCOUNT_LAYOUT.decode(i.account.data),
-        }));
-
-        if (wallet.toBase58()==process.env.WALLET_PUBLIC_KEY){
-            this.mainWalletTokenAccounts = tokenAccounts;
-        }
-        
-        return tokenAccounts;
     }
 
     static async createVersionedTransaction(instructions: web3.TransactionInstruction[], keypair: web3.Keypair, blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
