@@ -16,6 +16,9 @@ import { BotManager } from './managers/bot/BotManager';
 import { User } from './entities/User';
 import { Message } from './entities/Message';
 import { Wallet } from './entities/Wallet';
+import { JitoWebsocketManager } from './services/solana/JitoWebsocketManager';
+import { JitoManager } from './services/solana/JitoManager';
+import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager';
 
 const app = express();
 app.use(json());
@@ -39,15 +42,24 @@ const start = async () => {
     await Message.syncIndexes();
     await Wallet.syncIndexes();
 
-    await MigrationManager.migrate();
-
     const port = process.env.PORT;
     app.listen(port, () => {
         console.log(`Listening on port ${port}.`);
-
-        setupCron();
-        setupBot();
+        onExpressStarted();
     });
+}
+
+const onExpressStarted = async () => {
+    setupCron();
+    setupBot();
+
+    JitoWebsocketManager.getInstance();
+    await JitoManager.initSearcherClient();
+    if (process.env.SOLANA_GEYSER_RPC != 'NULL'){
+        YellowstoneManager.getInstance();
+    }
+
+    await MigrationManager.migrate();
 }
 
 const setupCron = async () => {

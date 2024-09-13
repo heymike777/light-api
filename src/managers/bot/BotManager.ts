@@ -133,5 +133,9 @@ export class BotManager {
         await botManager.sendTextMessage(chatId, text);
     }
 
+    static async sendMessage(chatId: number, text: string){
+        const botManager = await BotManager.getInstance();
+        await botManager.sendTextMessage(chatId, text);
+    }
 
 }

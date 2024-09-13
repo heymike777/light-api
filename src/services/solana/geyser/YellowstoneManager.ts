@@ -4,11 +4,13 @@ import base58 from 'bs58';
 import { ConfirmedTransaction, TokenBalance } from '@triton-one/yellowstone-grpc/dist/grpc/solana-storage';
 import { Helpers } from '../../helpers/Helpers';
 import { HeliusManager } from '../HeliusManager';
+import { WalletManager } from '../../../managers/WalletManager';
 // import { BuySellResult, TradingManager } from '../../TradingManager';
 
 export enum TxFilter {
     RAYDIUM = 'raydium',
     PUMPFUN = 'pumpfun',
+    WALLETS = 'wallets',
 }
 
 export class YellowstoneManager {
@@ -35,11 +37,11 @@ export class YellowstoneManager {
             });
             stream.on("end", () => {
                 resolve();
-                // this.onError('stream end');
+                this.onError('stream end');
             });
             stream.on("close", () => {
                 resolve();
-                this.onError('stream close');
+                // this.onError('stream close');
             });
         });
     
@@ -49,15 +51,19 @@ export class YellowstoneManager {
             if (filter == TxFilter.RAYDIUM || filter == TxFilter.PUMPFUN) {
                 this.receivedTx(data, filter);
             } 
+            else if (filter == TxFilter.WALLETS) {
+                this.receivedWalletTx(data, filter);
+            } 
             else if (data.pong) {
                 // console.log(new Date(), process.env.SERVER_NAME, `Processed ping response!`);
             }
         });
 
-        // await this.subscribeToRaydium(stream);
         await this.subscribeToPingPong(stream);
-        await this.subscribeToTransactions(stream);
-        // await this.subscribeToPumpfun(stream);
+        const walletAddresses = await WalletManager.getAllWalletAddresses();
+        // await this.subscribeToProcessedTransactions(stream);
+        await this.subscribeToConfirmedTransactions(stream, walletAddresses);
+
         await streamClosed;
     }
 
@@ -68,8 +74,8 @@ export class YellowstoneManager {
         YellowstoneManager.getInstance(true);
     }
 
-    async subscribeToTransactions(stream: any){
-        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToRaydium`);
+    async subscribeToProcessedTransactions(stream: any){
+        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToTransactions`);
 
         const raydiumRequest: SubscribeRequest = {
             "transactions": {
@@ -112,6 +118,43 @@ export class YellowstoneManager {
         });
     }
 
+    async subscribeToConfirmedTransactions(stream: any, wallets: string[]){
+        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions wallets.length: ${wallets.length}`);
+
+        const request: SubscribeRequest = {
+            "transactions": {
+                "wallets": {
+                    failed: false,
+                    vote: false,
+                    accountInclude: wallets,
+                    accountExclude: [],
+                    accountRequired: [],
+                }
+            },
+            "commitment": CommitmentLevel.CONFIRMED,
+            "entry": {},
+            "slots": {},
+            "accounts": {},
+            "transactionsStatus": {},
+            "blocks": {},
+            "blocksMeta": {},
+            "accountsDataSlice": [],
+        };
+        
+        await new Promise<void>((resolve, reject) => {
+            stream.write(request, (err: any) => {
+                if (err === null || err === undefined) {
+                    resolve();
+                } else {
+                    reject(err);
+                }
+            });
+        }).catch((reason) => {
+            console.error(reason);
+            throw reason;
+        });
+    }
+
     async subscribeToPingPong(stream: any){
         console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToPingPong`);
         // Send pings every 5s to keep the connection open
@@ -141,6 +184,18 @@ export class YellowstoneManager {
                 throw reason;
             });
         }, this.PING_INTERVAL_MS);
+    }
+
+    async receivedWalletTx(data: any, filter: string){
+        const transaction = data.transaction.transaction;
+        if (transaction.meta.err){ return; }
+
+        const signature = base58.encode(transaction.signature);
+        const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
+
+        console.log(new Date(), process.env.SERVER_NAME, 'receivedWalletTx', signature);
+
+        WalletManager.processWalletTransaction(signature, parsedTransaction);
     }
 
     async receivedTx(data: any, filter: string){
