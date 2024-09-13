@@ -102,15 +102,30 @@ export class WalletManager {
 
             // console.log(new Date(), process.env.SERVER_NAME, 'processWalletTransaction', signature, 'accounts:', accounts, 'logMessages:', logMessages);
 
+            const chats: {id: number, wallets: IWallet[]}[] = [];
             for (let wallet of wallets){
                 if (wallet.chatId){
-                    const walletTitle = wallet.title || wallet.walletAddress;
-                    let message = '';
-                    message += `[<a href="https://solscan.io/account/${wallet.walletAddress}">${walletTitle}</a>]\n\n`;
-                    message += `Transaction: <a href="https://solscan.io/tx/${signature}">${signature}</a>`;
-
-                    BotManager.sendMessage(wallet.chatId, message);
+                    const chat = chats.find((c) => c.id == wallet.chatId);
+                    if (chat){
+                        chat.wallets.push(wallet);
+                    }
+                    else {
+                        chats.push({id: wallet.chatId, wallets: [wallet]});
+                    }
                 }
+            }
+            
+            for (let chat of chats){
+                let message = `[<a href="https://solscan.io/tx/${signature}">NEW TRANSACTION</a>]\n\n`;
+
+                message += `Wallets:\n`;
+                for (const wallet of chat.wallets) {
+                    const walletTitle = wallet.title || wallet.walletAddress;
+                    message += `<a href="https://solscan.io/account/${wallet.walletAddress}">${walletTitle}</a>\n`;                    
+                }
+                // message += `Transaction: <a href="https://solscan.io/tx/${signature}">${signature}</a>`;
+
+                BotManager.sendMessage(wallet.chatId, message);
             }
             
         }
