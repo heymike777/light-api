@@ -56,7 +56,7 @@ const onExpressStarted = async () => {
 
     await WalletManager.fetchAllWalletAddresses();
     JitoWebsocketManager.getInstance();
-    await JitoManager.initSearcherClient();
+    // await JitoManager.initSearcherClient();
     if (process.env.SOLANA_GEYSER_RPC != 'NULL'){
         YellowstoneManager.getInstance();
     }

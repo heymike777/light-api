@@ -23,7 +23,7 @@ export class YellowstoneManager {
     }
 
     async init(){
-        
+        console.log(new Date(), process.env.SERVER_NAME, 'YellowstoneManager init', this.GRPC_URL, this.X_TOKEN);
         const client = new Client(this.GRPC_URL, this.X_TOKEN, {
             "grpc.max_receive_message_length": 64 * 1024 * 1024, // 64MiB
         });
