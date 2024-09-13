@@ -19,6 +19,7 @@ import { Wallet } from './entities/Wallet';
 import { JitoWebsocketManager } from './services/solana/JitoWebsocketManager';
 import { JitoManager } from './services/solana/JitoManager';
 import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager';
+import { WalletManager } from './managers/WalletManager';
 
 const app = express();
 app.use(json());
@@ -53,6 +54,7 @@ const onExpressStarted = async () => {
     setupCron();
     setupBot();
 
+    await WalletManager.fetchAllWalletAddresses();
     JitoWebsocketManager.getInstance();
     await JitoManager.initSearcherClient();
     if (process.env.SOLANA_GEYSER_RPC != 'NULL'){

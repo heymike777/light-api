@@ -11,6 +11,7 @@ export enum TxFilter {
     RAYDIUM = 'raydium',
     PUMPFUN = 'pumpfun',
     WALLETS = 'wallets',
+    ALL_TRANSACTIONS = 'all_transactions',
 }
 
 export class YellowstoneManager {
@@ -49,10 +50,10 @@ export class YellowstoneManager {
             const filter = data.filters[0];
 
             if (filter == TxFilter.RAYDIUM || filter == TxFilter.PUMPFUN) {
-                this.receivedTx(data, filter);
+                this.receivedDexTx(data, filter);
             } 
-            else if (filter == TxFilter.WALLETS) {
-                this.receivedWalletTx(data, filter);
+            else if (filter == TxFilter.ALL_TRANSACTIONS) {
+                this.receivedTx(data, filter);
             } 
             else if (data.pong) {
                 // console.log(new Date(), process.env.SERVER_NAME, `Processed ping response!`);
@@ -60,9 +61,8 @@ export class YellowstoneManager {
         });
 
         await this.subscribeToPingPong(stream);
-        const walletAddresses = await WalletManager.getAllWalletAddresses();
         // await this.subscribeToProcessedTransactions(stream);
-        await this.subscribeToConfirmedTransactions(stream, walletAddresses);
+        await this.subscribeToConfirmedTransactions(stream);
 
         await streamClosed;
     }
@@ -118,15 +118,15 @@ export class YellowstoneManager {
         });
     }
 
-    async subscribeToConfirmedTransactions(stream: any, wallets: string[]){
-        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions wallets.length: ${wallets.length}`);
+    async subscribeToConfirmedTransactions(stream: any){
+        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
 
         const request: SubscribeRequest = {
             "transactions": {
-                "wallets": {
+                "all_transactions": {
                     failed: false,
                     vote: false,
-                    accountInclude: wallets,
+                    accountInclude: [],
                     accountExclude: [],
                     accountRequired: [],
                 }
@@ -186,19 +186,18 @@ export class YellowstoneManager {
         }, this.PING_INTERVAL_MS);
     }
 
-    async receivedWalletTx(data: any, filter: string){
+    async receivedTx(data: any, filter: string){
         const transaction = data.transaction.transaction;
         if (transaction.meta.err){ return; }
 
         const signature = base58.encode(transaction.signature);
         const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
-
-        console.log(new Date(), process.env.SERVER_NAME, 'receivedWalletTx', signature);
+        console.log(new Date(), process.env.SERVER_NAME, 'receivedWalletTx', signature);       
 
         WalletManager.processWalletTransaction(signature, parsedTransaction);
     }
 
-    async receivedTx(data: any, filter: string){
+    async receivedDexTx(data: any, filter: string){
         const transaction = data.transaction.transaction;
         if (transaction.meta.err){ return; }
 

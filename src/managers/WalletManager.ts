@@ -5,11 +5,24 @@ import { BotManager } from "./bot/BotManager";
 
 export class WalletManager {
 
+    static walletsMap: Map<string, IWallet[]> = new Map();
+
     static async addWallet(chatId: number, walletAddress: string, title?: string){
         const existingWallet = await Wallet.findOne({chatId: chatId, walletAddress: walletAddress});
         if (existingWallet){
             existingWallet.title = title;
             await existingWallet.save();
+
+            // Update cache
+            const tmpWallets = this.walletsMap.get(walletAddress);
+            if (tmpWallets){
+                for (let wallet of tmpWallets){
+                    if (wallet.chatId == chatId){
+                        wallet.title = title;
+                        break;
+                    }
+                }
+            }
         }
         else {
             const wallet = new Wallet({
@@ -19,29 +32,52 @@ export class WalletManager {
                 isVerified: false,
                 createdAt: new Date()
             });
-            await wallet.save();    
+            await wallet.save();
+
+            // Update cache
+            let tmpWallets = this.walletsMap.get(walletAddress);
+            if (tmpWallets){
+                tmpWallets.push(wallet);
+            }
+            else {
+                tmpWallets = [wallet];
+            }
         }
     }
 
     static async removeWallets(chatId: number, walletAddresses: string[]){
         await Wallet.deleteMany({chatId: chatId, walletAddress: {$in: walletAddresses}});
+
+        // Remove from cache
+        for (let walletAddress of walletAddresses){
+            const tmpWallets = this.walletsMap.get(walletAddress);
+            if (tmpWallets){
+                const newWallets = tmpWallets.filter((wallet) => wallet.chatId != chatId);
+                if (newWallets.length == 0){
+                    this.walletsMap.delete(walletAddress);
+                }
+                else {
+                    this.walletsMap.set(walletAddress, newWallets);
+                }
+            }
+        }
     }
 
-    static async getWalletsByChatId(chatId: number): Promise<IWallet[]> {
+    static async fetchWalletsByChatId(chatId: number): Promise<IWallet[]> {
         return Wallet.find({chatId: chatId});
     }
 
-    static async getAllWalletAddresses(): Promise<string[]> {
+    static async fetchAllWalletAddresses() {
         const wallets = await Wallet.find();
-        const walletAddresses: string[] = [];
-
+        this.walletsMap.clear();
         for (let wallet of wallets){
-            if (walletAddresses.includes(wallet.walletAddress) == false){
-                walletAddresses.push(wallet.walletAddress);
+            if (this.walletsMap.has(wallet.walletAddress)){
+                this.walletsMap.get(wallet.walletAddress)?.push(wallet);
+            }
+            else {
+                this.walletsMap.set(wallet.walletAddress, [wallet]);
             }
         }
-
-        return walletAddresses;
     }
 
     static async processWalletTransaction(signature: string, parsedTransaction: ConfirmedTransaction, logs: boolean = false) {
@@ -52,18 +88,23 @@ export class WalletManager {
             if (!transaction || !meta || !transaction.message){
                 return;
             }
-        
+
+            const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i));
             const logMessages: string[] = meta.logMessages;
-            const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i))
-            const signer = base58.encode(transaction.message.accountKeys[0]);
+            
+            const wallets: IWallet[] = [];
+            for (const walletInvolved of accounts) {
+                const tmpWallets = this.walletsMap.get(walletInvolved);
+                if (tmpWallets){
+                    wallets.push(...tmpWallets);
+                }
+            }
 
-            console.log(new Date(), process.env.SERVER_NAME, 'processWalletTransaction', signature, 'signer:', signer, 'accounts:', accounts, 'logMessages:', logMessages);
+            // console.log(new Date(), process.env.SERVER_NAME, 'processWalletTransaction', signature, 'accounts:', accounts, 'logMessages:', logMessages);
 
-            const wallets = await Wallet.find({walletAddress: {$in: accounts}});
             for (let wallet of wallets){
                 if (wallet.chatId){
-                    // const user = await
-                    const walletTitle = wallet.title ? wallet.title : wallet.walletAddress;
+                    const walletTitle = wallet.title || wallet.walletAddress;
                     let message = '';
                     message += `[<a href="https://solscan.io/account/${wallet.walletAddress}">${walletTitle}</a>]\n\n`;
                     message += `Transaction: <a href="https://solscan.io/tx/${signature}">${signature}</a>`;
@@ -77,6 +118,5 @@ export class WalletManager {
             if (logs) console.error(new Date(), 'processWalletTransaction', 'Error:', err);
         }
     }
-
 
 }
