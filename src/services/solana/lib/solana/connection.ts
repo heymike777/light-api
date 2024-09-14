@@ -19,12 +19,12 @@ export function newConnection(fixedRpc?: string): Connection {
 }
 
 export function getRpc(): string {
-    // return process.env.SOLANA_RPC || "";
-    const rpcs: string[] = [];
-    if (process.env.SOLANA_RPC) { rpcs.push(process.env.SOLANA_RPC); }
-    if (process.env.SOLANA_RPC_2) { rpcs.push(process.env.SOLANA_RPC_2); }
-    const rpc = rpcs[Math.floor(Math.random() * rpcs.length)];
-    return rpc || "";
+    return process.env.SOLANA_RPC || "";
+    // const rpcs: string[] = [];
+    // if (process.env.SOLANA_RPC) { rpcs.push(process.env.SOLANA_RPC); }
+    // if (process.env.SOLANA_RPC_2) { rpcs.push(process.env.SOLANA_RPC_2); }
+    // const rpc = rpcs[Math.floor(Math.random() * rpcs.length)];
+    // return rpc || "";
 }
 
 interface Opt extends ConfirmedSignaturesForAddress2Options {
