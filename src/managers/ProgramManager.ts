@@ -1,7 +1,7 @@
 import { Program } from "../entities/Program";
 import { getProgramIdl, IdlItem } from "@solanafm/explorer-kit-idls";
 import { Chain } from "../services/solana/types";
-import { checkIfInstructionParser, ParserType, SolanaFMParser } from "@solanafm/explorer-kit";
+import { checkIfInstructionParser, ParserOutput, ParserType, SolanaFMParser } from "@solanafm/explorer-kit";
 
 export class ProgramManager {
 
@@ -45,7 +45,7 @@ export class ProgramManager {
         return undefined;
     }
 
-    static async parseIx(programId: string, ixData: string, chain: Chain = Chain.SOLANA){
+    static async parseIx(programId: string, ixData: string, chain: Chain = Chain.SOLANA): Promise<ParserOutput | undefined>{
         const idl = await this.getIDL(programId, chain);
         if (idl){
             const parser = new SolanaFMParser(idl, programId);
@@ -53,6 +53,7 @@ export class ProgramManager {
             
             if (instructionParser && checkIfInstructionParser(instructionParser)) {
                 const decodedData = instructionParser.parseInstructions(ixData);
+                return decodedData;
             }
         }
 

@@ -135,6 +135,9 @@ export class WalletManager {
                     const programId = accounts[instruction.programIdIndex];
                     const ix = this.compiledInstructionToBase58(instruction);
                     console.log('programId:', programId, 'ix:', ix);
+
+                    const parsed = await ProgramManager.parseIx(programId, ix);
+                    console.log('parsed:', parsed);
                 }
             }
 
