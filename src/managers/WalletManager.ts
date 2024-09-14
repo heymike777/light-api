@@ -2,8 +2,9 @@ import { ConfirmedTransaction } from "@triton-one/yellowstone-grpc/dist/grpc/sol
 import { IWallet, Wallet } from "../entities/Wallet";
 import base58 from "bs58";
 import { BotManager } from "./bot/BotManager";
-import { Program } from "../entities/Program";
 import { ProgramManager } from "./ProgramManager";
+import * as web3 from '@solana/web3.js';
+import { newConnection } from "../services/solana/lib/solana";
 
 export class WalletManager {
 
@@ -128,9 +129,28 @@ export class WalletManager {
                 return;
             }
 
+            // if (instructions){
+            //     for (const instruction of instructions) {
+            //         const programId = accounts[instruction.programIdIndex];
+            //         const ix = new web3.TransactionInstruction({
+            //             keys: instruction.accounts.map((accountIndex: number) => {
+            //                 return {
+            //                     pubkey: new web3.PublicKey(accounts[accountIndex]),
+            //                     isSigner: transaction.message.isAccountSigner(accountIndex),
+            //                     isWritable: transaction.message.isAccountWritable(accountIndex),
+            //                 }
+            //             }),
+            //             programId: new web3.PublicKey(programId),
+            //             data: Buffer.from(instruction.data),
+            //         });
+            //     }
+            // }
 
+            const connection = newConnection();
+            const tx = await connection.getParsedTransaction(signature);
+            console.log('tx:', JSON.stringify(tx, null, 2));
             
-            console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
+            // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
 
             for (let chat of chats){
                 let message = `[<a href="https://solscan.io/tx/${signature}">NEW TRANSACTION</a>]\n\n`;

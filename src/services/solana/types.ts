@@ -68,3 +68,11 @@ export enum Priority {
     LOW = 'LOW',
     HIGH = 'HIGH'
 }
+
+export enum Chain {
+    SOLANA = 'SOLANA',
+    ETHEREUM = 'ETHEREUM',
+    TON = 'TON',
+    TRON = 'TRON',
+    NEAR = 'NEAR',
+}
