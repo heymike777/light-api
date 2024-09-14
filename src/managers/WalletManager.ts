@@ -1,10 +1,11 @@
-import { ConfirmedTransaction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
+import { CompiledInstruction, ConfirmedTransaction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
 import { IWallet, Wallet } from "../entities/Wallet";
 import base58 from "bs58";
 import { BotManager } from "./bot/BotManager";
 import { ProgramManager } from "./ProgramManager";
 import * as web3 from '@solana/web3.js';
 import { newConnection } from "../services/solana/lib/solana";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 export class WalletManager {
 
@@ -129,26 +130,17 @@ export class WalletManager {
                 return;
             }
 
-            // if (instructions){
-            //     for (const instruction of instructions) {
-            //         const programId = accounts[instruction.programIdIndex];
-            //         const ix = new web3.TransactionInstruction({
-            //             keys: instruction.accounts.map((accountIndex: number) => {
-            //                 return {
-            //                     pubkey: new web3.PublicKey(accounts[accountIndex]),
-            //                     isSigner: transaction.message.isAccountSigner(accountIndex),
-            //                     isWritable: transaction.message.isAccountWritable(accountIndex),
-            //                 }
-            //             }),
-            //             programId: new web3.PublicKey(programId),
-            //             data: Buffer.from(instruction.data),
-            //         });
-            //     }
-            // }
+            if (instructions){
+                for (const instruction of instructions) {
+                    const programId = accounts[instruction.programIdIndex];
+                    const ix = this.compiledInstructionToBase58(instruction);
+                    console.log('programId:', programId, 'ix:', ix);
+                }
+            }
 
-            const connection = newConnection();
-            const tx = await connection.getParsedTransaction(signature, {commitment: 'confirmed'});
-            console.log('tx:', JSON.stringify(tx, null, 2));
+            // const connection = newConnection();
+            // const tx = await connection.getParsedTransaction(signature, {commitment: 'confirmed'});
+            // console.log('tx:', JSON.stringify(tx, null, 2));
             
             // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
 
@@ -170,6 +162,59 @@ export class WalletManager {
         catch (err) {
             if (logs) console.error(new Date(), 'processWalletTransaction', 'Error:', err);
         }
+    }
+
+    /**
+     * Serializes a number into a compact-u16 format used by Solana.
+     * @param value The number to serialize.
+     * @returns An array of bytes representing the compact-u16 encoded number.
+     */
+    static serializeCompactU16(value: number): number[] {
+        const bytes = [];
+        let remaining = value;
+    
+        do {
+        let byte = remaining & 0x7F;
+        remaining >>= 7;
+        if (remaining !== 0) {
+            byte |= 0x80;
+        }
+        bytes.push(byte);
+        } while (remaining !== 0);
+    
+        return bytes;
+    }
+    
+    /**
+     * Converts a CompiledInstruction into a base58 encoded string.
+     * @param instruction The CompiledInstruction to convert.
+     * @returns A base58 encoded string of the serialized instruction.
+     */
+    static compiledInstructionToBase58(instruction: CompiledInstruction): string {
+        const { programIdIndex, accounts, data } = instruction;
+    
+        const buffer = [];
+    
+        // Append programIdIndex (1 byte)
+        buffer.push(programIdIndex);
+    
+        // Append accounts length (compact-u16)
+        buffer.push(...this.serializeCompactU16(accounts.length));
+    
+        // Append account indices (each as a single byte)
+        buffer.push(...accounts);
+    
+        // Append data length (compact-u16)
+        buffer.push(...this.serializeCompactU16(data.length));
+    
+        // Append data bytes
+        buffer.push(...data);
+    
+        // Convert buffer to Uint8Array
+        const byteArray = Uint8Array.from(buffer);
+    
+        // Base58 encode the serialized instruction
+        return bs58.encode(byteArray);
     }
 
 }
