@@ -147,7 +147,7 @@ export class WalletManager {
             // }
 
             const connection = newConnection();
-            const tx = await connection.getParsedTransaction(signature);
+            const tx = await connection.getParsedTransaction(signature, {commitment: 'confirmed'});
             console.log('tx:', JSON.stringify(tx, null, 2));
             
             // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
