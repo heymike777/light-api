@@ -14,6 +14,13 @@ export class Helpers {
         return this.getRandomInt(1, 10000) <= winProbability * 100;
     }   
 
+    static prettyNumber(n: number, roundDecimals?: number): string {
+        if (roundDecimals != undefined){
+            n = Math.floor(n * (10 ** roundDecimals)) / (10 ** roundDecimals);
+        }
+        return this.numberWithCommas(n);
+    }
+
     static padNumber(d: number): string {
         return (d < 10) ? '0' + d.toString() : d.toString();
     }

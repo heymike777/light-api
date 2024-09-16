@@ -1,8 +1,9 @@
 import { AddressLookupTableAccount, Keypair, TransactionInstruction } from '@solana/web3.js';
-import { Helius, MintApiRequest } from "helius-sdk";
+import { EnrichedTransaction, Helius, MintApiRequest } from "helius-sdk";
 import { HeliusAsset, HeliusAssetDisplayOptions, MintApiResult } from './HeliusTypes';
 import { Asset, AssetType, Priority } from './types';
 import { kRaydiumAuthority } from './Constants';
+import axios from 'axios';
 
 export interface TokenHolder {
     owner: string;
@@ -20,6 +21,16 @@ export class HeliusManager {
         if (!this.helius){
             this.helius = new Helius(process.env.HELIUS_API_KEY!);
         }
+    }
+
+    static async getTransaction(signature: string): Promise<EnrichedTransaction> {
+        this.initHelius();
+
+        const apiEndpoint = this.helius.getApiEndpoint('/v0/transactions');
+        const result = await axios.post(apiEndpoint, {
+            transactions: [signature],
+        });
+        return result.data[0];
     }
 
     static async mintCompressedNFT(params: MintApiRequest): Promise<MintApiResult> {

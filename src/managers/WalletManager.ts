@@ -6,6 +6,9 @@ import { ProgramManager } from "./ProgramManager";
 import * as web3 from '@solana/web3.js';
 import { newConnection } from "../services/solana/lib/solana";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { ExplorerManager } from "../services/explorers/ExplorerManager";
+import { HeliusManager } from "../services/solana/HeliusManager";
+import { Helpers } from "../services/helpers/Helpers";
 
 export class WalletManager {
 
@@ -147,13 +150,42 @@ export class WalletManager {
             
             // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
 
-            for (let chat of chats){
-                let message = `[<a href="https://solscan.io/tx/${signature}">NEW TRANSACTION</a>]\n\n`;
 
-                message += `Wallets:\n`;
-                for (const wallet of chat.wallets) {
-                    const walletTitle = wallet.title || wallet.walletAddress;
-                    message += `<a href="https://solscan.io/account/${wallet.walletAddress}">${walletTitle}</a>\n`;                    
+            const tx = await HeliusManager.getTransaction(signature);
+
+            for (let chat of chats){
+                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">${tx.type}</a> on ${tx.source}]\n\n`;
+
+                let description = tx.description;
+                if (description && description != ''){
+                    for (const wallet of chat.wallets) {
+                        const walletTitle = wallet.title || wallet.walletAddress;
+                        if (description.includes(wallet.walletAddress)) {
+                            description = description.replace(wallet.walletAddress, `<a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`);
+                        }
+                    }
+        
+                    if (description != ''){
+                        message += `${description}\n\n`;
+                    }
+                }
+
+                for (const account of tx.accountData) {
+                    const wallet = chat.wallets.find((w) => w.walletAddress == account.account);
+                    if (wallet){
+                        const walletTitle = wallet.title || wallet.walletAddress;
+                        message += `<a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>:\n`;
+                        if (account.nativeBalanceChange != 0){
+                            message += `SOL: ${Helpers.prettyNumber(account.nativeBalanceChange / web3.LAMPORTS_PER_SOL, 3)}\n`;
+                        }
+                        // if (account.tokenBalanceChanges){
+                        //     for (const balanceChange of account.tokenBalanceChanges) {
+                        //         const amount = new BN(balanceChange.rawTokenAmount.tokenAmount);
+                        //         message += `${balanceChange.mint}: ${amount.div(new BN(10 ** balanceChange.rawTokenAmount.decimals))}\n`;
+                        //     }    
+                        // }
+                    }
+                    
                 }
 
                 //TODO: add info about token and BUY/SELL buttons
