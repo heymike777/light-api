@@ -160,6 +160,11 @@ export class WalletManager {
                 tries--;
             }
 
+            if (!tx){
+                //TODO: send transaction anyways, but with data from parsedTransaction
+                return;
+            }
+
             for (let chat of chats){
                 let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">${tx.type}</a> on ${tx.source}]\n\n`;
 
