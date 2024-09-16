@@ -24,6 +24,7 @@ export class HeliusManager {
     }
 
     static async getTransaction(signature: string): Promise<EnrichedTransaction | undefined> {
+        console.log(new Date(), 'HeliusManager', 'getTransaction', signature);
         this.initHelius();
 
         const apiEndpoint = this.helius.getApiEndpoint('/v0/transactions');

@@ -152,12 +152,14 @@ export class WalletManager {
             // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
 
             let tries = 3;
+            let sleepTime = 1;
             let tx: EnrichedTransaction | undefined = undefined;
             while (!tx && tries > 0){                
-                await Helpers.sleep(0.5);
+                await Helpers.sleep(sleepTime);
                 tx = await HeliusManager.getTransaction(signature);
                 console.log('!tx:', tx);
                 tries--;
+                sleepTime *= 2;
             }
 
             if (!tx){
