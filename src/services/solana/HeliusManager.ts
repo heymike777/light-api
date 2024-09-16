@@ -23,14 +23,14 @@ export class HeliusManager {
         }
     }
 
-    static async getTransaction(signature: string): Promise<EnrichedTransaction> {
+    static async getTransaction(signature: string): Promise<EnrichedTransaction | undefined> {
         this.initHelius();
 
         const apiEndpoint = this.helius.getApiEndpoint('/v0/transactions');
         const result = await axios.post(apiEndpoint, {
             transactions: [signature],
         });
-        return result.data[0];
+        return result.data[0] || undefined;
     }
 
     static async mintCompressedNFT(params: MintApiRequest): Promise<MintApiResult> {

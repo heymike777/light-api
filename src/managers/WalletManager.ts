@@ -9,6 +9,7 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { Helpers } from "../services/helpers/Helpers";
+import { EnrichedTransaction } from "helius-sdk";
 
 export class WalletManager {
 
@@ -150,9 +151,14 @@ export class WalletManager {
             
             // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
 
-
-            const tx = await HeliusManager.getTransaction(signature);
-            console.log('!tx:', tx);
+            let tries = 3;
+            let tx: EnrichedTransaction | undefined = undefined;
+            while (!tx && tries > 0){                
+                await Helpers.sleep(0.5);
+                tx = await HeliusManager.getTransaction(signature);
+                console.log('!tx:', tx);
+                tries--;
+            }
 
             for (let chat of chats){
                 let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">${tx.type}</a> on ${tx.source}]\n\n`;
