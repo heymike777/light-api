@@ -152,6 +152,7 @@ export class WalletManager {
 
 
             const tx = await HeliusManager.getTransaction(signature);
+            console.log('!tx:', tx);
 
             for (let chat of chats){
                 let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">${tx.type}</a> on ${tx.source}]\n\n`;
