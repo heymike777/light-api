@@ -216,8 +216,10 @@ export class WalletManager {
     
                         const nativeBalanceChange = tx.meta.preBalances[accountIndex] - tx.meta.postBalances[accountIndex];
                         const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
-                        if (nativeBalanceChange != 0 || wsolBalanceChange != 0){
-                            message += `SOL: ${Helpers.prettyNumber(nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange, 3)}\n`;
+                        const nativeBalanceChangeInSol = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
+                        if (nativeBalanceChangeInSol){
+
+                            message += `SOL: ${nativeBalanceChangeInSol>0?'+':''}${Helpers.prettyNumber(nativeBalanceChangeInSol, 2)}\n`;
                         }
     
                         for (const tokenBalance of tokenBalances) {
@@ -225,7 +227,7 @@ export class WalletManager {
                             if (mint && mint != kSolAddress){
                                 const balanceChange = tokenBalance.balanceChange;
                                 const tokenName = Helpers.prettyWallet(mint);
-                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange}\n`;            
+                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)}\n`;            
                             }
                         }
     
