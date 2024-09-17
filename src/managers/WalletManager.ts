@@ -104,7 +104,6 @@ export class WalletManager {
 
             const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i));
             const instructions = transaction.message.instructions;
-            const logMessages: string[] = meta.logMessages;
             
             for (const instruction of instructions) {
                 const programId = accounts[instruction.programIdIndex];
@@ -138,110 +137,18 @@ export class WalletManager {
                 return;
             }
 
-            if (instructions){
-                for (const instruction of instructions) {
-                    const programId = accounts[instruction.programIdIndex];
-                    const ix = this.compiledInstructionToBase58(instruction);
-                    console.log('programId:', programId, 'ix:', ix);
+            // if (instructions){
+            //     for (const instruction of instructions) {
+            //         const programId = accounts[instruction.programIdIndex];
+            //         const ix = this.compiledInstructionToBase58(instruction);
+            //         console.log('programId:', programId, 'ix:', ix);
 
-                    const parsed = await ProgramManager.parseIx(programId, ix);
-                    console.log('parsed:', parsed);
-                }
-            }
+            //         const parsed = await ProgramManager.parseIx(programId, ix);
+            //         console.log('parsed:', parsed);
+            //     }
+            // }
 
-            // const connection = newConnection();
-            // const tx = await connection.getParsedTransaction(signature, {commitment: 'confirmed'});
-            // console.log('tx:', JSON.stringify(tx, null, 2));
-            
-            // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
-
-            const connection = newConnection();
-            const tx = await SolanaManager.getParsedTransaction(connection, signature);
-            // console.log('MigrationManager', 'migrate', 'tx:', JSON.stringify(tx, null, 2));
-
-            if (!tx || !tx.meta){
-                console.error('MigrationManager', 'migrate', 'tx not found', signature);
-                return;
-            }
-
-            for (const chat of chats) {
-                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">TX</a>]\n\n`;
-    
-                let accountIndex = 0;
-                for (const account of tx.transaction.message.accountKeys) {
-                    const wallet = chat.wallets.find((w) => w.walletAddress == account.pubkey.toBase58());
-                    if (wallet){
-                        const walletTitle = wallet.title || wallet.walletAddress;
-                        message += `<a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>:\n`;
-    
-                        const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
-    
-                        if (tx.meta.preTokenBalances || tx.meta.postTokenBalances){
-                            const accountIndexes: number[] = [];
-                            //     ...(tx.meta.preTokenBalances ? tx.meta.preTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : []),
-                            //     ...(tx.meta.postTokenBalances ? tx.meta.postTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : [])
-                            // ]
-    
-                            if (tx.meta.preTokenBalances){
-                                for (const preTokenBalance of tx.meta.preTokenBalances) {
-                                    if (preTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(preTokenBalance.accountIndex)){
-                                        accountIndexes.push(preTokenBalance.accountIndex);
-                                    }
-                                }
-                            }
-                            if (tx.meta.postTokenBalances){
-                                for (const postTokenBalance of tx.meta.postTokenBalances) {
-                                    if (postTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(postTokenBalance.accountIndex)){
-                                        accountIndexes.push(postTokenBalance.accountIndex);
-                                    }
-                                }
-                            }
-    
-                            for (const accountIndex of accountIndexes){
-                                const preTokenBalance = tx.meta.preTokenBalances?.find((b) => b.accountIndex == accountIndex);
-                                const postTokenBalance = tx.meta.postTokenBalances?.find((b) => b.accountIndex == accountIndex);
-                                const mint = preTokenBalance?.mint || postTokenBalance?.mint || undefined;
-    
-                                const preBalance = new BN(preTokenBalance?.uiTokenAmount.amount || 0);
-                                const postBalance = new BN(postTokenBalance?.uiTokenAmount.amount || 0);
-                                const balanceDiff = postBalance.sub(preBalance);
-                                const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals ||postTokenBalance?.uiTokenAmount.decimals || 0);
-                                const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
-                                const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
-    
-    
-                                tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
-                            }
-                        }
-    
-                        const nativeBalanceChange = tx.meta.preBalances[accountIndex] - tx.meta.postBalances[accountIndex];
-                        const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
-                        const nativeBalanceChangeInSol = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
-                        if (nativeBalanceChangeInSol){
-
-                            message += `SOL: ${nativeBalanceChangeInSol>0?'+':''}${Helpers.prettyNumber(nativeBalanceChangeInSol, 2)}\n`;
-                        }
-    
-                        for (const tokenBalance of tokenBalances) {
-                            const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
-                            if (mint && mint != kSolAddress){
-                                const balanceChange = tokenBalance.balanceChange;
-                                const tokenName = Helpers.prettyWallet(mint);
-                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)}\n`;            
-                            }
-                        }
-    
-                    }
-                    accountIndex++;
-                }
-    
-                //TODO: add SOL & token prices in USD
-                //TODO: add info about token and BUY/SELL buttons
-    
-                BotManager.sendMessage(chat.id, message);
-                // console.log(message);
-            }
-            
+            await this.processTxForChats(signature, chats);            
         }
         catch (err) {
             if (logs) console.error(new Date(), 'processWalletTransaction', 'Error:', err);
@@ -299,6 +206,105 @@ export class WalletManager {
     
         // Base58 encode the serialized instruction
         return bs58.encode(byteArray);
+    }
+
+    static async processTxForChats(signature: string, chats: {id: number, wallets: IWallet[]}[]){
+        try {
+            const connection = newConnection();
+            const tx = await SolanaManager.getParsedTransaction(connection, signature);
+
+            if (!tx || !tx.meta){
+                console.error('MigrationManager', 'migrate', 'tx not found', signature);
+                return;
+            }
+
+            for (const chat of chats) {
+                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">TX</a>]\n\n`;
+    
+                let accountIndex = 0;
+                for (const account of tx.transaction.message.accountKeys) {
+                    const wallet = chat.wallets.find((w) => w.walletAddress == account.pubkey.toBase58());
+                    if (wallet){
+                        const walletTitle = wallet.title || wallet.walletAddress;
+                        message += `<a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>:\n`;
+    
+                        const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
+    
+                        if (tx.meta.preTokenBalances || tx.meta.postTokenBalances){
+                            const accountIndexes: number[] = [];
+                            //     ...(tx.meta.preTokenBalances ? tx.meta.preTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : []),
+                            //     ...(tx.meta.postTokenBalances ? tx.meta.postTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : [])
+                            // ]
+    
+                            if (tx.meta.preTokenBalances){
+                                for (const preTokenBalance of tx.meta.preTokenBalances) {
+                                    if (preTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(preTokenBalance.accountIndex)){
+                                        accountIndexes.push(preTokenBalance.accountIndex);
+                                    }
+                                }
+                            }
+                            if (tx.meta.postTokenBalances){
+                                for (const postTokenBalance of tx.meta.postTokenBalances) {
+                                    if (postTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(postTokenBalance.accountIndex)){
+                                        accountIndexes.push(postTokenBalance.accountIndex);
+                                    }
+                                }
+                            }
+    
+                            for (const accountIndex of accountIndexes){
+                                const preTokenBalance = tx.meta.preTokenBalances?.find((b) => b.accountIndex == accountIndex);
+                                const postTokenBalance = tx.meta.postTokenBalances?.find((b) => b.accountIndex == accountIndex);
+                                const mint = preTokenBalance?.mint || postTokenBalance?.mint || undefined;
+    
+                                const preBalance = new BN(preTokenBalance?.uiTokenAmount.amount || 0);
+                                const postBalance = new BN(postTokenBalance?.uiTokenAmount.amount || 0);
+                                const balanceDiff = postBalance.sub(preBalance);
+                                const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals ||postTokenBalance?.uiTokenAmount.decimals || 0);
+                                const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
+                                const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
+    
+    
+                                tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
+                            }
+                        }
+    
+                        const nativeBalanceChange = tx.meta.postBalances[accountIndex] - tx.meta.preBalances[accountIndex];
+                        const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
+                        const nativeBalanceChangeInSol = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
+                        console.log('nativeBalanceChange:', nativeBalanceChange, 'wsolBalanceChange:', wsolBalanceChange, 'nativeBalanceChangeInSol:', nativeBalanceChangeInSol);
+                        if (nativeBalanceChangeInSol){
+
+                            message += `SOL: ${nativeBalanceChangeInSol>0?'+':''}${Helpers.prettyNumber(nativeBalanceChangeInSol, 2)}\n`;
+                        }
+    
+                        for (const tokenBalance of tokenBalances) {
+                            const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
+                            if (mint && mint != kSolAddress){
+                                const balanceChange = tokenBalance.balanceChange;
+                                const tokenName = Helpers.prettyWallet(mint);
+                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)}\n`;            
+                            }
+                        }
+    
+                    }
+                    accountIndex++;
+                }
+    
+                //TODO: add SOL & token prices in USD
+                //TODO: add info about token and BUY/SELL buttons
+    
+                if (process.env.ENVIROMENT == 'PRODUCTION'){
+                    BotManager.sendMessage(chat.id, message);
+                }
+                else {
+                    console.log(message);
+                }
+            }
+        }
+        catch (err) {
+            console.error(new Date(), 'MigrationManager', 'processTxForChats', 'Error:', err);
+        }
+
     }
 
 }
