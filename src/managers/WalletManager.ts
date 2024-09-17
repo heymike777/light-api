@@ -10,6 +10,10 @@ import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { Helpers } from "../services/helpers/Helpers";
 import { EnrichedTransaction } from "helius-sdk";
+import { SolanaManager } from "../services/solana/SolanaManager";
+import { TokenBalance } from "@solana/web3.js";
+import { BN } from "bn.js";
+import { kSolAddress } from "../services/solana/Constants";
 
 export class WalletManager {
 
@@ -151,60 +155,89 @@ export class WalletManager {
             
             // console.log('parsedTransaction:', JSON.stringify(parsedTransaction, null, 2));
 
-            let tries = 3;
-            let sleepTime = 1;
-            let tx: EnrichedTransaction | undefined = undefined;
-            while (!tx && tries > 0){                
-                await Helpers.sleep(sleepTime);
-                tx = await HeliusManager.getTransaction(signature);
-                console.log('!tx:', tx);
-                tries--;
-                sleepTime *= 2;
-            }
+            const connection = newConnection();
+            const tx = await SolanaManager.getParsedTransaction(connection, signature);
+            // console.log('MigrationManager', 'migrate', 'tx:', JSON.stringify(tx, null, 2));
 
-            if (!tx){
-                //TODO: send transaction anyways, but with data from parsedTransaction
+            if (!tx || !tx.meta){
+                console.error('MigrationManager', 'migrate', 'tx not found', signature);
                 return;
             }
 
-            for (let chat of chats){
-                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">${tx.type}</a> on ${tx.source}]\n\n`;
-
-                let description = tx.description;
-                if (description && description != ''){
-                    for (const wallet of chat.wallets) {
-                        const walletTitle = wallet.title || wallet.walletAddress;
-                        if (description.includes(wallet.walletAddress)) {
-                            description = description.replace(wallet.walletAddress, `<a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`);
-                        }
-                    }
-        
-                    if (description != ''){
-                        message += `${description}\n\n`;
-                    }
-                }
-
-                for (const account of tx.accountData) {
-                    const wallet = chat.wallets.find((w) => w.walletAddress == account.account);
+            for (const chat of chats) {
+                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">TX</a>]\n\n`;
+    
+                let accountIndex = 0;
+                for (const account of tx.transaction.message.accountKeys) {
+                    const wallet = chat.wallets.find((w) => w.walletAddress == account.pubkey.toBase58());
                     if (wallet){
                         const walletTitle = wallet.title || wallet.walletAddress;
                         message += `<a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>:\n`;
-                        if (account.nativeBalanceChange != 0){
-                            message += `SOL: ${Helpers.prettyNumber(account.nativeBalanceChange / web3.LAMPORTS_PER_SOL, 3)}\n`;
+    
+                        const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
+    
+                        if (tx.meta.preTokenBalances || tx.meta.postTokenBalances){
+                            const accountIndexes: number[] = [];
+                            //     ...(tx.meta.preTokenBalances ? tx.meta.preTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : []),
+                            //     ...(tx.meta.postTokenBalances ? tx.meta.postTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : [])
+                            // ]
+    
+                            if (tx.meta.preTokenBalances){
+                                for (const preTokenBalance of tx.meta.preTokenBalances) {
+                                    if (preTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(preTokenBalance.accountIndex)){
+                                        accountIndexes.push(preTokenBalance.accountIndex);
+                                    }
+                                }
+                            }
+                            if (tx.meta.postTokenBalances){
+                                for (const postTokenBalance of tx.meta.postTokenBalances) {
+                                    if (postTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(postTokenBalance.accountIndex)){
+                                        accountIndexes.push(postTokenBalance.accountIndex);
+                                    }
+                                }
+                            }
+    
+                            for (const accountIndex of accountIndexes){
+                                const preTokenBalance = tx.meta.preTokenBalances?.find((b) => b.accountIndex == accountIndex);
+                                const postTokenBalance = tx.meta.postTokenBalances?.find((b) => b.accountIndex == accountIndex);
+                                const mint = preTokenBalance?.mint || postTokenBalance?.mint || undefined;
+    
+                                const preBalance = new BN(preTokenBalance?.uiTokenAmount.amount || 0);
+                                const postBalance = new BN(postTokenBalance?.uiTokenAmount.amount || 0);
+                                const balanceDiff = postBalance.sub(preBalance);
+                                const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals ||postTokenBalance?.uiTokenAmount.decimals || 0);
+                                const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
+                                const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
+    
+    
+                                tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
+                            }
                         }
-                        // if (account.tokenBalanceChanges){
-                        //     for (const balanceChange of account.tokenBalanceChanges) {
-                        //         const amount = new BN(balanceChange.rawTokenAmount.tokenAmount);
-                        //         message += `${balanceChange.mint}: ${amount.div(new BN(10 ** balanceChange.rawTokenAmount.decimals))}\n`;
-                        //     }    
-                        // }
+    
+                        const nativeBalanceChange = tx.meta.preBalances[accountIndex] - tx.meta.postBalances[accountIndex];
+                        const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
+                        if (nativeBalanceChange != 0 || wsolBalanceChange != 0){
+                            message += `SOL: ${Helpers.prettyNumber(nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange, 3)}\n`;
+                        }
+    
+                        for (const tokenBalance of tokenBalances) {
+                            const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
+                            if (mint && mint != kSolAddress){
+                                const balanceChange = tokenBalance.balanceChange;
+                                const tokenName = Helpers.prettyWallet(mint);
+                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange}\n`;            
+                            }
+                        }
+    
                     }
-                    
+                    accountIndex++;
                 }
-
+    
+                //TODO: add SOL & token prices in USD
                 //TODO: add info about token and BUY/SELL buttons
-
+    
                 BotManager.sendMessage(chat.id, message);
+                // console.log(message);
             }
             
         }

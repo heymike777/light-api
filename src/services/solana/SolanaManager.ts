@@ -10,6 +10,7 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TransactionMessage } from "@solana/web3.js";
 import { JitoManager } from "./JitoManager";
 import { Keypair } from "@solana/web3.js";
+import { Helpers } from "../helpers/Helpers";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -469,6 +470,25 @@ export class SolanaManager {
 
         return false;
     }
+
+    static async getParsedTransaction(web3Conn: web3.Connection, signature: string, tries: number = 3): Promise<web3.ParsedTransactionWithMeta | undefined>{
+        let tx: web3.ParsedTransactionWithMeta | null = null;
+
+        while (!tx && tries > 0){
+            try {
+                tx = await web3Conn.getParsedTransaction(signature, {commitment: 'confirmed', maxSupportedTransactionVersion: 0});
+            }
+            catch (err){}
+            tries--;
+
+            if (!tx){
+                await Helpers.sleep(1);
+            }
+        }
+
+        return tx || undefined;
+    }
+
 
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
