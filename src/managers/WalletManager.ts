@@ -226,7 +226,7 @@ export class WalletManager {
                     const wallet = chat.wallets.find((w) => w.walletAddress == account.pubkey.toBase58());
                     if (wallet){
                         const walletTitle = wallet.title || wallet.walletAddress;
-                        message += `<a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>:\n`;
+                        message += `🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>\n`;
     
                         const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
     
