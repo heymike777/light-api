@@ -293,7 +293,7 @@ export class WalletManager {
                 //TODO: add SOL & token prices in USD
                 //TODO: add info about token and BUY/SELL buttons
     
-                if (process.env.ENVIROMENT == 'PRODUCTION'){
+                if (process.env.ENVIRONMENT == 'PRODUCTION'){
                     BotManager.sendMessage(chat.id, message);
                 }
                 else {

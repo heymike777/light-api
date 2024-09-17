@@ -16,7 +16,9 @@ export class Helpers {
 
     static prettyNumber(n: number, roundDecimals?: number): string {
         if (roundDecimals != undefined){
-            n = Math.floor(n * (10 ** roundDecimals)) / (10 ** roundDecimals);
+            const tmp = 10 ** roundDecimals;
+
+            n = (n > 0 ? Math.floor(n * tmp) : Math.ceil(n * tmp)) / tmp;
         }
         return this.numberWithCommas(n);
     }
