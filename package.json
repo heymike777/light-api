@@ -16,6 +16,9 @@
   "license": "ISC",
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@metaplex-foundation/mpl-token-metadata": "^3.2.1",
+    "@metaplex-foundation/umi": "^0.9.2",
+    "@metaplex-foundation/umi-bundle-defaults": "^0.9.2",
     "@project-serum/serum": "^0.13.65",
     "@solana/spl-token": "^0.4.6",
     "@solana/web3.js": "1.95.2",

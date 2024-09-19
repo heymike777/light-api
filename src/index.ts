@@ -21,6 +21,7 @@ import { JitoManager } from './services/solana/JitoManager';
 import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager';
 import { WalletManager } from './managers/WalletManager';
 import { Program } from './entities/Program';
+import { TokenManager } from './managers/TokenManager';
 
 const app = express();
 app.use(json());
@@ -57,6 +58,7 @@ const onExpressStarted = async () => {
     setupBot();
 
     await WalletManager.fetchAllWalletAddresses();
+    await TokenManager.updateTokensPrices();
     JitoWebsocketManager.getInstance();
     // await JitoManager.initSearcherClient();
     if (process.env.SOLANA_GEYSER_RPC != 'NULL'){
@@ -67,11 +69,18 @@ const onExpressStarted = async () => {
 }
 
 const setupCron = async () => {
-    if (process.env.CRON_ENABLED == 'true'){
-        // cron.schedule('* * * * *', () => {
-        //     console.log('running a task every minute');
-        // });
-    }
+    cron.schedule('*/10 * * * * *', () => {
+        //TODO: for now it's every 10 seconds, but on productions set it to every second
+        TokenManager.updateTokensPrices();        
+    });
+
+    cron.schedule('* * * * *', () => {
+        // once a minute
+        TokenManager.fetchTokensInfo();
+
+        console.log('Cron', 'tokens:', TokenManager.tokens);
+    });
+
 }
 
 const setupBot = async () => {

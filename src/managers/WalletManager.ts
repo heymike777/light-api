@@ -14,6 +14,7 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
+import { TokenManager } from "./TokenManager";
 
 export class WalletManager {
 
@@ -288,24 +289,27 @@ export class WalletManager {
                         const nativeBalanceChangeInSol = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
                         console.log('nativeBalanceChange:', nativeBalanceChange, 'wsolBalanceChange:', wsolBalanceChange, 'nativeBalanceChangeInSol:', nativeBalanceChangeInSol);
                         if (nativeBalanceChangeInSol){
-
-                            message += `SOL: ${nativeBalanceChangeInSol>0?'+':''}${Helpers.prettyNumber(nativeBalanceChangeInSol, 2)}\n`;
+                            const token = await TokenManager.getToken(kSolAddress);
+                            const tokenValueString = token && token.price ? '($'+Math.round(Math.abs(nativeBalanceChangeInSol) * token.price * 100)/100 + ')' : '';
+                            message += `SOL: ${nativeBalanceChangeInSol>0?'+':''}${Helpers.prettyNumber(nativeBalanceChangeInSol, 2)} ${tokenValueString}\n`;
                         }
     
                         for (const tokenBalance of tokenBalances) {
                             const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
                             if (mint && mint != kSolAddress){
+                                const token = await TokenManager.getToken(mint);
+                                const tokenValueString = token && token.price ? '($'+Math.round(Math.abs(nativeBalanceChangeInSol) * token.price * 100)/100 + ')' : '';
+    
                                 const balanceChange = tokenBalance.balanceChange;
-                                const tokenName = Helpers.prettyWallet(mint);
-                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)}\n`;            
+                                const tokenName = token && token.name ? token.name : Helpers.prettyWallet(mint);
+                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;            
                             }
                         }
     
                     }
                     accountIndex++;
                 }
-    
-                //TODO: add SOL & token prices in USD
+                
                 //TODO: add info about token and BUY/SELL buttons
     
                 if (process.env.ENVIRONMENT == 'PRODUCTION'){
