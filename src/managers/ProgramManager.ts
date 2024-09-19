@@ -19,14 +19,6 @@ export class ProgramManager {
         catch (error){}
     }        
 
-    static async fetchIDLs(chain: Chain = Chain.SOLANA){
-        if (chain == Chain.SOLANA){
-            // const programId = "PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY";
-            // const idl = await getProgramIdl(programId);
-            // console.log(programId, 'idl is:', idl);    
-        }
-    }
-
     static async getIDL(programId: string, chain: Chain = Chain.SOLANA): Promise<IdlItem | undefined>{
         if (chain == Chain.SOLANA){
             const existingIdl = this.idls.get(programId);

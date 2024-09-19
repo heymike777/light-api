@@ -1,5 +1,3 @@
-import { SolanaManager } from "../../../services/solana/SolanaManager";
-import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 
@@ -21,8 +19,24 @@ export class BotStartHelper extends BotHelper {
         super('start', replyMessage);
     }
 
+    async commandReceived(ctx: any) {        
+        let referralCode: string | undefined = ctx?.update?.message?.text;
+        if (referralCode){
+            referralCode = referralCode.replace('/start', '');
+            referralCode = referralCode.trim();
+        }
+        if (!referralCode) {
+            referralCode = 'default';
+        }
+
+        const userTelegramId = ctx.update.message.from.id;
+        console.log('BotStartHelper', 'start', 'userTelegramId:', userTelegramId, 'referralCode:', referralCode);
+
+        super.commandReceived(ctx);
+    }
+
     async messageReceived(message: TgMessage, ctx: any){
-        console.log('BotStartHelper', 'messageReceived', message.text);
+        console.log('BotStartHelper', 'messageReceived', message.text, 'ctx.match:', ctx.match);
 
         super.messageReceived(message, ctx);
 

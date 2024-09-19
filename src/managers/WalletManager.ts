@@ -1,4 +1,4 @@
-import { CompiledInstruction, ConfirmedTransaction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
+import { CompiledInstruction, ConfirmedTransaction, InnerInstructions } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
 import { IWallet, Wallet } from "../entities/Wallet";
 import base58 from "bs58";
 import { BotManager } from "./bot/BotManager";
@@ -103,7 +103,7 @@ export class WalletManager {
             }
 
             const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i));
-            const instructions = transaction.message.instructions;
+            const instructions = [...transaction.message.instructions, ...meta.innerInstructions.map((i: InnerInstructions) => i.instructions).flat()];
             
             for (const instruction of instructions) {
                 const programId = accounts[instruction.programIdIndex];
@@ -136,6 +136,19 @@ export class WalletManager {
             if (chats.length == 0){
                 return;
             }
+
+    //             for (const item of [...transaction.message.instructions, ...meta.innerInstructions.map((i: any) => i.instructions).flat()]) {
+    //                 if (accounts[item.programIdIndex] !== kProgramIdRaydium) continue
+                
+    //                 if ([...(item.data as Buffer).values()][0] != 1) continue
+                
+    //                 const keyIndex = [...(item.accounts as Buffer).values()]
+
+    //                 const expectedPoolId = accounts[keyIndex[4]];
+    //                 console.log(new Date(), process.env.SERVER_NAME, 'processParsedTransaction', signature, 'keyIndex[4]:', keyIndex[4], 'expectedPoolId:', expectedPoolId);
+    //                 poolId = expectedPoolId;
+    //             }
+
 
             // if (instructions){
             //     for (const instruction of instructions) {
@@ -217,6 +230,8 @@ export class WalletManager {
                 console.error('MigrationManager', 'migrate', 'tx not found', signature);
                 return;
             }
+
+            // const instructions = [];
 
             for (const chat of chats) {
                 let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">TX</a>]\n\n`;

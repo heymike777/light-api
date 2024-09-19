@@ -95,6 +95,10 @@ export class BotManager {
     }
 
     async findHelperByCommand(command: string): Promise<BotHelper | undefined> {
+        if (command.startsWith('start')){
+            return this.helpers.find(helper => helper.kCommand == 'start');
+        }
+
         return this.helpers.find(helper => helper.kCommand == command);
     }
 
