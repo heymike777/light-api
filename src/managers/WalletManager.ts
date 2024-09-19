@@ -292,24 +292,26 @@ export class WalletManager {
                             const token = await TokenManager.getToken(kSolAddress);
                             const tokenValueString = token && token.price ? '($'+Math.round(Math.abs(nativeBalanceChangeInSol) * token.price * 100)/100 + ')' : '';
                             message += `SOL: ${nativeBalanceChangeInSol>0?'+':''}${Helpers.prettyNumber(nativeBalanceChangeInSol, 2)} ${tokenValueString}\n`;
+                            message += `SOL price: $${token?.price}\n`;
                         }
     
                         for (const tokenBalance of tokenBalances) {
                             const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
                             if (mint && mint != kSolAddress){
                                 const token = await TokenManager.getToken(mint);
-                                const tokenValueString = token && token.price ? '($'+Math.round(Math.abs(nativeBalanceChangeInSol) * token.price * 100)/100 + ')' : '';
     
                                 const balanceChange = tokenBalance.balanceChange;
-                                const tokenName = token && token.name ? token.name : Helpers.prettyWallet(mint);
+                                const tokenValueString = token && token.price ? '($'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
+                                const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
                                 message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;            
+                                message += `${tokenName} price: $${token?.price}\n`;
                             }
                         }
     
                     }
                     accountIndex++;
                 }
-                
+
                 //TODO: add info about token and BUY/SELL buttons
     
                 if (process.env.ENVIRONMENT == 'PRODUCTION'){
