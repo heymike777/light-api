@@ -120,7 +120,12 @@ export class BotManager {
 
     async sendTextMessage(chatId: number, text: string){
         console.log('sendTextMessage', chatId, text);
-        this.bot.api.sendMessage(chatId, text, {parse_mode: 'HTML'});
+        this.bot.api.sendMessage(chatId, text, {
+            parse_mode: 'HTML', 
+            link_preview_options: {
+                is_disabled: true
+            }
+        });
     }
 
     // -------- static --------

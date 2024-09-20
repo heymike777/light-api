@@ -59,9 +59,9 @@ export class TokenManager {
     }
 
     static async getToken(address: string): Promise<Token | undefined> {
-        const token = TokenManager.tokens.find(token => token.address === address);
+        let token = TokenManager.tokens.find(token => token.address === address);
         if (!token){
-            const token: Token = {
+            token = {
                 address,
                 priceUpdatedAt: 0,
             }
@@ -82,6 +82,7 @@ export class TokenManager {
                 token.price = prices[0].price;
                 token.priceUpdatedAt = Date.now();
             }
+            console.log('TokenManager', 'getToken', 'prices', prices);
         }
         return token;
     }

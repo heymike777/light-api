@@ -15,6 +15,7 @@ import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
 import { TokenManager } from "./TokenManager";
+import { kMinSolChange } from "../services/Constants";
 
 export class WalletManager {
 
@@ -227,6 +228,8 @@ export class WalletManager {
             const connection = newConnection();
             const tx = await SolanaManager.getParsedTransaction(connection, signature);
 
+            console.log('!tx', JSON.stringify(tx, null, 2));
+
             if (!tx || !tx.meta){
                 console.error('MigrationManager', 'migrate', 'tx not found', signature);
                 return;
@@ -238,8 +241,10 @@ export class WalletManager {
                 let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">TX</a>]\n\n`;
     
                 let accountIndex = 0;
+                console.log('wallets:', chat.wallets.map((w) => w.walletAddress));
+                console.log('tx.transaction.message.accountKeys:', tx.transaction.message.accountKeys);
                 for (const account of tx.transaction.message.accountKeys) {
-                    const wallet = chat.wallets.find((w) => w.walletAddress == account.pubkey.toBase58());
+                    const wallet = chat.wallets.find((w) => w.walletAddress === account.pubkey.toBase58());
                     if (wallet){
                         const walletTitle = wallet.title || wallet.walletAddress;
                         message += `🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>\n`;
@@ -286,25 +291,21 @@ export class WalletManager {
     
                         const nativeBalanceChange = tx.meta.postBalances[accountIndex] - tx.meta.preBalances[accountIndex];
                         const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
-                        const nativeBalanceChangeInSol = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
-                        console.log('nativeBalanceChange:', nativeBalanceChange, 'wsolBalanceChange:', wsolBalanceChange, 'nativeBalanceChangeInSol:', nativeBalanceChangeInSol);
-                        if (nativeBalanceChangeInSol){
+                        const balanceChange = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
+                        if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
                             const token = await TokenManager.getToken(kSolAddress);
-                            const tokenValueString = token && token.price ? '($'+Math.round(Math.abs(nativeBalanceChangeInSol) * token.price * 100)/100 + ')' : '';
-                            message += `SOL: ${nativeBalanceChangeInSol>0?'+':''}${Helpers.prettyNumber(nativeBalanceChangeInSol, 2)} ${tokenValueString}\n`;
-                            message += `SOL price: $${token?.price}\n`;
+                            const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
+                            message += `SOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;
                         }
     
                         for (const tokenBalance of tokenBalances) {
                             const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
                             if (mint && mint != kSolAddress){
                                 const token = await TokenManager.getToken(mint);
-    
                                 const balanceChange = tokenBalance.balanceChange;
-                                const tokenValueString = token && token.price ? '($'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
+                                const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                                 const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
                                 message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;            
-                                message += `${tokenName} price: $${token?.price}\n`;
                             }
                         }
     
@@ -314,12 +315,7 @@ export class WalletManager {
 
                 //TODO: add info about token and BUY/SELL buttons
     
-                if (process.env.ENVIRONMENT == 'PRODUCTION'){
-                    BotManager.sendMessage(chat.id, message);
-                }
-                else {
-                    console.log(message);
-                }
+                BotManager.sendMessage(chat.id, message);
             }
         }
         catch (err) {

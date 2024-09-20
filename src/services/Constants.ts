@@ -1,0 +1,1 @@
+export const kMinSolChange = 0.0001;
