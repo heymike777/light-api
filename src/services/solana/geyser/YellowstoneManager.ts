@@ -191,10 +191,10 @@ export class YellowstoneManager {
         if (transaction.meta.err){ return; }
 
         const signature = base58.encode(transaction.signature);
-        const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
-        console.log(new Date(), process.env.SERVER_NAME, 'receivedWalletTx', signature);       
+        // const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
+        // console.log(new Date(), process.env.SERVER_NAME, 'receivedWalletTx', signature);       
 
-        WalletManager.processWalletTransaction(signature, parsedTransaction);
+        WalletManager.processWalletTransaction(signature);
     }
 
     async receivedDexTx(data: any, filter: string){

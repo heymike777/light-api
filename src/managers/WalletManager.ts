@@ -96,86 +96,66 @@ export class WalletManager {
         }
     }
 
-    static async processWalletTransaction(signature: string, parsedTransaction: ConfirmedTransaction, logs: boolean = false) {
+    static kBatchSize = 50;
+    static signaturesQueue: string[] = [];
+    static async processWalletTransaction(signature: string) {
+        this.signaturesQueue.push(signature);
+        if (this.signaturesQueue.length >= this.kBatchSize){
+            this.processTransactionsBatch();
+        }
+    }
+
+    static async processTransactionsBatch(){
+        const signatures = this.signaturesQueue.splice(0, this.kBatchSize);
+        console.log(new Date(), 'processTransactionsBatch', 'signatures', signatures);
+
         try {
-            // const transaction = parsedTransaction.transaction;
-            // const meta = parsedTransaction.meta
-
-            // if (!transaction || !meta || !transaction.message){
-            //     return;
-            // }
-
-            // const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i));
-            // const instructions = [...transaction.message.instructions, ...meta.innerInstructions.map((i: InnerInstructions) => i.instructions).flat()];
-            
-            // for (const instruction of instructions) {
-            //     const programId = accounts[instruction.programIdIndex];
-            //     ProgramManager.addProgram(programId);
-            // }
-
             const connection = newConnection();
-            const tx = await SolanaManager.getParsedTransaction(connection, signature);
-            if (!tx || !tx.transaction || !tx.meta){
-                console.error(new Date(), 'processWalletTransaction', 'tx not found', signature);
-                return;
-            }
-
-            const walletsInvolved = this.getInvolvedWallets(tx);
-
-            const wallets: IWallet[] = [];
-            for (const walletInvolved of walletsInvolved) {
-                const tmpWallets = this.walletsMap.get(walletInvolved);
-                if (tmpWallets){
-                    wallets.push(...tmpWallets);
-                }
-            }
-
-            const chats: {id: number, wallets: IWallet[]}[] = [];
-            for (let wallet of wallets){
-                if (wallet.chatId){
-                    const chat = chats.find((c) => c.id == wallet.chatId);
-                    if (chat){
-                        chat.wallets.push(wallet);
+            const txs = await SolanaManager.getParsedTransactions(connection, signatures);
+            for (const tx of txs){
+                try{
+                    const signature = tx.transaction.signatures[0];
+                    if (!tx.transaction || !tx.meta){
+                        console.error(new Date(), 'processWalletTransaction', 'tx not found', signature);
+                        continue;
                     }
-                    else {
-                        chats.push({id: wallet.chatId, wallets: [wallet]});
+
+                    const walletsInvolved = this.getInvolvedWallets(tx);
+
+                    const wallets: IWallet[] = [];
+                    for (const walletInvolved of walletsInvolved) {
+                        const tmpWallets = this.walletsMap.get(walletInvolved);
+                        if (tmpWallets){
+                            wallets.push(...tmpWallets);
+                        }
                     }
+
+                    const chats: {id: number, wallets: IWallet[]}[] = [];
+                    for (let wallet of wallets){
+                        if (wallet.chatId){
+                            const chat = chats.find((c) => c.id == wallet.chatId);
+                            if (chat){
+                                chat.wallets.push(wallet);
+                            }
+                            else {
+                                chats.push({id: wallet.chatId, wallets: [wallet]});
+                            }
+                        }
+                    }
+
+                    if (chats.length == 0){
+                        continue;
+                    }
+
+                    await this.processTxForChats(signature, tx, chats);   
                 }
-            }
-
-            if (chats.length == 0){
-                return;
-            }
-
-    //             for (const item of [...transaction.message.instructions, ...meta.innerInstructions.map((i: any) => i.instructions).flat()]) {
-    //                 if (accounts[item.programIdIndex] !== kProgramIdRaydium) continue
-                
-    //                 if ([...(item.data as Buffer).values()][0] != 1) continue
-                
-    //                 const keyIndex = [...(item.accounts as Buffer).values()]
-
-    //                 const expectedPoolId = accounts[keyIndex[4]];
-    //                 console.log(new Date(), process.env.SERVER_NAME, 'processParsedTransaction', signature, 'keyIndex[4]:', keyIndex[4], 'expectedPoolId:', expectedPoolId);
-    //                 poolId = expectedPoolId;
-    //             }
-
-
-            // if (instructions){
-            //     for (const instruction of instructions) {
-            //         const programId = accounts[instruction.programIdIndex];
-            //         const ix = this.compiledInstructionToBase58(instruction);
-            //         console.log('programId:', programId, 'ix:', ix);
-
-            //         const parsed = await ProgramManager.parseIx(programId, ix);
-            //         console.log('parsed:', parsed);
-            //     }
-            // }
-
-
-            await this.processTxForChats(signature, tx, chats);            
+                catch (err) {
+                    console.error(new Date(), 'processWalletTransaction1', 'Error:', err);
+                }
+            }         
         }
         catch (err) {
-            if (logs) console.error(new Date(), 'processWalletTransaction', 'Error:', err);
+            console.error(new Date(), 'processWalletTransaction2', 'Error:', err);
         }
     }
 
@@ -234,8 +214,6 @@ export class WalletManager {
 
     static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: {id: number, wallets: IWallet[]}[]){
         try {
-            const connection = newConnection();
-
             if (!tx.meta){
                 console.error('MigrationManager', 'migrate', 'tx not found', signature);
                 return;

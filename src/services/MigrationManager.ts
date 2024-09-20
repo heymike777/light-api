@@ -27,13 +27,19 @@ export class MigrationManager {
 
         // await ProgramManager.fetchIDLs();
 
-        // const signature = 'TR4cA3UuXL43nTMbcBYGsBGuc3Q93Mvu6FRGa2R8TvA3WzYDBei9ARNeYja1TzKn1raZaCt8Dd7r3jcrQ4pa79a';
+        // const signature = 'MvLzZUdk4ZA2ho8Dsycytn68FvQYHe9aQE3iqXy5a1EV8mN88wxP3aPL7BwkS7z3hXCodtpz2KMBURPxHUGsBLk';
         // const wallets = await Wallet.find({ chatId });
+        // console.log('MigrationManager', 'migrate', 'wallets', wallets);
         // const chats = [{
         //     id: chatId,
         //     wallets: wallets,
         // }];
-        // await WalletManager.processTxForChats(signature, chats);
+
+        // const connection = newConnection();
+        // const tx = await SolanaManager.getParsedTransaction(connection, signature);
+        // if (tx){
+        //     await WalletManager.processTxForChats(signature, tx, chats);
+        // }
 
         // process.exit(0);
 

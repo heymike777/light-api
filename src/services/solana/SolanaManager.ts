@@ -472,21 +472,28 @@ export class SolanaManager {
     }
 
     static async getParsedTransaction(web3Conn: web3.Connection, signature: string, tries: number = 3): Promise<web3.ParsedTransactionWithMeta | undefined>{
-        let tx: web3.ParsedTransactionWithMeta | null = null;
+        const txs = await this.getParsedTransactions(web3Conn, [signature], tries);
+        return txs.length > 0 ? txs[0] : undefined;
+    }
 
-        while (!tx && tries > 0){
+    static async getParsedTransactions(web3Conn: web3.Connection, signatures: string[], tries: number = 3): Promise<web3.ParsedTransactionWithMeta[]>{
+        if (signatures.length == 0) return [];
+
+        let txs: (web3.ParsedTransactionWithMeta | null)[] = [];
+
+        while (txs.length==0 && tries > 0){
             try {
-                tx = await web3Conn.getParsedTransaction(signature, {commitment: 'confirmed', maxSupportedTransactionVersion: 0});
+                txs = await web3Conn.getParsedTransactions(signatures, {commitment: 'confirmed', maxSupportedTransactionVersion: 0});
             }
             catch (err){}
             tries--;
 
-            if (!tx){
+            if (!txs){
                 await Helpers.sleep(1);
             }
         }
 
-        return tx || undefined;
+        return txs.filter(tx => tx != null) as web3.ParsedTransactionWithMeta[];
     }
 
 
