@@ -106,8 +106,8 @@ export class WalletManager {
     }
 
     static async processTransactionsBatch(){
-        const signatures = this.signaturesQueue.splice(0, this.kBatchSize);
-        console.log(new Date(), 'processTransactionsBatch', 'signatures', signatures);
+        const signatures = this.signaturesQueue.splice(0, this.signaturesQueue.length);
+        console.log(new Date(), 'processTransactionsBatch', 'signatures', signatures.length, signatures);
 
         try {
             const connection = newConnection();
