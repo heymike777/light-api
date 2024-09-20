@@ -16,6 +16,7 @@ import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
 import { TokenManager } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
+import { ParsedTransactionWithMeta } from "@solana/web3.js";
 
 export class WalletManager {
 
@@ -97,30 +98,37 @@ export class WalletManager {
 
     static async processWalletTransaction(signature: string, parsedTransaction: ConfirmedTransaction, logs: boolean = false) {
         try {
-            const transaction = parsedTransaction.transaction;
-            const meta = parsedTransaction.meta
+            // const transaction = parsedTransaction.transaction;
+            // const meta = parsedTransaction.meta
 
-            if (!transaction || !meta || !transaction.message){
+            // if (!transaction || !meta || !transaction.message){
+            //     return;
+            // }
+
+            // const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i));
+            // const instructions = [...transaction.message.instructions, ...meta.innerInstructions.map((i: InnerInstructions) => i.instructions).flat()];
+            
+            // for (const instruction of instructions) {
+            //     const programId = accounts[instruction.programIdIndex];
+            //     ProgramManager.addProgram(programId);
+            // }
+
+            const connection = newConnection();
+            const tx = await SolanaManager.getParsedTransaction(connection, signature);
+            if (!tx || !tx.transaction || !tx.meta){
+                console.error(new Date(), 'processWalletTransaction', 'tx not found', signature);
                 return;
             }
 
-            const accounts = transaction.message.accountKeys.map((i: Uint8Array) => base58.encode(i));
-            const instructions = [...transaction.message.instructions, ...meta.innerInstructions.map((i: InnerInstructions) => i.instructions).flat()];
-            
-            for (const instruction of instructions) {
-                const programId = accounts[instruction.programIdIndex];
-                ProgramManager.addProgram(programId);
-            }
+            const walletsInvolved = this.getInvolvedWallets(tx);
 
             const wallets: IWallet[] = [];
-            for (const walletInvolved of accounts) {
+            for (const walletInvolved of walletsInvolved) {
                 const tmpWallets = this.walletsMap.get(walletInvolved);
                 if (tmpWallets){
                     wallets.push(...tmpWallets);
                 }
             }
-
-            // console.log(new Date(), process.env.SERVER_NAME, 'processWalletTransaction', signature, 'accounts:', accounts, 'logMessages:', logMessages);
 
             const chats: {id: number, wallets: IWallet[]}[] = [];
             for (let wallet of wallets){
@@ -163,7 +171,8 @@ export class WalletManager {
             //     }
             // }
 
-            await this.processTxForChats(signature, chats);            
+
+            await this.processTxForChats(signature, tx, chats);            
         }
         catch (err) {
             if (logs) console.error(new Date(), 'processWalletTransaction', 'Error:', err);
@@ -223,28 +232,23 @@ export class WalletManager {
         return bs58.encode(byteArray);
     }
 
-    static async processTxForChats(signature: string, chats: {id: number, wallets: IWallet[]}[]){
+    static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: {id: number, wallets: IWallet[]}[]){
         try {
             const connection = newConnection();
-            const tx = await SolanaManager.getParsedTransaction(connection, signature);
 
-            console.log('!tx', JSON.stringify(tx, null, 2));
-
-            if (!tx || !tx.meta){
+            if (!tx.meta){
                 console.error('MigrationManager', 'migrate', 'tx not found', signature);
                 return;
             }
 
-            // const instructions = [];
+            const walletsInvolved = this.getInvolvedWallets(tx);
 
             for (const chat of chats) {
                 let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">TX</a>]\n\n`;
     
                 let accountIndex = 0;
-                console.log('wallets:', chat.wallets.map((w) => w.walletAddress));
-                console.log('tx.transaction.message.accountKeys:', tx.transaction.message.accountKeys);
-                for (const account of tx.transaction.message.accountKeys) {
-                    const wallet = chat.wallets.find((w) => w.walletAddress === account.pubkey.toBase58());
+                for (const walletInvolved of walletsInvolved) {
+                    const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
                     if (wallet){
                         const walletTitle = wallet.title || wallet.walletAddress;
                         message += `🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>\n`;
@@ -253,20 +257,17 @@ export class WalletManager {
     
                         if (tx.meta.preTokenBalances || tx.meta.postTokenBalances){
                             const accountIndexes: number[] = [];
-                            //     ...(tx.meta.preTokenBalances ? tx.meta.preTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : []),
-                            //     ...(tx.meta.postTokenBalances ? tx.meta.postTokenBalances.filter((b) => b.owner == account.pubkey.toBase58()) : [])
-                            // ]
     
                             if (tx.meta.preTokenBalances){
                                 for (const preTokenBalance of tx.meta.preTokenBalances) {
-                                    if (preTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(preTokenBalance.accountIndex)){
+                                    if (preTokenBalance.owner == walletInvolved && !accountIndexes.includes(preTokenBalance.accountIndex)){
                                         accountIndexes.push(preTokenBalance.accountIndex);
                                     }
                                 }
                             }
                             if (tx.meta.postTokenBalances){
                                 for (const postTokenBalance of tx.meta.postTokenBalances) {
-                                    if (postTokenBalance.owner == account.pubkey.toBase58() && !accountIndexes.includes(postTokenBalance.accountIndex)){
+                                    if (postTokenBalance.owner == walletInvolved && !accountIndexes.includes(postTokenBalance.accountIndex)){
                                         accountIndexes.push(postTokenBalance.accountIndex);
                                     }
                                 }
@@ -322,6 +323,28 @@ export class WalletManager {
             console.error(new Date(), 'MigrationManager', 'processTxForChats', 'Error:', err);
         }
 
+    }
+
+    static getInvolvedWallets(tx: ParsedTransactionWithMeta): string[] {
+        const wallets: string[] = [];
+        for (const account of tx.transaction.message.accountKeys) {
+            wallets.push(account.pubkey.toBase58());
+        }
+        if (tx.meta?.preTokenBalances){
+            for (const account of tx.meta.preTokenBalances) {
+                if (account.owner && !wallets.includes(account.owner)){
+                    wallets.push(account.owner);
+                }
+            }
+        }
+        if (tx.meta?.postTokenBalances){
+            for (const account of tx.meta.postTokenBalances) {
+                if (account.owner && !wallets.includes(account.owner)){
+                    wallets.push(account.owner);
+                }
+            }
+        }
+        return wallets;
     }
 
 }
