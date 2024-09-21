@@ -1,3 +1,5 @@
+import { BonfidaManager } from "../../../services/solana/BonfidaManager";
+import { newConnection } from "../../../services/solana/lib/solana";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
@@ -26,7 +28,6 @@ export class BotAddWalletHelper extends BotHelper {
 
         super.messageReceived(message, ctx);
 
-
         const lines = message.text.split('\n');
         const wallets: {address: string, title?: string}[] = [];
         for (let line of lines) {
@@ -35,7 +36,7 @@ export class BotAddWalletHelper extends BotHelper {
                 continue;
             }
             const parts = line.split(' ');
-            const walletAddress = parts.shift();
+            let walletAddress = parts.shift();
             let title = parts.length>0 ? parts.join(' ') : undefined;
             title = title?.trim();
             if (title?.length == 0){
@@ -44,6 +45,13 @@ export class BotAddWalletHelper extends BotHelper {
 
             if (!walletAddress){
                 continue;
+            }
+
+            if (walletAddress.endsWith('.sol')){
+                const tmp = await BonfidaManager.resolveDomain(walletAddress);
+                if (tmp){
+                    walletAddress = tmp;
+                }
             }
 
             if (SolanaManager.isValidPublicKey(walletAddress) == false){
