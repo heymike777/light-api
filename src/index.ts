@@ -22,6 +22,7 @@ import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager'
 import { WalletManager } from './managers/WalletManager';
 import { Program } from './entities/Program';
 import { TokenManager } from './managers/TokenManager';
+import { UserManager } from './managers/UserManager';
 
 const app = express();
 app.use(json());
@@ -77,6 +78,7 @@ const setupCron = async () => {
     cron.schedule('* * * * *', () => {
         // once a minute
         TokenManager.fetchTokensInfo();
+        UserManager.cleanOldCache();
 
         console.log('Cron', 'tokens:', TokenManager.tokens);
     });

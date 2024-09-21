@@ -1,3 +1,4 @@
+import { IUser } from "../../../entities/User";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
@@ -15,7 +16,7 @@ export class BotMyWalletsHelper extends BotHelper {
         super('my_wallets', replyMessage);
     }
 
-    async commandReceived(ctx: any) {
+    async commandReceived(ctx: any, user: IUser) {
         let response = '';
 
         const chatId = this.getChatId(ctx);

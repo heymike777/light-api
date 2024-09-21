@@ -1,4 +1,5 @@
 import { SolanaManager } from "../../../services/solana/SolanaManager";
+import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
@@ -53,8 +54,9 @@ export class BotAddWalletHelper extends BotHelper {
             wallets.push({address: walletAddress, title: title});                
         }
 
+        const user = await UserManager.getUserByTelegramUser(message.from);
         for (const wallet of wallets) {
-            await WalletManager.addWallet(message.chat.id, wallet.address, wallet.title);
+            await WalletManager.addWallet(message.chat.id, user.id, wallet.address, wallet.title);
         }
 
         if (wallets.length == 0){

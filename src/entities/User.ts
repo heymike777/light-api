@@ -4,36 +4,41 @@ export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
 export let Mixed = mongoose.Schema.Types.Mixed;
 
-export interface IUser extends mongoose.Document {
-    chatId: number;
-    firstName: string;
-    lastName: string;
+export interface TelegramUser {
+    id: number;
+    is_bot: boolean;
+    first_name: string;
+    last_name: string;
     username: string;
-    isPremium: boolean;
-    isBot: boolean;
-    languageCode: string;
+    language_code: string;
+    is_premium: boolean;
+}
 
-    //isChannel
-    //isGroup
+export interface IUser extends mongoose.Document {
+    telegram?: TelegramUser;
+    referralCode?: string;
 
     updatedAt?: Date;
     createdAt: Date;
 }
 
 export const UserSchema = new mongoose.Schema<IUser>({
-    chatId: { type: Number },
-    firstName: { type: String },
-    lastName: { type: String },
-    username: { type: String },
-    isPremium: { type: Boolean },
-    isBot: { type: Boolean },
-    languageCode: { type: String },
+    telegram: {
+        id: { type: Number },
+        is_bot: { type: Boolean },
+        first_name: { type: String },
+        last_name: { type: String },
+        username: { type: String },
+        language_code: { type: String },
+        is_premium: { type: Boolean }
+    },
+    referralCode: { type: String },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
 });
 
-UserSchema.index({ chatId: 1 });
+UserSchema.index({ 'telegram.id': 1 });
 
 UserSchema.pre('save', function (next) {
     this.updatedAt = new Date();

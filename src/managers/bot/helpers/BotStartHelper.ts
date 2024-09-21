@@ -1,3 +1,5 @@
+import { IUser } from "../../../entities/User";
+import { UserRefClaim } from "../../../entities/UserRefClaim";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 
@@ -8,18 +10,14 @@ export class BotStartHelper extends BotHelper {
 
         const replyMessage: Message = {
             text: 'Hey, I am Nova! I can help you with:\n' + 
-            '- wallet tracker\n' + 
-            '- trade tokens\n' +
-            '- sniper\n' +
-            '- tokens price tracker\n' +
-            '- portfolio\n' +
-            '- alpha notifications'
+            '- wallet tracking\n' + 
+            '- tokens trading'
         };
 
         super('start', replyMessage);
     }
 
-    async commandReceived(ctx: any) {        
+    async commandReceived(ctx: any, user: IUser) {        
         let referralCode: string | undefined = ctx?.update?.message?.text;
         if (referralCode){
             referralCode = referralCode.replace('/start', '');
@@ -32,7 +30,21 @@ export class BotStartHelper extends BotHelper {
         const userTelegramId = ctx.update.message.from.id;
         console.log('BotStartHelper', 'start', 'userTelegramId:', userTelegramId, 'referralCode:', referralCode);
 
-        super.commandReceived(ctx);
+        if (!user.referralCode){
+            user.referralCode = referralCode;
+            await user.save();
+        }
+
+        if (referralCode != 'default'){
+            await UserRefClaim.create({
+                userId: user.id,
+                referralCode: referralCode,
+                claimedAt: new Date()
+            });
+        }
+
+
+        super.commandReceived(ctx, user);
     }
 
     async messageReceived(message: TgMessage, ctx: any){

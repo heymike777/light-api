@@ -1,3 +1,4 @@
+import { IUser } from "../../../entities/User";
 import { TgMessage } from "../BotManager";
 
 export interface Message {
@@ -17,7 +18,7 @@ export class BotHelper {
     async messageReceived(message: TgMessage, ctx: any) {
     };
 
-    async commandReceived(ctx: any) {
+    async commandReceived(ctx: any, user: IUser) {
         ctx.reply(this.kStartCommandReplyMessage.text);
     }
 

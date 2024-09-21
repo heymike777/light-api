@@ -6,6 +6,7 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface IWallet extends mongoose.Document {
     chatId: number;
+    userId: string;
     walletAddress: string;
     title?: string;
     isVerified: boolean;
@@ -16,6 +17,7 @@ export interface IWallet extends mongoose.Document {
 
 export const WalletSchema = new mongoose.Schema<IWallet>({
     chatId: { type: Number },
+    userId: { type: String },
     walletAddress: { type: String },
     title: { type: String },
     isVerified: { type: Boolean, default: false },

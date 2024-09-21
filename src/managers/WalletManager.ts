@@ -23,7 +23,7 @@ export class WalletManager {
     static walletsMap: Map<string, IWallet[]> = new Map();
     static programIds: string[] = [];
 
-    static async addWallet(chatId: number, walletAddress: string, title?: string){
+    static async addWallet(chatId: number, userId: string, walletAddress: string, title?: string){
         const existingWallet = await Wallet.findOne({chatId: chatId, walletAddress: walletAddress});
         if (existingWallet){
             existingWallet.title = title;
@@ -43,6 +43,7 @@ export class WalletManager {
         else {
             const wallet = new Wallet({
                 chatId: chatId,
+                userId: userId,
                 walletAddress: walletAddress,
                 title: title,
                 isVerified: false,

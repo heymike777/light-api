@@ -5,6 +5,8 @@ import { BotHelper } from "./helpers/BotHelper";
 import { BotStartHelper } from "./helpers/BotStartHelper";
 import { BotRemoveWalletHelper } from "./helpers/BotRemoveWalletHelper";
 import { BotMyWalletsHelper } from "./helpers/BotMyWalletsHelper";
+import { UserManager } from "../UserManager";
+import { IUser } from "../../entities/User";
 
 export interface TgMessage {
     message_id: number;
@@ -51,10 +53,10 @@ export class BotManager {
         console.log('Bot started!');    
     }
 
-    async onCommand(command: string, ctx: any){
+    async onCommand(command: string, ctx: any, user: IUser){
         const helper = await this.findHelperByCommand(command);
         if (helper){
-            helper.commandReceived(ctx);
+            helper.commandReceived(ctx, user);
         }
         else {
             console.error('Unknown command', command);
@@ -64,13 +66,14 @@ export class BotManager {
     async onMessage(message: TgMessage, ctx: any){
         console.log('onMessage', message);
 
+        const user = await UserManager.getUserByTelegramUser(message.from);
         const lastMessage = await Message.findOne({chatId: message.chat.id}).sort({createdAt: -1});
 
         await this.saveMessageToDB(message);
         
         if (message.text.startsWith('/')){
             const command = message.text.substring(1);
-            this.onCommand(command, ctx);
+            this.onCommand(command, ctx, user);
             return;
         }
 
