@@ -13,6 +13,16 @@ export class UserManager {
         const now = new Date();
         const user = await User.findOne({ 'telegram.id': from.id });
         if (user){
+            if (user.telegram?.is_bot !== from.is_bot || user.telegram?.first_name !== from.first_name || user.telegram?.last_name !== from.last_name || user.telegram?.username !== from.username || user.telegram?.language_code !== from.language_code){
+                user.telegram = from;
+
+                await User.updateOne({ _id: user._id }, {
+                    $set: {
+                        telegram: from,
+                    }
+                });
+            }
+
             this.cachedUsers.push({ user: user, createdAt: now });
             return user;
         }
