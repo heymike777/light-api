@@ -127,7 +127,6 @@ export class ProgramManager {
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
-                                
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: ixData?.programName || undefined,
@@ -138,14 +137,19 @@ export class ProgramManager {
 
         console.log('parsedInstructions', parsedInstructions);
 
-        const programNames = new Set<string>();
         for (const parsedInstruction of parsedInstructions) {
             if (parsedInstruction.program){
-                programNames.add(parsedInstruction.program);
+                if (title.length > 0){
+                    title += ', ';
+                }
+                
+                if (parsedInstruction.title){
+                    title += parsedInstruction.title + ' on ';
+                }
+                title += parsedInstruction.program;
             }
         }
 
-        title = Array.from(programNames).join(', ');
         if (title.length == 0){
             title = 'UNKNOWN';
         }
