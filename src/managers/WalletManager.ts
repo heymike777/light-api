@@ -17,6 +17,7 @@ import { kSolAddress } from "../services/solana/Constants";
 import { TokenManager } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
+import { Chain } from "../services/solana/types";
 
 export class WalletManager {
 
@@ -222,8 +223,10 @@ export class WalletManager {
 
             const walletsInvolved = this.getInvolvedWallets(tx);
 
+            const parsedTx = await ProgramManager.parseTx(tx, Chain.SOLANA);
+
             for (const chat of chats) {
-                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">TX</a>]\n\n`;
+                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">${parsedTx.title}</a>]\n\n`;
     
                 let accountIndex = 0;
                 for (const walletInvolved of walletsInvolved) {
