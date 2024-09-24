@@ -80,7 +80,7 @@ const setupCron = async () => {
         TokenManager.fetchTokensInfo();
         UserManager.cleanOldCache();
 
-        console.log('Cron', 'tokens:', TokenManager.tokens);
+        // console.log('Cron', 'tokens:', TokenManager.tokens);
     });
 
 }

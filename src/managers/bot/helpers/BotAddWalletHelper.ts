@@ -72,7 +72,7 @@ export class BotAddWalletHelper extends BotHelper {
             return;
         }
         else if (wallets.length == 1){
-            ctx.reply('Wallet saved! We will start tracking it in 2-3 minutes.');
+            ctx.reply('Wallet saved! We will start tracking it immediately.');
             return;
         }
         else {
