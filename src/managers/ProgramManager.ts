@@ -10,11 +10,15 @@ export interface ParsedTx {
 }
 
 export class ProgramManager {
-    static kSkipProgramIds = ['ComputeBudget111111111111111111111111111111'];
+    static kSkipProgramIds = [
+        'ComputeBudget111111111111111111111111111111',
+        'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7', // SOL INCINERATOR
+    ];
     static kProgramNames: { [key: string]: string } = {
         'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA': 'TOKEN PROGRAM',
         '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8': 'RAYDIUM',
         'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 'JUPITER',
+        'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7': 'SOL INCINERATOR',
     };
 
     static programIds: string[] = [];
@@ -103,7 +107,6 @@ export class ProgramManager {
     }
 
     static async parseTx(tx: web3.ParsedTransactionWithMeta, chain: Chain = Chain.SOLANA): Promise<ParsedTx> {
-        const connection = newConnection();
         const parsedInstructions: {programId: string, program?: string, title?: string}[] = [];
         let title = '';
 
@@ -117,20 +120,29 @@ export class ProgramManager {
             if ('parsed' in instruction){
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
 
+                let programName: string | undefined = this.kProgramNames[ixProgramId];
+                let ixTitle: string | undefined = instruction.parsed.type;
+
+                ixTitle = this.renameIx(ixProgramId, ixTitle);                
+
                 parsedInstructions.push({
                     programId: ixProgramId,
-                    program: undefined,
-                    title: 'UNKNOWN',
+                    program: programName,
+                    title: title,
                 });
 
             }
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
+
+                let ixTitle = ixData?.output?.name;
+                ixTitle = this.renameIx(ixProgramId, ixTitle);
+                
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: ixData?.programName || undefined,
-                    title: ixData?.output?.name,
+                    title: ixTitle,
                 });
             }
         }
@@ -142,21 +154,49 @@ export class ProgramManager {
                 if (title.length > 0){
                     title += ', ';
                 }
-                
+
                 if (parsedInstruction.title){
                     title += parsedInstruction.title + ' on ';
                 }
                 title += parsedInstruction.program;
+
+                // I add only first instruction to the tx parsed title. 
+                // if needed, can add more instructions to the title.
+                break; 
             }
         }
 
         if (title.length == 0){
-            title = 'UNKNOWN';
+            title = 'TRANSCATION';
         }
 
         return {
             title,
-        };
+        }
+    }
+
+    static renameIx(programId: string, title?: string): string | undefined {
+        if (!title){
+            return title;
+        }
+
+        if (programId == 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'){
+            if (title == 'transferChecked'){
+                return 'TRANSFER';
+            }
+        }
+        else if (programId == '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'){
+            if (title == 'swapBaseOut' || title == 'swapBaseIn'){
+                return 'SWAP';
+            }
+        }
+        else if (programId == 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4'){
+            if (title == 'sharedAccountsRoute'){
+                return 'SWAP';
+            }
+        }
+
+        return title;
     }
 
 }

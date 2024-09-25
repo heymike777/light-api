@@ -226,14 +226,15 @@ export class WalletManager {
             const parsedTx = await ProgramManager.parseTx(tx, Chain.SOLANA);
 
             for (const chat of chats) {
-                let message = `[<a href="${ExplorerManager.getUrlToTransaction(signature)}">${parsedTx.title}</a>]\n\n`;
+                let message = `[${parsedTx.title}]\n\n`;
     
                 let accountIndex = 0;
                 for (const walletInvolved of walletsInvolved) {
                     const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
                     if (wallet){
+                        let blockMessage = '';
                         const walletTitle = wallet.title || wallet.walletAddress;
-                        message += `🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>\n`;
+                        blockMessage += `🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>\n`;
     
                         const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
     
@@ -272,29 +273,38 @@ export class WalletManager {
                             }
                         }
     
+                        let hasBalanceChange = false;
                         const nativeBalanceChange = tx.meta.postBalances[accountIndex] - tx.meta.preBalances[accountIndex];
                         const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
                         const balanceChange = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
                         if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
+                            hasBalanceChange = true;
                             const token = await TokenManager.getToken(kSolAddress);
                             const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
-                            message += `SOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;
+                            blockMessage += `SOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;
                         }
     
                         for (const tokenBalance of tokenBalances) {
                             const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
                             if (mint && mint != kSolAddress){
+                                hasBalanceChange = true;
                                 const token = await TokenManager.getToken(mint);
                                 const balanceChange = tokenBalance.balanceChange;
                                 const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                                 const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
-                                message += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;            
+                                blockMessage += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;            
                             }
                         }
-    
+
+                        if (hasBalanceChange){
+                            message += blockMessage;
+                        }
                     }
                     accountIndex++;
                 }
+
+                message += `\n<a href="${ExplorerManager.getUrlToTransaction(signature)}">Explorer</a>\n\n`;
+
 
                 //TODO: add info about token and BUY/SELL buttons
     
