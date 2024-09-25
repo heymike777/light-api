@@ -9,16 +9,26 @@ export interface ParsedTx {
     title: string;
 }
 
+export enum kProgram {
+    TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111',
+    RAYDIUM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
+    JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
+    SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
+    TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
+}
+
 export class ProgramManager {
     static kSkipProgramIds = [
-        'ComputeBudget111111111111111111111111111111',
-        'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7', // SOL INCINERATOR
+        kProgram.COMPUTE_BUDGET as string,
+        kProgram.SOL_INCINERATOR as string,
     ];
     static kProgramNames: { [key: string]: string } = {
         'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA': 'TOKEN PROGRAM',
         '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8': 'RAYDIUM',
         'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 'JUPITER',
         'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7': 'SOL INCINERATOR',
+        'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN': 'TENSOR',
     };
 
     static programIds: string[] = [];
@@ -180,19 +190,24 @@ export class ProgramManager {
             return title;
         }
 
-        if (programId == 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'){
+        if (programId == kProgram.TOKEN_PROGRAM){
             if (title == 'transferChecked'){
                 return 'TRANSFER';
             }
         }
-        else if (programId == '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'){
+        else if (programId == kProgram.RAYDIUM){
             if (title == 'swapBaseOut' || title == 'swapBaseIn'){
                 return 'SWAP';
             }
         }
-        else if (programId == 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4'){
+        else if (programId == kProgram.JUPITER){
             if (title == 'sharedAccountsRoute'){
                 return 'SWAP';
+            }
+        }
+        else if (programId == kProgram.TENSOR){
+            if (title == 'buySingleListing'){
+                return 'NFT SELL';
             }
         }
 

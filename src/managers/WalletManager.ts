@@ -14,7 +14,7 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
-import { TokenManager } from "./TokenManager";
+import { Token, TokenManager, TokenNft } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { Chain } from "../services/solana/types";
@@ -224,6 +224,7 @@ export class WalletManager {
             const walletsInvolved = this.getInvolvedWallets(tx);
 
             const parsedTx = await ProgramManager.parseTx(tx, Chain.SOLANA);
+            let nftToken: Token | undefined = undefined;
 
             for (const chat of chats) {
                 let message = `[${parsedTx.title}]\n\n`;
@@ -268,7 +269,6 @@ export class WalletManager {
                                 const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
                                 const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
     
-    
                                 tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
                             }
                         }
@@ -289,6 +289,9 @@ export class WalletManager {
                             if (mint && mint != kSolAddress){
                                 hasBalanceChange = true;
                                 const token = await TokenManager.getToken(mint);
+                                if (token?.nft){
+                                    nftToken = token;
+                                }
                                 const balanceChange = tokenBalance.balanceChange;
                                 const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                                 const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
@@ -303,12 +306,22 @@ export class WalletManager {
                     accountIndex++;
                 }
 
-                message += `\n<a href="${ExplorerManager.getUrlToTransaction(signature)}">Explorer</a>\n\n`;
+                if (nftToken && nftToken.nft){
+                    message += `\n${nftToken.nft.title} | <a href="https://www.tensor.trade/item/${nftToken.address}">Tensor</a>`;
 
+                    if (nftToken.nft.attributes){
+                        message += `\n\n<b>Attributes:</b>\n`;
+                        message += `${nftToken.nft.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
+                    }
+                }
+
+                message += `\n\n<a href="${ExplorerManager.getUrlToTransaction(signature)}">Explorer</a>\n\n`;
+
+                const imageUrl = nftToken?.nft?.image;
 
                 //TODO: add info about token and BUY/SELL buttons
     
-                BotManager.sendMessage(chat.id, message);
+                BotManager.sendMessage(chat.id, message, imageUrl);
             }
         }
         catch (err) {

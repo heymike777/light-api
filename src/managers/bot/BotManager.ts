@@ -127,7 +127,15 @@ export class BotManager {
             parse_mode: 'HTML', 
             link_preview_options: {
                 is_disabled: true
-            }
+            },
+        });
+    }
+
+    async sendPhotoMessage(chatId: number, imageUrl: string, text?: string ){
+        // console.log('sendTextMessage', chatId, text);
+        this.bot.api.sendPhoto(chatId, imageUrl, {
+            caption: text,
+            parse_mode: 'HTML', 
         });
     }
 
@@ -145,9 +153,14 @@ export class BotManager {
         await botManager.sendTextMessage(chatId, text);
     }
 
-    static async sendMessage(chatId: number, text: string){
+    static async sendMessage(chatId: number, text: string, imageUrl?: string){
         const botManager = await BotManager.getInstance();
-        await botManager.sendTextMessage(chatId, text);
+        if (imageUrl){
+            await botManager.sendPhotoMessage(chatId, imageUrl, text);
+        }
+        else {
+            await botManager.sendTextMessage(chatId, text);
+        }
     }
 
 }
