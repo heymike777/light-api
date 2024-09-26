@@ -223,11 +223,15 @@ export class WalletManager {
 
             const walletsInvolved = this.getInvolvedWallets(tx);
 
-            const parsedTx = await ProgramManager.parseTx(tx, Chain.SOLANA);
+            const parsedTx = await ProgramManager.parseTx(tx);
             let nftToken: Token | undefined = undefined;
 
             for (const chat of chats) {
                 let message = `[${parsedTx.title}]\n\n`;
+
+                if (parsedTx.description){
+                    message += parsedTx.description.html + '\n\n';
+                }
     
                 let accountIndex = 0;
                 for (const walletInvolved of walletsInvolved) {

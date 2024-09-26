@@ -3,19 +3,31 @@ import { getProgramIdl, IdlItem } from "@solanafm/explorer-kit-idls";
 import { Chain } from "../services/solana/types";
 import { checkIfInstructionParser, ParserOutput, ParserType, SolanaFMParser } from "@solanafm/explorer-kit";
 import * as web3 from "@solana/web3.js";
-import { newConnection } from "../services/solana/lib/solana";
+import { ExplorerManager } from "../services/explorers/ExplorerManager";
+import { Helpers } from "../services/helpers/Helpers";
 
 export interface ParsedTx {
     title: string;
+    description?: TxDescription;
+}
+
+export interface TxDescription {
+    plain: string;
+    html: string;
 }
 
 export enum kProgram {
+    SOLANA = '11111111111111111111111111111111',
     TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111',
+
     RAYDIUM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
     JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
     TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
+    TENSOR_CNFT = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp',
+
+
 }
 
 export class ProgramManager {
@@ -29,6 +41,7 @@ export class ProgramManager {
         'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 'JUPITER',
         'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7': 'SOL INCINERATOR',
         'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN': 'TENSOR',
+        'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp': 'TENSOR',
     };
 
     static programIds: string[] = [];
@@ -46,26 +59,51 @@ export class ProgramManager {
         catch (error){}
     }        
 
-    static async getIDL(programId: string, chain: Chain = Chain.SOLANA): Promise<IdlItem | undefined>{
-        if (chain == Chain.SOLANA){
-            const existingIdl = this.idls.get(programId);
-            if (existingIdl){
-                return existingIdl;
-            }
-
-            const SFMIdlItem = await getProgramIdl(programId);
-            const idl = SFMIdlItem || undefined; 
-            if (idl){
-                this.idls.set(programId, idl);
-            }
-            return SFMIdlItem || undefined;    
+    static async getIDL(programId: string): Promise<IdlItem | undefined>{
+        const existingIdl = this.idls.get(programId);
+        if (existingIdl){
+            return existingIdl;
         }
 
-        return undefined;
+        const SFMIdlItem = await getProgramIdl(programId);
+        const idl = SFMIdlItem || undefined; 
+        if (idl){
+            this.idls.set(programId, idl);
+        }
+        return SFMIdlItem || undefined;    
     }
 
-    static async parseIx(programId: string, ixData: string, chain: Chain = Chain.SOLANA): Promise<{output: ParserOutput, programName?: string} | undefined>{
-        const idl = await this.getIDL(programId, chain);
+    static parseParsedIx(programId: string, ixParsed: any): {description?: TxDescription} {
+        if (!ixParsed){
+            return {};
+        }
+
+        let description: TxDescription | undefined;
+
+        if (programId == kProgram.SOLANA){
+            if (ixParsed.type == 'transfer'){
+
+                const sourceWalletTitle = Helpers.prettyWallet(ixParsed.info.source);
+                const destinationWalletTitle = Helpers.prettyWallet(ixParsed.info.destination);
+
+                description = {
+                    plain: `${ixParsed.info.source} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to ${ixParsed.info.destination}`,
+                    html: `<a href="${ExplorerManager.getUrlToAddress(ixParsed.info.source)}">${sourceWalletTitle}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(ixParsed.info.destination)}">${destinationWalletTitle}</a>`,
+                };
+            }
+        }
+        else if (programId == kProgram.TOKEN_PROGRAM){
+            if (ixParsed.type == 'transferChecked'){
+            }
+        }
+
+        return {
+            description,
+        };
+    }
+
+    static async parseIx(programId: string, ixData: string): Promise<{output: ParserOutput, programName?: string} | undefined>{
+        const idl = await this.getIDL(programId);
         // console.log('idl', idl);
         if (idl){
             const parser = new SolanaFMParser(idl, programId);
@@ -116,9 +154,8 @@ export class ProgramManager {
         }
     }
 
-    static async parseTx(tx: web3.ParsedTransactionWithMeta, chain: Chain = Chain.SOLANA): Promise<ParsedTx> {
-        const parsedInstructions: {programId: string, program?: string, title?: string}[] = [];
-        let title = '';
+    static async parseTx(tx: web3.ParsedTransactionWithMeta): Promise<ParsedTx> {
+        const parsedInstructions: {programId: string, program?: string, title?: string, description?: TxDescription}[] = [];
 
         let ixIndex = 0;
         for (const instruction of tx.transaction.message.instructions) {
@@ -130,15 +167,17 @@ export class ProgramManager {
             if ('parsed' in instruction){
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
 
+                const info = this.parseParsedIx(ixProgramId, instruction.parsed);
+                
                 let programName: string | undefined = this.kProgramNames[ixProgramId];
                 let ixTitle: string | undefined = instruction.parsed.type;
-
-                ixTitle = this.renameIx(ixProgramId, ixTitle);                
+                ixTitle = this.renameIx(ixProgramId, ixTitle);
 
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: programName,
-                    title: title,
+                    title: ixTitle,
+                    description: info?.description,
                 });
 
             }
@@ -159,16 +198,28 @@ export class ProgramManager {
 
         console.log('parsedInstructions', parsedInstructions);
 
+        let txTitle = '';
+        let txDescription: TxDescription | undefined;
+
         for (const parsedInstruction of parsedInstructions) {
-            if (parsedInstruction.program){
-                if (title.length > 0){
-                    title += ', ';
+            if (parsedInstruction.program || parsedInstruction.title){
+                if (txTitle.length > 0){
+                    txTitle += ', ';
                 }
 
                 if (parsedInstruction.title){
-                    title += parsedInstruction.title + ' on ';
+                    txTitle += parsedInstruction.title;
                 }
-                title += parsedInstruction.program;
+
+                if (parsedInstruction.title && parsedInstruction.program){
+                    txTitle += ' on ';
+                }
+
+                if (parsedInstruction.program){
+                    txTitle += parsedInstruction.program;
+                }
+
+                txDescription = parsedInstruction.description;
 
                 // I add only first instruction to the tx parsed title. 
                 // if needed, can add more instructions to the title.
@@ -176,12 +227,13 @@ export class ProgramManager {
             }
         }
 
-        if (title.length == 0){
-            title = 'TRANSCATION';
+        if (txTitle.length == 0){
+            txTitle = 'TRANSCATION';
         }
 
         return {
-            title,
+            title: txTitle,
+            description: txDescription,
         }
     }
 
@@ -190,7 +242,12 @@ export class ProgramManager {
             return title;
         }
 
-        if (programId == kProgram.TOKEN_PROGRAM){
+        if (programId == kProgram.SOLANA){
+            if (title == 'transfer'){
+                return 'TRANSFER';
+            }
+        }
+        else if (programId == kProgram.TOKEN_PROGRAM){
             if (title == 'transferChecked'){
                 return 'TRANSFER';
             }
@@ -201,13 +258,13 @@ export class ProgramManager {
             }
         }
         else if (programId == kProgram.JUPITER){
-            if (title == 'sharedAccountsRoute'){
+            if (title == 'sharedAccountsRoute' || title == 'route'){
                 return 'SWAP';
             }
         }
         else if (programId == kProgram.TENSOR){
             if (title == 'buySingleListing'){
-                return 'NFT SELL';
+                return 'NFT SALE';
             }
         }
 
