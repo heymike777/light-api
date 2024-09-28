@@ -318,7 +318,7 @@ export class ProgramManager {
                 return 'NFT LISTING';
             }
             else if (['delist', 'delistCore'].includes(title)){
-                return 'NFT DELISTING';
+                return 'NFT DELIST';
             }
         }
         else if (programId == kProgram.MAGIC_EDEN_AMM){
@@ -332,6 +332,9 @@ export class ProgramManager {
         else if (programId == kProgram.MAGIC_EDEN_V2){
             if (['mip1Sell'].includes(title)){
                 return 'NFT LISTING';
+            }
+            else if (['[mip1CancelSell'].includes(title)){
+                return 'NFT DELIST';
             }
             else if (['sell', 'coreSell'].includes(title)){
                 return 'NFT SALE';
