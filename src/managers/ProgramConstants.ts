@@ -101,6 +101,7 @@ export const kPrograms: { [key: string]: {
             { 'listCore': {title: 'NFT LISTING', priority: 5} },
             { 'delist': {title: 'NFT DELIST', priority: 5} },
             { 'delistCore': {title: 'NFT DELIST', priority: 5} },
+            { 'takeBidFullMeta': {title: 'NFT SALE', priority: 3} }
         ],
         priority: 3,
         skip: false,
