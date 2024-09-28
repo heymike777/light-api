@@ -20,35 +20,28 @@ import { MetaplexManager } from "../managers/MetaplexManager";
 export class MigrationManager {
 
     static async migrate() {
+
+
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
 
-        // await BotManager.sendMessage(chatId, 'Hello');
+        // const signature = '5NhaByTrpzrGhdg7gNqbrucvihV9Vc9gJ77jvqabpiZrhb3sossjkefu4s5qPzwM8ny2LFSmGW2Z8vaBAijy1g16'; // NFT purchase on Tensor
+        // const signature = '4R6NJAPRFC41cXUWvtmpr7o44c9XFMuDvGGNGVRQG1CWQHyD4PdJqiY8dXaaC4NKZdEwT9VHeJWSR4mr96NmhUpw'; // just a simple transfer
+        // const signature = 'jWCom8wCbHneiKvAHomawtxvLeRAXrvokBfG12Hdp4Fmd9Mc6MmasF8ZmhEeuDrFn9zmttsyKF8Ubq64rVJMeiL'; // bought cNFT on tensor
+        // const signature = '5WjDsagDsf7mgCuxo7xHJUPEqiHKb45nf6j3z7vdptEKKgfG6rHU2vzMkaT2zhndB7r7bLFsdEVfy1MRabzQz4WE';
 
-        // await ProgramManager.fetchIDLs();
-
-        // const signature = 'MvLzZUdk4ZA2ho8Dsycytn68FvQYHe9aQE3iqXy5a1EV8mN88wxP3aPL7BwkS7z3hXCodtpz2KMBURPxHUGsBLk';
         // const wallets = await Wallet.find({ chatId });
-        // console.log('MigrationManager', 'migrate', 'wallets', wallets);
+        // // console.log('MigrationManager', 'migrate', 'wallets', wallets);
         // const chats = [{
         //     id: chatId,
         //     wallets: wallets,
         // }];
-
         // const connection = newConnection();
         // const tx = await SolanaManager.getParsedTransaction(connection, signature);
+        // console.log('!tx', JSON.stringify(tx));
         // if (tx){
         //     await WalletManager.processTxForChats(signature, tx, chats);
         // }
-
-        // process.exit(0);
-
-        // const mints = ['So11111111111111111111111111111111111111112', 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'];
-        // await MetaplexManager.fetchAllDigitalAssets(mints);
-
-        // await TokenManager.getToken('EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp');
-        // await TokenManager.getToken('FoXyMu5xwXre7zEoSvzViRk3nGawHUp9kUh97y2NDhcq');
-
 
         console.log('MigrationManager', 'migrate', 'done');
     }
