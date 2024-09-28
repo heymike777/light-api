@@ -229,6 +229,7 @@ export class WalletManager {
             
             if (parsedTx.assetId){
                 const tmp = await MetaplexManager.fetchAsset(parsedTx.assetId);
+                console.log('!asset', tmp);
                 if (tmp){
                     let image: string | undefined = undefined;
                     let links: any = tmp.content.links;
@@ -264,6 +265,10 @@ export class WalletManager {
 
                 if (parsedTx.description){
                     message += parsedTx.description.html + '\n\n';
+                }
+
+                if (asset){
+                    hasWalletsChanges = true;
                 }
     
                 let accountIndex = 0;
