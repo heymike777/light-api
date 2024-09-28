@@ -1,14 +1,18 @@
+import { HeliusManager } from "../services/solana/HeliusManager";
 import { JupiterManager } from "./JupiterManager";
 import { MetaplexManager } from "./MetaplexManager";
 
+export interface TokenNftAttribute {
+    trait_type: string;
+    value: string;
+}
+
 export interface TokenNft {
+    id: string;
     image?: string;
     title?: string;
     uri?: string;
-    attributes?: {
-        trait_type: string;
-        value: string;
-    }[];
+    attributes?: TokenNftAttribute[];
 }
 
 export interface Token {
@@ -70,56 +74,62 @@ export class TokenManager {
         }
     }
 
+    static async fetchDigitalAsset(address: string): Promise<Token> {
+        const token: Token = {
+            address,
+            priceUpdatedAt: 0,
+        }
+
+        const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
+        console.log('TokenManager', 'getToken', address, '=', digitalAssets);
+        if (digitalAssets && digitalAssets.length > 0){
+            const digitalAsset = digitalAssets[0];
+            token.name = digitalAsset.metadata.name;
+            token.symbol = digitalAsset.metadata.symbol;
+            token.decimals = digitalAsset.mint.decimals;
+
+            if (digitalAsset.mint.supply === BigInt(1)) {
+                // NFT
+                token.nft = {
+                    id: digitalAsset.mint.publicKey.toString(),
+                    title: digitalAsset.metadata.name,
+                    uri: digitalAsset.metadata.uri,
+                };
+
+                // const detailedAsset = await HeliusManager.getDetailedAsset(address);
+                // console.log('detailedAsset:', detailedAsset);
+
+                const uri = digitalAsset.metadata.uri;
+                if (uri){
+                    try {
+                        const metadata = await fetch(uri);
+                        const metadataJson = await metadata.json();
+                        console.log('TokenManager', 'getToken', 'metadata', metadataJson);    
+
+                        if (metadataJson.attributes){
+                            token.nft.attributes = metadataJson.attributes;
+                        }
+                        if (metadataJson.image){
+                            token.nft.image = metadataJson.image;
+                        }                            
+                    }
+                    catch (error) {
+                        console.error('TokenManager', 'getToken', 'metadata', error);
+                    }
+                }
+            }
+            else {
+                TokenManager.tokens.push(token);
+            }
+        }
+
+        return token;
+    }
+
     static async getToken(address: string): Promise<Token | undefined> {
         let token = TokenManager.tokens.find(token => token.address === address);
         if (!token){
-            token = {
-                address,
-                priceUpdatedAt: 0,
-            }
-
-            const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
-            console.log('TokenManager', 'getToken', address, '=', digitalAssets);
-            if (digitalAssets && digitalAssets.length > 0){
-                const digitalAsset = digitalAssets[0];
-                token.name = digitalAsset.metadata.name;
-                token.symbol = digitalAsset.metadata.symbol;
-                token.decimals = digitalAsset.mint.decimals;
-
-                if (digitalAsset.mint.supply === BigInt(1)) {
-                    // NFT
-                    token.nft = {
-                        title: digitalAsset.metadata.name,
-                        uri: digitalAsset.metadata.uri,
-                    };
-
-
-                    const uri = digitalAsset.metadata.uri;
-                    if (uri){
-                        try {
-                            const metadata = await fetch(uri);
-                            const metadataJson = await metadata.json();
-                            console.log('TokenManager', 'getToken', 'metadata', metadataJson);    
-
-                            if (metadataJson.attributes){
-                                token.nft.attributes = metadataJson.attributes;
-                            }
-                            if (metadataJson.image){
-                                token.nft.image = metadataJson.image;
-                            }                            
-                        }
-                        catch (error) {
-                            console.error('TokenManager', 'getToken', 'metadata', error);
-                        }
-                    }
-                    
-
-
-                }
-                else {
-                    TokenManager.tokens.push(token);
-                }
-            }
+            token = await this.fetchDigitalAsset(address);
         }
         if (token && !token.price){
             const prices = await JupiterManager.getPrices([address]);

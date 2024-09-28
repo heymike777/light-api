@@ -92,7 +92,7 @@ export interface HeliusAsset {
 }
 
 export interface HeliusAssetDisplayOptions {​
-    showUnverifiedCollections?: boolean; 
+    showUnverifiedCollections?: boolean;
     showCollectionMetadata?: boolean;
     showFungible?: boolean;
     showInscription?: boolean;

@@ -14,10 +14,11 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
-import { Token, TokenManager, TokenNft } from "./TokenManager";
+import { Token, TokenManager, TokenNft, TokenNftAttribute } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { Chain } from "../services/solana/types";
+import { MetaplexManager } from "./MetaplexManager";
 
 export class WalletManager {
 
@@ -109,7 +110,7 @@ export class WalletManager {
 
     static async processTransactionsBatch(){
         const signatures = this.signaturesQueue.splice(0, this.signaturesQueue.length);
-        console.log(new Date(), 'processTransactionsBatch', 'signatures', signatures.length, signatures);
+        // console.log(new Date(), 'processTransactionsBatch', 'signatures', signatures.length, signatures);
 
         try {
             const connection = newConnection();
@@ -224,9 +225,41 @@ export class WalletManager {
             const walletsInvolved = this.getInvolvedWallets(tx);
 
             const parsedTx = await ProgramManager.parseTx(tx);
-            let nftToken: Token | undefined = undefined;
+            let asset: TokenNft | undefined = undefined;
+            
+            if (parsedTx.assetId){
+                const tmp = await MetaplexManager.fetchAsset(parsedTx.assetId);
+                if (tmp){
+                    let image: string | undefined = undefined;
+                    let links: any = tmp.content.links;
+                    if (!image && links?.[0]?.['image']){ image = '' + links[0]['image']; }
+                    if (!image && links?.['image']){ image = '' + links['image']; }
+                    
+                    tmp.content.links?.[0] ? '' + tmp.content.links?.[0]['image'] : undefined;
+                    const attributes: TokenNftAttribute[] = [];
+                    if (tmp.content.metadata.attributes){
+                        for (const attr of tmp?.content.metadata.attributes) {
+                            if (attr.trait_type && attr.value){
+                                attributes.push({
+                                    trait_type: attr.trait_type,
+                                    value: attr.value,
+                                });
+                            }
+                        }
+                    }
+                    
+                    asset = {
+                        id: tmp.id.toString(),
+                        title: tmp.content.metadata.name,
+                        image: image,
+                        uri: tmp.content.json_uri,
+                        attributes: attributes,
+                    };
+                }
+            }
 
             for (const chat of chats) {
+                let hasWalletsChanges = false;
                 let message = `[${parsedTx.title}]\n\n`;
 
                 if (parsedTx.description){
@@ -283,6 +316,7 @@ export class WalletManager {
                         const balanceChange = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
                         if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
                             hasBalanceChange = true;
+                            hasWalletsChanges = true;
                             const token = await TokenManager.getToken(kSolAddress);
                             const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                             blockMessage += `SOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;
@@ -292,9 +326,10 @@ export class WalletManager {
                             const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
                             if (mint && mint != kSolAddress){
                                 hasBalanceChange = true;
+                                hasWalletsChanges = true;
                                 const token = await TokenManager.getToken(mint);
-                                if (token?.nft){
-                                    nftToken = token;
+                                if (token?.nft && !asset){
+                                    asset = token.nft;
                                 }
                                 const balanceChange = tokenBalance.balanceChange;
                                 const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
@@ -310,22 +345,20 @@ export class WalletManager {
                     accountIndex++;
                 }
 
-                if (nftToken && nftToken.nft){
-                    message += `\n${nftToken.nft.title} | <a href="https://www.tensor.trade/item/${nftToken.address}">Tensor</a>`;
+                if (asset){
+                    message += `\n${asset.title} | <a href="https://www.tensor.trade/item/${asset.id}">Tensor</a>`;
 
-                    if (nftToken.nft.attributes){
+                    if (asset.attributes){
                         message += `\n\n<b>Attributes:</b>\n`;
-                        message += `${nftToken.nft.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
+                        message += `${asset.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
                     }
                 }
 
                 message += `\n\n<a href="${ExplorerManager.getUrlToTransaction(signature)}">Explorer</a>\n\n`;
 
-                const imageUrl = nftToken?.nft?.image;
-
-                //TODO: add info about token and BUY/SELL buttons
-    
-                BotManager.sendMessage(chat.id, message, imageUrl);
+                if (hasWalletsChanges){
+                    BotManager.sendMessage(chat.id, message, asset?.image);
+                }
             }
         }
         catch (err) {

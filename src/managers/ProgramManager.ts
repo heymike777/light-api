@@ -9,6 +9,7 @@ import { Helpers } from "../services/helpers/Helpers";
 export interface ParsedTx {
     title: string;
     description?: TxDescription;
+    assetId?: string;
 }
 
 export interface TxDescription {
@@ -155,10 +156,25 @@ export class ProgramManager {
     }
 
     static async parseTx(tx: web3.ParsedTransactionWithMeta): Promise<ParsedTx> {
-        const parsedInstructions: {programId: string, program?: string, title?: string, description?: TxDescription}[] = [];
+        const parsedInstructions: {
+            programId: string, 
+            program?: string, 
+            title?: string, 
+            description?: TxDescription,
+            data?: ParserOutput
+        }[] = [];
 
+        const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [
+            ...tx.transaction.message.instructions,
+        ];
+        if (tx.meta?.innerInstructions){
+            for (const innerIx of tx.meta?.innerInstructions) {
+                instructions.push(...innerIx.instructions)
+            }
+        }
+        
         let ixIndex = 0;
-        for (const instruction of tx.transaction.message.instructions) {
+        for (const instruction of instructions) {
             const ixProgramId = instruction.programId.toBase58();
             if (ProgramManager.kSkipProgramIds.indexOf(ixProgramId) != -1){
                 continue;
@@ -187,19 +203,21 @@ export class ProgramManager {
 
                 let ixTitle = ixData?.output?.name;
                 ixTitle = this.renameIx(ixProgramId, ixTitle);
-                
+
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: ixData?.programName || undefined,
                     title: ixTitle,
+                    data: ixData?.output,
                 });
             }
         }
 
-        console.log('parsedInstructions', parsedInstructions);
+        console.log('parsedInstructions', JSON.stringify(parsedInstructions));
 
         let txTitle = '';
         let txDescription: TxDescription | undefined;
+        let assetId: string | undefined;
 
         for (const parsedInstruction of parsedInstructions) {
             if (parsedInstruction.program || parsedInstruction.title){
@@ -221,6 +239,14 @@ export class ProgramManager {
 
                 txDescription = parsedInstruction.description;
 
+                if (parsedInstruction.programId == kProgram.TENSOR_CNFT){
+                    const ix2 = parsedInstructions.find((ix) => ix.programId == kProgram.TENSOR_CNFT && ix.data?.data?.event?.taker['0']?.assetId);
+                    if (ix2){
+                        assetId = ix2.data?.data?.event?.taker['0']?.assetId;
+                        const taker = ix2.data?.data?.event?.taker['0']?.taker;
+                    }
+                }
+
                 // I add only first instruction to the tx parsed title. 
                 // if needed, can add more instructions to the title.
                 break; 
@@ -234,6 +260,7 @@ export class ProgramManager {
         return {
             title: txTitle,
             description: txDescription,
+            assetId,
         }
     }
 
@@ -253,18 +280,41 @@ export class ProgramManager {
             }
         }
         else if (programId == kProgram.RAYDIUM){
-            if (title == 'swapBaseOut' || title == 'swapBaseIn'){
+            if (['swapBaseIn', 'swapBaseOut'].includes(title)){
                 return 'SWAP';
+            }
+            else if (['initialize', 'initialize2'].includes(title)){
+                return 'ADD LIQUIDOTY'
             }
         }
         else if (programId == kProgram.JUPITER){
-            if (title == 'sharedAccountsRoute' || title == 'route'){
+            if (['routeWithTokenLedger', 'sharedAccountsRoute', 'route', 'exactOutRoute', 'sharedAccountsRouteWithTokenLedger', 'sharedAccountsExactOutRoute', ].includes(title)){
                 return 'SWAP';
+            }
+            else if (['claim', 'claimToken'].includes(title)){
+                return 'CLAIM'
             }
         }
         else if (programId == kProgram.TENSOR){
-            if (title == 'buySingleListing'){
+            if (['buyNft', 'buySingleListing', 'sellNftTokenPool', 'sellNftTradePool', 'buyNftT22'].includes(title)){
                 return 'NFT SALE';
+            }
+            else if (title == 'list'){
+                return 'NFT LISTING';
+            }
+            else if (title == 'delist'){
+                return 'NFT DELIST';
+            }
+        }
+        else if (programId == kProgram.TENSOR_CNFT){
+            if (['buy', 'buySpl', 'buyCore'].includes(title)){
+                return 'NFT SALE';
+            }
+            else if (['list', 'listCore'].includes(title)){
+                return 'NFT LIST';
+            }
+            else if (['delist', 'delistCore'].includes(title)){
+                return 'NFT DELIST';
             }
         }
 

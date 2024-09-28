@@ -14,7 +14,7 @@ export interface TokenHolder {
 
 export class HeliusManager {
 
-    static apiUrl = `https://${process.env.SOLANA_NETWORK=='devnet' ? 'devnet': 'mainnet'}.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
+    static apiUrl = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
     static helius: Helius;
 
     static async initHelius(){
@@ -154,7 +154,8 @@ export class HeliusManager {
                     id: 'my-id',
                     method: 'getAssetBatch',
                     params: {
-                        ids: mintTokens
+                        ids: mintTokens,
+                        options: displayOptions,
                     },
                 }),
             });
@@ -162,7 +163,7 @@ export class HeliusManager {
             return result;
         }
         catch (e){
-            console.error('getAssetBatch', e);
+            // console.error('getAssetBatch', e);
             return [];
         }
     };
@@ -205,6 +206,26 @@ export class HeliusManager {
 
     static async getFungibleAssetBatch(mintTokens: string[]): Promise<HeliusAsset[]> {
         const displayOptions: HeliusAssetDisplayOptions = {showFungible: true};
+        return this.getAssetBatch(mintTokens, displayOptions);
+    };
+
+    static async getDetailedAsset(mintToken: string): Promise<HeliusAsset | undefined> {
+        const displayOptions: HeliusAssetDisplayOptions = {
+            showUnverifiedCollections: true,
+            showCollectionMetadata: true,
+            showFungible: true,
+            showInscription: true,
+        };
+        return this.getAsset(mintToken, displayOptions);
+    };
+
+    static async getDetailedAssets(mintTokens: string[]): Promise<HeliusAsset[]> {
+        const displayOptions: HeliusAssetDisplayOptions = {
+            showUnverifiedCollections: true,
+            showCollectionMetadata: true,
+            showFungible: true,
+            showInscription: true,
+        };
         return this.getAssetBatch(mintTokens, displayOptions);
     };
 
