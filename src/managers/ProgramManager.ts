@@ -5,6 +5,8 @@ import { checkIfInstructionParser, ParserOutput, ParserType, SolanaFMParser } fr
 import * as web3 from "@solana/web3.js";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { Helpers } from "../services/helpers/Helpers";
+import { Record } from "@bonfida/spl-name-service";
+import { KnownInstruction, kProgram, kPrograms, kSkipProgramIds } from "./ProgramConstants";
 
 export interface ParsedTx {
     title: string;
@@ -17,38 +19,7 @@ export interface TxDescription {
     html: string;
 }
 
-export enum kProgram {
-    SOLANA = '11111111111111111111111111111111',
-    TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-    COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111',
-
-    RAYDIUM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
-    JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
-    SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
-    TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
-    TENSOR_CNFT = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp',
-    MAGIC_EDEN_AMM = 'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc',
-    MAGIC_EDEN_V2 = 'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K',
-
-
-}
-
 export class ProgramManager {
-    static kSkipProgramIds = [
-        kProgram.COMPUTE_BUDGET as string,
-        kProgram.SOL_INCINERATOR as string,
-    ];
-    static kProgramNames: { [key: string]: string } = {
-        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA': 'TOKEN PROGRAM',
-        '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8': 'RAYDIUM',
-        'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 'JUPITER',
-        'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7': 'SOL INCINERATOR',
-        'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN': 'TENSOR',
-        'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp': 'TENSOR',
-        'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc': 'MAGIC EDEN',
-        'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K': 'MAGIC EDEN',
-    };
-
     static programIds: string[] = [];
     static idls: Map<string, IdlItem> = new Map();
     static programNameCache: Map<string, string | undefined> = new Map();
@@ -117,8 +88,7 @@ export class ProgramManager {
             if (instructionParser && checkIfInstructionParser(instructionParser)) {
                 const output = instructionParser.parseInstructions(ixData);
 
-
-                let programName: string | undefined = this.kProgramNames[programId];
+                let programName: string | undefined = kPrograms[programId]?.name;
                 if (!programName){
                     programName = (idl.idl as any).name || undefined;
                     programName = programName?.replace('_', ' ');
@@ -160,12 +130,13 @@ export class ProgramManager {
     }
 
     static async parseTx(tx: web3.ParsedTransactionWithMeta): Promise<ParsedTx> {
-        const parsedInstructions: {
+        let parsedInstructions: {
             programId: string, 
+            priority: number,
             program?: string, 
             title?: string, 
             description?: TxDescription,
-            data?: ParserOutput
+            data?: ParserOutput,
         }[] = [];
 
         const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [
@@ -180,7 +151,7 @@ export class ProgramManager {
         let ixIndex = 0;
         for (const instruction of instructions) {
             const ixProgramId = instruction.programId.toBase58();
-            if (ProgramManager.kSkipProgramIds.indexOf(ixProgramId) != -1){
+            if (kSkipProgramIds.indexOf(ixProgramId) != -1){
                 continue;
             }
 
@@ -189,15 +160,17 @@ export class ProgramManager {
 
                 const info = this.parseParsedIx(ixProgramId, instruction.parsed);
                 
-                let programName: string | undefined = this.kProgramNames[ixProgramId];
+                let programName: string | undefined = kPrograms[ixProgramId]?.name;
                 let ixTitle: string | undefined = instruction.parsed.type;
-                ixTitle = this.renameIx(ixProgramId, ixTitle);
+                const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
+                ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
 
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: programName,
                     title: ixTitle,
                     description: info?.description,
+                    priority: knownInstruction?.priority || 1000,
                 });
 
             }
@@ -206,22 +179,26 @@ export class ProgramManager {
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
 
                 let ixTitle = ixData?.output?.name;
-                ixTitle = this.renameIx(ixProgramId, ixTitle);
+                const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
+                ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
 
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: ixData?.programName || undefined,
                     title: ixTitle,
                     data: ixData?.output,
+                    priority: knownInstruction?.priority || 1000,
                 });
             }
         }
 
-        console.log('parsedInstructions', JSON.stringify(parsedInstructions));
 
         let txTitle = '';
         let txDescription: TxDescription | undefined;
         let assetId: string | undefined;
+
+        parsedInstructions = parsedInstructions.sort((a, b) => a.priority - b.priority);
+        console.log('parsedInstructions (sorted by priority)', JSON.stringify(parsedInstructions));
 
         for (const parsedInstruction of parsedInstructions) {
             if (parsedInstruction.program || parsedInstruction.title){
@@ -268,83 +245,19 @@ export class ProgramManager {
         }
     }
 
-    static renameIx(programId: string, title?: string): string | undefined {
+    static findKnownInstruction(programId: string, title?: string): KnownInstruction | undefined {
         if (!title){
-            return title;
+            return undefined;
         }
 
-        if (programId == kProgram.SOLANA){
-            if (title == 'transfer'){
-                return 'TRANSFER';
+        const program = kPrograms[programId];
+        if (program){
+            for (const knownInstruction of program.knownInstructions){
+                if (knownInstruction[title]){
+                    return knownInstruction[title];
+                }
             }
         }
-        else if (programId == kProgram.TOKEN_PROGRAM){
-            if (title == 'transferChecked'){
-                return 'TRANSFER';
-            }
-        }
-        else if (programId == kProgram.RAYDIUM){
-            if (['swapBaseIn', 'swapBaseOut'].includes(title)){
-                return 'SWAP';
-            }
-            else if (['initialize', 'initialize2'].includes(title)){
-                return 'ADD LIQUIDOTY'
-            }
-        }
-        else if (programId == kProgram.JUPITER){
-            if (['routeWithTokenLedger', 'sharedAccountsRoute', 'route', 'exactOutRoute', 'sharedAccountsRouteWithTokenLedger', 'sharedAccountsExactOutRoute', ].includes(title)){
-                return 'SWAP';
-            }
-            else if (['claim', 'claimToken'].includes(title)){
-                return 'CLAIM'
-            }
-        }
-        else if (programId == kProgram.TENSOR){
-            if (['buyNft', 'buySingleListing', 'sellNftTokenPool', 'sellNftTradePool', 'buyNftT22'].includes(title)){
-                return 'NFT SALE';
-            }
-            else if (title == 'list'){
-                return 'NFT LISTING';
-            }
-            else if (title == 'delist'){
-                return 'NFT DELIST';
-            }
-        }
-        else if (programId == kProgram.TENSOR_CNFT){
-            if (['buy', 'buySpl', 'buyCore'].includes(title)){
-                return 'NFT SALE';
-            }
-            else if (['list', 'listCore'].includes(title)){
-                return 'NFT LISTING';
-            }
-            else if (['delist', 'delistCore'].includes(title)){
-                return 'NFT DELIST';
-            }
-        }
-        else if (programId == kProgram.MAGIC_EDEN_AMM){
-            if (['solFulfillBuy', 'solMip1FulfillBuy', 'solOcpFulfillBuy', 'solExtFulfillBuy', 'solMplCoreFulfillBuy'].includes(title)){
-                return 'NFT SALE';
-            }
-            else if (['solFulfillSell', 'solMip1FulfillSell', 'solOcpFulfillSell', 'solExtFulfillSell', 'solMplCoreFulfillSell'].includes(title)){
-                return 'NFT SALE';
-            }
-        }
-        else if (programId == kProgram.MAGIC_EDEN_V2){
-            if (['mip1Sell'].includes(title)){
-                return 'NFT LISTING';
-            }
-            else if (['[mip1CancelSell'].includes(title)){
-                return 'NFT DELIST';
-            }
-            else if (['sell', 'coreSell'].includes(title)){
-                return 'NFT SALE';
-            }
-            else if (['buy', 'buyV2'].includes(title)){
-                return 'NFT SALE';
-            }
-        }
-
-        return title;
     }
 
 }
