@@ -348,7 +348,7 @@ export class WalletManager {
                 if (asset){
                     message += `\n${asset.title} | <a href="https://www.tensor.trade/item/${asset.id}">Tensor</a>`;
 
-                    if (asset.attributes){
+                    if (asset.attributes && asset.attributes.length > 0){
                         message += `\n\n<b>Attributes:</b>\n`;
                         message += `${asset.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
                     }
