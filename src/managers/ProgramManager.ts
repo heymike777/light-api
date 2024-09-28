@@ -27,6 +27,7 @@ export enum kProgram {
     SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
     TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
     TENSOR_CNFT = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp',
+    MAGIC_EDEN_AMM = 'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc',
 
 
 }
@@ -43,6 +44,7 @@ export class ProgramManager {
         'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7': 'SOL INCINERATOR',
         'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN': 'TENSOR',
         'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp': 'TENSOR',
+        'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc': 'MAGIC EDEN',
     };
 
     static programIds: string[] = [];
@@ -315,6 +317,14 @@ export class ProgramManager {
             }
             else if (['delist', 'delistCore'].includes(title)){
                 return 'NFT DELIST';
+            }
+        }
+        else if (programId == kProgram.MAGIC_EDEN_AMM){
+            if (['solFulfillBuy', 'solMip1FulfillBuy', 'solOcpFulfillBuy', 'solExtFulfillBuy', 'solMplCoreFulfillBuy'].includes(title)){
+                return 'NFT SALE';
+            }
+            else if (['solFulfillSell', 'solMip1FulfillSell', 'solOcpFulfillSell', 'solExtFulfillSell', 'solMplCoreFulfillSell'].includes(title)){
+                return 'NFT SALE';
             }
         }
 
