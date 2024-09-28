@@ -28,6 +28,7 @@ export enum kProgram {
     TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
     TENSOR_CNFT = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp',
     MAGIC_EDEN_AMM = 'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc',
+    MAGIC_EDEN_V2 = 'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K',
 
 
 }
@@ -45,6 +46,7 @@ export class ProgramManager {
         'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN': 'TENSOR',
         'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp': 'TENSOR',
         'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc': 'MAGIC EDEN',
+        'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K': 'MAGIC EDEN',
     };
 
     static programIds: string[] = [];
@@ -313,10 +315,10 @@ export class ProgramManager {
                 return 'NFT SALE';
             }
             else if (['list', 'listCore'].includes(title)){
-                return 'NFT LIST';
+                return 'NFT LISTING';
             }
             else if (['delist', 'delistCore'].includes(title)){
-                return 'NFT DELIST';
+                return 'NFT DELISTING';
             }
         }
         else if (programId == kProgram.MAGIC_EDEN_AMM){
@@ -324,6 +326,17 @@ export class ProgramManager {
                 return 'NFT SALE';
             }
             else if (['solFulfillSell', 'solMip1FulfillSell', 'solOcpFulfillSell', 'solExtFulfillSell', 'solMplCoreFulfillSell'].includes(title)){
+                return 'NFT SALE';
+            }
+        }
+        else if (programId == kProgram.MAGIC_EDEN_V2){
+            if (['mip1Sell'].includes(title)){
+                return 'NFT LISTING';
+            }
+            else if (['sell', 'coreSell'].includes(title)){
+                return 'NFT SALE';
+            }
+            else if (['buy', 'buyV2'].includes(title)){
                 return 'NFT SALE';
             }
         }
