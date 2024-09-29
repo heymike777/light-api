@@ -90,7 +90,7 @@ export class HeliusManager {
                     },
                 }),
             });
-            const { result } = await response.json();
+            const { result } = await response.json() as any;
             const items = result?.items || [];
 
             if (items.length == limit && page < 3){
@@ -126,7 +126,7 @@ export class HeliusManager {
                     },
                 }),
             });
-            const { result } = await response.json();
+            const { result } = await response.json() as any;
             const items = result?.items || [];
 
             if (items.length == limit && page < 3){
@@ -159,7 +159,7 @@ export class HeliusManager {
                     },
                 }),
             });
-            const { result } = await response.json();
+            const { result } = await response.json() as any;
             return result;
         }
         catch (e){
@@ -190,7 +190,7 @@ export class HeliusManager {
                     },
                 }),
             });
-            const { result } = await response.json();
+            const { result } = await response.json() as any;
             return result;
         }
         catch (e){
@@ -326,7 +326,7 @@ export class HeliusManager {
                 }),
             });
 
-            const { result } = await response.json();
+            const { result } = await response.json() as any;
 
             if (result?.priorityFeeLevels?.high){
                 fees = Math.ceil(result.priorityFeeLevels.high);

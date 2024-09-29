@@ -4,6 +4,7 @@ import { getRpc } from '../services/solana/lib/solana';
 import { publicKey } from '@metaplex-foundation/umi';
 import { dasApi, DasApiAsset } from '@metaplex-foundation/digital-asset-standard-api';
 import { TokenNft, TokenNftAttribute } from './TokenManager';
+import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
 
 export class MetaplexManager {
 
@@ -73,4 +74,23 @@ export class MetaplexManager {
         return undefined;
     }
     
+    static fetchAssetIdByTreeAnfLeafIndex(merkleTree: string, leafIndex: number): string | undefined {
+        try {
+            const umi = createUmi(process.env.HELIUS_SHARED_RPC!); 
+            umi.use(dasApi())
+            umi.use(mplBubblegum())
+
+            const [assetId, bump] = findLeafAssetIdPda(umi, {
+                merkleTree: publicKey(merkleTree),
+                leafIndex,
+            });
+
+            return assetId.toString();
+        }
+        catch (error) {
+            console.error('MetaplexManager', 'fetchAsset', error);
+        }        
+        return undefined;
+    }
+
 }

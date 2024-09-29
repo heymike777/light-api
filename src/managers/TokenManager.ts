@@ -103,7 +103,7 @@ export class TokenManager {
                 if (uri){
                     try {
                         const metadata = await fetch(uri);
-                        const metadataJson = await metadata.json();
+                        const metadataJson = await metadata.json() as any;
                         console.log('TokenManager', 'getToken', 'metadata', metadataJson);    
 
                         if (metadataJson.attributes){

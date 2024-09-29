@@ -5,13 +5,26 @@ import { checkIfInstructionParser, ParserOutput, ParserType, SolanaFMParser } fr
 import * as web3 from "@solana/web3.js";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { Helpers } from "../services/helpers/Helpers";
-import { Record } from "@bonfida/spl-name-service";
 import { KnownInstruction, kProgram, kPrograms, kSkipProgramIds } from "./ProgramConstants";
+import { SPL_ACCOUNT_COMPRESSION_PROGRAM_ID } from "@metaplex-foundation/mpl-bubblegum";
+import { PublicKey } from "@solana/web3.js";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { MetaplexManager } from "./MetaplexManager";
 
 export interface ParsedTx {
     title: string;
     description?: TxDescription;
     assetId?: string;
+}
+
+export interface ParsedIx {
+    programId: string, 
+    priority: number,
+    program?: string, 
+    title?: string, 
+    description?: TxDescription,
+    data?: ParserOutput,
+    accountKeys: PublicKey[],
 }
 
 export interface TxDescription {
@@ -91,7 +104,7 @@ export class ProgramManager {
                 let programName: string | undefined = kPrograms[programId]?.name;
                 if (!programName){
                     programName = (idl.idl as any).name || undefined;
-                    programName = programName?.replace('_', ' ');
+                    programName = programName?.replaceAll('_', ' ');
                     programName = programName?.toUpperCase();
                 }
 
@@ -130,14 +143,7 @@ export class ProgramManager {
     }
 
     static async parseTx(tx: web3.ParsedTransactionWithMeta): Promise<ParsedTx> {
-        let parsedInstructions: {
-            programId: string, 
-            priority: number,
-            program?: string, 
-            title?: string, 
-            description?: TxDescription,
-            data?: ParserOutput,
-        }[] = [];
+        let parsedInstructions: ParsedIx[] = [];
 
         const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [
             ...tx.transaction.message.instructions,
@@ -165,12 +171,15 @@ export class ProgramManager {
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
 
+                console.log('!1!', instruction);
+
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: programName,
                     title: ixTitle,
                     description: info?.description,
                     priority: knownInstruction?.priority || 1000,
+                    accountKeys: [],//TODO: do I have to fill them from instruction.parsed?...
                 });
 
             }
@@ -188,6 +197,7 @@ export class ProgramManager {
                     title: ixTitle,
                     data: ixData?.output,
                     priority: knownInstruction?.priority || 1000,
+                    accountKeys: instruction.accounts || [],
                 });
             }
         }
@@ -221,11 +231,24 @@ export class ProgramManager {
                 txDescription = parsedInstruction.description;
 
                 if (parsedInstruction.programId == kProgram.TENSOR_CNFT){
-                    const ix2 = parsedInstructions.find((ix) => ix.programId == kProgram.TENSOR_CNFT && ix.data?.data?.event?.taker?.['0']?.assetId);
-                    if (ix2){
-                        assetId = ix2.data?.data?.event?.taker['0']?.assetId;
-                        const taker = ix2.data?.data?.event?.taker['0']?.taker;
+                    if (!assetId){
+                        const ix2 = parsedInstructions.find((ix) => ix.programId == kProgram.TENSOR_CNFT && ix.data?.data?.event?.taker?.['0']?.assetId);
+                        if (ix2){
+                            assetId = ix2.data?.data?.event?.taker['0']?.assetId;
+                            const taker = ix2.data?.data?.event?.taker['0']?.taker;
+                        }
                     }
+
+                    if (!assetId){
+                        const ix3 = parsedInstructions.find((ix) => ix.programId == kProgram.TENSOR_CNFT && ix.data?.data?.event?.maker?.['0']?.assetId);
+                        if (ix3){
+                            assetId = ix3.data?.data?.event?.maker['0']?.assetId;
+                            const maker = ix3.data?.data?.event?.maker['0']?.taker;
+                        }
+                    }
+                }
+                else if (parsedInstruction.programId == kProgram.MAGIC_EDEN_V3){
+                    assetId = await this.getAssetIdFromIxs(parsedInstructions);
                 }
 
                 // I add only first instruction to the tx parsed title. 
@@ -259,5 +282,29 @@ export class ProgramManager {
             }
         }
     }
+
+    static async getAssetIdFromIxs(parsedInstructions: ParsedIx[]): Promise<string | undefined> {
+        const ix = parsedInstructions.find((ix) => ix.programId == SPL_ACCOUNT_COMPRESSION_PROGRAM_ID.toString());
+        const treeAddress = ix?.accountKeys?.[0] || undefined;
+        const leafIndex = this.findCompressedLeafIndex(parsedInstructions);
+
+        if (!treeAddress || leafIndex == undefined){
+            return undefined;
+        }
+
+        const assetId = MetaplexManager.fetchAssetIdByTreeAnfLeafIndex(treeAddress.toBase58(), leafIndex);
+        return assetId;
+    }
+
+    static findCompressedLeafIndex(parsedInstructions: ParsedIx[]): number | undefined {
+        for (const ix of parsedInstructions) {
+            if (ix.programId == SPL_ACCOUNT_COMPRESSION_PROGRAM_ID.toString() && ix.data?.data?.index){
+                return ix.data.data.index
+            }
+        }
+
+        return undefined;
+    }
+
 
 }

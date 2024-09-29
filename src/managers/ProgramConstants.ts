@@ -10,6 +10,7 @@ export enum kProgram {
     TENSOR_CNFT = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp',
     MAGIC_EDEN_AMM = 'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc',
     MAGIC_EDEN_V2 = 'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K',
+    MAGIC_EDEN_V3 = 'M3mxk5W2tt27WGT7THox7PmgRDp4m6NEhL5xvxrBfS1',
 }
 
 export interface KnownInstruction {
@@ -136,6 +137,17 @@ export const kPrograms: { [key: string]: {
         priority: 3,
         skip: false,
     },    
+    [kProgram.MAGIC_EDEN_V3]: {
+        name: 'MAGIC EDEN',
+        knownInstructions: [
+            { 'buyNow': {title: 'NFT SALE', priority: 3} },
+            { 'sell': {title: 'NFT LISTING', priority: 5} },
+            { 'cancelSell': {title: 'NFT DELIST', priority: 5} },
+        ],
+        priority: 3,
+        skip: false,
+    },    
+
 }
 
 export const kSkipProgramIds = Object.keys(kPrograms).filter((key) => kPrograms[key].skip).map((key) => key);
