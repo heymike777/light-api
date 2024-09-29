@@ -8,7 +8,6 @@ import { Helpers } from "../services/helpers/Helpers";
 import { KnownInstruction, kProgram, kPrograms, kSkipProgramIds } from "./ProgramConstants";
 import { SPL_ACCOUNT_COMPRESSION_PROGRAM_ID } from "@metaplex-foundation/mpl-bubblegum";
 import { PublicKey } from "@solana/web3.js";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { MetaplexManager } from "./MetaplexManager";
 
 export interface ParsedTx {
@@ -248,7 +247,11 @@ export class ProgramManager {
                     }
                 }
                 else if (parsedInstruction.programId == kProgram.MAGIC_EDEN_V3){
-                    assetId = await this.getAssetIdFromIxs(parsedInstructions);
+                    assetId = this.getAssetIdFromIxs(parsedInstructions);
+                }
+
+                if (!assetId){
+                    assetId = this.getAssetIdFromIxs(parsedInstructions);
                 }
 
                 // I add only first instruction to the tx parsed title. 
@@ -283,7 +286,7 @@ export class ProgramManager {
         }
     }
 
-    static async getAssetIdFromIxs(parsedInstructions: ParsedIx[]): Promise<string | undefined> {
+    static getAssetIdFromIxs(parsedInstructions: ParsedIx[]): string | undefined {
         const ix = parsedInstructions.find((ix) => ix.programId == SPL_ACCOUNT_COMPRESSION_PROGRAM_ID.toString());
         const treeAddress = ix?.accountKeys?.[0] || undefined;
         const leafIndex = this.findCompressedLeafIndex(parsedInstructions);
