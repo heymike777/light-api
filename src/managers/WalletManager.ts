@@ -234,10 +234,10 @@ export class WalletManager {
 
             for (const chat of chats) {
                 let hasWalletsChanges = false;
-                let message = `[${parsedTx.title}]\n\n`;
+                let message = `[${parsedTx.title}]\n`;
 
                 if (parsedTx.description){
-                    message += parsedTx.description.html + '\n\n';
+                    message += '\n' + parsedTx.description.html + '\n';
                 }
 
                 if (asset){
@@ -250,7 +250,7 @@ export class WalletManager {
                     if (wallet){
                         let blockMessage = '';
                         const walletTitle = wallet.title || wallet.walletAddress;
-                        blockMessage += `🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>\n`;
+                        blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`;
     
                         const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
     
@@ -297,7 +297,7 @@ export class WalletManager {
                             hasWalletsChanges = true;
                             const token = await TokenManager.getToken(kSolAddress);
                             const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
-                            blockMessage += `SOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;
+                            blockMessage += `\nSOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;
                         }
     
                         for (const tokenBalance of tokenBalances) {
@@ -312,7 +312,7 @@ export class WalletManager {
                                 const balanceChange = tokenBalance.balanceChange;
                                 const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                                 const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
-                                blockMessage += `<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}\n`;            
+                                blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;            
                             }
                         }
 
@@ -325,6 +325,7 @@ export class WalletManager {
 
                 if (!asset){
                     // Try to find asset from list of balances
+
                     const balances = [
                         ...tx.meta.preTokenBalances || [],
                         ...tx.meta.postTokenBalances || [],
@@ -342,9 +343,30 @@ export class WalletManager {
                         }
                     }
 
+                    const uniqueNftMints: string[] = [];
                     for (const mint of uniqueMints) {
+                        const preTokenBalance = tx.meta.preTokenBalances?.find((b) => b.mint == mint);
+                        const postTokenBalance = tx.meta.postTokenBalances?.find((b) => b.mint == mint);
+
+                        if (mint == '26WzjUcXtyR2f4Uob7orpusxWgAg7Bycu46LQCmutWa5'){
+                            console.log('!mike1', 'preTokenBalance', preTokenBalance, 'postTokenBalance', postTokenBalance);
+                        }
+
+                        if (preTokenBalance && postTokenBalance){
+                            if (
+                                (preTokenBalance.uiTokenAmount.amount == '0' || preTokenBalance.uiTokenAmount.amount == '1')
+                                && (postTokenBalance.uiTokenAmount.amount == '0' || postTokenBalance.uiTokenAmount.amount == '1')
+                            ){
+                                uniqueNftMints.push(mint);
+                            }
+                        }
+                    }
+
+                    console.log('!mike1', 'uniqueMints', uniqueMints, 'uniqueNftMints', uniqueNftMints);
+                    for (const mint of uniqueNftMints) {
                         asset = await MetaplexManager.fetchAssetAndParseToTokenNft(mint);
                         if (asset){
+                            console.log('!mike2', 'asset', asset);
                             break;
                         }
                     }
@@ -354,15 +376,21 @@ export class WalletManager {
                     message += `\n${asset.title} | <a href="https://www.tensor.trade/item/${asset.id}">Tensor</a>`;
 
                     if (asset.attributes && asset.attributes.length > 0){
-                        message += `\n\n<b>Attributes:</b>\n`;
+                        message += `\n\n<b>Attributes:</b>`;
                         message += `${asset.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
                     }
+
+                    message += '\n';
                 }
 
-                message += `\n\n<a href="${ExplorerManager.getUrlToTransaction(signature)}">Explorer</a>\n\n`;
+                message += `\n<a href="${ExplorerManager.getUrlToTransaction(signature)}">Explorer</a>`;
 
                 if (hasWalletsChanges){
-                    BotManager.sendMessage(chat.id, message, asset?.image);
+                    BotManager.sendMessage({ 
+                        chatId: chat.id, 
+                        text: message, 
+                        imageUrl: asset?.image 
+                    });
                 }
             }
         }

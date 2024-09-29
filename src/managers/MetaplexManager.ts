@@ -8,6 +8,8 @@ import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubbl
 
 export class MetaplexManager {
 
+    static assetsCache: {[key: string]: {id: string, asset: DasApiAsset, createdAt: number}} = {};
+
     static async fetchAllDigitalAssets(mints: string[]): Promise<DigitalAsset[]> {
         try {
             const umi = createUmi(getRpc()); 
@@ -22,10 +24,19 @@ export class MetaplexManager {
     }
 
     static async fetchAsset(assetId: string): Promise<DasApiAsset | undefined> {
+        console.log('MetaplexManager', '!fetchAsset', assetId);
+        const existingAsset = this.assetsCache[assetId]
+        if (existingAsset){
+            return existingAsset.asset;
+        }
+
         try {
             const umi = createUmi(process.env.HELIUS_SHARED_RPC!); 
             umi.use(dasApi())
             const asset = await umi.rpc.getAsset(publicKey(assetId));
+            if (asset){
+                this.assetsCache[assetId] = {id: assetId, asset, createdAt: Date.now()};
+            }
             return asset;
         }
         catch (error) {
@@ -36,18 +47,23 @@ export class MetaplexManager {
 
     static async fetchAssetAndParseToTokenNft(assetId: string): Promise<TokenNft | undefined> {
         try {
-            const tmp = await this.fetchAsset(assetId);
+            const asset = await this.fetchAsset(assetId);
+            // console.log('tmp', asset);
+            if (asset){
+                if (asset.interface as string == 'FungibleToken'){
+                    console.error('MetaplexManager', 'fetchAssetAndParseToTokenNft', 'asset is not NFT', asset);
+                    return undefined;
+                }
 
-            if (tmp){
                 let image: string | undefined = undefined;
-                let links: any = tmp.content.links;
+                let links: any = asset.content.links;
                 if (!image && links?.[0]?.['image']){ image = '' + links[0]['image']; }
                 if (!image && links?.['image']){ image = '' + links['image']; }
                 
-                tmp.content.links?.[0] ? '' + tmp.content.links?.[0]['image'] : undefined;
+                asset.content.links?.[0] ? '' + asset.content.links?.[0]['image'] : undefined;
                 const attributes: TokenNftAttribute[] = [];
-                if (tmp.content.metadata.attributes){
-                    for (const attr of tmp?.content.metadata.attributes) {
+                if (asset.content.metadata.attributes){
+                    for (const attr of asset?.content.metadata.attributes) {
                         if (attr.trait_type && attr.value){
                             attributes.push({
                                 trait_type: attr.trait_type,
@@ -57,15 +73,15 @@ export class MetaplexManager {
                     }
                 }
                 
-                const asset: TokenNft = {
-                    id: tmp.id.toString(),
-                    title: tmp.content.metadata.name,
+                const nftAsset: TokenNft = {
+                    id: asset.id.toString(),
+                    title: asset.content.metadata.name,
                     image: image,
-                    uri: tmp.content.json_uri,
+                    uri: asset.content.json_uri,
                     attributes: attributes,
                 };
 
-                return asset;
+                return nftAsset;
             }
         }
         catch (error) {

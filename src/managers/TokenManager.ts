@@ -81,7 +81,7 @@ export class TokenManager {
         }
 
         const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
-        console.log('TokenManager', 'getToken', address, '=', digitalAssets);
+        // console.log('TokenManager', 'getToken', address, '=', digitalAssets);
         if (digitalAssets && digitalAssets.length > 0){
             const digitalAsset = digitalAssets[0];
             token.name = digitalAsset.metadata.name;
@@ -96,15 +96,12 @@ export class TokenManager {
                     uri: digitalAsset.metadata.uri,
                 };
 
-                // const detailedAsset = await HeliusManager.getDetailedAsset(address);
-                // console.log('detailedAsset:', detailedAsset);
-
                 const uri = digitalAsset.metadata.uri;
                 if (uri){
                     try {
                         const metadata = await fetch(uri);
                         const metadataJson = await metadata.json() as any;
-                        console.log('TokenManager', 'getToken', 'metadata', metadataJson);    
+                        // console.log('TokenManager', 'getToken', 'metadata', metadataJson);    
 
                         if (metadataJson.attributes){
                             token.nft.attributes = metadataJson.attributes;

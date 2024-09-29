@@ -8,6 +8,14 @@ import { BotMyWalletsHelper } from "./helpers/BotMyWalletsHelper";
 import { UserManager } from "../UserManager";
 import { IUser } from "../../entities/User";
 import { autoRetry } from "@grammyjs/auto-retry";
+import { InlineKeyboardMarkup } from "grammy/types";
+
+export interface SendMessageData {
+    chatId: number;
+    text?: string;
+    imageUrl?: string;
+    inlineKeyboard?: InlineKeyboardMarkup;
+}
 
 export interface TgMessage {
     message_id: number;
@@ -124,22 +132,23 @@ export class BotManager {
         return newMessage;
     }
 
-    async sendTextMessage(chatId: number, text: string){
-        // console.log('sendTextMessage', chatId, text);
-        this.bot.api.sendMessage(chatId, text, {
-            parse_mode: 'HTML', 
-            link_preview_options: {
-                is_disabled: true
-            },
-        });
-    }
-
-    async sendPhotoMessage(chatId: number, imageUrl: string, text?: string ){
-        // console.log('sendTextMessage', chatId, text);
-        this.bot.api.sendPhoto(chatId, imageUrl, {
-            caption: text,
-            parse_mode: 'HTML', 
-        });
+    async sendMessage(data: SendMessageData){
+        if (data.imageUrl){
+            this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
+                caption: data.text,
+                parse_mode: 'HTML', 
+                reply_markup: data.inlineKeyboard,
+            });    
+        }
+        else {
+            this.bot.api.sendMessage(data.chatId, data.text || '', {
+                parse_mode: 'HTML', 
+                link_preview_options: {
+                    is_disabled: true
+                },
+                reply_markup: data.inlineKeyboard,
+            });    
+        }
     }
 
     // -------- static --------
@@ -153,17 +162,12 @@ export class BotManager {
 
     static async sendSystemMessage(text: string, chatId: number = +process.env.TELEGRAM_SYSTEM_CHAT_ID!){
         const botManager = await BotManager.getInstance();
-        await botManager.sendTextMessage(chatId, text);
+        await botManager.sendMessage({chatId, text});
     }
 
-    static async sendMessage(chatId: number, text: string, imageUrl?: string){
+    static async sendMessage(data: SendMessageData){
         const botManager = await BotManager.getInstance();
-        if (imageUrl){
-            await botManager.sendPhotoMessage(chatId, imageUrl, text);
-        }
-        else {
-            await botManager.sendTextMessage(chatId, text);
-        }
+        await botManager.sendMessage(data);
     }
 
 }
