@@ -7,6 +7,7 @@ import { BotRemoveWalletHelper } from "./helpers/BotRemoveWalletHelper";
 import { BotMyWalletsHelper } from "./helpers/BotMyWalletsHelper";
 import { UserManager } from "../UserManager";
 import { IUser } from "../../entities/User";
+import { autoRetry } from "@grammyjs/auto-retry";
 
 export interface TgMessage {
     message_id: number;
@@ -44,6 +45,8 @@ export class BotManager {
 
         console.log('Starting bot...');
         this.bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
+
+        this.bot.api.config.use(autoRetry());
     
         this.bot.on('message', (ctx) => {
             this.onMessage(ctx.update.message as TgMessage, ctx);
