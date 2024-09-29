@@ -221,7 +221,7 @@ export class ProgramManager {
                 txDescription = parsedInstruction.description;
 
                 if (parsedInstruction.programId == kProgram.TENSOR_CNFT){
-                    const ix2 = parsedInstructions.find((ix) => ix.programId == kProgram.TENSOR_CNFT && ix.data?.data?.event?.taker['0']?.assetId);
+                    const ix2 = parsedInstructions.find((ix) => ix.programId == kProgram.TENSOR_CNFT && ix.data?.data?.event?.taker?.['0']?.assetId);
                     if (ix2){
                         assetId = ix2.data?.data?.event?.taker['0']?.assetId;
                         const taker = ix2.data?.data?.event?.taker['0']?.taker;

@@ -228,35 +228,8 @@ export class WalletManager {
             let asset: TokenNft | undefined = undefined;
             
             if (parsedTx.assetId){
-                const tmp = await MetaplexManager.fetchAsset(parsedTx.assetId);
-                console.log('!asset', tmp);
-                if (tmp){
-                    let image: string | undefined = undefined;
-                    let links: any = tmp.content.links;
-                    if (!image && links?.[0]?.['image']){ image = '' + links[0]['image']; }
-                    if (!image && links?.['image']){ image = '' + links['image']; }
-                    
-                    tmp.content.links?.[0] ? '' + tmp.content.links?.[0]['image'] : undefined;
-                    const attributes: TokenNftAttribute[] = [];
-                    if (tmp.content.metadata.attributes){
-                        for (const attr of tmp?.content.metadata.attributes) {
-                            if (attr.trait_type && attr.value){
-                                attributes.push({
-                                    trait_type: attr.trait_type,
-                                    value: attr.value,
-                                });
-                            }
-                        }
-                    }
-                    
-                    asset = {
-                        id: tmp.id.toString(),
-                        title: tmp.content.metadata.name,
-                        image: image,
-                        uri: tmp.content.json_uri,
-                        attributes: attributes,
-                    };
-                }
+                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(parsedTx.assetId);
+                console.log('!asset', asset);
             }
 
             for (const chat of chats) {
@@ -348,6 +321,33 @@ export class WalletManager {
                         }
                     }
                     accountIndex++;
+                }
+
+                if (!asset){
+                    // Try to find asset from list of balances
+                    const balances = [
+                        ...tx.meta.preTokenBalances || [],
+                        ...tx.meta.postTokenBalances || [],
+                    ];
+
+                    const uniqueMints: string[] = [];
+                    for (const balance of balances){
+                        if (balance.mint && balance.owner){
+                            const wallet = chat.wallets.find((w) => w.walletAddress === balance.owner);
+                            if (!wallet){
+                                if (!uniqueMints.includes(balance.mint)){
+                                    uniqueMints.push(balance.mint);
+                                }
+                            }
+                        }
+                    }
+
+                    for (const mint of uniqueMints) {
+                        asset = await MetaplexManager.fetchAssetAndParseToTokenNft(mint);
+                        if (asset){
+                            break;
+                        }
+                    }
                 }
 
                 if (asset){
