@@ -1,4 +1,4 @@
-import { Bot } from "grammy";
+import { Bot, InlineKeyboard } from "grammy";
 import { IMessage, Message } from "../../entities/Message";
 import { BotAddWalletHelper } from "./helpers/BotAddWalletHelper";
 import { BotHelper } from "./helpers/BotHelper";
@@ -9,12 +9,18 @@ import { UserManager } from "../UserManager";
 import { IUser } from "../../entities/User";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { InlineKeyboardMarkup } from "grammy/types";
+import { ExplorerManager } from "../../services/explorers/ExplorerManager";
+import { Chain } from "../../services/solana/types";
 
 export interface SendMessageData {
     chatId: number;
     text?: string;
     imageUrl?: string;
     inlineKeyboard?: InlineKeyboardMarkup;
+}
+
+export enum InlineKeyboardType {
+    TOKEN_TX = 'token_tx',
 }
 
 export interface TgMessage {
@@ -58,6 +64,55 @@ export class BotManager {
     
         this.bot.on('message', (ctx) => {
             this.onMessage(ctx.update.message as TgMessage, ctx);
+        });
+
+        this.bot.on("callback_query:data", async (ctx) => {
+            const data = ctx.callbackQuery.data.split('_');
+            if (data.length < 2){
+                console.error('Unknown button event with payload', ctx.callbackQuery.data);
+                await ctx.answerCallbackQuery(); // remove loading animation
+                return;
+            }
+
+            const chain = data[0];
+            const command = data[1];
+            if (chain == Chain.SOLANA){
+                if (command == 'trade'){
+                    if (data.length < 2){
+                        console.error('Unknown button event with payload', ctx.callbackQuery.data);
+                        await ctx.answerCallbackQuery(); // remove loading animation
+                        return;
+                    }
+
+                    const mint = data[2];
+                    console.log('trade', mint, 'by', ctx.callbackQuery.from.username);
+
+                    //TODO: send message with this token info and buttons to buy/sell
+
+                    await ctx.answerCallbackQuery(); // remove loading animation
+                    return;
+                }
+                else if (command == 'buy'){
+                    if (data.length < 3){
+                        console.error('Unknown button event with payload', ctx.callbackQuery.data);
+                        await ctx.answerCallbackQuery(); // remove loading animation
+                        return;
+                    }
+
+                    const mint = data[2];
+                    const amount = data[3];
+                    console.log('buy', mint, 'for', amount, 'SOL', 'by', ctx.callbackQuery.from.username);
+
+                    //TODO: buy token
+
+                    await ctx.answerCallbackQuery(); // remove loading animation
+                    return;
+                }
+            }
+
+
+            console.log("Unknown button event with payload", ctx.callbackQuery.data);
+            await ctx.answerCallbackQuery(); // remove loading animation
         });
     
         this.bot.start();
@@ -168,6 +223,22 @@ export class BotManager {
     static async sendMessage(data: SendMessageData){
         const botManager = await BotManager.getInstance();
         await botManager.sendMessage(data);
+    }
+
+    static buildInlineKeyboardForToken(chain: Chain, type: InlineKeyboardType, mint: string, tokenName: string): InlineKeyboardMarkup | undefined {
+        if (chain == Chain.SOLANA){
+            if (type == InlineKeyboardType.TOKEN_TX){
+                const inlineKeyboard = new InlineKeyboard()
+                    .text(`Trade ${tokenName}`, `${chain}_trade_${mint}`)
+                    .url(`Explorer`, ExplorerManager.getUrlToAddress(mint));
+                return inlineKeyboard;
+            }
+            else {
+                console.error('Unknown inline keyboard type', type);
+            }
+        }
+
+        return undefined;
     }
 
 }

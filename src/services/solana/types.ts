@@ -70,9 +70,9 @@ export enum Priority {
 }
 
 export enum Chain {
-    SOLANA = 'SOLANA',
-    ETHEREUM = 'ETHEREUM',
-    TON = 'TON',
-    TRON = 'TRON',
-    NEAR = 'NEAR',
+    SOLANA = 'sol',
+    ETHEREUM = 'eth',
+    TON = 'ton',
+    TRON = 'tron',
+    NEAR = 'near',
 }
