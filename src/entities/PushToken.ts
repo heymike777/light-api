@@ -21,6 +21,6 @@ export const PushTokenSchema = new mongoose.Schema<IPushToken>({
 PushTokenSchema.index({ userId: 1 });
 PushTokenSchema.index({ token: 1 });
 PushTokenSchema.index({ deviceId: 1 });
-PushTokenSchema.index({ userId: 1, token: 1 }, { unique: true });
+PushTokenSchema.index({ userId: 1, deviceId: 1, token: 1 }, { unique: true });
 
 export const PushToken = mongoose.model<IPushToken>('users-push-tokens', PushTokenSchema);

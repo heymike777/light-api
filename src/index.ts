@@ -28,6 +28,7 @@ import { walletsRouter } from './routes/v1/Wallets';
 import { PushToken } from './entities/PushToken';
 import { Auth } from './entities/Auth';
 import { UserRefClaim } from './entities/UserRefClaim';
+import { usersRouter } from './routes/v1/Users';
 
 const app = express();
 app.use(json());
@@ -44,6 +45,7 @@ declare global {
 if (process.env.API_ENABLED == 'true'){
     app.use(authRouter);
     app.use(walletsRouter);
+    app.use(usersRouter);
 }
 
 app.all('*', async () => {
