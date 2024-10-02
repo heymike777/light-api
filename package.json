@@ -41,6 +41,7 @@
     "express-form-data": "^2.0.17",
     "express-jwt": "^6.0.0",
     "express-validator": "^6.8.0",
+    "firebase-admin": "^12.6.0",
     "fs": "0.0.1-security",
     "grammy": "^1.24.0",
     "helius-sdk": "^1.3.5",

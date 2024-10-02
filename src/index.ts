@@ -25,6 +25,9 @@ import { UserManager } from './managers/UserManager';
 import { authRouter } from './routes/v1/Auth';
 import { AccessToken } from './models/AccessToken';
 import { walletsRouter } from './routes/v1/Wallets';
+import { PushToken } from './entities/PushToken';
+import { Auth } from './entities/Auth';
+import { UserRefClaim } from './entities/UserRefClaim';
 
 const app = express();
 app.use(json());
@@ -54,9 +57,12 @@ const start = async () => {
     console.log('Connected to mongodb!');
 
     await User.syncIndexes();
+    await UserRefClaim.syncIndexes();
     await Message.syncIndexes();
     await Wallet.syncIndexes();
     await Program.syncIndexes();
+    await Auth.syncIndexes();
+    await PushToken.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {
