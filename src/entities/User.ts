@@ -15,6 +15,7 @@ export interface TelegramUser {
 }
 
 export interface IUser extends mongoose.Document {
+    email?: string;
     telegram?: TelegramUser;
     referralCode?: string;
 
@@ -23,6 +24,7 @@ export interface IUser extends mongoose.Document {
 }
 
 export const UserSchema = new mongoose.Schema<IUser>({
+    email: { type: String },
     telegram: {
         id: { type: Number },
         is_bot: { type: Boolean },
@@ -39,6 +41,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
 });
 
 UserSchema.index({ 'telegram.id': 1 });
+UserSchema.index({ 'email': 1 });
 
 UserSchema.pre('save', function (next) {
     this.updatedAt = new Date();
@@ -49,6 +52,7 @@ UserSchema.pre('save', function (next) {
 UserSchema.methods.toJSON = function () {
     return {
         id: this._id,
+        email: this.email,
     };
 };
 
