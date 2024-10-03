@@ -9,11 +9,18 @@ import { KnownInstruction, kProgram, kPrograms, kSkipProgramIds } from "./Progra
 import { SPL_ACCOUNT_COMPRESSION_PROGRAM_ID } from "@metaplex-foundation/mpl-bubblegum";
 import { PublicKey } from "@solana/web3.js";
 import { MetaplexManager } from "./MetaplexManager";
+import { WalletManager } from "./WalletManager";
 
 export interface ParsedTx {
     title: string;
     description?: TxDescription;
     assetId?: string;
+    signature: string;
+    walletsInvolved: string[];
+    preBalances?: number[];
+    postBalances?: number[];
+    preTokenBalances?: web3.TokenBalance[];
+    postTokenBalances?: web3.TokenBalance[];
 }
 
 export interface ParsedIx {
@@ -144,6 +151,7 @@ export class ProgramManager {
     static async parseTx(tx: web3.ParsedTransactionWithMeta): Promise<ParsedTx> {
         let parsedInstructions: ParsedIx[] = [];
 
+        const walletsInvolved = WalletManager.getInvolvedWallets(tx);
         const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [
             ...tx.transaction.message.instructions,
         ];
@@ -264,10 +272,18 @@ export class ProgramManager {
             txTitle = 'TRANSCATION';
         }
 
+        tx.meta?.preTokenBalances
+
         return {
             title: txTitle,
             description: txDescription,
             assetId,
+            signature: tx?.transaction?.signatures?.[0] || '',
+            walletsInvolved,
+            preTokenBalances: tx.meta?.preTokenBalances || undefined,
+            postTokenBalances: tx.meta?.postTokenBalances || undefined,
+            preBalances: tx.meta?.preBalances || undefined,
+            postBalances: tx.meta?.postBalances || undefined,
         }
     }
 

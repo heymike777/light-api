@@ -2,7 +2,7 @@ import { CompiledInstruction, ConfirmedTransaction, InnerInstructions } from "@t
 import { IWallet, Wallet } from "../entities/Wallet";
 import base58 from "bs58";
 import { BotManager } from "./bot/BotManager";
-import { ProgramManager } from "./ProgramManager";
+import { ParsedTx, ProgramManager } from "./ProgramManager";
 import * as web3 from '@solana/web3.js';
 import { newConnection } from "../services/solana/lib/solana";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
@@ -19,6 +19,7 @@ import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { Chain } from "../services/solana/types";
 import { MetaplexManager } from "./MetaplexManager";
+import { UserTransaction } from "../entities/UserTransaction";
 
 export class WalletManager {
 
@@ -246,8 +247,6 @@ export class WalletManager {
                 return;
             }
 
-            const walletsInvolved = this.getInvolvedWallets(tx);
-
             const parsedTx = await ProgramManager.parseTx(tx);
             let asset: TokenNft | undefined = undefined;
             
@@ -257,171 +256,182 @@ export class WalletManager {
             }
 
             for (const chat of chats) {
-                let hasWalletsChanges = false;
-                let message = `[${parsedTx.title}]\n`;
+                //TODO: don't save tx if that's a channel or group chat
+                const userTx = new UserTransaction();
+                userTx.userId = chat.wallets[0].userId;
+                userTx.chatId = chat.id;
+                userTx.parsedTx = parsedTx;
+                userTx.asset = asset;
+                await userTx.save();
 
-                if (parsedTx.description){
-                    message += '\n' + parsedTx.description.html + '\n';
-                }
-
-                if (asset){
-                    hasWalletsChanges = true;
-                }
-    
-                let accountIndex = 0;
-                for (const walletInvolved of walletsInvolved) {
-                    const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
-                    if (wallet){
-                        let blockMessage = '';
-                        const walletTitle = wallet.title || wallet.walletAddress;
-                        blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`;
-    
-                        const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
-    
-                        if (tx.meta.preTokenBalances || tx.meta.postTokenBalances){
-                            const accountIndexes: number[] = [];
-    
-                            if (tx.meta.preTokenBalances){
-                                for (const preTokenBalance of tx.meta.preTokenBalances) {
-                                    if (preTokenBalance.owner == walletInvolved && !accountIndexes.includes(preTokenBalance.accountIndex)){
-                                        accountIndexes.push(preTokenBalance.accountIndex);
-                                    }
-                                }
-                            }
-                            if (tx.meta.postTokenBalances){
-                                for (const postTokenBalance of tx.meta.postTokenBalances) {
-                                    if (postTokenBalance.owner == walletInvolved && !accountIndexes.includes(postTokenBalance.accountIndex)){
-                                        accountIndexes.push(postTokenBalance.accountIndex);
-                                    }
-                                }
-                            }
-    
-                            for (const accountIndex of accountIndexes){
-                                const preTokenBalance = tx.meta.preTokenBalances?.find((b) => b.accountIndex == accountIndex);
-                                const postTokenBalance = tx.meta.postTokenBalances?.find((b) => b.accountIndex == accountIndex);
-                                const mint = preTokenBalance?.mint || postTokenBalance?.mint || undefined;
-    
-                                const preBalance = new BN(preTokenBalance?.uiTokenAmount.amount || 0);
-                                const postBalance = new BN(postTokenBalance?.uiTokenAmount.amount || 0);
-                                const balanceDiff = postBalance.sub(preBalance);
-                                const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals ||postTokenBalance?.uiTokenAmount.decimals || 0);
-                                const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
-                                const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
-    
-                                tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
-                            }
-                        }
-    
-                        let hasBalanceChange = false;
-                        const nativeBalanceChange = tx.meta.postBalances[accountIndex] - tx.meta.preBalances[accountIndex];
-                        const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
-                        const balanceChange = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
-                        if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
-                            hasBalanceChange = true;
-                            hasWalletsChanges = true;
-                            const token = await TokenManager.getToken(kSolAddress);
-                            const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
-                            blockMessage += `\nSOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;
-                        }
-    
-                        for (const tokenBalance of tokenBalances) {
-                            const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
-                            if (mint && mint != kSolAddress){
-                                hasBalanceChange = true;
-                                hasWalletsChanges = true;
-                                const token = await TokenManager.getToken(mint);
-                                if (token?.nft && !asset){
-                                    asset = token.nft;
-                                }
-                                const balanceChange = tokenBalance.balanceChange;
-                                const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
-                                const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
-                                blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;            
-                            }
-                        }
-
-                        if (hasBalanceChange){
-                            message += blockMessage;
-                        }
-                    }
-                    accountIndex++;
-                }
-
-                if (!asset){
-                    // Try to find asset from list of balances
-
-                    const balances = [
-                        ...tx.meta.preTokenBalances || [],
-                        ...tx.meta.postTokenBalances || [],
-                    ];
-
-                    const uniqueMints: string[] = [];
-                    for (const balance of balances){
-                        if (balance.mint && balance.owner){
-                            const wallet = chat.wallets.find((w) => w.walletAddress === balance.owner);
-                            if (!wallet){
-                                if (!uniqueMints.includes(balance.mint)){
-                                    uniqueMints.push(balance.mint);
-                                }
-                            }
-                        }
-                    }
-
-                    const uniqueNftMints: string[] = [];
-                    for (const mint of uniqueMints) {
-                        const preTokenBalance = tx.meta.preTokenBalances?.find((b) => b.mint == mint);
-                        const postTokenBalance = tx.meta.postTokenBalances?.find((b) => b.mint == mint);
-
-                        if (mint == '26WzjUcXtyR2f4Uob7orpusxWgAg7Bycu46LQCmutWa5'){
-                            console.log('!mike1', 'preTokenBalance', preTokenBalance, 'postTokenBalance', postTokenBalance);
-                        }
-
-                        if (preTokenBalance && postTokenBalance){
-                            if (
-                                (preTokenBalance.uiTokenAmount.amount == '0' || preTokenBalance.uiTokenAmount.amount == '1')
-                                && (postTokenBalance.uiTokenAmount.amount == '0' || postTokenBalance.uiTokenAmount.amount == '1')
-                            ){
-                                uniqueNftMints.push(mint);
-                            }
-                        }
-                    }
-
-                    console.log('!mike1', 'uniqueMints', uniqueMints, 'uniqueNftMints', uniqueNftMints);
-                    for (const mint of uniqueNftMints) {
-                        asset = await MetaplexManager.fetchAssetAndParseToTokenNft(mint);
-                        if (asset){
-                            console.log('!mike2', 'asset', asset);
-                            break;
-                        }
-                    }
-                }
-
-                if (asset){
-                    message += `\n${asset.title} | <a href="https://www.tensor.trade/item/${asset.id}">Tensor</a>`;
-
-                    if (asset.attributes && asset.attributes.length > 0){
-                        message += `\n\n<b>Attributes:</b>`;
-                        message += `${asset.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
-                    }
-
-                    message += '\n';
-                }
-
-                message += `\n<a href="${ExplorerManager.getUrlToTransaction(signature)}">Explorer</a>`;
-
-                if (hasWalletsChanges){
-                    BotManager.sendMessage({ 
-                        chatId: chat.id, 
-                        text: message, 
-                        imageUrl: asset?.image 
-                    });
-                }
+                await this.processTx(parsedTx, asset, chat);
             }
         }
         catch (err) {
             console.error(new Date(), 'MigrationManager', 'processTxForChats', 'Error:', err);
         }
 
+    }
+
+    static async processTx(parsedTx: ParsedTx, asset: TokenNft | undefined, chat: {id: number, wallets: IWallet[]}){
+        let hasWalletsChanges = false;
+        let message = `[${parsedTx.title}]\n`;
+
+        if (parsedTx.description){
+            message += '\n' + parsedTx.description.html + '\n';
+        }
+
+        if (asset){
+            hasWalletsChanges = true;
+        }
+
+        const txPreBalances = parsedTx.postBalances || [];
+        const txPostBalances = parsedTx.postBalances || [];
+        const txPreTokenBalances = parsedTx.preTokenBalances || [];
+        const txPostTokenBalances = parsedTx.postTokenBalances || [];
+
+        let accountIndex = 0;
+        for (const walletInvolved of parsedTx.walletsInvolved) {
+            const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
+            if (wallet){
+                let blockMessage = '';
+                const walletTitle = wallet.title || wallet.walletAddress;
+                blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`;
+
+                const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
+
+                if (txPreTokenBalances || txPostTokenBalances){
+                    const accountIndexes: number[] = [];
+
+                    if (txPreTokenBalances){
+                        for (const preTokenBalance of txPreTokenBalances) {
+                            if (preTokenBalance.owner == walletInvolved && !accountIndexes.includes(preTokenBalance.accountIndex)){
+                                accountIndexes.push(preTokenBalance.accountIndex);
+                            }
+                        }
+                    }
+                    if (txPostTokenBalances){
+                        for (const postTokenBalance of txPostTokenBalances) {
+                            if (postTokenBalance.owner == walletInvolved && !accountIndexes.includes(postTokenBalance.accountIndex)){
+                                accountIndexes.push(postTokenBalance.accountIndex);
+                            }
+                        }
+                    }
+
+                    for (const accountIndex of accountIndexes){
+                        const preTokenBalance = txPreTokenBalances?.find((b: any) => b.accountIndex == accountIndex);
+                        const postTokenBalance = txPostTokenBalances?.find((b: any) => b.accountIndex == accountIndex);
+                        const mint = preTokenBalance?.mint || postTokenBalance?.mint || undefined;
+
+                        const preBalance = new BN(preTokenBalance?.uiTokenAmount.amount || 0);
+                        const postBalance = new BN(postTokenBalance?.uiTokenAmount.amount || 0);
+                        const balanceDiff = postBalance.sub(preBalance);
+                        const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals ||postTokenBalance?.uiTokenAmount.decimals || 0);
+                        const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
+                        const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
+
+                        tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
+                    }
+                }
+
+                let hasBalanceChange = false;
+                const nativeBalanceChange = txPostBalances[accountIndex] - txPreBalances[accountIndex];
+                const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
+                const balanceChange = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
+                if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
+                    hasBalanceChange = true;
+                    hasWalletsChanges = true;
+                    const token = await TokenManager.getToken(kSolAddress);
+                    const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
+                    blockMessage += `\nSOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;
+                }
+
+                for (const tokenBalance of tokenBalances) {
+                    const mint = tokenBalance.pre?.mint || tokenBalance.post?.mint || undefined;
+                    if (mint && mint != kSolAddress){
+                        hasBalanceChange = true;
+                        hasWalletsChanges = true;
+                        const token = await TokenManager.getToken(mint);
+                        if (token?.nft && !asset){
+                            asset = token.nft;
+                        }
+                        const balanceChange = tokenBalance.balanceChange;
+                        const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
+                        const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
+                        blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;            
+                    }
+                }
+
+                if (hasBalanceChange){
+                    message += blockMessage;
+                }
+            }
+            accountIndex++;
+        }
+
+        if (!asset){
+            // Try to find asset from list of balances
+
+            const balances = [
+                ...txPreTokenBalances || [],
+                ...txPostTokenBalances || [],
+            ];
+
+            const uniqueMints: string[] = [];
+            for (const balance of balances){
+                if (balance.mint && balance.owner){
+                    const wallet = chat.wallets.find((w) => w.walletAddress === balance.owner);
+                    if (!wallet){
+                        if (!uniqueMints.includes(balance.mint)){
+                            uniqueMints.push(balance.mint);
+                        }
+                    }
+                }
+            }
+
+            const uniqueNftMints: string[] = [];
+            for (const mint of uniqueMints) {
+                const preTokenBalance = txPreTokenBalances?.find((b: any) => b.mint == mint);
+                const postTokenBalance = txPostTokenBalances?.find((b: any) => b.mint == mint);
+
+                if (preTokenBalance && postTokenBalance){
+                    if (
+                        (preTokenBalance.uiTokenAmount.amount == '0' || preTokenBalance.uiTokenAmount.amount == '1')
+                        && (postTokenBalance.uiTokenAmount.amount == '0' || postTokenBalance.uiTokenAmount.amount == '1')
+                    ){
+                        uniqueNftMints.push(mint);
+                    }
+                }
+            }
+
+            for (const mint of uniqueNftMints) {
+                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(mint);
+                if (asset){
+                    break;
+                }
+            }
+        }
+
+        if (asset){
+            message += `\n${asset.title} | <a href="https://www.tensor.trade/item/${asset.id}">Tensor</a>`;
+
+            if (asset.attributes && asset.attributes.length > 0){
+                message += `\n\n<b>Attributes:</b>`;
+                message += `${asset.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
+            }
+        }
+
+        message += '\n\n';
+
+        message += `<a href="${ExplorerManager.getUrlToTransaction(parsedTx.signature)}">Explorer</a>`;
+
+        if (hasWalletsChanges){
+            BotManager.sendMessage({ 
+                chatId: chat.id, 
+                text: message, 
+                imageUrl: asset?.image 
+            });
+        }
     }
 
     static getInvolvedWallets(tx: ParsedTransactionWithMeta): string[] {
