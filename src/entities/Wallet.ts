@@ -27,7 +27,9 @@ export const WalletSchema = new mongoose.Schema<IWallet>({
 });
 
 WalletSchema.index({ chatId: 1 });
+WalletSchema.index({ userId: 1 });
 WalletSchema.index({ chatId: 1, wallletAddress: 1 });
+WalletSchema.index({ chatId: 1, userId: 1, wallletAddress: 1 });
 
 WalletSchema.pre('save', function (next) {
     this.updatedAt = new Date();
@@ -37,7 +39,9 @@ WalletSchema.pre('save', function (next) {
 
 WalletSchema.methods.toJSON = function () {
     return {
-        id: this._id,
+        id: this.id,
+        walletAddress: this.walletAddress,
+        title: this.title,
     };
 };
 

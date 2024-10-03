@@ -4,6 +4,23 @@ export class UserManager {
 
     static cachedUsers: {user: IUser, createdAt: Date}[] = [];
 
+    static async getUserById(id: string): Promise<IUser> {
+        const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.id == id);
+        if (cachedUser){
+            return cachedUser.user;
+        }
+
+        const now = new Date();
+        const user = await User.findById(id);
+        if (user){
+            this.cachedUsers.push({ user: user, createdAt: now });
+            return user;
+        }
+        else {
+            throw new Error('User not found');
+        }
+    }
+
     static async getUserByTelegramUser(from: TelegramUser): Promise<IUser> {
         const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.telegram?.id === from.id);
         if (cachedUser){
@@ -29,6 +46,28 @@ export class UserManager {
         else {
             const newUser = await User.create({
                 telegram: from,
+                createdAt: now,
+            });
+            this.cachedUsers.push({ user: newUser, createdAt: now });
+            return newUser;
+        }
+    }
+
+    static async getUserByEmail(email: string): Promise<IUser> {
+        const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.email === email);
+        if (cachedUser){
+            return cachedUser.user;
+        }
+
+        const now = new Date();
+        const user = await User.findOne({ 'email': email });
+        if (user){
+            this.cachedUsers.push({ user: user, createdAt: now });
+            return user;
+        }
+        else {
+            const newUser = await User.create({
+                email: email,
                 createdAt: now,
             });
             this.cachedUsers.push({ user: newUser, createdAt: now });

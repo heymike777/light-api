@@ -1,5 +1,6 @@
 import { IUser } from "../../../entities/User";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
+import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
@@ -57,7 +58,8 @@ export class BotMyWalletsHelper extends BotHelper {
             walletAddresses.push(line);                
         }
 
-        await WalletManager.removeWallets(message.chat.id, walletAddresses);
+        const user = await UserManager.getUserByTelegramUser(message.from);
+        await WalletManager.removeWallets(message.chat.id, user.id, walletAddresses);
 
         ctx.reply('Done ✅');
     }

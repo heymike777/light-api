@@ -11,7 +11,6 @@ import { errorHandler } from './middlewares/ErrorHandler';
 
 import cron from 'node-cron';
 import { MigrationManager } from './services/MigrationManager';
-import { messagesRouter } from './routes/v1/Notifications';
 import { BotManager } from './managers/bot/BotManager';
 import { User } from './entities/User';
 import { Message } from './entities/Message';
@@ -23,13 +22,30 @@ import { WalletManager } from './managers/WalletManager';
 import { Program } from './entities/Program';
 import { TokenManager } from './managers/TokenManager';
 import { UserManager } from './managers/UserManager';
+import { authRouter } from './routes/v1/Auth';
+import { AccessToken } from './models/AccessToken';
+import { walletsRouter } from './routes/v1/Wallets';
+import { PushToken } from './entities/PushToken';
+import { Auth } from './entities/Auth';
+import { UserRefClaim } from './entities/UserRefClaim';
+import { usersRouter } from './routes/v1/Users';
 
 const app = express();
 app.use(json());
 app.use(cors());
 
+declare global {
+  namespace Express {
+    interface Request {
+      accessToken?: AccessToken,
+    }
+  }
+}
+
 if (process.env.API_ENABLED == 'true'){
-    app.use(messagesRouter);
+    app.use(authRouter);
+    app.use(walletsRouter);
+    app.use(usersRouter);
 }
 
 app.all('*', async () => {
@@ -43,9 +59,12 @@ const start = async () => {
     console.log('Connected to mongodb!');
 
     await User.syncIndexes();
+    await UserRefClaim.syncIndexes();
     await Message.syncIndexes();
     await Wallet.syncIndexes();
     await Program.syncIndexes();
+    await Auth.syncIndexes();
+    await PushToken.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {

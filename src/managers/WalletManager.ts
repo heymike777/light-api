@@ -25,8 +25,8 @@ export class WalletManager {
     static walletsMap: Map<string, IWallet[]> = new Map();
     static programIds: string[] = [];
 
-    static async addWallet(chatId: number, userId: string, walletAddress: string, title?: string){
-        const existingWallet = await Wallet.findOne({chatId: chatId, walletAddress: walletAddress});
+    static async addWallet(chatId: number, userId: string, walletAddress: string, title?: string): Promise<IWallet>{
+        const existingWallet = await Wallet.findOne({chatId: chatId, userId: userId, walletAddress: walletAddress});
         if (existingWallet){
             existingWallet.title = title;
             await existingWallet.save();
@@ -41,6 +41,8 @@ export class WalletManager {
                     }
                 }
             }
+
+            return existingWallet;
         }
         else {
             const wallet = new Wallet({
@@ -61,11 +63,13 @@ export class WalletManager {
             else {
                 tmpWallets = [wallet];
             }
+
+            return wallet;
         }
     }
 
-    static async removeWallets(chatId: number, walletAddresses: string[]){
-        await Wallet.deleteMany({chatId: chatId, walletAddress: {$in: walletAddresses}});
+    static async removeWallets(chatId: number, userId: string, walletAddresses: string[]){
+        await Wallet.deleteMany({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
 
         // Remove from cache
         for (let walletAddress of walletAddresses){
@@ -82,8 +86,28 @@ export class WalletManager {
         }
     }
 
+    static async removeWallet(wallet: IWallet){
+        await Wallet.deleteOne({_id: wallet.id});
+
+        // Remove from cache
+        const tmpWallets = this.walletsMap.get(wallet.walletAddress);
+        if (tmpWallets){
+            const newWallets = tmpWallets.filter((tmpWallet) => tmpWallet.id != wallet.id);
+            if (newWallets.length == 0){
+                this.walletsMap.delete(wallet.walletAddress);
+            }
+            else {
+                this.walletsMap.set(wallet.walletAddress, newWallets);
+            }
+        }
+    }
+
     static async fetchWalletsByChatId(chatId: number): Promise<IWallet[]> {
         return Wallet.find({chatId: chatId});
+    }
+
+    static async fetchWalletsByUserId(userId: number): Promise<IWallet[]> {
+        return Wallet.find({ userId });
     }
 
     static async fetchAllWalletAddresses() {

@@ -42,15 +42,18 @@ export class MigrationManager {
         //     await WalletManager.processTxForChats(signature, tx, chats);
         // }
 
-        const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
-        const tokenName = 'BONK';
-        const inlineKeyboard = BotManager.buildInlineKeyboardForToken(Chain.SOLANA, InlineKeyboardType.TOKEN_TX, mint, tokenName);
 
-        await BotManager.sendMessage({
-            chatId, 
-            text: 'BONK BONK BONK 🔥🔥🔥',
-            inlineKeyboard
-        });
+        
+
+        // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
+        // const tokenName = 'BONK';
+        // const inlineKeyboard = BotManager.buildInlineKeyboardForToken(Chain.SOLANA, InlineKeyboardType.TOKEN_TX, mint, tokenName);
+
+        // await BotManager.sendMessage({
+        //     chatId, 
+        //     text: 'BONK BONK BONK 🔥🔥🔥',
+        //     inlineKeyboard
+        // });
 
         console.log('MigrationManager', 'migrate', 'done');
     }
