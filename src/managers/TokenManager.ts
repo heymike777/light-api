@@ -1,3 +1,4 @@
+import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { JupiterManager } from "./JupiterManager";
 import { MetaplexManager } from "./MetaplexManager";
@@ -13,6 +14,7 @@ export interface TokenNft {
     title?: string;
     uri?: string;
     attributes?: TokenNftAttribute[];
+    marketplace: {title: string, url: string};
 }
 
 export interface Token {
@@ -90,10 +92,12 @@ export class TokenManager {
 
             if (digitalAsset.mint.supply === BigInt(1)) {
                 // NFT
+                const nftId = digitalAsset.mint.publicKey.toString();
                 token.nft = {
-                    id: digitalAsset.mint.publicKey.toString(),
+                    id: nftId,
                     title: digitalAsset.metadata.name,
                     uri: digitalAsset.metadata.uri,
+                    marketplace: ExplorerManager.getMarketplace(nftId),
                 };
 
                 const uri = digitalAsset.metadata.uri;

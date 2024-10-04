@@ -6,6 +6,12 @@ import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { body } from "express-validator";
 import { validateRequest } from "../../middlewares/ValidateRequest";
 import { FirebaseManager } from "../../managers/FirebaseManager";
+import { Helpers } from "../../services/helpers/Helpers";
+import { PageToken } from "../../models/PageToken";
+import { UserTransaction } from "../../entities/UserTransaction";
+import { WalletManager } from "../../managers/WalletManager";
+import { ChatWallets, TransactionApiResponse } from "../../models/types";
+import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 
 const router = express.Router();
 
@@ -48,6 +54,57 @@ router.post(
       }
 
       res.status(200).send({success: true});
+    }
+);
+
+router.post(
+    '/api/v1/users/:userId/transactions',
+    jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
+    validateAuth(),  
+    async (req: Request, res: Response) => {
+        const userId = req.accessToken?.userId;
+        if (!userId){
+            throw new NotAuthorizedError();
+        }
+
+        let pageToken = Helpers.parsePageToken(req);
+        let existingIds = pageToken?.ids || [];
+        const kPageSize = pageToken?.pageSize || 10;
+
+        const transactions = await UserTransaction.find({userId: userId, _id: {$nin: existingIds}}).sort({createdAt: -1}).limit(kPageSize+1).exec();
+        const hasMore = transactions.length > kPageSize;
+        if (hasMore){
+            transactions.pop();
+        }
+        const transactionsIds = transactions.map((transaction) => transaction.id.toString());
+
+        existingIds.push(...transactionsIds);    
+        const newPageToken: PageToken = new PageToken(existingIds, kPageSize);
+
+
+        const wallets = await WalletManager.fetchWalletsByUserId(userId);
+        const chat: ChatWallets = { id: -1, wallets: wallets };
+
+        const parsedTransactions: TransactionApiResponse[] = [];
+        for (const transaction of transactions) {
+            const parsedTx = transaction.parsedTx;
+            const info = await WalletManager.processTx(parsedTx, transaction.asset, chat);
+            parsedTransactions.push({
+                title: parsedTx.title,
+                description: parsedTx.description?.plain,
+                explorerUrl: ExplorerManager.getUrlToTransaction(parsedTx.signature),
+                asset: info.asset,
+                signature: parsedTx.signature,
+                blockTime: parsedTx.blockTime,
+                wallets: info.changedWallets,
+            });
+        }
+
+        res.status(200).send({
+            hasMore: hasMore,
+            pageToken: newPageToken,
+            transactions: parsedTransactions,
+        });
     }
 );
 

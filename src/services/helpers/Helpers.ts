@@ -1,3 +1,7 @@
+import { PageToken } from "../../models/PageToken";
+import { Request } from "express";
+
+
 export class Helpers {
 
     static async sleep(seconds: number) {
@@ -82,6 +86,21 @@ export class Helpers {
 
     static prettyWallet(address: string): string {
         return address.substring(0, 4) + '...' + address.substring(address.length - 4, address.length);
+    }
+
+    static parsePageToken(req: Request): PageToken | undefined {
+        let pageToken: PageToken | undefined;
+        try {
+            if (req.body?.pageToken != undefined){
+                pageToken = PageToken.parse(req.body.pageToken.toString());
+            }
+            else if (req.query?.pageToken != undefined){
+                pageToken = PageToken.parse(req.query.pageToken.toString());
+            }
+        }
+        catch (err){}
+
+        return pageToken;
     }
     
 }

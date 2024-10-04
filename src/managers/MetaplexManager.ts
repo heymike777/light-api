@@ -5,6 +5,7 @@ import { publicKey } from '@metaplex-foundation/umi';
 import { dasApi, DasApiAsset } from '@metaplex-foundation/digital-asset-standard-api';
 import { TokenNft, TokenNftAttribute } from './TokenManager';
 import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
+import { ExplorerManager } from '../services/explorers/ExplorerManager';
 
 export class MetaplexManager {
 
@@ -79,6 +80,7 @@ export class MetaplexManager {
                     image: image,
                     uri: asset.content.json_uri,
                     attributes: attributes,
+                    marketplace: ExplorerManager.getMarketplace(asset.id.toString()),
                 };
 
                 return nftAsset;

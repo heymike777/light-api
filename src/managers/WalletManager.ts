@@ -20,6 +20,7 @@ import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { Chain } from "../services/solana/types";
 import { MetaplexManager } from "./MetaplexManager";
 import { UserTransaction } from "../entities/UserTransaction";
+import { ChangedWallet, ChangedWalletTokenChange, ChatWallets, TransactionApiResponse } from "../models/types";
 
 export class WalletManager {
 
@@ -107,7 +108,7 @@ export class WalletManager {
         return Wallet.find({chatId: chatId});
     }
 
-    static async fetchWalletsByUserId(userId: number): Promise<IWallet[]> {
+    static async fetchWalletsByUserId(userId: string): Promise<IWallet[]> {
         return Wallet.find({ userId });
     }
 
@@ -158,7 +159,7 @@ export class WalletManager {
                         }
                     }
 
-                    const chats: {id: number, wallets: IWallet[]}[] = [];
+                    const chats: ChatWallets[] = [];
                     for (let wallet of wallets){
                         if (wallet.chatId){
                             const chat = chats.find((c) => c.id == wallet.chatId);
@@ -256,6 +257,22 @@ export class WalletManager {
             }
 
             for (const chat of chats) {
+                const info = await this.processTx(parsedTx, asset, chat);
+                asset = info.asset;
+
+                console.log('!chat.wallets', chat.wallets.map((w) => w.walletAddress));
+                console.log('!info', info);
+                console.log('!asset', asset);
+
+
+                if (info.hasWalletsChanges && chat.id != -1){
+                    BotManager.sendMessage({ 
+                        chatId: chat.id, 
+                        text: info.message, 
+                        imageUrl: asset?.image 
+                    });
+                }
+
                 //TODO: don't save tx if that's a channel or group chat
                 const userTx = new UserTransaction();
                 userTx.userId = chat.wallets[0].userId;
@@ -264,7 +281,6 @@ export class WalletManager {
                 userTx.asset = asset;
                 await userTx.save();
 
-                await this.processTx(parsedTx, asset, chat);
             }
         }
         catch (err) {
@@ -281,16 +297,14 @@ export class WalletManager {
             message += '\n' + parsedTx.description.html + '\n';
         }
 
-        if (asset){
-            hasWalletsChanges = true;
-        }
-
         const txPreBalances = parsedTx.postBalances || [];
         const txPostBalances = parsedTx.postBalances || [];
         const txPreTokenBalances = parsedTx.preTokenBalances || [];
         const txPostTokenBalances = parsedTx.postTokenBalances || [];
 
         let accountIndex = 0;
+        const changedWallets: ChangedWallet[] = [];
+        console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
         for (const walletInvolved of parsedTx.walletsInvolved) {
             const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
             if (wallet){
@@ -298,6 +312,7 @@ export class WalletManager {
                 const walletTitle = wallet.title || wallet.walletAddress;
                 blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`;
 
+                const walletTokenChanges: ChangedWalletTokenChange[] = [];
                 const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
 
                 if (txPreTokenBalances || txPostTokenBalances){
@@ -342,8 +357,19 @@ export class WalletManager {
                     hasBalanceChange = true;
                     hasWalletsChanges = true;
                     const token = await TokenManager.getToken(kSolAddress);
+
+                    const amount = +Helpers.prettyNumber(balanceChange, 2);
+                    let amountUSD = token && token.price ? Math.round(Math.abs(balanceChange) * token.price * 100)/100 : undefined;
+                    if (amountUSD!=undefined && balanceChange<0) { amountUSD = -amountUSD; }
+
                     const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                     blockMessage += `\nSOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;
+
+                    walletTokenChanges.push({
+                        mint: kSolAddress,
+                        symbol: 'SOL',
+                        description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`,
+                    });
                 }
 
                 for (const tokenBalance of tokenBalances) {
@@ -359,11 +385,25 @@ export class WalletManager {
                         const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                         const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
                         blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;            
+
+                        walletTokenChanges.push({
+                            mint: mint,
+                            symbol: tokenName,
+                            description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`,
+                        });
                     }
                 }
 
                 if (hasBalanceChange){
                     message += blockMessage;
+
+                    const changedWallet: ChangedWallet = {
+                        walletAddress: wallet.walletAddress,
+                        title: walletTitle,
+                        explorerUrl: ExplorerManager.getUrlToAddress(wallet.walletAddress),
+                        tokenChanges: walletTokenChanges,
+                    };
+                    changedWallets.push(changedWallet);
                 }
             }
             accountIndex++;
@@ -413,25 +453,48 @@ export class WalletManager {
         }
 
         if (asset){
-            message += `\n${asset.title} | <a href="https://www.tensor.trade/item/${asset.id}">Tensor</a>`;
+            hasWalletsChanges = true;
+        }
+
+        if (asset){
+            const marketplace = ExplorerManager.getMarketplace(asset.id);
+            message += `\n${asset.title} | <a href="${marketplace.url}">${marketplace.title}</a>`;
 
             if (asset.attributes && asset.attributes.length > 0){
-                message += `\n\n<b>Attributes:</b>`;
+                message += `\n\n<b>Attributes:\n</b>`;
                 message += `${asset.attributes.map((a) => '- ' + a.trait_type + ': ' + a.value).join('\n')}`;
             }
         }
 
         message += '\n\n';
 
-        message += `<a href="${ExplorerManager.getUrlToTransaction(parsedTx.signature)}">Explorer</a>`;
+        const explorerUrl = ExplorerManager.getUrlToTransaction(parsedTx.signature);
+        message += `<a href="${explorerUrl}">Explorer</a>`;
 
-        if (hasWalletsChanges){
-            BotManager.sendMessage({ 
-                chatId: chat.id, 
-                text: message, 
-                imageUrl: asset?.image 
-            });
-        }
+        const txApiResponse: TransactionApiResponse = {
+            title: parsedTx.title,
+            description: parsedTx.description?.plain,
+            explorerUrl: explorerUrl,
+            signature: parsedTx.signature,
+            blockTime: parsedTx.blockTime,
+            wallets: [],
+        };
+
+        return {
+            hasWalletsChanges,
+            message,
+            asset,
+            transactionApiResponse: txApiResponse,
+            changedWallets,
+        };
+
+        // if (hasWalletsChanges && chat.id != -1){
+        //     BotManager.sendMessage({ 
+        //         chatId: chat.id, 
+        //         text: message, 
+        //         imageUrl: asset?.image 
+        //     });
+        // }
     }
 
     static getInvolvedWallets(tx: ParsedTransactionWithMeta): string[] {

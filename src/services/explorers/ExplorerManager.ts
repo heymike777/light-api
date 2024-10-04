@@ -12,4 +12,11 @@ export class ExplorerManager {
         return `https://rugcheck.xyz/tokens/${address}`;
     }
 
+    static getMarketplace(address: string): { title: string, url: string } {
+        return {
+            title: 'Tensor',
+            url: `https://www.tensor.trade/item/${address}`
+        }
+    }
+
 }

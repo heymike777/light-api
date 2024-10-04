@@ -29,6 +29,7 @@ import { PushToken } from './entities/PushToken';
 import { Auth } from './entities/Auth';
 import { UserRefClaim } from './entities/UserRefClaim';
 import { usersRouter } from './routes/v1/Users';
+import { UserTransaction } from './entities/UserTransaction';
 
 const app = express();
 app.use(json());
@@ -60,6 +61,7 @@ const start = async () => {
 
     await User.syncIndexes();
     await UserRefClaim.syncIndexes();
+    await UserTransaction.syncIndexes();
     await Message.syncIndexes();
     await Wallet.syncIndexes();
     await Program.syncIndexes();

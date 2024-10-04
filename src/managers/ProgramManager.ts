@@ -21,6 +21,7 @@ export interface ParsedTx {
     postBalances?: number[];
     preTokenBalances?: web3.TokenBalance[];
     postTokenBalances?: web3.TokenBalance[];
+    blockTime: number;
 }
 
 export interface ParsedIx {
@@ -272,8 +273,6 @@ export class ProgramManager {
             txTitle = 'TRANSCATION';
         }
 
-        tx.meta?.preTokenBalances
-
         return {
             title: txTitle,
             description: txDescription,
@@ -284,6 +283,7 @@ export class ProgramManager {
             postTokenBalances: tx.meta?.postTokenBalances || undefined,
             preBalances: tx.meta?.preBalances || undefined,
             postBalances: tx.meta?.postBalances || undefined,
+            blockTime: tx.blockTime || Math.floor(Date.now() / 1000),
         }
     }
 
