@@ -132,9 +132,22 @@ export class YellowstoneManager {
         }, this.PING_INTERVAL_MS);
     }
 
+    static firstTxDate: Date | undefined; 
+    static txCount = 0;
     async receivedTx(data: any, filter: string){
         const transaction = data.transaction.transaction;
         if (transaction.meta.err){ return; }
+
+        if (YellowstoneManager.firstTxDate === undefined){
+            YellowstoneManager.firstTxDate = new Date();
+        }
+        YellowstoneManager.txCount += 1;
+
+        if (YellowstoneManager.txCount % 1000 === 0){
+            const txsPerMinute = YellowstoneManager.txCount / ((new Date().getTime() - YellowstoneManager.firstTxDate.getTime()) / 1000 / 60);
+            const txsPerMonth = txsPerMinute * 60 * 24 * 30;
+            console.log(new Date(), process.env.SERVER_NAME, 'receivedTx', 'txCount', YellowstoneManager.txCount, 'txsPerMinute', txsPerMinute, 'txsPerMonth', txsPerMonth);
+        }
 
         const signature = base58.encode(transaction.signature);
         // const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
