@@ -151,7 +151,7 @@ export class YellowstoneManager {
 
         const signature = base58.encode(transaction.signature);
         // const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
-        console.log(new Date(), process.env.SERVER_NAME, 'receivedTx', signature);       
+        console.log(new Date(), process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
 
         WalletManager.processWalletTransaction(signature);
     }
