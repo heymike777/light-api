@@ -172,6 +172,7 @@ export class WalletManager {
                         }
                     }
 
+
                     if (chats.length == 0){
                         continue;
                     }
@@ -260,26 +261,24 @@ export class WalletManager {
                 const info = await this.processTx(parsedTx, asset, chat);
                 asset = info.asset;
 
-                console.log('!chat.wallets', chat.wallets.map((w) => w.walletAddress));
-                console.log('!info', info);
-                console.log('!asset', asset);
+                if (info.hasWalletsChanges){
+                    if (chat.id != -1){
+                        BotManager.sendMessage({ 
+                            chatId: chat.id, 
+                            text: info.message, 
+                            imageUrl: asset?.image 
+                        });
+                    }
 
-
-                if (info.hasWalletsChanges && chat.id != -1){
-                    BotManager.sendMessage({ 
-                        chatId: chat.id, 
-                        text: info.message, 
-                        imageUrl: asset?.image 
-                    });
+                    //TODO: don't save tx if that's a channel or group chat
+                    const userTx = new UserTransaction();
+                    userTx.userId = chat.wallets[0].userId;
+                    userTx.chatId = chat.id;
+                    userTx.parsedTx = parsedTx;
+                    userTx.asset = asset;
+                    await userTx.save();
                 }
 
-                //TODO: don't save tx if that's a channel or group chat
-                const userTx = new UserTransaction();
-                userTx.userId = chat.wallets[0].userId;
-                userTx.chatId = chat.id;
-                userTx.parsedTx = parsedTx;
-                userTx.asset = asset;
-                await userTx.save();
 
             }
         }

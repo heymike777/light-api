@@ -146,12 +146,12 @@ export class YellowstoneManager {
         if (YellowstoneManager.txCount % 1000 === 0){
             const txsPerMinute = YellowstoneManager.txCount / ((new Date().getTime() - YellowstoneManager.firstTxDate.getTime()) / 1000 / 60);
             const txsPerMonth = txsPerMinute * 60 * 24 * 30;
-            console.log(new Date(), process.env.SERVER_NAME, 'receivedTx', 'txCount', YellowstoneManager.txCount, 'txsPerMinute', txsPerMinute, 'txsPerMonth', txsPerMonth);
+            // console.log(new Date(), process.env.SERVER_NAME, 'receivedTx', 'txCount', YellowstoneManager.txCount, 'txsPerMinute', txsPerMinute, 'txsPerMonth', txsPerMonth);
         }
 
         const signature = base58.encode(transaction.signature);
         // const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
-        console.log(new Date(), process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
+        // console.log(new Date(), process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
 
         WalletManager.processWalletTransaction(signature);
     }
