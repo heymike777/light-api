@@ -30,7 +30,6 @@ export class MigrationManager {
         // const signature = '2T7mEAvLtNN9bn6bu1mzwTZv9MGfsnXcvRbPEiCYqSdpjvYs393CUssq6qmzywv7BWQGcGzyafVp2RE12QsixJcH';
 
         // const wallets = await Wallet.find({ chatId });
-        // // console.log('MigrationManager', 'migrate', 'wallets', wallets);
         // const chats = [{
         //     id: chatId,
         //     wallets: wallets,
@@ -41,9 +40,6 @@ export class MigrationManager {
         // if (tx){
         //     await WalletManager.processTxForChats(signature, tx, chats);
         // }
-
-
-        
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
