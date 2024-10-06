@@ -451,6 +451,10 @@ export class WalletManager {
             }
         }
 
+        if (asset && asset.title){
+            asset.title = asset.title.trim();
+        }
+
         if (asset){
             hasWalletsChanges = true;
         }
