@@ -6,6 +6,7 @@ export interface PushNotificationMessage {
     title: string;
     subtitle: string;
     data?: {
+        open?: 'transactions' | 'airdrops' | 'profile'
     };
   }
 

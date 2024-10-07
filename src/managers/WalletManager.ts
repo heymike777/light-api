@@ -21,6 +21,7 @@ import { Chain } from "../services/solana/types";
 import { MetaplexManager } from "./MetaplexManager";
 import { UserTransaction } from "../entities/UserTransaction";
 import { ChangedWallet, ChangedWalletTokenChange, ChatWallets, TransactionApiResponse } from "../models/types";
+import { FirebaseManager } from "./FirebaseManager";
 
 export class WalletManager {
 
@@ -268,6 +269,11 @@ export class WalletManager {
                             text: info.message, 
                             imageUrl: asset?.image 
                         });
+                    }
+
+                    const userId = chat.wallets?.[0]?.userId;
+                    if (userId){
+                        FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, { open: 'transactions' });
                     }
 
                     //TODO: don't save tx if that's a channel or group chat
