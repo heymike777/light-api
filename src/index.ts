@@ -30,6 +30,7 @@ import { Auth } from './entities/Auth';
 import { UserRefClaim } from './entities/UserRefClaim';
 import { usersRouter } from './routes/v1/Users';
 import { UserTransaction } from './entities/UserTransaction';
+import { testRouter } from './routes/v1/Test';
 
 const app = express();
 app.use(json());
@@ -47,6 +48,7 @@ if (process.env.API_ENABLED == 'true'){
     app.use(authRouter);
     app.use(walletsRouter);
     app.use(usersRouter);
+    app.use(testRouter);
 }
 
 app.all('*', async () => {
