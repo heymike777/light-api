@@ -18,6 +18,7 @@ export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
     referralCode?: string;
+    isSubscriptionActive?: boolean;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -35,6 +36,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
         is_premium: { type: Boolean }
     },
     referralCode: { type: String },
+    isSubscriptionActive: { type: Boolean },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -53,6 +55,7 @@ UserSchema.methods.toJSON = function () {
     return {
         id: this._id,
         email: this.email,
+        isSubscriptionActive: this.isSubscriptionActive,
     };
 };
 

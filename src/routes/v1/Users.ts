@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-import { BadRequestError } from "../../errors/BadRequestError";
 import jwt from "express-jwt";
 import { validateAuth } from "../../middlewares/ValidateAuth";
 import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
@@ -12,8 +11,28 @@ import { UserTransaction } from "../../entities/UserTransaction";
 import { WalletManager } from "../../managers/WalletManager";
 import { ChatWallets, TransactionApiResponse } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
+import { UserManager } from "../../managers/UserManager";
 
 const router = express.Router();
+
+router.get(
+    '/api/v1/users',
+    jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
+    validateAuth(),  
+    async (req: Request, res: Response) => {
+      const userId = req.accessToken?.userId;
+      if (!userId){
+        throw new NotAuthorizedError();
+      }
+
+      const user = await UserManager.getUserById(userId);
+      if (!user){
+        throw new NotAuthorizedError();
+      }
+   
+      res.status(200).send({ user });
+    }
+);
 
 router.post(
     '/api/v1/users/:userId/pushToken',
