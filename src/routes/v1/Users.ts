@@ -32,7 +32,8 @@ router.post(
    
       const pushToken = req.body.pushToken;
       const deviceId = req.body.deviceId;
-      await FirebaseManager.savePushToken(userId, deviceId, pushToken);
+      const platform = req.body.platform;
+      await FirebaseManager.savePushToken(userId, deviceId, pushToken, platform);
 
       res.status(200).send({success: true});
     }

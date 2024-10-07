@@ -8,6 +8,7 @@ export interface IPushToken extends mongoose.Document {
     userId: string;
     deviceId: string;
     token: string;
+    platform?: string;
     createdAt: Date;
 }
 
@@ -15,6 +16,7 @@ export const PushTokenSchema = new mongoose.Schema<IPushToken>({
     userId: { type: String },
     deviceId: { type: String },
     token: { type: String },
+    platform: { type: String },
     createdAt: { type: Date, default: new Date() },
 });
 

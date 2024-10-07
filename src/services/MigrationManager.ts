@@ -17,6 +17,7 @@ import { JupiterManager } from "../managers/JupiterManager";
 import { TokenManager } from "../managers/TokenManager";
 import { MetaplexManager } from "../managers/MetaplexManager";
 import { InlineKeyboard } from "grammy";
+import { FirebaseManager } from "../managers/FirebaseManager";
 
 export class MigrationManager {
 
@@ -50,6 +51,8 @@ export class MigrationManager {
         //     text: 'BONK BONK BONK 🔥🔥🔥',
         //     inlineKeyboard
         // });
+
+        // FirebaseManager.sendPushToUser('66eefe2c8fed7f2c60d147ef', 'hello', 'world', { open: 'transactions' });
 
         console.log('MigrationManager', 'migrate', 'done');
     }

@@ -64,7 +64,7 @@ export class FirebaseManager {
         return FirebaseManager.instance;
     }
 
-    static async savePushToken(userId: string, deviceId: string, token: string) {
+    static async savePushToken(userId: string, deviceId: string, token: string, platform?: string) {
         const existingPushToken = await PushToken.findOne({ userId, deviceId });
         if (existingPushToken){
             if (existingPushToken.token != token){
@@ -79,6 +79,7 @@ export class FirebaseManager {
         pushToken.userId = userId;
         pushToken.deviceId = deviceId;
         pushToken.token = token;
+        pushToken.platform = platform
         pushToken.createdAt = new Date();
         await pushToken.save();
     }
