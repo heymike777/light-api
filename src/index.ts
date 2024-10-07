@@ -31,6 +31,7 @@ import { UserRefClaim } from './entities/UserRefClaim';
 import { usersRouter } from './routes/v1/Users';
 import { UserTransaction } from './entities/UserTransaction';
 import { testRouter } from './routes/v1/Test';
+import { webhooksRouter } from './routes/v1/Webhooks';
 
 const app = express();
 app.use(json());
@@ -49,6 +50,7 @@ if (process.env.API_ENABLED == 'true'){
     app.use(walletsRouter);
     app.use(usersRouter);
     app.use(testRouter);
+    app.use(webhooksRouter);
 }
 
 app.all('*', async () => {
