@@ -92,19 +92,24 @@ export class FirebaseManager {
     }
 
     static async sendPushToUser(userId: string, title: string, subtitle?: string, data?: PushNotificationMessage['data']){
-        const firebaseManager = FirebaseManager.getInstance();
+        try {
+            const firebaseManager = FirebaseManager.getInstance();
 
-        const pushTokens = await PushToken.find({ userId: userId });
-        
-        for (const pushToken of pushTokens){
-            const message: PushNotificationMessage = {
-                token: pushToken.token,
-                title: title,
-                subtitle: subtitle || '',
-                data: data,
-            };
+            const pushTokens = await PushToken.find({ userId: userId });
+            
+            for (const pushToken of pushTokens){
+                const message: PushNotificationMessage = {
+                    token: pushToken.token,
+                    title: title,
+                    subtitle: subtitle || '',
+                    data: data,
+                };
 
-            await firebaseManager.sendMessage(message);
+                await firebaseManager.sendMessage(message);
+            }
+        }
+        catch (error){
+            console.error('sendPushToUser', userId, error);
         }
     }
 
