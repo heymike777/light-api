@@ -89,7 +89,7 @@ router.post(
             throw new NotAuthorizedError();
         }
 
-        console.log("GET TRANSACTIONS", "userId", userId, "pageToken", req.body.pageToken);
+        console.log("GET TRANSACTIONS", "userId", userId, "pageToken", req.body.pageToken, "pushToken", req.body.pushToken);
 
 
         let pageToken = Helpers.parsePageToken(req);
