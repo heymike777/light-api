@@ -90,6 +90,7 @@ router.post(
         }
 
         console.log("GET TRANSACTIONS", "userId", userId, "pageToken", req.body.pageToken, "pushToken", req.body.pushToken);
+        console.log("GET TRANSACTIONS", "body:", req.body, "query:", req.query, "params:", req.params);
 
 
         let pageToken = Helpers.parsePageToken(req);
