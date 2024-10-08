@@ -63,33 +63,34 @@ export class BotAddWalletHelper extends BotHelper {
             wallets.push({address: walletAddress, title: title});                
         }
 
+        let walletsCounter = 0;
+        let hasLimitError = false;
         const user = await UserManager.getUserByTelegramUser(message.from);
         for (const wallet of wallets) {
             try {
                 await WalletManager.addWallet(message.chat.id, user, wallet.address, wallet.title);
+                walletsCounter++;
             }
             catch (err){
                 console.log('BotAddWalletHelper', 'messageReceived', 'error', err);
-                if (err instanceof PremiumError){
+                if (!hasLimitError && err instanceof PremiumError){
+                    hasLimitError = true;
                     ctx.reply(err.message);
                 }
             }
         }
 
-        if (wallets.length == 0){
-            ctx.reply('No wallets found!');
-            return;
+        if (walletsCounter == 0){
+            if (!hasLimitError){
+                ctx.reply('No wallets found!');
+            }
         }
-        else if (wallets.length == 1){
+        else if (walletsCounter == 1){
             ctx.reply('Wallet saved! We will start tracking it immediately.');
-            return;
         }
         else {
-            ctx.reply(`${wallets.length} wallets saved! We will start tracking them immediately.`);
-            return;
+            ctx.reply(`${walletsCounter} wallets saved! We will start tracking them immediately.`);
         }
     }
-
-
 
 }
