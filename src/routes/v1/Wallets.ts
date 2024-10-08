@@ -37,7 +37,7 @@ router.post(
     '/api/v1/wallets',
     [
         body('walletAddress').notEmpty().withMessage('Wallet address must be valid'),
-        body('title').optional().notEmpty().withMessage('Wallet title must be valid')
+        // body('title').optional().notEmpty().withMessage('Wallet title must be valid')
     ],
     validateRequest,
     jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
@@ -50,7 +50,7 @@ router.post(
         if (!user) { throw new NotAuthorizedError(); }
 
         const walletAddress = '' + req.body.walletAddress;
-        const walletTitle = req.body.title ? '' + req.body.title : undefined;
+        const walletTitle = (req.body.title && req.body.title!=null && req.body.title!='') ? '' + req.body.title : undefined;
 
         let wallet: IWallet | undefined;
         try {
