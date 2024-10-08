@@ -31,6 +31,16 @@ export class FirebaseManager {
                 title: data.title,
                 body: data.subtitle,
             },
+            apns: {
+                payload: {
+                  aps: {
+                    'mutable-content': 1
+                  }
+                },
+                // fcm_options: {
+                //   image: 'https://foo.bar.pizza-monster.png'
+                // }
+              },
             data: data.data,
         };
 
