@@ -16,7 +16,7 @@ export class AuthManager {
 
         await BrevoManager.createContact({email}, [BrevoManager.allUsersListId]);
 
-        const code = email=='test@sololabs.io' ? '111111' : this.generateCode();
+        const code = (email=='test@sololabs.io' || email=='test@heynova.xyz') ? '111111' : this.generateCode();
 
         const request = new Auth();
         request.email = email;
