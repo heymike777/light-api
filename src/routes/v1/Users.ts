@@ -69,6 +69,8 @@ router.post(
       }
    
       const deviceId = req.body.deviceId;
+      console.log("LOGOUT", "userId", userId, "deviceId", deviceId);
+
       if (deviceId){
         await FirebaseManager.deletePushTokens(userId, deviceId);
       }
@@ -86,6 +88,9 @@ router.post(
         if (!userId){
             throw new NotAuthorizedError();
         }
+
+        console.log("GET TRANSACTIONS", "userId", userId, "pageToken", req.body.pageToken);
+
 
         let pageToken = Helpers.parsePageToken(req);
         let existingIds = pageToken?.ids || [];
@@ -119,6 +124,9 @@ router.post(
                 wallets: info.changedWallets,
             });
         }
+
+        console.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
+
 
         res.status(200).send({
             hasMore: hasMore,
