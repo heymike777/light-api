@@ -35,6 +35,8 @@ export class FirebaseManager {
             apns: {
                 payload: {
                   aps: {
+                    badge: 1,
+                    sound: 'default',
                     contentAvailable: true,
                   }
                 },
