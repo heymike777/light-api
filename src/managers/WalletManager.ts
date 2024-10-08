@@ -1,35 +1,33 @@
-import { CompiledInstruction, ConfirmedTransaction, InnerInstructions } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
+import { CompiledInstruction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
 import { IWallet, Wallet } from "../entities/Wallet";
-import base58 from "bs58";
 import { BotManager } from "./bot/BotManager";
 import { ParsedTx, ProgramManager } from "./ProgramManager";
 import * as web3 from '@solana/web3.js';
 import { newConnection } from "../services/solana/lib/solana";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
-import { HeliusManager } from "../services/solana/HeliusManager";
 import { Helpers } from "../services/helpers/Helpers";
-import { EnrichedTransaction } from "helius-sdk";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
-import { Token, TokenManager, TokenNft, TokenNftAttribute } from "./TokenManager";
+import { TokenManager, TokenNft } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
-import { Chain } from "../services/solana/types";
 import { MetaplexManager } from "./MetaplexManager";
 import { UserTransaction } from "../entities/UserTransaction";
 import { ChangedWallet, ChangedWalletTokenChange, ChatWallets, TransactionApiResponse } from "../models/types";
 import { FirebaseManager } from "./FirebaseManager";
+import { IUser } from "../entities/User";
+import { BadRequestError } from "../errors/BadRequestError";
 
 export class WalletManager {
 
     static walletsMap: Map<string, IWallet[]> = new Map();
     static programIds: string[] = [];
 
-    static async addWallet(chatId: number, userId: string, walletAddress: string, title?: string): Promise<IWallet>{
-        const existingWallet = await Wallet.findOne({chatId: chatId, userId: userId, walletAddress: walletAddress});
+    static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string): Promise<IWallet>{
+        const existingWallet = await Wallet.findOne({chatId: chatId, userId: user.id, walletAddress: walletAddress});
         if (existingWallet){
             existingWallet.title = title;
             await existingWallet.save();
@@ -48,9 +46,18 @@ export class WalletManager {
             return existingWallet;
         }
         else {
+
+            //!!
+            // const walletsCount = await Wallet.countDocuments({userId: user.id});
+            // if (user.isSubscriptionActive == false && walletsCount >= 10){
+            // const kMaxWallets = user.isSubscriptionActive ? 500 : 10;
+            // if (walletsCount >= kMaxWallets){
+            //     throw new BadRequestError('You have reached the maximum number of wallets. Please remove some wallets to add new ones.');
+            // }
+
             const wallet = new Wallet({
                 chatId: chatId,
-                userId: userId,
+                userId: user.id,
                 walletAddress: walletAddress,
                 title: title,
                 isVerified: false,
@@ -282,6 +289,7 @@ export class WalletManager {
                     userTx.chatId = chat.id;
                     userTx.parsedTx = parsedTx;
                     userTx.asset = asset;
+                    userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                     await userTx.save();
                 }
 

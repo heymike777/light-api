@@ -15,6 +15,7 @@
   "author": "Mike Timashov",
   "license": "ISC",
   "dependencies": {
+    "@apple/app-store-server-library": "^1.4.0",
     "@bonfida/spl-name-service": "^3.0.3",
     "@coral-xyz/anchor": "^0.29.0",
     "@grammyjs/auto-retry": "^2.0.2",

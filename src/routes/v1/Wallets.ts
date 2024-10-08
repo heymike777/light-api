@@ -51,7 +51,7 @@ router.post(
         const walletAddress = '' + req.body.walletAddress;
         const walletTitle = req.body.title ? '' + req.body.title : undefined;
 
-        const wallet = await WalletManager.addWallet(-1, userId, walletAddress, walletTitle);
+        const wallet = await WalletManager.addWallet(-1, user, walletAddress, walletTitle);
 
 		const response = {
             success: true,

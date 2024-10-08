@@ -64,7 +64,7 @@ export class BotAddWalletHelper extends BotHelper {
 
         const user = await UserManager.getUserByTelegramUser(message.from);
         for (const wallet of wallets) {
-            await WalletManager.addWallet(message.chat.id, user.id, wallet.address, wallet.title);
+            await WalletManager.addWallet(message.chat.id, user, wallet.address, wallet.title);
         }
 
         if (wallets.length == 0){
