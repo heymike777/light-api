@@ -48,7 +48,9 @@ export class WalletManager {
         }
         else {
             const walletsCount = await Wallet.countDocuments({userId: user.id});
+            console.log('walletsCount', walletsCount);
             const kMaxWallets = user.isSubscriptionActive ? 500 : 10;
+            console.log('kMaxWallets', kMaxWallets);
             if (walletsCount >= kMaxWallets){
                 if (user.isSubscriptionActive){
                     throw new PremiumError(`You have reached the maximum number of wallets. Please contact support if you need to track more than ${kMaxWallets} wallets.`);
@@ -57,6 +59,8 @@ export class WalletManager {
                     throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
                 }
             }
+            console.log('all good, add wallet');
+
 
             const wallet = new Wallet({
                 chatId: chatId,
