@@ -69,7 +69,7 @@ router.post(
       }
    
       const deviceId = req.body.deviceId;
-      console.log("LOGOUT", "userId", userId, "deviceId", deviceId);
+      console.log("LOGOUT", "userId", userId, "deviceId", deviceId, "body:", req.body, "query:", req.query, "params:", req.params);
 
       if (deviceId){
         await FirebaseManager.deletePushTokens(userId, deviceId);
