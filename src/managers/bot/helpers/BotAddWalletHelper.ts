@@ -1,3 +1,4 @@
+import { PremiumError } from "../../../errors/PremiumError";
 import { BonfidaManager } from "../../../services/solana/BonfidaManager";
 import { newConnection } from "../../../services/solana/lib/solana";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
@@ -64,7 +65,15 @@ export class BotAddWalletHelper extends BotHelper {
 
         const user = await UserManager.getUserByTelegramUser(message.from);
         for (const wallet of wallets) {
-            await WalletManager.addWallet(message.chat.id, user, wallet.address, wallet.title);
+            try {
+                await WalletManager.addWallet(message.chat.id, user, wallet.address, wallet.title);
+            }
+            catch (err){
+                console.log('BotAddWalletHelper', 'messageReceived', 'error', err);
+                if (err instanceof PremiumError){
+                    ctx.reply(err.message);
+                }
+            }
         }
 
         if (wallets.length == 0){

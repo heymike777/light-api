@@ -18,6 +18,8 @@ import { TokenManager } from "../managers/TokenManager";
 import { MetaplexManager } from "../managers/MetaplexManager";
 import { InlineKeyboard } from "grammy";
 import { FirebaseManager } from "../managers/FirebaseManager";
+import { AppStoreManager } from "../managers/AppStoreManager";
+import { UserTransaction } from "../entities/UserTransaction";
 
 export class MigrationManager {
 
@@ -52,7 +54,7 @@ export class MigrationManager {
         //     inlineKeyboard
         // });
 
-        // FirebaseManager.sendPushToUser('66eefe2c8fed7f2c60d147ef', 'hello', 'world', { open: 'transactions' });
+        // await AppStoreManager.sendTestPaymentWebhook();
 
         console.log('MigrationManager', 'migrate', 'done');
     }

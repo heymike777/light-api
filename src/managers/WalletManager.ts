@@ -20,6 +20,7 @@ import { ChangedWallet, ChangedWalletTokenChange, ChatWallets, TransactionApiRes
 import { FirebaseManager } from "./FirebaseManager";
 import { IUser } from "../entities/User";
 import { BadRequestError } from "../errors/BadRequestError";
+import { PremiumError } from "../errors/PremiumError";
 
 export class WalletManager {
 
@@ -46,14 +47,16 @@ export class WalletManager {
             return existingWallet;
         }
         else {
-
-            //!!
-            // const walletsCount = await Wallet.countDocuments({userId: user.id});
-            // if (user.isSubscriptionActive == false && walletsCount >= 10){
-            // const kMaxWallets = user.isSubscriptionActive ? 500 : 10;
-            // if (walletsCount >= kMaxWallets){
-            //     throw new BadRequestError('You have reached the maximum number of wallets. Please remove some wallets to add new ones.');
-            // }
+            const walletsCount = await Wallet.countDocuments({userId: user.id});
+            const kMaxWallets = user.isSubscriptionActive ? 500 : 10;
+            if (walletsCount >= kMaxWallets){
+                if (user.isSubscriptionActive){
+                    throw new PremiumError(`You have reached the maximum number of wallets. Please contact support if you need to track more than ${kMaxWallets} wallets.`);
+                }
+                else {
+                    throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
+                }
+            }
 
             const wallet = new Wallet({
                 chatId: chatId,

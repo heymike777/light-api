@@ -6,8 +6,9 @@ import { validateAuth } from "../../middlewares/ValidateAuth";
 import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { UserManager } from "../../managers/UserManager";
 import { WalletManager } from "../../managers/WalletManager";
-import { Wallet } from "../../entities/Wallet";
+import { IWallet, Wallet } from "../../entities/Wallet";
 import { BadRequestError } from "../../errors/BadRequestError";
+import { PremiumError } from "../../errors/PremiumError";
 
 const router = express.Router();
 
@@ -51,7 +52,20 @@ router.post(
         const walletAddress = '' + req.body.walletAddress;
         const walletTitle = req.body.title ? '' + req.body.title : undefined;
 
-        const wallet = await WalletManager.addWallet(-1, user, walletAddress, walletTitle);
+        let wallet: IWallet | undefined;
+        try {
+            wallet = await WalletManager.addWallet(-1, user, walletAddress, walletTitle);
+        }
+        catch (err){
+            console.log('AddWallet (API)', 'error', err);
+            if (err instanceof PremiumError){
+                throw err;
+            }
+        }
+
+        if (!wallet){
+            throw new BadRequestError('Wallet could not be added');
+        }
 
 		const response = {
             success: true,

@@ -3,26 +3,18 @@ import express, { Request, Response } from "express";
 const router = express.Router();
 
 router.post(
-    '/api/v1/subscriptions/apple/webhook/sandbox',
+    '/api/v1/subscriptions/apple/webhook/:environment',
     async (req: Request, res: Response) => {
-        console.log('Webhook received: subscriptions/apple/webhook/sandbox');
-        console.log('body:', req.body);
-        console.log('headers:', req.headers);
-        console.log('query:', req.query);
-        console.log('params:', req.params);
+        const { environment } = req.params;
 
-		res.status(200).send({});
-    }
-);
-
-router.post(
-    '/api/v1/subscriptions/apple/webhook',
-    async (req: Request, res: Response) => {
         console.log('Webhook received: subscriptions/apple/webhook');
+        console.log('environment:', environment);
         console.log('body:', req.body);
         console.log('headers:', req.headers);
         console.log('query:', req.query);
         console.log('params:', req.params);
+
+        const isSandbox = environment === 'sandbox';
 
 		res.status(200).send({});
     }
