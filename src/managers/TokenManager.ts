@@ -115,7 +115,7 @@ export class TokenManager {
                         }                            
                     }
                     catch (error) {
-                        console.error('TokenManager', 'getToken', 'metadata', error);
+                        // console.error('TokenManager', 'getToken', 'metadata', error);
                     }
                 }
             }
@@ -138,7 +138,7 @@ export class TokenManager {
                 token.price = prices[0].price;
                 token.priceUpdatedAt = Date.now();
             }
-            console.log('TokenManager', 'getToken', 'prices', prices);
+            // console.log('TokenManager', 'getToken', 'prices', prices);
         }
         return token;
     }

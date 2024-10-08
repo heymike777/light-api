@@ -23,7 +23,7 @@ export class JupiterManager {
             }
         }
         catch (error) {
-            console.error('JupiterManager', 'getPrices', error);
+            // console.error('JupiterManager', 'getPrices', error);
         }
 
         return [];

@@ -309,7 +309,7 @@ export class WalletManager {
 
         let accountIndex = 0;
         const changedWallets: ChangedWallet[] = [];
-        console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
+        // console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
         for (const walletInvolved of parsedTx.walletsInvolved) {
             const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
             if (wallet){
