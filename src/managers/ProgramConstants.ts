@@ -1,6 +1,7 @@
 export enum kProgram {
     SOLANA = '11111111111111111111111111111111',
     TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    TOKEN_EXTENSIONS_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
     COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111',
     
     RAYDIUM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
@@ -27,6 +28,7 @@ export const kPrograms: { [key: string]: {
     [kProgram.SOLANA]: {
         name: undefined,
         knownInstructions: [
+            { 'transferChecked': {title: 'TRANSFER', priority: 100} },
             { 'transfer': {title: 'TRANSFER', priority: 100} },
         ],
         skip: false,
@@ -35,6 +37,15 @@ export const kPrograms: { [key: string]: {
         name: 'TOKEN PROGRAM',
         knownInstructions: [
             { 'transferChecked': {title: 'TRANSFER', priority: 100} },
+            { 'transfer': {title: 'TRANSFER', priority: 100} },
+        ],
+        skip: false,
+    },
+    [kProgram.TOKEN_EXTENSIONS_PROGRAM]: {
+        name: 'TOKEN PROGRAM',
+        knownInstructions: [
+            { 'transferChecked': {title: 'TRANSFER', priority: 100} },
+            { 'transfer': {title: 'TRANSFER', priority: 100} },
         ],
         skip: false,
     },
