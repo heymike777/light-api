@@ -140,7 +140,7 @@ export class WalletManager {
         }
     }
 
-    static kBatchSize = 50;
+    static kBatchSize = 200;
     static signaturesQueue: string[] = [];
     static async processWalletTransaction(signature: string) {
         this.signaturesQueue.push(signature);
@@ -265,6 +265,7 @@ export class WalletManager {
             }
 
             const parsedTx = await ProgramManager.parseTx(tx);
+            console.log('!!parsedTx', parsedTx);
             let asset: TokenNft | undefined = undefined;
             
             if (parsedTx.assetId){
@@ -273,7 +274,9 @@ export class WalletManager {
             }
 
             for (const chat of chats) {
+                console.log('!!!chat', chat);
                 const info = await this.processTx(parsedTx, asset, chat);
+                console.log('!!!info', JSON.stringify(info));
                 asset = info.asset;
 
                 if (info.hasWalletsChanges){
