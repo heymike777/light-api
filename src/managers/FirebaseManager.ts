@@ -1,5 +1,6 @@
 import admin from "firebase-admin";
 import { PushToken } from "../entities/PushToken";
+import { Message } from "firebase-admin/lib/messaging/messaging-api";
 
 export interface PushNotificationMessage {
     token?: string;
@@ -25,7 +26,7 @@ export class FirebaseManager {
             return;
         }
 
-        const message = {
+        const message: Message = {
             token: data.token,
             notification: {
                 title: data.title,
@@ -34,7 +35,7 @@ export class FirebaseManager {
             apns: {
                 payload: {
                   aps: {
-                    'mutable-content': 1
+                    contentAvailable: true,
                   }
                 },
                 // fcm_options: {
