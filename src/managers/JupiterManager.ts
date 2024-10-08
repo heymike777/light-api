@@ -3,6 +3,8 @@ import axios from "axios";
 export class JupiterManager {
 
     static async getPrices(mints: string[]): Promise<{address: string, price: number}[]> {
+        return [];
+        
         if (mints.length === 0) {
             return [];
         }
