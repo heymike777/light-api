@@ -29,10 +29,10 @@ export class MigrationManager {
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
 
-        // const signature = '2ZwVpUivC3pwPkFnSbK45xzw2jDji4B7qWzTn7PxvUpsUEydLBWWXtZa1mtqoRV9pFWnPAKeY2Rny2ax3pkXwUZ9';
-        // const signature = '2T7mEAvLtNN9bn6bu1mzwTZv9MGfsnXcvRbPEiCYqSdpjvYs393CUssq6qmzywv7BWQGcGzyafVp2RE12QsixJcH';
+        // const signature = 'zmYk8eFHFob1WwTcjL2o1kikFSD4gLVTTdYjXFj4xs4rmAjYPHwLAZitKo34zM9sS7dnx1M1UKv5pDX8QREmgGv';
+        // const signature = '56Sn9p3NKE82D6znVu3ASEt1AZCyMKGZj5NN21GaJsMHay4pPa8YzkwQW6Yi43Q2kFqZUzQqtVpwniZAo7xeiQPt';
 
-        // const wallets = await Wallet.find({ chatId });
+        // const wallets = await Wallet.find({ userId: '66eefe2c8fed7f2c60d147ef' });
         // const chats = [{
         //     id: chatId,
         //     wallets: wallets,

@@ -36,7 +36,7 @@ export async function fetchWeb3Transactions(
   account: string,
   opt?: Opt
 ): Promise<ParsedTransactionWithMeta[] | null> {
-  const signatures = await conn.getConfirmedSignaturesForAddress2(
+  const signatures = await conn.getSignaturesForAddress(
     new PublicKey(account),
     {
       limit: opt?.limit,
