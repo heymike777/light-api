@@ -273,6 +273,8 @@ export class WalletManager {
                 console.log('!asset', asset);
             }
 
+            let sentUserIds: string[] = [];
+
             for (const chat of chats) {
                 // console.log('!!!chat', chat);
                 const info = await this.processTx(parsedTx, asset, chat);
@@ -289,7 +291,8 @@ export class WalletManager {
                     }
 
                     const userId = chat.wallets?.[0]?.userId;
-                    if (userId){
+                    if (userId && !sentUserIds.includes(userId)){
+                        sentUserIds.push(userId);
                         FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, { open: 'transactions' });
                     }
 
