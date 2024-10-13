@@ -78,10 +78,23 @@ export class FirebaseManager {
     }
 
     static async savePushToken(userId: string, deviceId: string, token: string, platform?: string) {
-        const existingPushToken = await PushToken.findOne({ userId, deviceId });
+        const existingPushToken = await PushToken.findOne({ deviceId });
         if (existingPushToken){
+            let shouldUpdate = false;
+
+            if (existingPushToken.userId != userId){
+                existingPushToken.userId = userId;
+                shouldUpdate = true;
+            }
             if (existingPushToken.token != token){
                 existingPushToken.token = token;
+                shouldUpdate = true;
+            }
+            if (existingPushToken.platform != platform){
+                existingPushToken.platform = platform;
+                shouldUpdate = true;
+            }
+            if (shouldUpdate){
                 await existingPushToken.save();
             }
 
