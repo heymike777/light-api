@@ -22,6 +22,7 @@ export interface ParsedTx {
     preTokenBalances?: web3.TokenBalance[];
     postTokenBalances?: web3.TokenBalance[];
     blockTime: number;
+    accounts: string[];
 }
 
 export interface ParsedIx {
@@ -284,6 +285,7 @@ export class ProgramManager {
             preBalances: tx.meta?.preBalances || undefined,
             postBalances: tx.meta?.postBalances || undefined,
             blockTime: tx.blockTime || Math.floor(Date.now() / 1000),
+            accounts: tx.transaction.message.accountKeys.map((key) => key.pubkey.toBase58()),
         }
     }
 

@@ -29,7 +29,6 @@ export class MigrationManager {
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
 
-        // const signature = 'zmYk8eFHFob1WwTcjL2o1kikFSD4gLVTTdYjXFj4xs4rmAjYPHwLAZitKo34zM9sS7dnx1M1UKv5pDX8QREmgGv';
         // const signature = '56Sn9p3NKE82D6znVu3ASEt1AZCyMKGZj5NN21GaJsMHay4pPa8YzkwQW6Yi43Q2kFqZUzQqtVpwniZAo7xeiQPt';
 
         // const wallets = await Wallet.find({ userId: '66eefe2c8fed7f2c60d147ef' });
@@ -43,6 +42,7 @@ export class MigrationManager {
         // if (tx){
         //     await WalletManager.processTxForChats(signature, tx, chats);
         // }
+
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';

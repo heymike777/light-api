@@ -320,17 +320,18 @@ export class WalletManager {
             message += '\n' + parsedTx.description.html + '\n';
         }
 
-        const txPreBalances = parsedTx.postBalances || [];
+        const txPreBalances = parsedTx.preBalances || [];
         const txPostBalances = parsedTx.postBalances || [];
         const txPreTokenBalances = parsedTx.preTokenBalances || [];
         const txPostTokenBalances = parsedTx.postTokenBalances || [];
 
-        let accountIndex = 0;
         const changedWallets: ChangedWallet[] = [];
         // console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
         for (const walletInvolved of parsedTx.walletsInvolved) {
             const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
             if (wallet){
+                const walletAccountIndex = parsedTx.accounts.findIndex((a) => a == walletInvolved);
+
                 let blockMessage = '';
                 const walletTitle = wallet.title || wallet.walletAddress;
                 blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`;
@@ -373,7 +374,7 @@ export class WalletManager {
                 }
 
                 let hasBalanceChange = false;
-                const nativeBalanceChange = txPostBalances[accountIndex] - txPreBalances[accountIndex];
+                const nativeBalanceChange = txPostBalances[walletAccountIndex] - txPreBalances[walletAccountIndex];
                 const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
                 const balanceChange = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
                 if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
@@ -429,7 +430,6 @@ export class WalletManager {
                     changedWallets.push(changedWallet);
                 }
             }
-            accountIndex++;
         }
 
         if (!asset){
