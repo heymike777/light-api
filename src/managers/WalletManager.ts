@@ -274,9 +274,9 @@ export class WalletManager {
             }
 
             for (const chat of chats) {
-                console.log('!!!chat', chat);
+                // console.log('!!!chat', chat);
                 const info = await this.processTx(parsedTx, asset, chat);
-                console.log('!!!info', JSON.stringify(info));
+                // console.log('!!!info', JSON.stringify(info));
                 asset = info.asset;
 
                 if (info.hasWalletsChanges){
@@ -382,17 +382,17 @@ export class WalletManager {
                     hasWalletsChanges = true;
                     const token = await TokenManager.getToken(kSolAddress);
 
-                    const amount = +Helpers.prettyNumber(balanceChange, 2);
+                    // const amount = +Helpers.prettyNumber(balanceChange, 3);
                     let amountUSD = token && token.price ? Math.round(Math.abs(balanceChange) * token.price * 100)/100 : undefined;
                     if (amountUSD!=undefined && balanceChange<0) { amountUSD = -amountUSD; }
 
                     const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
-                    blockMessage += `\nSOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;
+                    blockMessage += `\nSOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
 
                     walletTokenChanges.push({
                         mint: kSolAddress,
                         symbol: 'SOL',
-                        description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`,
+                        description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`,
                     });
                 }
 
@@ -408,12 +408,12 @@ export class WalletManager {
                         const balanceChange = tokenBalance.balanceChange;
                         const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
                         const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
-                        blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`;            
+                        blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;            
 
                         walletTokenChanges.push({
                             mint: mint,
                             symbol: tokenName,
-                            description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 2)} ${tokenValueString}`,
+                            description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`,
                         });
                     }
                 }

@@ -22,7 +22,8 @@ export class Helpers {
         if (roundDecimals != undefined){
             const tmp = 10 ** roundDecimals;
 
-            n = (n > 0 ? Math.floor(n * tmp) : Math.ceil(n * tmp)) / tmp;
+            // n = (n > 0 ? Math.floor(n * tmp) : Math.ceil(n * tmp)) / tmp;
+            n = Math.round(n * tmp) / tmp;
         }
         return this.numberWithCommas(n);
     }
