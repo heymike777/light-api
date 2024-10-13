@@ -485,7 +485,7 @@ export class WalletManager {
 
         if (asset){
             const marketplace = ExplorerManager.getMarketplace(asset.id);
-            message += `\n${asset.title} | <a href="${marketplace.url}">${marketplace.title}</a>`;
+            message += `\n\n${asset.title} | <a href="${marketplace.url}">${marketplace.title}</a>`;
 
             if (asset.attributes && asset.attributes.length > 0){
                 message += `\n\n<b>Attributes:\n</b>`;
@@ -506,6 +506,10 @@ export class WalletManager {
             blockTime: parsedTx.blockTime,
             wallets: [],
         };
+
+        while (message.includes('\n\n\n')){
+            message = message.replace('\n\n\n', '\n\n');
+        }
 
         return {
             hasWalletsChanges,
