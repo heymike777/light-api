@@ -106,10 +106,12 @@ export class FirebaseManager {
     }
 
     static async sendPushToUser(userId: string, title: string, subtitle?: string, data?: PushNotificationMessage['data']){
+        console.log('sendPushToUser', userId, title, subtitle, data);
         try {
             const firebaseManager = FirebaseManager.getInstance();
 
             const pushTokens = await PushToken.find({ userId: userId });
+            console.log('pushTokens', pushTokens);
             
             for (const pushToken of pushTokens){
                 const message: PushNotificationMessage = {
