@@ -387,7 +387,7 @@ export class WalletManager {
                     if (amountUSD!=undefined && balanceChange<0) { amountUSD = -amountUSD; }
 
                     const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
-                    blockMessage += `\nSOL: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
+                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(kSolAddress)}">SOL</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
 
                     walletTokenChanges.push({
                         mint: kSolAddress,
