@@ -5,6 +5,7 @@ export enum kProgram {
     COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111',
     
     RAYDIUM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
+    RAYDIUM_CLMM = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK',
     JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
     TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
@@ -61,6 +62,19 @@ export const kPrograms: { [key: string]: {
             { 'swapBaseOut': {title: 'SWAP', priority: 2} },
             { 'initialize': {title: 'ADD LIQUIDOTY', priority: 3} },
             { 'initialize2': {title: 'ADD LIQUIDOTY', priority: 3} },
+        ],
+        skip: false,
+    },
+    [kProgram.RAYDIUM_CLMM]: {
+        name: 'RAYDIUM',
+        knownInstructions: [
+            { 'swap': {title: 'SWAP', priority: 2} },
+            { 'swapV2': {title: 'SWAP', priority: 2} },
+            { 'swapRouterBaseIn': {title: 'SWAP', priority: 2} },
+            { 'decreaseLiquidity': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'decreaseLiquidityV2': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidity': {title: 'ADD LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidityV2': {title: 'ADD LIQUIDOTY', priority: 3} },
         ],
         skip: false,
     },
