@@ -19,8 +19,8 @@ export class TxParser {
         const signatures = confirmedTx.transaction?.signatures.map((sig) => base58.encode(sig)) || [];
         const connection = newConnection();
         const geyserMessage: any = geyserTxData.transaction.transaction.message;
-        
-        console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
+
+        // console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
         // console.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
 
         const postTokenBalances: web3.TokenBalance[] = [];
@@ -59,6 +59,7 @@ export class TxParser {
                 }             
             }
         }
+
 
         const accountKeys: web3.ParsedMessageAccount[] = []; 
         if (confirmedTx.transaction?.message?.accountKeys){
@@ -139,6 +140,8 @@ export class TxParser {
                 }
             }
         }
+
+        const heymikeAccount = accountKeys.find((account) => account.pubkey.toBase58() == '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
         // console.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
 
         const instructions = this.parseYellowstoneGrpcCompiledInstructions(confirmedTx.transaction?.message?.instructions, accountKeys, signature);
@@ -186,14 +189,17 @@ export class TxParser {
 
         const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), [signature]);
 
-        try{
-            console.log("parseGeyserTransactionWithMeta", 'parsedTx', signature, JSON.stringify(parsedTransactionWithMeta));
-            console.log("parseGeyserTransactionWithMeta", 'realParsedTx', signature, JSON.stringify(realParsedTxs));    
+        if (heymikeAccount){ 
+            console.log('!heymikeAccount parseGeyserTransactionWithMeta', 'signature:', signature);
+            try{
+                console.log("parseGeyserTransactionWithMeta", 'parsedTx', signature, JSON.stringify(parsedTransactionWithMeta));
+                console.log("parseGeyserTransactionWithMeta", 'realParsedTx', signature, JSON.stringify(realParsedTxs));    
+            }
+            catch (e){
+                console.error("parseGeyserTransactionWithMeta", 'error', signature, 'cannot stringify', e);
+            }
         }
-        catch (e){
-            console.error("parseGeyserTransactionWithMeta", 'error', signature, 'cannot stringify', e);
-        }
-
+        
         return parsedTransactionWithMeta;
     }
 
