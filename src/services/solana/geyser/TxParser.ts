@@ -159,11 +159,11 @@ export class TxParser {
         if (confirmedTx.transaction?.message?.instructions){
             for (const instruction of confirmedTx.transaction?.message?.instructions){
                 const ixProgramId = (accountKeys.length > instruction.programIdIndex) ? accountKeys[instruction.programIdIndex].pubkey : undefined;
-                const ixAccounts: web3.PublicKey[] = [];
+                const ixAccounts: web3.ParsedMessageAccount[] = [];
                 for (const accountIndex of instruction.accounts) {
-                    const pubkey = (accountKeys.length > accountIndex) ? accountKeys[accountIndex].pubkey : undefined;
-                    if (pubkey){
-                        ixAccounts.push(pubkey);
+                    const accountKey = (accountKeys.length > accountIndex) ? accountKeys[accountIndex] : undefined;
+                    if (accountKey){
+                        ixAccounts.push(accountKey);
                     }
                     else {
                         console.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
@@ -178,27 +178,37 @@ export class TxParser {
 
                 const data = Buffer.from(instruction.data);
 
-                // if (SystemInstruction.decodeInstructionType(instruction) === 'Transfer') {
-                //     const transferData = SystemInstruction.decodeTransfer(instruction);
-                //     console.log('Transfer Amount:', transferData.lamports);
-                //     console.log('From:', transferData.fromPubkey.toBase58());
-                //     console.log('To:', transferData.toPubkey.toBase58());
-                //   }
-
                 if (ixProgramId){
+                    
 
                     const transactionInstruction = new web3.TransactionInstruction({
-                        keys: ixAccounts,
+                        keys: ixAccounts.map((account) => {
+                            return {
+                                pubkey: account.pubkey,
+                                isWritable: account.writable,
+                                isSigner: account.signer,
+                            }
+                        }),
                         programId: ixProgramId,
                         data,
                     });
 
-                    // const ix: web3.PartiallyDecodedInstruction = {
-                    //     programId: ixProgramId,
-                    //     accounts: ixAccounts,
-                    //     data: data.toString(),
-                    // }
-                    // instructions.push(ix);    
+
+                    let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction);
+                    
+                    if (!ix) {
+                        ix = {
+                            programId: ixProgramId,
+                            accounts: ixAccounts.map((account) => account.pubkey),
+                            data: base58.encode(data),
+                        }
+                    }
+
+                    instructions.push(ix);        
+
+
+                    // console.log('!ix', 'signature:', signature, 'transactionInstruction:', transactionInstruction);
+
                 }
                 else {
                     console.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
@@ -214,10 +224,10 @@ export class TxParser {
             logMessages: confirmedTx.meta.logMessages,
             preTokenBalances: preTokenBalances,
             postTokenBalances:postTokenBalances,
-            err: null, // since I subscribe to successful transactions only
+            err: null, //TODO: get err from confirmedTx.meta?.err
             loadedAddresses: loadedAddresses,
             computeUnitsConsumed: confirmedTx.meta.computeUnitsConsumed ? +confirmedTx.meta.computeUnitsConsumed : 0,
-        }
+        };
 
         const message: web3.ParsedMessage = {
             accountKeys: accountKeys,
@@ -228,13 +238,13 @@ export class TxParser {
 
         const parsedTransactionWithMeta: web3.ParsedTransactionWithMeta = {
             blockTime: Math.floor(Date.now() / 1000), // not the best way to set blockTime, but that's ok for me for now
-            slot: +geyserTxData.slot, 
-            version: isVersioned ? 0 : 'legacy',
-            transaction: {
-                signatures: signatures,
-                message: message
-            },
             meta: meta,
+            slot: +geyserTxData.slot, 
+            transaction: {
+                message: message,
+                signatures: signatures,
+            },
+            version: isVersioned ? 0 : 'legacy',
         };
 
         const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), [signature]);
@@ -263,6 +273,215 @@ export class TxParser {
         else {
             return false; // Read-only accounts
         }
+    }
+
+    static decodeSystemInstruction(transactionInstruction: web3.TransactionInstruction): web3.ParsedInstruction | undefined {
+        let ix: web3.ParsedInstruction | undefined = undefined;
+        const ixProgramId = transactionInstruction.programId;
+
+        if (ixProgramId.toBase58() == '11111111111111111111111111111111'){
+
+            // System Program
+            const ixProgramName = 'system';
+            const ixType = SystemInstruction.decodeInstructionType(transactionInstruction);
+
+            if (ixType === 'Transfer') {
+                const data = SystemInstruction.decodeTransfer(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'transfer',
+                        info: {
+                            lamports: data.lamports,
+                            from: data.fromPubkey.toBase58(),
+                            to: data.toPubkey.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'TransferWithSeed') {
+                const data = SystemInstruction.decodeTransferWithSeed(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'transferWithSeed',
+                        info: {
+                            fromPubkey: data.fromPubkey.toBase58(),
+                            basePubkey: data.basePubkey.toBase58(),
+                            toPubkey: data.toPubkey.toBase58(),
+                            lamports: data.lamports,
+                            seed: data.seed,
+                            programId: data.programId.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'Create') {
+                const data = SystemInstruction.decodeCreateAccount(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'create',
+                        info: {
+                            fromPubkey: data.fromPubkey.toBase58(),
+                            newAccountPubkey: data.newAccountPubkey.toBase58(),
+                            lamports: data.lamports,
+                            space: data.space,
+                            programId: data.programId.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'Assign') {
+                const data = SystemInstruction.decodeAssign(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'assign',
+                        info: {
+                            accountPubkey: data.accountPubkey.toBase58(),
+                            programId: data.programId.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'CreateWithSeed') {
+                const data = SystemInstruction.decodeCreateWithSeed(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'createWithSeed',
+                        info: {
+                            fromPubkey: data.fromPubkey.toBase58(),
+                            newAccountPubkey: data.newAccountPubkey.toBase58(),
+                            basePubkey: data.basePubkey.toBase58(),
+                            seed: data.seed,
+                            lamports: data.lamports,
+                            space: data.space,
+                            programId: data.programId.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'Allocate') {
+                const data = SystemInstruction.decodeAllocate(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'allocate',
+                        info: {
+                            accountPubkey: data.accountPubkey.toBase58(),
+                            space: data.space,
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'AllocateWithSeed') {
+                const data = SystemInstruction.decodeAllocateWithSeed(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'allocateWithSeed',
+                        info: {
+                            accountPubkey: data.accountPubkey.toBase58(),
+                            basePubkey: data.basePubkey.toBase58(),
+                            seed: data.seed,
+                            space: data.space,
+                            programId: data.programId.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'AssignWithSeed') {
+                const data = SystemInstruction.decodeAssignWithSeed(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'assignWithSeed',
+                        info: {
+                            accountPubkey: data.accountPubkey.toBase58(),
+                            basePubkey: data.basePubkey.toBase58(),
+                            seed: data.seed,
+                            programId: data.programId.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'AdvanceNonceAccount') {
+                const data = SystemInstruction.decodeNonceAdvance(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'advanceNonceAccount',//TODO: ???
+                        info: {
+                            noncePubkey: data.noncePubkey.toBase58(),
+                            authorizedPubkey: data.authorizedPubkey.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'AuthorizeNonceAccount') {
+                const data = SystemInstruction.decodeNonceAuthorize(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'authorizeNonceAccount',
+                        info: {
+                            noncePubkey: data.noncePubkey.toBase58(),
+                            authorizedPubkey: data.authorizedPubkey.toBase58(),
+                            newAuthorizedPubkey: data.newAuthorizedPubkey.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'InitializeNonceAccount') {
+                const data = SystemInstruction.decodeNonceInitialize(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'initializeNonceAccount',
+                        info: {
+                            noncePubkey: data.noncePubkey.toBase58(),
+                            authorizedPubkey: data.authorizedPubkey.toBase58(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'WithdrawNonceAccount') {
+                const data = SystemInstruction.decodeNonceWithdraw(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'withdrawNonceAccount',
+                        info: {
+                            noncePubkey: data.noncePubkey.toBase58(),
+                            authorizedPubkey: data.authorizedPubkey.toBase58(),
+                            toPubkey: data.toPubkey.toBase58(),
+                            lamports: data.lamports,
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'UpgradeNonceAccount') {
+                // no parser for this ix
+            }
+
+        }
+
+
+        return ix;
     }
       
 
