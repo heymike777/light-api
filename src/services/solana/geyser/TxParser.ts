@@ -1,4 +1,4 @@
-import { ConfirmedTransaction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
+import * as grpc from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
 import base58 from "bs58";
 import { newConnection } from "../lib/solana";
 import * as web3 from '@solana/web3.js';
@@ -11,7 +11,7 @@ import { SystemInstruction } from "@solana/web3.js";
 export class TxParser {
 
     static async parseGeyserTransactionWithMeta(geyserData: any, shouldFetchLookupTable = true): Promise<web3.ParsedTransactionWithMeta | undefined> {
-        const confirmedTx = ConfirmedTransaction.fromJSON(geyserData.transaction.transaction);
+        const confirmedTx = grpc.ConfirmedTransaction.fromJSON(geyserData.transaction.transaction);
         const geyserTxData = geyserData.transaction;
         const signature = base58.encode(geyserTxData.transaction.signature);
         const isVote: boolean = geyserTxData.transaction.isVote;
@@ -20,8 +20,8 @@ export class TxParser {
         const connection = newConnection();
         const geyserMessage: any = geyserTxData.transaction.transaction.message;
 
-        console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
-        console.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
+        // console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
+        // console.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
 
         const postTokenBalances: web3.TokenBalance[] = [];
         const preTokenBalances: web3.TokenBalance[] = [];
@@ -80,24 +80,11 @@ export class TxParser {
             readonly: [],
         };
         if (confirmedTx.transaction?.message?.addressTableLookups){
-            // console.log((confirmedTx.transaction?.message?.addressTableLookups.length>1 ? 'yes' : 'no'), 'confirmedTx.transaction?.message?.addressTableLookups.length', confirmedTx.transaction?.message?.addressTableLookups.length)
-
-            // for (const item of confirmedTx.transaction?.message?.addressTableLookups) {
-            //     const address = base58.encode(item.accountKey);
-            //     const accountKey = new web3.PublicKey(address);
-            //     const writableIndexes = Array.from(item.writableIndexes);
-            //     const readonlyIndexes = Array.from(item.readonlyIndexes);
-
-            //     console.log('addressTableLookups', 'signature:', signature, 'address:', address, 'writableIndexes:', writableIndexes, 'readonlyIndexes:', readonlyIndexes);
-            // }
-
             for (const item of confirmedTx.transaction?.message?.addressTableLookups) {
                 const address = base58.encode(item.accountKey);
                 const accountKey = new web3.PublicKey(address);
                 const writableIndexes = Array.from(item.writableIndexes);
                 const readonlyIndexes = Array.from(item.readonlyIndexes);
-
-                // console.log("parseGeyserTransactionWithMeta", 'addressTableLookups', 'signature:', signature, 'address:', address, 'writableIndexes:', writableIndexes, 'readonlyIndexes:', readonlyIndexes);
 
                 addressTableLookups.push({
                     accountKey: accountKey,
@@ -152,68 +139,17 @@ export class TxParser {
                 }
             }
         }
-        console.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
+        // console.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
 
+        const instructions = this.parseYellowstoneGrpcCompiledInstructions(confirmedTx.transaction?.message?.instructions, accountKeys, signature);
         const innerInstructions: web3.ParsedInnerInstruction[] = [];
-        const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [];
-
-        if (confirmedTx.transaction?.message?.instructions){
-            for (const instruction of confirmedTx.transaction?.message?.instructions){
-                const ixProgramId = (accountKeys.length > instruction.programIdIndex) ? accountKeys[instruction.programIdIndex].pubkey : undefined;
-                const ixAccounts: web3.ParsedMessageAccount[] = [];
-                for (const accountIndex of instruction.accounts) {
-                    const accountKey = (accountKeys.length > accountIndex) ? accountKeys[accountIndex] : undefined;
-                    if (accountKey){
-                        ixAccounts.push(accountKey);
-                    }
-                    else {
-                        console.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
-                    }
-                }
-
-                // export interface CompiledInstruction {
-                //     programIdIndex: number;
-                //     accounts: Uint8Array;
-                //     data: Uint8Array;
-                // }
-
-                const data = Buffer.from(instruction.data);
-
-                if (ixProgramId){
-                    
-
-                    const transactionInstruction = new web3.TransactionInstruction({
-                        keys: ixAccounts.map((account) => {
-                            return {
-                                pubkey: account.pubkey,
-                                isWritable: account.writable,
-                                isSigner: account.signer,
-                            }
-                        }),
-                        programId: ixProgramId,
-                        data,
-                    });
-
-
-                    let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction);
-                    
-                    if (!ix) {
-                        ix = {
-                            programId: ixProgramId,
-                            accounts: ixAccounts.map((account) => account.pubkey),
-                            data: base58.encode(data),
-                        }
-                    }
-
-                    instructions.push(ix);        
-
-
-                    // console.log('!ix', 'signature:', signature, 'transactionInstruction:', transactionInstruction);
-
-                }
-                else {
-                    console.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
-                }
+        if (confirmedTx.meta?.innerInstructions){
+            for (const innerInstruction of confirmedTx.meta.innerInstructions){
+                const parsedInnerInstructions = this.parseYellowstoneGrpcCompiledInstructions(innerInstruction.instructions, accountKeys, signature);
+                innerInstructions.push({
+                    index: innerInstruction.index,
+                    instructions: parsedInnerInstructions,
+                });
             }
         }
 
@@ -254,6 +190,59 @@ export class TxParser {
         console.log("parseGeyserTransactionWithMeta", 'realParsedTx', signature, JSON.stringify(realParsedTxs));
 
         return parsedTransactionWithMeta;
+    }
+
+    static parseYellowstoneGrpcCompiledInstructions(compiledInstructions: grpc.CompiledInstruction[] | undefined, accountKeys: web3.ParsedMessageAccount[], signature?: string): (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] {
+        if (!compiledInstructions) { return []; }
+
+        const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [];
+
+        for (const instruction of compiledInstructions){
+            const ixProgramId = (accountKeys.length > instruction.programIdIndex) ? accountKeys[instruction.programIdIndex].pubkey : undefined;
+            const ixAccounts: web3.ParsedMessageAccount[] = [];
+            for (const accountIndex of instruction.accounts) {
+                const accountKey = (accountKeys.length > accountIndex) ? accountKeys[accountIndex] : undefined;
+                if (accountKey){
+                    ixAccounts.push(accountKey);
+                }
+                else {
+                    console.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
+                }
+            }
+
+            const data = Buffer.from(instruction.data);
+
+            if (ixProgramId){
+                const transactionInstruction = new web3.TransactionInstruction({
+                    keys: ixAccounts.map((account) => {
+                        return {
+                            pubkey: account.pubkey,
+                            isWritable: account.writable,
+                            isSigner: account.signer,
+                        }
+                    }),
+                    programId: ixProgramId,
+                    data,
+                });
+
+                let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction);
+                
+                if (!ix) {
+                    ix = {
+                        programId: ixProgramId,
+                        accounts: ixAccounts.map((account) => account.pubkey),
+                        data: base58.encode(data),
+                    }
+                }
+
+                instructions.push(ix);        
+            }
+            else {
+                console.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
+            }
+        }
+
+        return instructions;
     }
 
     static isAccountSigner(geyserMessage: any, accountIndex: number) {
