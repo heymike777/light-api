@@ -7,6 +7,7 @@ import { } from "@solana/buffer-layout";
 import { decodeTransferInstruction } from "@solana/spl-token";
 import { SystemInstruction } from "@solana/web3.js";
 
+//TODO: open-source TxParser
 export class TxParser {
 
     static async parseGeyserTransactionWithMeta(geyserData: any, shouldFetchLookupTable = true): Promise<web3.ParsedTransactionWithMeta | undefined> {
