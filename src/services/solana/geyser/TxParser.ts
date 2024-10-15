@@ -19,8 +19,8 @@ export class TxParser {
         const signatures = confirmedTx.transaction?.signatures.map((sig) => base58.encode(sig)) || [];
         const connection = newConnection();
         const geyserMessage: any = geyserTxData.transaction.transaction.message;
-
-        // console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
+        
+        console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
         // console.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
 
         const postTokenBalances: web3.TokenBalance[] = [];
@@ -191,7 +191,7 @@ export class TxParser {
             console.log("parseGeyserTransactionWithMeta", 'realParsedTx', signature, JSON.stringify(realParsedTxs));    
         }
         catch (e){
-            // console.error("parseGeyserTransactionWithMeta", 'error', signature, 'cannot stringify', e);
+            console.error("parseGeyserTransactionWithMeta", 'error', signature, 'cannot stringify', e);
         }
 
         return parsedTransactionWithMeta;
