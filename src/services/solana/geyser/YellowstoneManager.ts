@@ -3,6 +3,7 @@ import base58 from 'bs58';
 import { ConfirmedTransaction, TokenBalance } from '@triton-one/yellowstone-grpc/dist/grpc/solana-storage';
 import { Helpers } from '../../helpers/Helpers';
 import { WalletManager } from '../../../managers/WalletManager';
+import { TxParser } from "./TxParser";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -150,7 +151,9 @@ export class YellowstoneManager {
         }
 
         const signature = base58.encode(transaction.signature);
-        // const parsedTransaction = ConfirmedTransaction.fromJSON(data.transaction.transaction);
+
+        const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
+
         // console.log(new Date(), process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
 
         WalletManager.processWalletTransaction(signature);
