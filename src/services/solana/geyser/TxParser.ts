@@ -186,8 +186,13 @@ export class TxParser {
 
         const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), [signature]);
 
-        console.log("parseGeyserTransactionWithMeta", 'parsedTx', signature, JSON.stringify(parsedTransactionWithMeta));
-        console.log("parseGeyserTransactionWithMeta", 'realParsedTx', signature, JSON.stringify(realParsedTxs));
+        try{
+            console.log("parseGeyserTransactionWithMeta", 'parsedTx', signature, JSON.stringify(parsedTransactionWithMeta));
+            console.log("parseGeyserTransactionWithMeta", 'realParsedTx', signature, JSON.stringify(realParsedTxs));    
+        }
+        catch (e){
+            // console.error("parseGeyserTransactionWithMeta", 'error', signature, 'cannot stringify', e);
+        }
 
         return parsedTransactionWithMeta;
     }
