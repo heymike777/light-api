@@ -128,7 +128,7 @@ export class YellowstoneManager {
                 });
             }).catch((reason) => {
                 console.error(reason);
-                throw reason;
+                // throw reason;
             });
         }, this.PING_INTERVAL_MS);
     }
