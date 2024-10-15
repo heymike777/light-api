@@ -142,65 +142,68 @@ export class WalletManager {
 
     static kBatchSize = 200;
     static signaturesQueue: string[] = [];
-    static async processWalletTransaction(signature: string) {
+    static async processWalletTransactionBySignature(signature: string) {
         this.signaturesQueue.push(signature);
         if (this.signaturesQueue.length >= this.kBatchSize){
-            this.processTransactionsBatch();
+            this.processTransactionsBySignaturesBatch();
         }
     }
 
-    static async processTransactionsBatch(){
+    static async processTransactionsBySignaturesBatch(){
         const signatures = this.signaturesQueue.splice(0, this.signaturesQueue.length);
-        // console.log(new Date(), 'processTransactionsBatch', 'signatures', signatures.length, signatures);
 
         try {
             const connection = newConnection();
             const txs = await SolanaManager.getParsedTransactions(connection, signatures);
             for (const tx of txs){
-                try{
-                    const signature = tx.transaction.signatures[0];
-                    if (!tx.transaction || !tx.meta){
-                        console.error(new Date(), 'processWalletTransaction', 'tx not found', signature);
-                        continue;
-                    }
-
-                    const walletsInvolved = this.getInvolvedWallets(tx);
-
-                    const wallets: IWallet[] = [];
-                    for (const walletInvolved of walletsInvolved) {
-                        const tmpWallets = this.walletsMap.get(walletInvolved);
-                        if (tmpWallets){
-                            wallets.push(...tmpWallets);
-                        }
-                    }
-
-                    const chats: ChatWallets[] = [];
-                    for (let wallet of wallets){
-                        if (wallet.chatId){
-                            const chat = chats.find((c) => c.id == wallet.chatId);
-                            if (chat){
-                                chat.wallets.push(wallet);
-                            }
-                            else {
-                                chats.push({id: wallet.chatId, wallets: [wallet]});
-                            }
-                        }
-                    }
-
-
-                    if (chats.length == 0){
-                        continue;
-                    }
-
-                    await this.processTxForChats(signature, tx, chats);   
-                }
-                catch (err) {
-                    console.error(new Date(), 'processWalletTransaction1', 'Error:', err);
-                }
+                await this.processWalletTransaction(tx);
             }         
         }
         catch (err) {
             console.error(new Date(), 'processWalletTransaction2', 'Error:', err);
+        }
+    }
+
+    static async processWalletTransaction(tx: web3.ParsedTransactionWithMeta) {
+        try{
+            const signature = tx.transaction.signatures[0];
+            if (!tx.transaction || !tx.meta){
+                console.error(new Date(), 'processWalletTransaction', 'tx not found', signature);
+                return;
+            }
+
+            const walletsInvolved = this.getInvolvedWallets(tx);
+
+            const wallets: IWallet[] = [];
+            for (const walletInvolved of walletsInvolved) {
+                const tmpWallets = this.walletsMap.get(walletInvolved);
+                if (tmpWallets){
+                    wallets.push(...tmpWallets);
+                }
+            }
+
+            const chats: ChatWallets[] = [];
+            for (let wallet of wallets){
+                if (wallet.chatId){
+                    const chat = chats.find((c) => c.id == wallet.chatId);
+                    if (chat){
+                        chat.wallets.push(wallet);
+                    }
+                    else {
+                        chats.push({id: wallet.chatId, wallets: [wallet]});
+                    }
+                }
+            }
+
+
+            if (chats.length == 0){
+                return;
+            }
+
+            await this.processTxForChats(signature, tx, chats);   
+        }
+        catch (err) {
+            console.error(new Date(), 'processWalletTransaction1', 'Error:', err);
         }
     }
 

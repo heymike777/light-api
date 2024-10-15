@@ -153,10 +153,11 @@ export class YellowstoneManager {
         const signature = base58.encode(transaction.signature);
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
-
+        if (parsedTransactionWithMeta){
+            WalletManager.processWalletTransaction(parsedTransactionWithMeta);
+        }
         // console.log(new Date(), process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
-
-        WalletManager.processWalletTransaction(signature);
+        // WalletManager.processWalletTransactionBySignature(signature);
     }
 
     // ### static methods
