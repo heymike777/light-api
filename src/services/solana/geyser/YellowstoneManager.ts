@@ -1,6 +1,5 @@
 import Client, { SubscribeRequest, CommitmentLevel } from "@triton-one/yellowstone-grpc";
 import base58 from 'bs58';
-import { ConfirmedTransaction, TokenBalance } from '@triton-one/yellowstone-grpc/dist/grpc/solana-storage';
 import { Helpers } from '../../helpers/Helpers';
 import { WalletManager } from '../../../managers/WalletManager';
 import { TxParser } from "./TxParser";
@@ -139,7 +138,9 @@ export class YellowstoneManager {
         if (transaction.meta.err){ return; }
 
         const signature = base58.encode(transaction.signature);
-        fs.appendFileSync('transactions.txt', `${signature}\n`);
+        fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
+            if (err) console.error(err);
+        });
 
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);

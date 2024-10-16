@@ -20,6 +20,7 @@ import { InlineKeyboard } from "grammy";
 import { FirebaseManager } from "../managers/FirebaseManager";
 import { AppStoreManager } from "../managers/AppStoreManager";
 import { UserTransaction } from "../entities/UserTransaction";
+import fs from "fs";
 
 export class MigrationManager {
 
@@ -46,6 +47,9 @@ export class MigrationManager {
         
         // const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), ['DPCPsHa5D3ptocGrApQHnhMKAhjzXh1vVa8g5dn34ciZLpdsX1eGoJJ8T8VPprsPVYP4JEz77cMChoovN6stUUe']);
         // console.log('!!!realParsedTxs', JSON.stringify(realParsedTxs));
+
+
+        fs.writeFileSync('transactions.txt', `${new Date()} start\n`);
 
         console.log('MigrationManager', 'migrate', 'done');
     }
