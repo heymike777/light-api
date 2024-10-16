@@ -145,7 +145,7 @@ export class TxParser {
         const heymikeAccount = accountKeys.find((account) => account.pubkey.toBase58() == '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
         // console.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
 
-        fs.appendFile('transactions_account_keys.txt', `${new Date()} ${signature} ${JSON.stringify(accountKeys)}\n`, (err) => {
+        fs.appendFile('transactions_account_keys.txt', `${new Date()} ${signature} heymikeAccount:${heymikeAccount} ${JSON.stringify(accountKeys)}\n`, (err) => {
             if (err) console.error(err);
         });
 
