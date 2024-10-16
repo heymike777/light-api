@@ -4,6 +4,7 @@ import { ConfirmedTransaction, TokenBalance } from '@triton-one/yellowstone-grpc
 import { Helpers } from '../../helpers/Helpers';
 import { WalletManager } from '../../../managers/WalletManager';
 import { TxParser } from "./TxParser";
+import fs from "fs";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -136,6 +137,10 @@ export class YellowstoneManager {
     async receivedTx(data: any, filter: string){
         const transaction = data.transaction.transaction;
         if (transaction.meta.err){ return; }
+
+        const signature = base58.encode(transaction.signature);
+        fs.appendFileSync('transactions.txt', `${signature}\n`);
+
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
         if (parsedTransactionWithMeta){
