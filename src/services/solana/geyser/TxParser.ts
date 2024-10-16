@@ -197,7 +197,7 @@ export class TxParser {
 
         if (heymikeAccount){ 
             fs.appendFileSync('mike_txs.txt', `${new Date()} ${signature} parseGeyserTransactionWithMeta\n`);
-            fs.appendFileSync('mike_txs.txt', `${signature} parsedTx: ${JSON.stringify(parsedTransactionWithMeta)}}\n`);
+            // fs.appendFileSync('mike_txs.txt', `${signature} parsedTx: ${JSON.stringify(parsedTransactionWithMeta)}}\n`);
 
             // console.log('!heymikeAccount parseGeyserTransactionWithMeta', 'signature:', signature);
             // try{
