@@ -48,8 +48,9 @@ export class MigrationManager {
         // const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), ['DPCPsHa5D3ptocGrApQHnhMKAhjzXh1vVa8g5dn34ciZLpdsX1eGoJJ8T8VPprsPVYP4JEz77cMChoovN6stUUe']);
         // console.log('!!!realParsedTxs', JSON.stringify(realParsedTxs));
 
-
+        
         fs.writeFileSync('transactions.txt', `${new Date()} start\n`);
+        fs.writeFileSync('transactions_account_keys.txt', `${new Date()} start\n`);
 
         console.log('MigrationManager', 'migrate', 'done');
     }

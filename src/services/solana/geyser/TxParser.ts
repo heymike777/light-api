@@ -196,9 +196,8 @@ export class TxParser {
         // const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), [signature]);
 
         if (heymikeAccount){ 
-            fs.appendFile('mike_txs.txt', `${new Date()} ${signature} parseGeyserTransactionWithMeta parsedTx: ${JSON.stringify(parsedTransactionWithMeta)}}\n`, (err) => {
-                if (err) console.error(err);
-            });
+            fs.appendFileSync('mike_txs.txt', `${new Date()} ${signature} parseGeyserTransactionWithMeta\n`);
+            fs.appendFileSync('mike_txs.txt', `${signature} parsedTx: ${JSON.stringify(parsedTransactionWithMeta)}}\n`);
 
             // console.log('!heymikeAccount parseGeyserTransactionWithMeta', 'signature:', signature);
             // try{

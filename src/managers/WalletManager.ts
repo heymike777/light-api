@@ -268,12 +268,12 @@ export class WalletManager {
             }
 
             const parsedTx = await ProgramManager.parseTx(tx);
-            console.log('!!parsedTx', parsedTx);
+            // console.log('!!parsedTx', parsedTx);
             let asset: TokenNft | undefined = undefined;
             
             if (parsedTx.assetId){
                 asset = await MetaplexManager.fetchAssetAndParseToTokenNft(parsedTx.assetId);
-                console.log('!asset', asset);
+                // console.log('!asset', asset);
             }
 
             let sentUserIds: string[] = [];
