@@ -303,13 +303,14 @@ export class TxParser {
                     parsed: {
                         type: 'transfer',
                         info: {
-                            lamports: data.lamports,
-                            from: data.fromPubkey.toBase58(),
-                            to: data.toPubkey.toBase58(),
+                            lamports: +data.lamports.toString(),
+                            source: data.fromPubkey.toBase58(),
+                            destination: data.toPubkey.toBase58(),
                         }
                     },
                 }
             }
+            /*
             else if (ixType === 'TransferWithSeed') {
                 const data = SystemInstruction.decodeTransferWithSeed(transactionInstruction);
                 ix = {
@@ -321,7 +322,7 @@ export class TxParser {
                             fromPubkey: data.fromPubkey.toBase58(),
                             basePubkey: data.basePubkey.toBase58(),
                             toPubkey: data.toPubkey.toBase58(),
-                            lamports: data.lamports,
+                            lamports: +data.lamports.toString(),
                             seed: data.seed,
                             programId: data.programId.toBase58(),
                         }
@@ -338,7 +339,7 @@ export class TxParser {
                         info: {
                             fromPubkey: data.fromPubkey.toBase58(),
                             newAccountPubkey: data.newAccountPubkey.toBase58(),
-                            lamports: data.lamports,
+                            lamports: +data.lamports.toString(),
                             space: data.space,
                             programId: data.programId.toBase58(),
                         }
@@ -371,7 +372,7 @@ export class TxParser {
                             newAccountPubkey: data.newAccountPubkey.toBase58(),
                             basePubkey: data.basePubkey.toBase58(),
                             seed: data.seed,
-                            lamports: data.lamports,
+                            lamports: +data.lamports.toString(),
                             space: data.space,
                             programId: data.programId.toBase58(),
                         }
@@ -479,14 +480,14 @@ export class TxParser {
                             noncePubkey: data.noncePubkey.toBase58(),
                             authorizedPubkey: data.authorizedPubkey.toBase58(),
                             toPubkey: data.toPubkey.toBase58(),
-                            lamports: data.lamports,
+                            lamports: +data.lamports.toString(),
                         }
                     },
                 }
             }
             else if (ixType === 'UpgradeNonceAccount') {
                 // no parser for this ix
-            }
+            }*/
 
         }
 

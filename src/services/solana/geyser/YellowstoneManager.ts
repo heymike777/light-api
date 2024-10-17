@@ -68,17 +68,22 @@ export class YellowstoneManager {
     async subscribeToConfirmedTransactions(stream: any){
         console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
 
+        const accountInclude = process.env.ENVIROMENT === 'DEVELOPMENT' ? [
+            'FUCww3SgAmqiP4CswfgY2r2Nsf6PPzARrXraEnGCn4Ln',
+            '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL'
+        ] : [];
+
         const request: SubscribeRequest = {
             "transactions": {
                 "all_transactions": {
                     failed: false,
                     vote: false,
-                    accountInclude: [],
+                    accountInclude: accountInclude,
                     accountExclude: [],
                     accountRequired: [],
                 }
             },
-            "commitment": CommitmentLevel.CONFIRMED,
+            "commitment": CommitmentLevel.PROCESSED,
             "entry": {},
             "slots": {},
             "accounts": {},

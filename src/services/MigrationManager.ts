@@ -29,8 +29,8 @@ export class MigrationManager {
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
-        // const signature = 'KQLrXrgfuSuzrehAdBz26jMxLJuoEgD7DxznsqpZyYVfLYG7JCoaQ67zd6pvNqSfN5gdKAcCbV2hb1Ap6Tof67e';
-        // const tx = await SolanaManager.getParsedTransaction(newConnection(), 'KQLrXrgfuSuzrehAdBz26jMxLJuoEgD7DxznsqpZyYVfLYG7JCoaQ67zd6pvNqSfN5gdKAcCbV2hb1Ap6Tof67e');
+        // const signature = '58SPjaDd8HXNKj74R85DYLXh9FsMgqjynZ6H7ELiHF6dFYBUjVne4QZnb2jSE44vxvjosK2XnJxXNcUmkUFQinuH';
+        // const tx = await SolanaManager.getParsedTransaction(newConnection(), signature);
         // console.log('!tx', JSON.stringify(tx));
         // await this.processTx(signature, chatId);
 
