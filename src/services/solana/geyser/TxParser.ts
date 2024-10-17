@@ -95,10 +95,7 @@ export class TxParser {
                 });
 
                 if (shouldFetchLookupTable){
-                    //TODO: should I cache this?... So that I don't fetch it every time if lookupTable is the same
-                    const lookupTableAccount = (
-                        await connection.getAddressLookupTable(accountKey)
-                    ).value;
+                    const lookupTableAccount = await SolanaManager.fetchLookupTableAccount(accountKey.toBase58());
 
                     if (lookupTableAccount){
                         lookupTableAccounts.push(lookupTableAccount);

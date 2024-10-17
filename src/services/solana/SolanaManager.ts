@@ -496,6 +496,50 @@ export class SolanaManager {
         return txs.filter(tx => tx != null) as web3.ParsedTransactionWithMeta[];
     }
 
+    static lookupTableAccounts: {[key: string]: {createdAt: Date, value: web3.AddressLookupTableAccount}} = {};
+    static async fetchLookupTableAccount(accountKey: string, forseFetch = false): Promise<web3.AddressLookupTableAccount | undefined>{
+        if (!forseFetch && this.lookupTableAccounts[accountKey]){
+            const diff = new Date().getTime() - this.lookupTableAccounts[accountKey].createdAt.getTime();
+            if (diff < 1000 * 60 * 5) { // 5 min cache
+                return this.lookupTableAccounts[accountKey].value;
+            }
+            else {
+                delete this.lookupTableAccounts[accountKey];
+            }
+        }
+
+        let lookupTableAccount: web3.AddressLookupTableAccount | null = null;
+
+        if (!lookupTableAccount){
+            try {
+                const connection = newConnection();
+                lookupTableAccount = (
+                    await connection.getAddressLookupTable(new web3.PublicKey(accountKey))
+                ).value;
+            }
+            catch (err){
+                console.error('fetchLookupTableAccount (1)', err);
+            }
+        }
+
+        if (!lookupTableAccount){
+            try {
+                const connection = newConnection(process.env.HELIUS_SHARED_RPC!);
+                lookupTableAccount = (
+                    await connection.getAddressLookupTable(new web3.PublicKey(accountKey))
+                ).value;
+            }
+            catch (err){
+                console.error('fetchLookupTableAccount (2)', err);
+            }
+        }
+
+        if (lookupTableAccount){
+            this.lookupTableAccounts[accountKey] = {createdAt: new Date(), value: lookupTableAccount};
+        }
+
+        return lookupTableAccount || undefined;
+    }
 
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
