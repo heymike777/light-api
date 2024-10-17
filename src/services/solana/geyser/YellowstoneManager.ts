@@ -83,7 +83,7 @@ export class YellowstoneManager {
                     accountRequired: [],
                 }
             },
-            "commitment": CommitmentLevel.PROCESSED,
+            "commitment": CommitmentLevel.CONFIRMED,
             "entry": {},
             "slots": {},
             "accounts": {},
