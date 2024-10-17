@@ -56,6 +56,7 @@ export class ProgramManager {
         catch (error){}
     }        
 
+    static programsIdlFetchCounts: {[key: string]: number} = {};
     static async getIDL(programId: string): Promise<IdlItem | undefined>{
         const existingIdl = this.idls.get(programId);
         if (existingIdl){
@@ -180,8 +181,6 @@ export class ProgramManager {
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
 
-                console.log('!1!', instruction);
-
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: programName,
@@ -190,7 +189,6 @@ export class ProgramManager {
                     priority: knownInstruction?.priority || 1000,
                     accountKeys: [],//TODO: do I have to fill them from instruction.parsed?...
                 });
-
             }
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);

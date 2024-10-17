@@ -139,13 +139,11 @@ export class TxParser {
             }
         }
 
-        const heymikeAccount = accountKeys.find((account) => account.pubkey.toBase58() == '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
         // console.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
 
-        fs.appendFile('transactions_account_keys.txt', `${new Date()} ${signature} heymikeAccount:${heymikeAccount} ${JSON.stringify(accountKeys)}\n`, (err) => {
-            if (err) console.error(err);
-        });
-
+        // fs.appendFile('transactions_account_keys.txt', `${new Date()} ${signature} heymikeAccount:${heymikeAccount} ${JSON.stringify(accountKeys)}\n`, (err) => {
+        //     if (err) console.error(err);
+        // });
 
         const instructions = this.parseYellowstoneGrpcCompiledInstructions(confirmedTx.transaction?.message?.instructions, accountKeys, signature);
         const innerInstructions: web3.ParsedInnerInstruction[] = [];
@@ -189,22 +187,6 @@ export class TxParser {
             },
             version: isVersioned ? 0 : 'legacy',
         };
-
-        // const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), [signature]);
-
-        if (heymikeAccount){ 
-            fs.appendFileSync('mike_txs.txt', `${new Date()} ${signature} parseGeyserTransactionWithMeta\n`);
-            // fs.appendFileSync('mike_txs.txt', `${signature} parsedTx: ${JSON.stringify(parsedTransactionWithMeta)}}\n`);
-
-            // console.log('!heymikeAccount parseGeyserTransactionWithMeta', 'signature:', signature);
-            // try{
-            //     console.log("parseGeyserTransactionWithMeta", 'parsedTx', signature, JSON.stringify(parsedTransactionWithMeta));
-            //     // console.log("parseGeyserTransactionWithMeta", 'realParsedTx', signature, JSON.stringify(realParsedTxs));    
-            // }
-            // catch (e){
-            //     console.error("parseGeyserTransactionWithMeta", 'error', signature, 'cannot stringify', e);
-            // }
-        }
 
         return parsedTransactionWithMeta;
     }

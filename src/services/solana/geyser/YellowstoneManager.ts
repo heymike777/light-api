@@ -142,10 +142,10 @@ export class YellowstoneManager {
         const transaction = data.transaction.transaction;
         if (transaction.meta.err){ return; }
 
-        const signature = base58.encode(transaction.signature);
-        fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
-            if (err) console.error(err);
-        });
+        // const signature = base58.encode(transaction.signature);
+        // fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
+        //     if (err) console.error(err);
+        // });
 
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
