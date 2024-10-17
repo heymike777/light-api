@@ -14,6 +14,7 @@ export enum kProgram {
     MAGIC_EDEN_V2 = 'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K',
     MAGIC_EDEN_V3 = 'M3mxk5W2tt27WGT7THox7PmgRDp4m6NEhL5xvxrBfS1',
     BUBBLEGUM = 'BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY',
+    BONK_REWARDS = 'STAKEkKzbdeKkqzKpLkNQD3SUuLgshDKCD7U8duxAbB',
 }
 
 export interface KnownInstruction {
@@ -168,6 +169,17 @@ export const kPrograms: { [key: string]: {
         ],
         skip: false,
     },   
+    [kProgram.BONK_REWARDS]: {
+        name: 'BONK REWARDS',
+        knownInstructions: [
+            { 'deposit': {title: 'DEPOSIT', priority: 3} },
+            { 'claimAll': {title: 'CLAIM ALL', priority: 5} },
+            { 'withdraw': {title: 'WITHDRAW', priority: 3} },
+            { 'moveToExpiredPool': {title: 'STAKE EXPIRED', priority: 6} },
+            { 'withdrawStakeAndExpiredRewards': {title: 'WITHDRAW', priority: 4} },
+        ],
+        skip: false,
+    }, 
 }
 
 export const kSkipProgramIds = Object.keys(kPrograms).filter((key) => kPrograms[key].skip).map((key) => key);

@@ -313,7 +313,7 @@ export class WalletManager {
             }
         }
         catch (err) {
-            console.error(new Date(), 'MigrationManager', 'processTxForChats', 'Error:', err);
+            console.error(new Date(), 'WalletManager', 'processTxForChats', 'Error:', err);
         }
 
     }

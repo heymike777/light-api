@@ -29,7 +29,9 @@ export class MigrationManager {
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
-        const signature = '5pDUM7e2M2gpb54i18Byu1QE69TNQ91H7z8tZZpfMH7reqaZVMht7BVuTeSmdZCVgBfbc6JwpVRHwYDZbvmDsYZZ';
+        // const signature = 'KQLrXrgfuSuzrehAdBz26jMxLJuoEgD7DxznsqpZyYVfLYG7JCoaQ67zd6pvNqSfN5gdKAcCbV2hb1Ap6Tof67e';
+        // const tx = await SolanaManager.getParsedTransaction(newConnection(), 'KQLrXrgfuSuzrehAdBz26jMxLJuoEgD7DxznsqpZyYVfLYG7JCoaQ67zd6pvNqSfN5gdKAcCbV2hb1Ap6Tof67e');
+        // console.log('!tx', JSON.stringify(tx));
         // await this.processTx(signature, chatId);
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
