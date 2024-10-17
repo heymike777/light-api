@@ -167,11 +167,7 @@ export class WalletManager {
     static async processWalletTransaction(tx: web3.ParsedTransactionWithMeta) {
         try{
             const signature = tx.transaction.signatures[0];
-            const accounts = tx.transaction.message.accountKeys.map((a) => a.pubkey.toBase58());
-            if (accounts.includes('9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL')){
-                console.log(new Date(), 'processWalletTransaction', signature, 'accounts:', accounts);
-            }
-            
+                        
             if (!tx.transaction || !tx.meta){
                 console.error(new Date(), 'processWalletTransaction', 'tx not found', signature);
                 return;
