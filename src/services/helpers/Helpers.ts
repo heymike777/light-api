@@ -123,7 +123,7 @@ export class Helpers {
                     title = this.prettyWallet(address);
                 }
                 
-                text = text.replaceAll(`address${index}`, title);
+                text = text.replaceAll(`{address${index}}`, title);
             }
         }
 
