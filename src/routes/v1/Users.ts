@@ -117,7 +117,7 @@ router.post(
             const info = await WalletManager.processTx(parsedTx, transaction.asset, chat);
             parsedTransactions.push({
                 title: parsedTx.title,
-                description: parsedTx.description?.plain,
+                description: parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, wallets) : undefined,
                 explorerUrl: ExplorerManager.getUrlToTransaction(parsedTx.signature),
                 asset: info.asset,
                 signature: parsedTx.signature,

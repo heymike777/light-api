@@ -38,6 +38,7 @@ export interface ParsedIx {
 export interface TxDescription {
     plain: string;
     html: string;
+    addresses?: string[];
 }
 
 export class ProgramManager {
@@ -84,9 +85,12 @@ export class ProgramManager {
                 const sourceWalletTitle = Helpers.prettyWallet(ixParsed.info.source);
                 const destinationWalletTitle = Helpers.prettyWallet(ixParsed.info.destination);
 
+                const addresses = [ixParsed.info.source, ixParsed.info.destination];
+
                 description = {
-                    plain: `${ixParsed.info.source} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to ${ixParsed.info.destination}`,
-                    html: `<a href="${ExplorerManager.getUrlToAddress(ixParsed.info.source)}">${sourceWalletTitle}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(ixParsed.info.destination)}">${destinationWalletTitle}</a>`,
+                    plain: `{address0} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
+                    html: `<a href="${ExplorerManager.getUrlToAddress(ixParsed.info.source)}">{address0}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(ixParsed.info.destination)}">{address1}</a>`,
+                    addresses,
                 };
             }
         }

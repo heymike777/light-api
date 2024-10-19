@@ -324,7 +324,10 @@ export class WalletManager {
         let message = `[${parsedTx.title}]\n`;
 
         if (parsedTx.description){
-            message += '\n' + parsedTx.description.html + '\n';
+            let description = parsedTx.description.html;
+            description = Helpers.replaceAddressesWithPretty(description, parsedTx.description.addresses, chat.wallets);
+
+            message += '\n' + description + '\n';
         }
 
         const txPreBalances = parsedTx.preBalances || [];

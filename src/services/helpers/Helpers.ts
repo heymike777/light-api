@@ -1,3 +1,4 @@
+import { IWallet } from "../../entities/Wallet";
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 
@@ -102,6 +103,21 @@ export class Helpers {
         catch (err){}
 
         return pageToken;
+    }
+
+    static replaceAddressesWithPretty(text: string, addresses: string[] | undefined, wallets: IWallet[]): string {
+        if (!addresses || addresses.length == 0){
+            return text;
+        }
+
+        for (let index = 0; index < addresses.length; index++) {
+            const address = addresses[index];
+            const wallet = wallets.find(w => w.walletAddress == address);
+            const title = wallet?.title || this.prettyWallet(address);
+            text = text.replaceAll(`address${index}`, title);
+        }
+
+        return text;
     }
     
 }
