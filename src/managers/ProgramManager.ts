@@ -5,7 +5,7 @@ import { checkIfInstructionParser, ParserOutput, ParserType, SolanaFMParser } fr
 import * as web3 from "@solana/web3.js";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { Helpers } from "../services/helpers/Helpers";
-import { KnownInstruction, kProgram, kPrograms, kSkipProgramIds } from "./ProgramConstants";
+import { KnownInstruction, kProgram, kPrograms, kSkipProgramIds } from "./constants/ProgramConstants";
 import { SPL_ACCOUNT_COMPRESSION_PROGRAM_ID } from "@metaplex-foundation/mpl-bubblegum";
 import { PublicKey } from "@solana/web3.js";
 import { MetaplexManager } from "./MetaplexManager";
@@ -80,16 +80,21 @@ export class ProgramManager {
         let description: TxDescription | undefined;
 
         if (programId == kProgram.SOLANA){
-            if (ixParsed.type == 'transfer'){
-
-                const sourceWalletTitle = Helpers.prettyWallet(ixParsed.info.source);
-                const destinationWalletTitle = Helpers.prettyWallet(ixParsed.info.destination);
-
+            if (ixParsed.type == 'transfer' || ixParsed.type == 'transferWithSeed'){
                 const addresses = [ixParsed.info.source, ixParsed.info.destination];
-
                 description = {
                     plain: `{address0} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
-                    html: `<a href="${ExplorerManager.getUrlToAddress(ixParsed.info.source)}">{address0}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(ixParsed.info.destination)}">{address1}</a>`,
+                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                    addresses,
+                };
+            }
+        }
+        else if (programId == kProgram.STAKE_PROGRAM){
+            if (ixParsed.type == 'delegate'){
+                const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
+                description = {
+                    plain: `{address0} staked with {address1}`,
+                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                     addresses,
                 };
             }

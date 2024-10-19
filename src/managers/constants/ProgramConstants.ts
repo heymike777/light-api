@@ -3,6 +3,7 @@ export enum kProgram {
     TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     TOKEN_EXTENSIONS_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
     COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111',
+    STAKE_PROGRAM = 'Stake11111111111111111111111111111111111111',
     
     RAYDIUM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
     RAYDIUM_CLMM = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK',
@@ -32,6 +33,17 @@ export const kPrograms: { [key: string]: {
         knownInstructions: [
             { 'transferChecked': {title: 'TRANSFER', priority: 100} },
             { 'transfer': {title: 'TRANSFER', priority: 100} },
+        ],
+        skip: false,
+    },
+    [kProgram.STAKE_PROGRAM]: {
+        name: 'STAKE PROGRAM',
+        knownInstructions: [
+            { 'delegate': {title: 'STAKE SOL', priority: 50} },
+            { 'withdraw': {title: 'UNSTAKE SOL', priority: 50} },
+            { 'deactivate': {title: 'DEACTIVATE STAKE', priority: 51} },
+            { 'merge': {title: 'MERGE STAKE', priority: 52} },
+            { 'split': {title: 'SPLIT STAKE', priority: 52} },
         ],
         skip: false,
     },

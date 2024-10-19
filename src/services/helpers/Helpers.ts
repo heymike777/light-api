@@ -1,4 +1,5 @@
 import { IWallet } from "../../entities/Wallet";
+import { kValidators } from "../../managers/constants/ValidatorConstants";
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 
@@ -106,15 +107,24 @@ export class Helpers {
     }
 
     static replaceAddressesWithPretty(text: string, addresses: string[] | undefined, wallets: IWallet[]): string {
-        if (!addresses || addresses.length == 0){
-            return text;
-        }
-
-        for (let index = 0; index < addresses.length; index++) {
-            const address = addresses[index];
-            const wallet = wallets.find(w => w.walletAddress == address);
-            const title = wallet?.title || this.prettyWallet(address);
-            text = text.replaceAll(`address${index}`, title);
+        if (addresses && addresses.length > 0){
+            for (let index = 0; index < addresses.length; index++) {
+                const address = addresses[index];
+                const wallet = wallets.find(w => w.walletAddress == address);
+                
+                let title = '';
+                if (wallet?.title){
+                    title = wallet?.title;
+                }
+                else if (kValidators[address]){
+                    title = kValidators[address].name;
+                }
+                else {
+                    title = this.prettyWallet(address);
+                }
+                
+                text = text.replaceAll(`address${index}`, title);
+            }
         }
 
         return text;
