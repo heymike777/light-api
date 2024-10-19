@@ -55,6 +55,8 @@ export class MigrationManager {
         // fs.writeFileSync('transactions.txt', `${new Date()} start\n`);
         // fs.writeFileSync('transactions_account_keys.txt', `${new Date()} start\n`);
 
+        // await this.migrateValidators();
+
         console.log('MigrationManager', 'migrate', 'done');
     }
 
@@ -70,6 +72,18 @@ export class MigrationManager {
         if (tx){
             await WalletManager.processTxForChats(signature, tx, chats);
         }
+    }
+
+    static async migrateValidators() {
+        const validatorsJson = `[list of validators from solanabeach]`;
+        const validators = JSON.parse(validatorsJson);
+        for (const tmp of validators) {
+            if (tmp.moniker && tmp.moniker.length > 0) {
+                console.log(`'${tmp.votePubkey}': {name: \`${tmp.moniker}\`},`);
+            }
+
+        }
+
     }
 
 }
