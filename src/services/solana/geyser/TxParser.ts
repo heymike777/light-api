@@ -6,6 +6,7 @@ import { SolanaManager } from "../SolanaManager";
 import { } from "@solana/buffer-layout";
 import { decodeTransferInstruction } from "@solana/spl-token";
 import { SystemInstruction } from "@solana/web3.js";
+import * as spl from "@solana/spl-token";
 
 //TODO: open-source TxParser
 export class TxParser {
@@ -630,15 +631,103 @@ export class TxParser {
 
             const ixProgramName = 'Vote Program';
             const ixType = web3.VoteInstruction.decodeInstructionType(transactionInstruction);
+            // 'Authorize' | 'AuthorizeWithSeed' | 'InitializeAccount' | 'Withdraw' | 'UpdateValidatorIdentity';
 
-
+            if (ixType === 'Authorize') {
+                const data = web3.VoteInstruction.decodeAuthorize(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'authorize',
+                        info: {
+                            voteAccount: data.votePubkey.toBase58(),
+                            /** Current vote or withdraw authority, depending on `voteAuthorizationType` */
+                            authority: data.authorizedPubkey.toBase58(),
+                            newAuthority: data.newAuthorizedPubkey.toBase58(),
+                            authorityType: data.voteAuthorizationType, // is this correct?
+                            // clockSysvar // I can't find this in the decoded data
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'AuthorizeWithSeed'){
+                const data = web3.VoteInstruction.decodeAuthorizeWithSeed(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'authorizeWithSeed',
+                        info: {
+                            voteAccount: data.votePubkey.toBase58(),
+                            authorityBase: data.currentAuthorityDerivedKeyBasePubkey.toBase58(),
+                            authorityOwner: data.currentAuthorityDerivedKeyOwnerPubkey.toBase58(),
+                            authoritySeed: data.currentAuthorityDerivedKeySeed,
+                            newAuthorized: data.newAuthorizedPubkey.toBase58(),
+                            authorityType: data.voteAuthorizationType,
+                            // clockSysvar // I can't find this in the decoded data
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'InitializeAccount'){
+                const data = web3.VoteInstruction.decodeInitializeAccount(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'initialize',
+                        info: {
+                            voteAccount: data.votePubkey.toBase58(),
+                            node: data.nodePubkey.toBase58(),
+                            authorizedVoter: data.voteInit.authorizedVoter.toBase58(),
+                            authorizedWithdrawer: data.voteInit.authorizedWithdrawer.toBase58(),
+                            commission: data.voteInit.commission,
+                            // clockSysvar // I can't find this in the decoded data
+                            // rentSysvar // I can't find this in the decoded data
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'Withdraw'){
+                const data = web3.VoteInstruction.decodeWithdraw(transactionInstruction);
+                ix = {
+                    programId: ixProgramId,
+                    program: ixProgramName,
+                    parsed: {
+                        type: 'withdraw',
+                        info: {
+                            voteAccount: data.votePubkey.toBase58(),
+                            destination: data.toPubkey.toBase58(),
+                            withdrawAuthority: data.authorizedWithdrawerPubkey.toBase58(),
+                            lamports: +data.lamports.toString(),
+                        }
+                    },
+                }
+            }
+            else if (ixType === 'UpdateValidatorIdentity'){
+                // no parser for this ix
+            }
         }
-        else if (ixProgramId.toBase58() == web3.AddressLookupTableProgram.programId.toBase58()){
-            // Address Lookup Table Program
+        else if (ixProgramId.toBase58() == spl.TOKEN_PROGRAM_ID.toBase58()){
+            // Token Program
 
-            const ixProgramName = 'Address Lookup Table Program';
-            const ixType = web3.AddressLookupTableInstruction.decodeInstructionType(transactionInstruction);
+            const ixProgramName = 'Token Program';
+            const ixType = spl.decodeInstruction(transactionInstruction);
 
+            // if (ixType === 'CreateLookupTable'){
+            //     const data = web3.AddressLookupTableInstruction.decodeCreateLookupTable(transactionInstruction);
+            //     ix = {
+            //         programId: ixProgramId,
+            //         program: ixProgramName,
+            //         parsed: {
+            //             type: 'createLookupTable',
+            //             info: {
+            //                 lookupTableAccount: data.
+            //             }
+            //         },
+            //     }
+            // }
 
         }
 
