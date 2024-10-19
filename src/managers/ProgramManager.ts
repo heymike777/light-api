@@ -10,6 +10,7 @@ import { SPL_ACCOUNT_COMPRESSION_PROGRAM_ID } from "@metaplex-foundation/mpl-bub
 import { PublicKey } from "@solana/web3.js";
 import { MetaplexManager } from "./MetaplexManager";
 import { WalletManager } from "./WalletManager";
+import { getTokenMetadata } from "@solana/spl-token";
 
 export interface ParsedTx {
     title: string;
@@ -72,7 +73,7 @@ export class ProgramManager {
         return SFMIdlItem || undefined;    
     }
 
-    static parseParsedIx(programId: string, ixParsed: any): {description?: TxDescription} {
+    static parseParsedIx(programId: string, ixParsed: any, previousIxs?: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[]): {description?: TxDescription} {
         if (!ixParsed){
             return {};
         }
@@ -91,10 +92,14 @@ export class ProgramManager {
         }
         else if (programId == kProgram.STAKE_PROGRAM){
             if (ixParsed.type == 'delegate'){
+                const createAccountIx = previousIxs?.find((ix) => ('parsed' in ix) && ix.programId.toBase58() == kProgram.SOLANA && ix.parsed.type == 'createAccount');
+                const lamports = createAccountIx && ('parsed' in createAccountIx) ? createAccountIx?.parsed.info.lamports : undefined;
+                const stakeAmountString = lamports ? `${lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
+
                 const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
                 description = {
-                    plain: `{address0} staked with {address1}`,
-                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                    plain: `{address0} staked ${stakeAmountString} with {address1}`,
+                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked ${stakeAmountString} with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                     addresses,
                 };
             }
@@ -174,6 +179,7 @@ export class ProgramManager {
         }
         
         let ixIndex = 0;
+        let previousIxs: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [];
         for (const instruction of instructions) {
             const ixProgramId = instruction.programId.toBase58();
             if (kSkipProgramIds.indexOf(ixProgramId) != -1){
@@ -183,7 +189,7 @@ export class ProgramManager {
             if ('parsed' in instruction){
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
 
-                const info = this.parseParsedIx(ixProgramId, instruction.parsed);
+                const info = this.parseParsedIx(ixProgramId, instruction.parsed, previousIxs);
                 
                 let programName: string | undefined = kPrograms[ixProgramId]?.name;
                 let ixTitle: string | undefined = instruction.parsed.type;
@@ -216,6 +222,8 @@ export class ProgramManager {
                     accountKeys: instruction.accounts || [],
                 });
             }
+
+            previousIxs.push(instruction);
         }
 
 
