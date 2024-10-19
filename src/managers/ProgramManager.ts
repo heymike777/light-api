@@ -103,6 +103,24 @@ export class ProgramManager {
                     addresses,
                 };
             }
+            else if (ixParsed.type == 'withdraw'){
+                const stakeAmountString = ixParsed.info.lamports ? `${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
+
+                const addresses = [ixParsed.info.destination, ixParsed.info.withdrawAuthority, ixParsed.info.stakeAccount];
+                description = {
+                    plain: `{address0} unstaked ${stakeAmountString} from {address1}`,
+                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> unstaked ${stakeAmountString} from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                    addresses,
+                };
+            }
+            else if (ixParsed.type == 'deactivate'){
+                const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.stakeAccount];
+                description = {
+                    plain: `{address0} deactivated stake account {address1}`,
+                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> deactivated stake account <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                    addresses,
+                };
+            }
         }
         else if (programId == kProgram.TOKEN_PROGRAM){
             if (ixParsed.type == 'transferChecked'){
