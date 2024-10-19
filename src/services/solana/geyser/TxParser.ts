@@ -713,7 +713,7 @@ export class TxParser {
             // Token Program
 
             const ixProgramName = 'Token Program';
-            const ixType = spl.decodeInstruction(transactionInstruction);
+            // const ixType = spl.decodeInstruction(transactionInstruction);
 
             // if (ixType === 'CreateLookupTable'){
             //     const data = web3.AddressLookupTableInstruction.decodeCreateLookupTable(transactionInstruction);
