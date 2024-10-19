@@ -29,7 +29,8 @@ export class MigrationManager {
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
-        // const signature = '58SPjaDd8HXNKj74R85DYLXh9FsMgqjynZ6H7ELiHF6dFYBUjVne4QZnb2jSE44vxvjosK2XnJxXNcUmkUFQinuH';
+        
+        // const signature = '26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA';
         // const tx = await SolanaManager.getParsedTransaction(newConnection(), signature);
         // console.log('!tx', JSON.stringify(tx));
         // await this.processTx(signature, chatId);
@@ -51,8 +52,8 @@ export class MigrationManager {
         // console.log('!!!realParsedTxs', JSON.stringify(realParsedTxs));
 
         
-        fs.writeFileSync('transactions.txt', `${new Date()} start\n`);
-        fs.writeFileSync('transactions_account_keys.txt', `${new Date()} start\n`);
+        // fs.writeFileSync('transactions.txt', `${new Date()} start\n`);
+        // fs.writeFileSync('transactions_account_keys.txt', `${new Date()} start\n`);
 
         console.log('MigrationManager', 'migrate', 'done');
     }

@@ -16,7 +16,6 @@ import { User } from './entities/User';
 import { Message } from './entities/Message';
 import { Wallet } from './entities/Wallet';
 import { JitoWebsocketManager } from './services/solana/JitoWebsocketManager';
-import { JitoManager } from './services/solana/JitoManager';
 import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager';
 import { WalletManager } from './managers/WalletManager';
 import { Program } from './entities/Program';

@@ -8,7 +8,7 @@ import base58 from "bs58";
 import { HeliusManager } from "./HeliusManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TransactionMessage } from "@solana/web3.js";
-import { JitoManager } from "./JitoManager";
+// import { JitoManager } from "./JitoManager";
 import { Keypair } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
 
@@ -436,8 +436,9 @@ export class SolanaManager {
         tx.sign([keypair]);
 
         if (sendThrough?.useJito){
-            console.log(new Date(), process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useJito', 'sendTransaction');
-            JitoManager.sendTransaction(tx, keypair, true, tx.message.recentBlockhash, sendThrough?.priority);
+            throw new Error('Jito is not supported');
+            // console.log(new Date(), process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useJito', 'sendTransaction');
+            // JitoManager.sendTransaction(tx, keypair, true, tx.message.recentBlockhash, sendThrough?.priority);
         }
 
         const rawTransaction = tx.serialize();
