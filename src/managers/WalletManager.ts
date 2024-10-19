@@ -268,6 +268,8 @@ export class WalletManager {
                 return;
             }
 
+            // console.log('processTxForChats', 'signature', signature, 'chats', chats);
+
             const parsedTx = await ProgramManager.parseTx(tx);
             // console.log('!!parsedTx', parsedTx);
             let asset: TokenNft | undefined = undefined;
@@ -285,7 +287,7 @@ export class WalletManager {
                 // console.log('!!!info', JSON.stringify(info));
                 asset = info.asset;
 
-                if (info.hasWalletsChanges){
+                // if (info.hasWalletsChanges){
                     if (chat.id != -1){
                         BotManager.sendMessage({ 
                             chatId: chat.id, 
@@ -308,7 +310,7 @@ export class WalletManager {
                     userTx.asset = asset;
                     userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                     await userTx.save();
-                }
+                // }
 
 
             }
