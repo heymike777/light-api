@@ -89,10 +89,6 @@ router.post(
             throw new NotAuthorizedError();
         }
 
-        console.log("GET TRANSACTIONS", "userId", userId, "pageToken", req.body.pageToken, "pushToken", req.body.pushToken);
-        console.log("GET TRANSACTIONS", "body:", req.body, "query:", req.query, "params:", req.params);
-
-
         let pageToken = Helpers.parsePageToken(req);
         let existingIds = pageToken?.ids || [];
         const kPageSize = pageToken?.pageSize || 10;
@@ -106,7 +102,6 @@ router.post(
 
         existingIds.push(...transactionsIds);    
         const newPageToken: PageToken = new PageToken(existingIds, kPageSize);
-
 
         const wallets = await WalletManager.fetchWalletsByUserId(userId);
         const chat: ChatWallets = { id: -1, wallets: wallets };

@@ -39,11 +39,11 @@ export const kPrograms: { [key: string]: {
     [kProgram.STAKE_PROGRAM]: {
         name: 'STAKE PROGRAM',
         knownInstructions: [
-            { 'delegate': {title: 'STAKE SOL', priority: 50} },
-            { 'withdraw': {title: 'UNSTAKE SOL', priority: 50} },
-            { 'deactivate': {title: 'DEACTIVATE STAKE', priority: 51} },
-            { 'merge': {title: 'MERGE STAKE', priority: 52} },
-            { 'split': {title: 'SPLIT STAKE', priority: 52} },
+            { 'delegate': {title: 'STAKE SOL', priority: 20} },
+            { 'withdraw': {title: 'UNSTAKE SOL', priority: 20} },
+            { 'deactivate': {title: 'DEACTIVATE STAKE', priority: 21} },
+            { 'merge': {title: 'MERGE STAKE', priority: 22} },
+            { 'split': {title: 'SPLIT STAKE', priority: 22} },
         ],
         skip: false,
     },
@@ -58,8 +58,9 @@ export const kPrograms: { [key: string]: {
     [kProgram.TOKEN_EXTENSIONS_PROGRAM]: {
         name: 'TOKEN PROGRAM',
         knownInstructions: [
-            { 'transferChecked': {title: 'TRANSFER', priority: 100} },
             { 'transfer': {title: 'TRANSFER', priority: 100} },
+            { 'transferChecked': {title: 'TRANSFER', priority: 100} },
+            { 'transferFeeExtension': {title: 'TRANSFER', priority: 100} },
         ],
         skip: false,
     },
