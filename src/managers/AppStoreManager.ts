@@ -1,5 +1,6 @@
 import { AppStoreServerAPIClient, Environment, SendTestNotificationResponse } from "@apple/app-store-server-library"
 import { readFileSync } from "fs";
+import jwt from "jsonwebtoken";
 
 export class AppStoreManager {
 
@@ -11,7 +12,7 @@ export class AppStoreManager {
         const bundleId = 'xyz.heynova';
         const environment = process.env.ENVIRONMENT == 'PRODUCTION' ? Environment.PRODUCTION : Environment.SANDBOX;
 
-        const client = new AppStoreServerAPIClient(encodedKey, keyId, issuerId, bundleId, environment)
+        const client = new AppStoreServerAPIClient(encodedKey, keyId, issuerId, bundleId, environment);
 
         try {
             const response: SendTestNotificationResponse = await client.requestTestNotification()
@@ -19,6 +20,57 @@ export class AppStoreManager {
         } catch (e) {
             console.error('AppStoreManager', 'sendTestPaymentWebhook', e)
         }
+    }
+
+    static async receivedPaymentWebhook(body: any, isSandbox: boolean) {
+        try {
+            const signedPayload = body.signedPayload;
+            const decodedPayload = jwt.decode(signedPayload);
+        
+            console.log('AppStoreManager', 'receivedPaymentWebhook', 'decodedPayload:', decodedPayload);
+
+            // // decoded signedPayload contains "notificationType" property to determine the type of event.
+            // const notificationType = decodedPayload?.notificationType;
+        
+            // // subtype is also used to determine type of event
+            // const subtype = decodedPayload?.subtype;
+        
+            // if (notificationType === "SUBSCRIBED" && subtype === "INITIAL_BUY") {
+            //     this.handleInitialPurchase(decodedPayload);
+            // } 
+            // else if (notificationType === "DID_RENEW") {
+            //     this.handleDidRenew(decodedPayload);
+            // } 
+            // else if (notificationType === "EXPIRED" && subtype === "VOLUNTARY") {
+            //     this.handleVoluntaryExpire(decodedPayload);
+            // } 
+            // else {
+            //     console.error('AppStoreManager', 'receivedPaymentWebhook', 'Unknown notification type:', notificationType);
+            // }
+
+            return true;
+        } catch (error) {
+            console.error('AppStoreManager', 'receivedPaymentWebhook', 'Error processing notification:', error);
+            return false;
+        }
+    }
+
+    static handleInitialPurchase(decodedPayload: any) {
+        console.log("Initial purchase:", decodedPayload);
+        const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
+        console.log(transactionInfo);
+    }
+
+    static handleDidRenew(decodedPayload: any) {
+        console.log("Did Renew:", decodedPayload);
+        const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
+        console.log(transactionInfo);
+    }
+
+    static handleVoluntaryExpire(decodedPayload: any) {
+        console.log("Voluntary Expire:", decodedPayload);
+        const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
+        console.log(transactionInfo);
     }
 
     // static async validateReceipt(receipt: string) {
