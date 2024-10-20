@@ -281,6 +281,8 @@ export class WalletManager {
 
             let sentUserIds: string[] = [];
 
+            console.log('processTxForChats', 'chats', JSON.stringify(chats));
+
             for (const chat of chats) {
                 // console.log('!!!chat', chat);
                 const info = await this.processTx(parsedTx, asset, chat);
