@@ -81,10 +81,13 @@ export interface SubscriptionConfig {
     type: 'silver' | 'gold' | 'platinum',
     title: string,
     description: string,
+    default: boolean,
     month: {
         id: string,
+        default: boolean,
     },
     year: {
         id: string,
+        default: boolean,
     },                
 }

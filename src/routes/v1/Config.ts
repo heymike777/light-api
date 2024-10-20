@@ -18,33 +18,42 @@ router.get(
                     type: 'silver',
                     title: 'SILVER',
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility',
+                    default: false,
                     month: {
                         id: 'nova.pro.monthly',
+                        default: true,
                     },
                     year: {
                         id: 'nova.pro.annual',
+                        default: false,
                     },
                 },
                 {
                     type: 'gold',
                     title: 'GOLD',
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility\nPriority notifications\nCustom referral links',
+                    default: true,
                     month: {
                         id: 'nova.pro.monthly',
+                        default: false,
                     },
                     year: {
                         id: 'nova.pro.annual',
+                        default: true,
                     },
                 },
                 {
                     type: 'platinum',
                     title: 'PLATINUM',
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility\nHigh priority notifications\nCustom referral links',
+                    default: false,
                     month: {
                         id: 'nova.pro.monthly',
+                        default: true,
                     },
                     year: {
                         id: 'nova.pro.annual',
+                        default: false,
                     },
                 },
             ];
