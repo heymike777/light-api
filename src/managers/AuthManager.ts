@@ -5,6 +5,7 @@ import { Helpers } from '../services/helpers/Helpers';
 import { IUser, User } from '../entities/User';
 import { AccessToken } from '../models/AccessToken';
 import { BrevoManager } from './BrevoManager';
+import { SystemNotificationsManager } from './SytemNotificationsManager';
 
 export class AuthManager {
 
@@ -95,6 +96,8 @@ export class AuthManager {
         user.email = email;
         user.createdAt = new Date();
         await user.save();
+
+        SystemNotificationsManager.sendSystemMessage(`New user: ${email}`);
 
         return user;
     }

@@ -1,4 +1,5 @@
 import { IUser, TelegramUser, User } from "../entities/User";
+import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export class UserManager {
 
@@ -48,6 +49,9 @@ export class UserManager {
                 telegram: from,
                 createdAt: now,
             });
+
+            SystemNotificationsManager.sendSystemMessage(`New user: @${from.username}`);
+
             this.cachedUsers.push({ user: newUser, createdAt: now });
             return newUser;
         }
@@ -70,6 +74,9 @@ export class UserManager {
                 email: email,
                 createdAt: now,
             });
+            
+            SystemNotificationsManager.sendSystemMessage(`New user: ${email}`);
+
             this.cachedUsers.push({ user: newUser, createdAt: now });
             return newUser;
         }

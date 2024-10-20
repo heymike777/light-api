@@ -478,8 +478,7 @@ export class TxParser {
             }
             else if (ixProgramId.toBase58() == web3.StakeProgram.programId.toBase58()){
                 // Stake Program
-                console.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
-
+                // console.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
 
                 const ixProgramName = 'Stake Program';
                 const ixType = web3.StakeInstruction.decodeInstructionType(transactionInstruction);
@@ -629,7 +628,7 @@ export class TxParser {
                     }
                 }
 
-                console.log('!stake', 'ixType:', ixType, 'ix:', ix);
+                // console.log('!stake', 'ixType:', ixType, 'ix:', ix);
 
             }
             else if (ixProgramId.toBase58() == web3.VoteProgram.programId.toBase58()){
