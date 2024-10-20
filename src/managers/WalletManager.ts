@@ -186,7 +186,10 @@ export class WalletManager {
             const chats: ChatWallets[] = [];
             for (let wallet of wallets){
                 if (wallet.chatId){
-                    const chat = chats.find((c) => c.id == wallet.chatId);
+                    // if chat.id == -1 - it's mobile app.
+                    // if chat.id != -1 - it's telegram chat.
+                    const chat = wallet.chatId == -1 ? chats.find((c) => c.id == -1 && c.wallets[0].userId == wallet.userId) : chats.find((c) => c.id == wallet.chatId);
+
                     if (chat){
                         chat.wallets.push(wallet);
                     }
