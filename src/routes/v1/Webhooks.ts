@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { AppStoreManager } from "../../managers/AppStoreManager";
+import fs from 'fs';
 
 const router = express.Router();
 
@@ -9,10 +10,8 @@ router.post(
         const { environment } = req.params;
         console.log('Webhook received: subscriptions/apple/webhook');
         console.log('environment:', environment);
-        console.log('body:', req.body);
-        console.log('headers:', req.headers);
-        console.log('query:', req.query);
-        console.log('params:', req.params);
+
+        fs.appendFileSync('apple_webhooks.txt', 'environment:' + environment + '\n' + JSON.stringify(req.body, null, 2) + '\n\n');
 
         const isSandbox = environment === 'sandbox';
         const body = req.body;

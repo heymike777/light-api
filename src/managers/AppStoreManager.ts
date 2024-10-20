@@ -25,10 +25,31 @@ export class AppStoreManager {
     static async receivedPaymentWebhook(body: any, isSandbox: boolean) {
         try {
             const signedPayload = body.signedPayload;
-            const decodedPayload = jwt.decode(signedPayload);
-        
+            const decodedPayload: any = jwt.decode(signedPayload);
+
+            // notificationType: 'TEST',
+            // notificationUUID: '6a8bbc37-b8f1-43ce-bee7-d8bc1f5dd91b',
+            // data: { bundleId: 'xyz.heynova', environment: 'Sandbox' },
+            // version: '2.0',
+            // signedDate: 1729424777492
+
             console.log('AppStoreManager', 'receivedPaymentWebhook', 'decodedPayload:', decodedPayload);
 
+            if (decodedPayload?.data?.bundleId != 'xyz.heynova') {
+                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Invalid bundleId:', decodedPayload?.data?.bundleId);
+                return false;
+            }
+
+            if (isSandbox && decodedPayload?.data?.environment != 'Sandbox') {
+                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Invalid environment:', decodedPayload?.data?.environment);
+                return false;
+            }
+
+            if (!isSandbox && decodedPayload?.data?.environment != 'Production') {
+                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Invalid environment:', decodedPayload?.data?.environment);
+                return false;
+            }
+        
             // // decoded signedPayload contains "notificationType" property to determine the type of event.
             // const notificationType = decodedPayload?.notificationType;
         

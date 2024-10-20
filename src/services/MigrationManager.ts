@@ -29,10 +29,10 @@ export class MigrationManager {
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
+
+        // await AppStoreManager.sendTestPaymentWebhook();
         
-        // const signature = '26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA';
-        // const tx = await SolanaManager.getParsedTransaction(newConnection(), signature);
-        // console.log('!tx', JSON.stringify(tx));
+        // const signature = '2bMneJqzZ2CWqe37wu1sp5fp9NyiAizbPv1PKd4EfdbLxH8rhhus6miTqTWU29MuhYyywnRufiLHMZHTbbFmDhaF';
         // await this.processTx(signature, chatId);
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
