@@ -31,6 +31,7 @@ import { usersRouter } from './routes/v1/Users';
 import { UserTransaction } from './entities/UserTransaction';
 import { testRouter } from './routes/v1/Test';
 import { webhooksRouter } from './routes/v1/Webhooks';
+import { configRouter } from './routes/v1/Config';
 
 const app = express();
 app.use(json());
@@ -50,6 +51,7 @@ if (process.env.API_ENABLED == 'true'){
     app.use(usersRouter);
     app.use(testRouter);
     app.use(webhooksRouter);
+    app.use(configRouter);
 }
 
 app.all('*', async () => {

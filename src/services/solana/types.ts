@@ -76,3 +76,15 @@ export enum Chain {
     TRON = 'tron',
     NEAR = 'near',
 }
+
+export interface SubscriptionConfig {
+    type: 'silver' | 'gold' | 'platinum',
+    title: string,
+    description: string,
+    month: {
+        id: string,
+    },
+    year: {
+        id: string,
+    },                
+}
