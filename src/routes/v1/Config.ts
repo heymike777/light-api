@@ -15,6 +15,12 @@ router.get(
         if (platform == 'ios' || platform == 'android'){
             subscruptions = [
                 {
+                    type: 'free',
+                    title: 'FREE',
+                    description: 'Track up to 10 wallets',
+                    default: false,
+                },
+                {
                     type: 'silver',
                     title: 'SILVER',
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility',
