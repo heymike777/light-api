@@ -78,15 +78,15 @@ export enum Chain {
 }
 
 export interface SubscriptionConfig {
-    type: 'silver' | 'gold' | 'platinum',
+    type: 'free' | 'silver' | 'gold' | 'platinum',
     title: string,
     description: string,
     default: boolean,
-    month: {
+    month?: {
         id: string,
         default: boolean,
     },
-    year: {
+    year?: {
         id: string,
         default: boolean,
     },                

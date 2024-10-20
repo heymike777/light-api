@@ -510,9 +510,11 @@ export class WalletManager {
         const explorerUrl = ExplorerManager.getUrlToTransaction(parsedTx.signature);
         message += `<a href="${explorerUrl}">Explorer</a>`;
 
+        const txDescription = parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, chat.wallets) : undefined;
+
         const txApiResponse: TransactionApiResponse = {
             title: parsedTx.title,
-            description: parsedTx.description?.plain,
+            description: txDescription,
             explorerUrl: explorerUrl,
             signature: parsedTx.signature,
             blockTime: parsedTx.blockTime,
