@@ -21,14 +21,17 @@ import { FirebaseManager } from "../managers/FirebaseManager";
 import { AppStoreManager } from "../managers/AppStoreManager";
 import { UserTransaction } from "../entities/UserTransaction";
 import fs from "fs";
+import { SystemNotificationsManager } from "../managers/SytemNotificationsManager";
 
 export class MigrationManager {
 
     static async migrate() {
+        SystemNotificationsManager.sendSystemMessage('Server started');
 
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
+
 
         // await AppStoreManager.sendTestPaymentWebhook();
         
