@@ -32,6 +32,9 @@ import { UserTransaction } from './entities/UserTransaction';
 import { testRouter } from './routes/v1/Test';
 import { webhooksRouter } from './routes/v1/Webhooks';
 import { configRouter } from './routes/v1/Config';
+import { AppleSubscription } from './entities/payments/AppleSubscription';
+import { AppleLog } from './entities/payments/AppleLog';
+import { paymentsRouter } from './routes/v1/Payments';
 
 const app = express();
 app.use(json());
@@ -52,6 +55,7 @@ if (process.env.API_ENABLED == 'true'){
     app.use(testRouter);
     app.use(webhooksRouter);
     app.use(configRouter);
+    app.use(paymentsRouter);
 }
 
 app.all('*', async () => {
@@ -72,6 +76,8 @@ const start = async () => {
     await Program.syncIndexes();
     await Auth.syncIndexes();
     await PushToken.syncIndexes();
+    await AppleSubscription.syncIndexes();
+    await AppleLog.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {

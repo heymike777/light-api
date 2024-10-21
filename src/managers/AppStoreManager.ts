@@ -27,12 +27,6 @@ export class AppStoreManager {
             const signedPayload = body.signedPayload;
             const decodedPayload: any = jwt.decode(signedPayload);
 
-            // notificationType: 'TEST',
-            // notificationUUID: '6a8bbc37-b8f1-43ce-bee7-d8bc1f5dd91b',
-            // data: { bundleId: 'xyz.heynova', environment: 'Sandbox' },
-            // version: '2.0',
-            // signedDate: 1729424777492
-
             console.log('AppStoreManager', 'receivedPaymentWebhook', 'decodedPayload:', decodedPayload);
 
             if (decodedPayload?.data?.bundleId != 'xyz.heynova') {
@@ -50,24 +44,24 @@ export class AppStoreManager {
                 return false;
             }
         
-            // // decoded signedPayload contains "notificationType" property to determine the type of event.
-            // const notificationType = decodedPayload?.notificationType;
+            // decoded signedPayload contains "notificationType" property to determine the type of event.
+            const notificationType = decodedPayload?.notificationType;
         
-            // // subtype is also used to determine type of event
-            // const subtype = decodedPayload?.subtype;
+            // subtype is also used to determine type of event
+            const subtype = decodedPayload?.subtype;
         
-            // if (notificationType === "SUBSCRIBED" && subtype === "INITIAL_BUY") {
-            //     this.handleInitialPurchase(decodedPayload);
-            // } 
-            // else if (notificationType === "DID_RENEW") {
-            //     this.handleDidRenew(decodedPayload);
-            // } 
-            // else if (notificationType === "EXPIRED" && subtype === "VOLUNTARY") {
-            //     this.handleVoluntaryExpire(decodedPayload);
-            // } 
-            // else {
-            //     console.error('AppStoreManager', 'receivedPaymentWebhook', 'Unknown notification type:', notificationType);
-            // }
+            if (notificationType === "SUBSCRIBED" && subtype === "INITIAL_BUY") {
+                this.handleInitialPurchase(decodedPayload);
+            } 
+            else if (notificationType === "DID_RENEW") {
+                this.handleDidRenew(decodedPayload);
+            } 
+            else if (notificationType === "EXPIRED" && subtype === "VOLUNTARY") {
+                this.handleVoluntaryExpire(decodedPayload);
+            } 
+            else {
+                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Unknown notification type:', notificationType);
+            }
 
             return true;
         } catch (error) {
@@ -77,19 +71,19 @@ export class AppStoreManager {
     }
 
     static handleInitialPurchase(decodedPayload: any) {
-        console.log("Initial purchase:", decodedPayload);
+        console.log("!handle Initial purchase:", decodedPayload);
         const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
         console.log(transactionInfo);
     }
 
     static handleDidRenew(decodedPayload: any) {
-        console.log("Did Renew:", decodedPayload);
+        console.log("!handle Did Renew:", decodedPayload);
         const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
         console.log(transactionInfo);
     }
 
     static handleVoluntaryExpire(decodedPayload: any) {
-        console.log("Voluntary Expire:", decodedPayload);
+        console.log("!handle Voluntary Expire:", decodedPayload);
         const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
         console.log(transactionInfo);
     }
