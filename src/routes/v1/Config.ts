@@ -11,9 +11,9 @@ router.get(
     async (req: Request, res: Response) => {
 		const platform = '' + req.query.platform;
 
-        let subscruptions: SubscriptionConfig[] = [];
+        let subscriptions: SubscriptionConfig[] = [];
         if (platform == 'ios' || platform == 'android'){
-            subscruptions = [
+            subscriptions = [
                 {
                     type: 'free',
                     title: 'FREE',
@@ -66,7 +66,7 @@ router.get(
         }
 
         const config = {
-            subscruptions,
+            subscriptions,
         }
 
 		const response = {
