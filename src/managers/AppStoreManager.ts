@@ -50,6 +50,8 @@ export class AppStoreManager {
             // subtype is also used to determine type of event
             const subtype = decodedPayload?.subtype;
         
+            //TODO: parse the payload and update the payment & user records
+
             if (notificationType === "SUBSCRIBED" && subtype === "INITIAL_BUY") {
                 this.handleInitialPurchase(decodedPayload);
             } 
