@@ -122,19 +122,24 @@ export class YellowstoneManager {
             entry: {},
             slots: {},
         };
-        setInterval(async () => {
-            await new Promise<void>((resolve, reject) => {
-                stream.write(pingRequest, (err: any) => {
-                    if (err === null || err === undefined) {
-                        resolve();
-                    } else {
-                        reject(err);
-                    }
+        const intervalId = setInterval(async () => {
+            if (stream.writable){
+                await new Promise<void>((resolve, reject) => {
+                    stream.write(pingRequest, (err: any) => {
+                        if (err === null || err === undefined) {
+                            resolve();
+                        } else {
+                            reject(err);
+                        }
+                    });
+                }).catch((reason) => {
+                    console.error('pingpong error(catched):', reason);
+                    // throw reason;
                 });
-            }).catch((reason) => {
-                console.error(reason);
-                // throw reason;
-            });
+            }
+            else {
+                clearInterval(intervalId);
+            }
         }, this.PING_INTERVAL_MS);
     }
 
