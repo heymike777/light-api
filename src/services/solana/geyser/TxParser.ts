@@ -224,7 +224,7 @@ export class TxParser {
                     data,
                 });
 
-                let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction);
+                let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction, signature);
                 
                 if (!ix) {
                     ix = {
@@ -265,7 +265,7 @@ export class TxParser {
     }
 
     // https://docs.solanalabs.com/runtime/programs
-    static decodeSystemInstruction(transactionInstruction: web3.TransactionInstruction): web3.ParsedInstruction | undefined {
+    static decodeSystemInstruction(transactionInstruction: web3.TransactionInstruction, signature?: string): web3.ParsedInstruction | undefined {
         try {
             let ix: web3.ParsedInstruction | undefined = undefined;
             const ixProgramId = transactionInstruction.programId;
@@ -478,7 +478,7 @@ export class TxParser {
             }
             else if (ixProgramId.toBase58() == web3.StakeProgram.programId.toBase58()){
                 // Stake Program
-                // console.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
+                console.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
 
                 const ixProgramName = 'Stake Program';
                 const ixType = web3.StakeInstruction.decodeInstructionType(transactionInstruction);
@@ -738,8 +738,9 @@ export class TxParser {
 
             return ix;
         }
-        catch (err){
-            console.error('!error(catched)', 'decodeSystemInstruction', err);
+        catch (err){            
+            console.error('!error(catched)', 'signature:', signature, 'decodeSystemInstruction', err);
+            console.log('!error(catched)', 'decodeSystemInstruction', 'transactionInstruction:', transactionInstruction);
             return undefined;
         }
     }
