@@ -478,7 +478,7 @@ export class TxParser {
             }
             else if (ixProgramId.toBase58() == web3.StakeProgram.programId.toBase58()){
                 // Stake Program
-                console.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
+                // console.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
 
                 const ixProgramName = 'Stake Program';
                 const ixType = web3.StakeInstruction.decodeInstructionType(transactionInstruction);
@@ -739,8 +739,8 @@ export class TxParser {
             return ix;
         }
         catch (err){            
-            console.error('!error(catched)', 'signature:', signature, 'decodeSystemInstruction', err);
-            console.log('!error(catched)', 'decodeSystemInstruction', 'transactionInstruction:', transactionInstruction);
+            // console.error('!error(catched)', 'signature:', signature, 'decodeSystemInstruction', err);
+            // console.log('!error(catched)', 'decodeSystemInstruction', 'transactionInstruction:', transactionInstruction);
             return undefined;
         }
     }
