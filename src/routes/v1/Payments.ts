@@ -26,10 +26,14 @@ router.post(
 
         const platform = req.params.platform;
         const receipt = req.body.receipt;
+        const transaction = req.body.transaction;
 
         if (!receipt){
             throw new BadRequestError('receipt is required', 'receipt');
         }
+
+        console.log('!receipt:', receipt);
+        console.log('!transaction:', transaction);
 
 
         //TODO: validate receipt and save payment
@@ -37,7 +41,7 @@ router.post(
         const log = await PaymentLog.create({
             userId,
             platform,
-            data: { receipt },
+            data: { receipt, transaction },
         });
 
         res.status(200).send({
