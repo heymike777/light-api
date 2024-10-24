@@ -75,7 +75,7 @@ export class AppStoreManager {
             user = await User.findById(userId);
         }
 
-        SystemNotificationsManager.sendSystemMessage(`User ID: ${userId}\nUser email: ${user?.email}\n\nReceipt: ${JSON.stringify(decodedReceipt, null, 2)}`);
+        SystemNotificationsManager.sendSystemMessage(`PAYMENT RECEIPT\nUser ID: ${userId}\nUser email: ${user?.email}\n\nReceipt: ${JSON.stringify(decodedReceipt, null, 2)}`);
 
         // const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
         // console.log(transactionInfo);
