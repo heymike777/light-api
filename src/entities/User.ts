@@ -14,11 +14,19 @@ export interface TelegramUser {
     is_premium: boolean;
 }
 
+export interface UserSubscription {
+    subscriptionId: string;
+    platform: 'ios' | 'android' | 'sol';
+    tier: 'free' | 'silver' | 'gold' | 'platinum';
+    expirationDate: Date;
+}
+
 export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
     referralCode?: string;
     isSubscriptionActive?: boolean;
+    subscription?: UserSubscription;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -35,6 +43,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
         language_code: { type: String },
         is_premium: { type: Boolean }
     },
+    subscription: { type: Mixed },
     referralCode: { type: String },
     isSubscriptionActive: { type: Boolean },
 
@@ -55,6 +64,7 @@ UserSchema.methods.toJSON = function () {
     return {
         id: this._id,
         email: this.email,
+        subscription: this.subscription,
         isSubscriptionActive: this.isSubscriptionActive,
     };
 };

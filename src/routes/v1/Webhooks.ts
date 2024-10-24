@@ -15,7 +15,7 @@ router.post(
 
         const isSandbox = environment === 'sandbox';
         const body = req.body;
-        const success = await AppStoreManager.receivedPaymentWebhook(body, isSandbox);
+        const success = await AppStoreManager.receivedPaymentWebhook(body);
         console.log('!success:', success);
 		res.status(200).send({
             success,

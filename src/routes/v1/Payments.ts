@@ -6,6 +6,7 @@ import { PaymentLog } from "../../entities/payments/PaymentLog";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { validateRequest } from "../../middlewares/ValidateRequest";
 import { body, param } from "express-validator";
+import { AppStoreManager } from "../../managers/AppStoreManager";
 
 const router = express.Router();
 
@@ -26,23 +27,25 @@ router.post(
 
         const platform = req.params.platform;
         const receipt = req.body.receipt;
-        const transaction = req.body.transaction;
 
         if (!receipt){
             throw new BadRequestError('receipt is required', 'receipt');
         }
 
-        console.log('!receipt:', receipt);
-        console.log('!transaction:', transaction);
-
-
-        //TODO: validate receipt and save payment
-
-        const log = await PaymentLog.create({
-            userId,
-            platform,
-            data: { receipt, transaction },
-        });
+        if (platform === 'ios'){
+            await AppStoreManager.receivedPaymentWebhook(receipt, userId);
+        }
+        else if (platform === 'android'){
+            const log = await PaymentLog.create({
+                userId,
+                platform: 'android',
+                data: { receipt },
+                createdAt: new Date(),
+            });
+        }
+        else {
+            throw new BadRequestError('Platform is not supported', 'platform');
+        }
 
         res.status(200).send({
             success: true,

@@ -1,13 +1,22 @@
-import { AppStoreServerAPIClient, Environment, SendTestNotificationResponse, SignedDataVerifier } from "@apple/app-store-server-library"
+import { AppStoreServerAPIClient, AppTransaction, Environment, JWSRenewalInfoDecodedPayload, JWSTransactionDecodedPayload, ResponseBodyV2, ResponseBodyV2DecodedPayload, SignedDataVerifier } from "@apple/app-store-server-library"
 import { readFileSync } from "fs";
 import jwt from "jsonwebtoken";
 import { AppleLog } from "../entities/payments/AppleLog";
-import { PaymentEnvironment, Subscription } from "../entities/payments/Subscription";
+import { Subscription } from "../entities/payments/Subscription";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
+import { PaymentLog } from "../entities/payments/PaymentLog";
+import { IUser, User } from "../entities/User";
+
+export interface DecodedReceipt {
+    notification?: ResponseBodyV2DecodedPayload;
+    transaction?: JWSTransactionDecodedPayload;
+    renewalInfo?: JWSRenewalInfoDecodedPayload;
+    appTransaction?: AppTransaction;
+}
 
 export class AppStoreManager {
     static bundleId = 'xyz.heynova';
-    static environment = Environment.SANDBOX;
+    static environment = Environment.XCODE;
     static appAppleId = 6736581652;
     static appleRootCAs: Buffer[] = this.loadRootCAs() 
 
@@ -34,74 +43,55 @@ export class AppStoreManager {
     //     }
     // }
 
-    static async receivedPaymentWebhook(body: any, isSandbox: boolean) {
+    static async receivedPaymentWebhook(signedPayload: string, userId?: string): Promise<boolean> {
         try {
-            const signedPayload = body.signedPayload;
+            const decodedReceipt = await this.verifyAndDecodeReceipt(signedPayload);
 
-            const decodedPayload1: any = jwt.decode(signedPayload);
-            console.log('!AppStoreManager', 'receivedPaymentWebhook', 'decodedPayload:', decodedPayload1);
-            return undefined;
+            await PaymentLog.create({
+                userId,
+                platform: 'ios',
+                data: { signedPayload, decodedReceipt },
+                createdAt: new Date(),
+            });
 
-            const isVerified = await this.verifyReceipt(signedPayload);
-            if (!isVerified) {
-                console.log('!verifyReceipt failed');
-                console.error('!apple webhook error(catched)', 'AppStoreManager', 'receivedPaymentWebhook', 'Invalid signedPayload:', signedPayload);
+            if (!decodedReceipt) {
+                console.log('!verifyAndDecodeReceipt failed', 'userId:', userId);
                 return false;
-            }
-            console.log('!verifyReceipt success');
-
-            const decodedPayload: any = jwt.decode(signedPayload);
-            
-            console.log('AppStoreManager', 'receivedPaymentWebhook', 'decodedPayload:', decodedPayload);
-
-            if (decodedPayload?.data?.bundleId != 'xyz.heynova') {
-                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Invalid bundleId:', decodedPayload?.data?.bundleId);
-                return false;
-            }
-
-            if (isSandbox && decodedPayload?.data?.environment != 'Sandbox') {
-                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Invalid environment:', decodedPayload?.data?.environment);
-                return false;
-            }
-
-            if (!isSandbox && decodedPayload?.data?.environment != 'Production') {
-                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Invalid environment:', decodedPayload?.data?.environment);
-                return false;
-            }
+            }            
+            console.log('!verifyAndDecodeReceipt success', 'userId:', userId, 'decodedReceipt:',  decodedReceipt);
         
-            // decoded signedPayload contains "notificationType" property to determine the type of event.
-            const notificationType = decodedPayload?.notificationType;
-        
-            // subtype is also used to determine type of event
-            const subtype = decodedPayload?.subtype;
-        
-            //TODO: parse the payload and update the payment & user records
-
-            if (notificationType === "SUBSCRIBED" && subtype === "INITIAL_BUY") {
-                await this.handleInitialPurchase(decodedPayload);
-            } 
-            else if (notificationType === "DID_RENEW") {
-                await this.handleDidRenew(decodedPayload);
-            } 
-            else if (notificationType === "EXPIRED" && subtype === "VOLUNTARY") {
-                await this.handleVoluntaryExpire(decodedPayload);
-            } 
-            else {
-                console.error('AppStoreManager', 'receivedPaymentWebhook', 'Unknown notification type:', notificationType);
-            }
-
-            return true;
+            return await this.handleNotification(decodedReceipt, userId);
         } catch (error) {
             console.error('AppStoreManager', 'receivedPaymentWebhook', 'Error processing notification:', error);
             return false;
         }
     }
 
-    static async handleInitialPurchase(decodedPayload: any) {
-        console.log("!handle Initial purchase:", decodedPayload);
-        const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
-        console.log(transactionInfo);
+    static async handleNotification(decodedReceipt: DecodedReceipt, userId?: string): Promise<boolean> {
+        console.log("!handle notification:", decodedReceipt);
 
+        let user: IUser | null = null;
+        if (userId){
+            user = await User.findById(userId);
+        }
+
+        SystemNotificationsManager.sendSystemMessage(`User ID: ${userId}\nUser email: ${user?.email}\n\nReceipt: ${JSON.stringify(decodedReceipt, null, 2)}`);
+
+        // const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
+        // console.log(transactionInfo);
+
+        // if (notificationType === "SUBSCRIBED" && subtype === "INITIAL_BUY") {
+        //     await this.handleInitialPurchase(decodedPayload);
+        // } 
+        // else if (notificationType === "DID_RENEW") {
+        //     await this.handleDidRenew(decodedPayload);
+        // } 
+        // else if (notificationType === "EXPIRED" && subtype === "VOLUNTARY") {
+        //     await this.handleVoluntaryExpire(decodedPayload);
+        // } 
+        // else {
+        //     console.error('AppStoreManager', 'receivedPaymentWebhook', 'Unknown notification type:', notificationType);
+        // }
 
 
         // {
@@ -128,112 +118,79 @@ export class AppStoreManager {
         //     "environment" : "Xcode",
         //     "price" : 19990
         //   }
+
+        return false;
     }
 
-    static async handleDidRenew(decodedPayload: any) {
-        console.log("!handle Did Renew:", decodedPayload);
-        const transactionInfo: any = jwt.decode(decodedPayload.data.signedTransactionInfo);
+    // static async handleDidRenew(decodedPayload: any) {
+    //     console.log("!handle Did Renew:", decodedPayload);
+    //     const transactionInfo: any = jwt.decode(decodedPayload.data.signedTransactionInfo);
 
-        await AppleLog.create({
-            userId: '',//TODO: save user id
-            originalTransactionId: transactionInfo?.originalTransactionId,
-            data: transactionInfo,
-            createdAt: new Date(),
-        });
+    //     if (transactionInfo && transactionInfo?.originalTransactionId){
+    //         const newExpiresDate = new Date(transactionInfo?.expiresDate);   
 
-        if (transactionInfo && transactionInfo?.originalTransactionId){
-            const newExpiresDate = new Date(transactionInfo?.expiresDate);   
+    //         const subscription = await Subscription.findOne({ originalTransactionId: transactionInfo.originalTransactionId });
+    //         if (subscription){
+    //             subscription.expiresDate = newExpiresDate;
+    //             subscription.isActive = newExpiresDate > new Date();
+    //             if (subscription.ios){
+    //                 subscription.ios.environment = transactionInfo.environment;
+    //             }
+    //             await subscription.save();
 
-            const subscription = await Subscription.findOne({ originalTransactionId: transactionInfo.originalTransactionId });
-            if (subscription){
-                subscription.expiresDate = newExpiresDate;
-                subscription.isActive = newExpiresDate > new Date();
-                if (subscription.ios){
-                    subscription.ios.environment = transactionInfo.environment == 'Sandbox' ? PaymentEnvironment.SANDBOX : PaymentEnvironment.PRODUCTION;
-                }
-                await subscription.save();
-
-                SystemNotificationsManager.sendSystemMessage(`NULL renewed subscription\nID: ${transactionInfo.productId}\nExpiration: ${newExpiresDate.toISOString().substring(0, 10)}\nPrice: ${transactionInfo.price/1000} ${transactionInfo.currency}\nEnvironment: ${transactionInfo.environment}\nTransaction reason: ${transactionInfo.transactionReason}\nQuantity: ${transactionInfo.quantity}\nType: ${transactionInfo.type}\nIn-app ownership type: ${transactionInfo.inAppOwnershipType}\nStorefront: ${transactionInfo.storefront}`);
-            }
-            else {
-                const newSubscription = await Subscription.create({
-                    userId: '',//TODO: save user id
-                    expiresDate: newExpiresDate,
-                    isActive: newExpiresDate > new Date(),
-                    ios: {
-                        originalTransactionId: transactionInfo.originalTransactionId,
-                        environment: transactionInfo.environment == 'Sandbox' ? PaymentEnvironment.SANDBOX : PaymentEnvironment.PRODUCTION,
-                    },
-                    createdAt: new Date(),
-                });
+    //             SystemNotificationsManager.sendSystemMessage(`NULL renewed subscription\nID: ${transactionInfo.productId}\nExpiration: ${newExpiresDate.toISOString().substring(0, 10)}\nPrice: ${transactionInfo.price/1000} ${transactionInfo.currency}\nEnvironment: ${transactionInfo.environment}\nTransaction reason: ${transactionInfo.transactionReason}\nQuantity: ${transactionInfo.quantity}\nType: ${transactionInfo.type}\nIn-app ownership type: ${transactionInfo.inAppOwnershipType}\nStorefront: ${transactionInfo.storefront}`);
+    //         }
+    //         else {
+    //             const newSubscription = await Subscription.create({
+    //                 userId: '',//TODO: save user id
+    //                 expiresDate: newExpiresDate,
+    //                 isActive: newExpiresDate > new Date(),
+    //                 ios: {
+    //                     originalTransactionId: transactionInfo.originalTransactionId,
+    //                     environment: transactionInfo.environment,
+    //                 },
+    //                 createdAt: new Date(),
+    //             });
 
 
-                SystemNotificationsManager.sendSystemMessage(`NULL renewed subscription\nID: ${transactionInfo.productId}\nExpiration: ${newExpiresDate.toISOString().substring(0, 10)}\nPrice: ${transactionInfo.price/1000} ${transactionInfo.currency}\nEnvironment: ${transactionInfo.environment}\nTransaction reason: ${transactionInfo.transactionReason}\nQuantity: ${transactionInfo.quantity}\nType: ${transactionInfo.type}\nIn-app ownership type: ${transactionInfo.inAppOwnershipType}\nStorefront: ${transactionInfo.storefront}`);
-            }
-        }
-
-        // {
-        //     transactionId: '2000000748768559',
-        //     originalTransactionId: '2000000748766388',
-        //     productId: 'nova.pro.monthly',
-        //     expiresDate: 1729444735000,
-        //     environment: 'Sandbox',
-        //     transactionReason: 'RENEWAL',
-        //     price: 22990,
-        //     currency: 'USD'
-
-        //     webOrderLineItemId: '2000000078043469',
-        //     bundleId: 'xyz.heynova',
-        //     subscriptionGroupIdentifier: '21554286',
-        //     purchaseDate: 1729444435000,
-        //     originalPurchaseDate: 1729443835000,
-        //     quantity: 1,
-        //     type: 'Auto-Renewable Subscription',
-        //     inAppOwnershipType: 'PURCHASED',
-        //     signedDate: 1729444385239,
-        //     storefront: 'UKR',
-        //     storefrontId: '143492',
-        //   }
-
-        console.log(transactionInfo);
-    }
-
-    static async handleVoluntaryExpire(decodedPayload: any) {
-        console.log("!handle Voluntary Expire:", decodedPayload);
-        const transactionInfo = jwt.decode(decodedPayload.data.signedTransactionInfo);
-        console.log(transactionInfo);
-    }
-
-    static async verifyReceipt(receipt: string): Promise<boolean> {
-        const verifier = new SignedDataVerifier(this.appleRootCAs, false, this.environment, this.bundleId, this.appAppleId)
-        try {
-            const decodedNotification = await verifier.verifyAndDecodeNotification(receipt);
-            console.log('!decodedNotification', decodedNotification);
-            return true;
-        } catch (e) {
-            console.error('!verifyReceipt error(catched)', e);
-            return false;
-        }
-    }
-
-    // static async validateReceipt(receipt: string) {
-    //     const filePath = 'keys/SubscriptionKey_VXDQ9BS3R6.p8';
-    //     const encodedKey = readFileSync(filePath).toString();
-    //     const keyId = 'VXDQ9BS3R6';
-    //     const issuerId = '81a5b015-01e1-4961-bfc3-932271536d67';
-    //     const bundleId = 'xyz.heynova';
-    //     const environment = process.env.ENVIRONMENT == 'PRODUCTION' ? Environment.PRODUCTION : Environment.SANDBOX;
-
-    //     const client = new AppStoreServerAPIClient(encodedKey, keyId, issuerId, bundleId, environment)
-
-    //     try {
-    //         client.
-    //         const response: SendTestNotificationResponse = await client.requestTestNotification()
-    //         console.log('AppStoreManager', 'sendTestPaymentWebhook', response)
-    //     } catch (e) {
-    //         console.error('AppStoreManager', 'sendTestPaymentWebhook', e)
+    //             SystemNotificationsManager.sendSystemMessage(`NULL renewed subscription\nID: ${transactionInfo.productId}\nExpiration: ${newExpiresDate.toISOString().substring(0, 10)}\nPrice: ${transactionInfo.price/1000} ${transactionInfo.currency}\nEnvironment: ${transactionInfo.environment}\nTransaction reason: ${transactionInfo.transactionReason}\nQuantity: ${transactionInfo.quantity}\nType: ${transactionInfo.type}\nIn-app ownership type: ${transactionInfo.inAppOwnershipType}\nStorefront: ${transactionInfo.storefront}`);
+    //         }
     //     }
+
+    //     console.log(transactionInfo);
     // }
 
+    static async verifyAndDecodeReceipt(receipt: string): Promise<DecodedReceipt | undefined> {
+        const verifier = new SignedDataVerifier(this.appleRootCAs, false, this.environment, this.bundleId, this.appAppleId)
+        try {
+            const notification = await verifier.verifyAndDecodeNotification(receipt);
+            return { notification };
+        } catch (e) {
+            // console.error('!verifyAndDecodeNotification error(catched)', e);
+        }
+
+        try {
+            const transaction = await verifier.verifyAndDecodeTransaction(receipt);
+            return { transaction };
+        } catch (e) {
+            // console.error('!verifyAndDecodeTransaction error(catched)', e);
+        }
+
+        try {
+            const renewalInfo = await verifier.verifyAndDecodeRenewalInfo(receipt);
+            return { renewalInfo };
+        } catch (e) {
+            // console.error('!verifyAndDecodeRenewalInfo error(catched)', e);
+        }
+
+        try {
+            const appTransaction = await verifier.verifyAndDecodeAppTransaction(receipt);
+            return { appTransaction };
+        } catch (e) {
+            // console.error('!verifyAndDecodeAppTransaction error(catched)', e);
+        }
+
+        return undefined;
+    }
 
 }

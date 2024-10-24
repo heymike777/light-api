@@ -1,14 +1,9 @@
 import * as mongoose from 'mongoose';
-import { Environment } from '../../services/solana/types';
+import { Environment } from "@apple/app-store-server-library"
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
 export let Mixed = mongoose.Schema.Types.Mixed;
-
-export enum PaymentEnvironment {
-    SANDBOX = 'SANDBOX',
-    PRODUCTION = 'PRODUCTION',
-}
 
 export interface ISubscription extends mongoose.Document {
     userId: string;
@@ -16,7 +11,7 @@ export interface ISubscription extends mongoose.Document {
     isActive: boolean;
     ios?: {
         originalTransactionId: string;
-        environment: PaymentEnvironment;
+        environment: Environment;
     };
     updatedAt?: Date;
     createdAt: Date;
@@ -28,7 +23,7 @@ export const SubscriptionSchema = new mongoose.Schema<ISubscription>({
     isActive: { type: Boolean },
     ios: {
         originalTransactionId: { type: String },
-        environment: { type: String, enum: [PaymentEnvironment.SANDBOX, PaymentEnvironment.PRODUCTION] },
+        environment: { type: String },
     },
 
     updatedAt: { type: Date, default: new Date() },
