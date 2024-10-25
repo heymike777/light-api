@@ -26,11 +26,11 @@ router.get(
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility',
                     default: false,
                     month: {
-                        id: 'nova.pro.monthly',
+                        id: 'xyz.heynova.subscriptions.silver.month',
                         default: true,
                     },
                     year: {
-                        id: 'nova.pro.annual',
+                        id: 'xyz.heynova.subscriptions.silver.year',
                         default: false,
                     },
                 },
@@ -40,11 +40,11 @@ router.get(
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility\nPriority notifications\nCustom referral links',
                     default: true,
                     month: {
-                        id: 'nova.pro.monthly',
+                        id: 'xyz.heynova.subscriptions.gold.month',
                         default: false,
                     },
                     year: {
-                        id: 'nova.pro.annual',
+                        id: 'xyz.heynova.subscriptions.gold.year',
                         default: true,
                     },
                 },
@@ -54,11 +54,11 @@ router.get(
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility\nHigh priority notifications\nCustom referral links',
                     default: false,
                     month: {
-                        id: 'nova.pro.monthly',
+                        id: 'xyz.heynova.subscriptions.platinum.month',
                         default: true,
                     },
                     year: {
-                        id: 'nova.pro.annual',
+                        id: 'xyz.heynova.subscriptions.platinum.year',
                         default: false,
                     },
                 },
