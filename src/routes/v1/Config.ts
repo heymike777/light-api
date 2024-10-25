@@ -26,11 +26,11 @@ router.get(
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility',
                     default: false,
                     month: {
-                        id: 'xyz.heynova.subscriptions.silver.month',
+                        id: 'xyz.heynova.subscriptions.silver.monthly',
                         default: true,
                     },
                     year: {
-                        id: 'xyz.heynova.subscriptions.silver.year',
+                        id: 'xyz.heynova.subscriptions.silver.annually',
                         default: false,
                     },
                 },
@@ -40,11 +40,11 @@ router.get(
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility\nPriority notifications\nCustom referral links',
                     default: true,
                     month: {
-                        id: 'xyz.heynova.subscriptions.gold.month',
+                        id: 'xyz.heynova.subscriptions.gold.monthly',
                         default: false,
                     },
                     year: {
-                        id: 'xyz.heynova.subscriptions.gold.year',
+                        id: 'xyz.heynova.subscriptions.gold.annually',
                         default: true,
                     },
                 },
@@ -54,11 +54,11 @@ router.get(
                     description: 'Track up to 100 wallets\nTrack airdrops eligibility\nHigh priority notifications\nCustom referral links',
                     default: false,
                     month: {
-                        id: 'xyz.heynova.subscriptions.platinum.month',
+                        id: 'xyz.heynova.subscriptions.platinum.monthly',
                         default: true,
                     },
                     year: {
-                        id: 'xyz.heynova.subscriptions.platinum.year',
+                        id: 'xyz.heynova.subscriptions.platinum.annually',
                         default: false,
                     },
                 },
