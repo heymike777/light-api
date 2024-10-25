@@ -23,42 +23,42 @@ router.get(
                 {
                     type: 'silver',
                     title: 'SILVER',
-                    description: 'Track up to 100 wallets\nTrack airdrops eligibility',
+                    description: 'Track up to 100 wallets\nTrack airdrops',
                     default: false,
                     month: {
-                        id: 'xyz.heynova.subscriptions.silver.monthly',
+                        id: 'xyz.heynova.subscriptions.silver.month',
                         default: true,
                     },
                     year: {
-                        id: 'xyz.heynova.subscriptions.silver.annually',
+                        id: 'xyz.heynova.subscriptions.silver.year',
                         default: false,
                     },
                 },
                 {
                     type: 'gold',
                     title: 'GOLD',
-                    description: 'Track up to 100 wallets\nTrack airdrops eligibility\nPriority notifications\nCustom referral links',
+                    description: 'Track up to 500 wallets\nTrack airdrops\nPriority notifications\nCustom referral links',
                     default: true,
                     month: {
-                        id: 'xyz.heynova.subscriptions.gold.monthly',
+                        id: 'xyz.heynova.subscriptions.gold.month',
                         default: false,
                     },
                     year: {
-                        id: 'xyz.heynova.subscriptions.gold.annually',
+                        id: 'xyz.heynova.subscriptions.gold.year',
                         default: true,
                     },
                 },
                 {
                     type: 'platinum',
                     title: 'PLATINUM',
-                    description: 'Track up to 100 wallets\nTrack airdrops eligibility\nHigh priority notifications\nCustom referral links',
+                    description: 'Track up to 1000 wallets\nTrack airdrops\nHigh priority notifications\nCustom referral links',
                     default: false,
                     month: {
-                        id: 'xyz.heynova.subscriptions.platinum.monthly',
+                        id: 'xyz.heynova.subscriptions.platinum.month',
                         default: true,
                     },
                     year: {
-                        id: 'xyz.heynova.subscriptions.platinum.annually',
+                        id: 'xyz.heynova.subscriptions.platinum.year',
                         default: false,
                     },
                 },
