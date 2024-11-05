@@ -21,7 +21,8 @@ export class BotMyWalletsHelper extends BotHelper {
         let response = '';
 
         const chatId = this.getChatId(ctx);
-        const wallets = await WalletManager.fetchWalletsByChatId(chatId);
+        // const wallets = await WalletManager.fetchWalletsByChatId(chatId);
+        const wallets = await WalletManager.fetchWalletsByUserId(user.id);
         if (wallets.length == 0){
             response = 'No wallets found.';
         }
