@@ -80,6 +80,7 @@ export class WalletManager {
             else {
                 tmpWallets = [wallet];
             }
+            this.walletsMap.set(walletAddress, tmpWallets);
 
             YellowstoneManager.resubscribeAll();
 
