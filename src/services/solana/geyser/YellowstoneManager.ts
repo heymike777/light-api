@@ -175,14 +175,20 @@ export class YellowstoneManager {
             this.instances = [];
         }
 
-        if (process.env.SOLANA_GEYSER_RPC && process.env.SOLANA_GEYSER_X_TOKEN){
-            const listener = new YellowstoneManager('zero', process.env.SOLANA_GEYSER_RPC, process.env.SOLANA_GEYSER_X_TOKEN);
+        if (process.env.SOLANA_GEYSER_RPC_1_NAME && process.env.SOLANA_GEYSER_RPC_1 && process.env.SOLANA_GEYSER_X_TOKEN_1){
+            const listener = new YellowstoneManager(process.env.SOLANA_GEYSER_RPC_1_NAME, process.env.SOLANA_GEYSER_RPC_1, process.env.SOLANA_GEYSER_X_TOKEN_1);
             listener.init();
             this.instances.push(listener);
         }
 
-        if (process.env.SOLANA_GEYSER_RPC_1 && process.env.SOLANA_GEYSER_X_TOKEN_1){
-            const listener = new YellowstoneManager('one', process.env.SOLANA_GEYSER_RPC_1, process.env.SOLANA_GEYSER_X_TOKEN_1);
+        if (process.env.SOLANA_GEYSER_RPC_2_NAME && process.env.SOLANA_GEYSER_RPC_2 && process.env.SOLANA_GEYSER_X_TOKEN_2){
+            const listener = new YellowstoneManager(process.env.SOLANA_GEYSER_RPC_2_NAME, process.env.SOLANA_GEYSER_RPC_2, process.env.SOLANA_GEYSER_X_TOKEN_2);
+            listener.init();
+            this.instances.push(listener);
+        }
+
+        if (process.env.SOLANA_GEYSER_RPC_3_NAME && process.env.SOLANA_GEYSER_RPC_3 && process.env.SOLANA_GEYSER_X_TOKEN_3){
+            const listener = new YellowstoneManager(process.env.SOLANA_GEYSER_RPC_3_NAME, process.env.SOLANA_GEYSER_RPC_3, process.env.SOLANA_GEYSER_X_TOKEN_3);
             listener.init();
             this.instances.push(listener);
         }
