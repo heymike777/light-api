@@ -10,11 +10,16 @@ export enum TxFilter {
 }
 
 export class YellowstoneManager {
-    GRPC_URL = process.env.SOLANA_GEYSER_RPC!;
-    X_TOKEN = process.env.SOLANA_GEYSER_X_TOKEN!;
+    id: string;
+    GRPC_URL: string;
+    X_TOKEN: string;
     PING_INTERVAL_MS = 30_000; // 30s
+    stream: any;
 
-    constructor() {
+    constructor(id: string, grpcUrl: string, xToken: string){
+        this.id = id;
+        this.GRPC_URL = grpcUrl;
+        this.X_TOKEN = xToken;
     }
 
     async init(){
@@ -24,7 +29,8 @@ export class YellowstoneManager {
         });
     
         const stream = await client.subscribe();
-    
+        this.stream = stream;
+
         const streamClosed = new Promise<void>((resolve, reject) => {
             stream.on("error", (error) => {
                 reject(error);
@@ -62,16 +68,14 @@ export class YellowstoneManager {
         console.error(new Date(), process.env.SERVER_NAME, 'YellowstoneManager onError', error);
         await Helpers.sleep(5);
         
-        YellowstoneManager.getInstance(true);
+        YellowstoneManager.reloadInstance(this.id);
     }
 
     async subscribeToConfirmedTransactions(stream: any){
         console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
 
-        const accountInclude = process.env.ENVIROMENT === 'DEVELOPMENT' ? [
-            'FUCww3SgAmqiP4CswfgY2r2Nsf6PPzARrXraEnGCn4Ln',
-            '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL'
-        ] : [];
+        const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
+        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
 
         const request: SubscribeRequest = {
             "transactions": {
@@ -147,7 +151,8 @@ export class YellowstoneManager {
         const transaction = data.transaction.transaction;
         if (transaction.meta.err){ return; }
 
-        // const signature = base58.encode(transaction.signature);
+        const signature = base58.encode(transaction.signature);
+        console.log(new Date(), process.env.SERVER_NAME, 'listener', this.id, `receivedTx`, signature);
         // fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
         //     if (err) console.error(err);
         // });
@@ -164,13 +169,47 @@ export class YellowstoneManager {
 
     // ### static methods
 
-    static instance?: YellowstoneManager;
-    static getInstance(forceCreate: boolean = false): YellowstoneManager | undefined {
-        if (!this.instance || forceCreate){
-            this.instance = new YellowstoneManager();
-            this.instance.init();
+    static instances?: YellowstoneManager[];
+    static createInstances(){
+        if (!this.instances){
+            this.instances = [];
         }
-        return this.instance;
+
+        if (process.env.SOLANA_GEYSER_RPC && process.env.SOLANA_GEYSER_X_TOKEN){
+            const listener = new YellowstoneManager('zero', process.env.SOLANA_GEYSER_RPC, process.env.SOLANA_GEYSER_X_TOKEN);
+            listener.init();
+            this.instances.push(listener);
+        }
+
+        if (process.env.SOLANA_GEYSER_RPC_1 && process.env.SOLANA_GEYSER_X_TOKEN_1){
+            const listener = new YellowstoneManager('one', process.env.SOLANA_GEYSER_RPC_1, process.env.SOLANA_GEYSER_X_TOKEN_1);
+            listener.init();
+            this.instances.push(listener);
+        }
+    }
+
+    static reloadInstance(id: string): YellowstoneManager | undefined {
+        if (!this.instances){
+            return undefined;
+        }
+
+        const listener = this.instances.find((instance) => instance.id === id);
+        if (!listener){
+            return undefined;
+        }
+
+        listener.init();
+    }
+
+    static async resubscribeAll(){
+        if (!this.instances){
+            return;
+        }
+
+        for (const instance of this.instances){
+            await instance.subscribeToConfirmedTransactions(instance.stream);
+            await Helpers.sleep(1);
+        }
     }
 
 }

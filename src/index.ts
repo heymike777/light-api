@@ -94,9 +94,7 @@ const onExpressStarted = async () => {
     await TokenManager.updateTokensPrices();
     JitoWebsocketManager.getInstance();
     // await JitoManager.initSearcherClient();
-    if (process.env.SOLANA_GEYSER_RPC != 'NULL'){
-        YellowstoneManager.getInstance();
-    }
+    YellowstoneManager.createInstances();
 
     await MigrationManager.migrate();
 }

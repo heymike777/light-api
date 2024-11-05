@@ -21,6 +21,7 @@ import { FirebaseManager } from "./FirebaseManager";
 import { IUser } from "../entities/User";
 import { BadRequestError } from "../errors/BadRequestError";
 import { PremiumError } from "../errors/PremiumError";
+import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager";
 
 export class WalletManager {
 
@@ -61,7 +62,6 @@ export class WalletManager {
             }
             console.log('all good, add wallet');
 
-
             const wallet = new Wallet({
                 chatId: chatId,
                 userId: user.id,
@@ -80,6 +80,8 @@ export class WalletManager {
             else {
                 tmpWallets = [wallet];
             }
+
+            YellowstoneManager.resubscribeAll();
 
             return wallet;
         }
@@ -101,6 +103,8 @@ export class WalletManager {
                 }
             }
         }
+
+        YellowstoneManager.resubscribeAll();
     }
 
     static async removeWallet(wallet: IWallet){
@@ -117,6 +121,8 @@ export class WalletManager {
                 this.walletsMap.set(wallet.walletAddress, newWallets);
             }
         }
+
+        YellowstoneManager.resubscribeAll();
     }
 
     static async fetchWalletsByChatId(chatId: number): Promise<IWallet[]> {
@@ -138,6 +144,8 @@ export class WalletManager {
                 this.walletsMap.set(wallet.walletAddress, [wallet]);
             }
         }
+
+        YellowstoneManager.resubscribeAll();
     }
 
     static kBatchSize = 200;
