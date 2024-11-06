@@ -35,6 +35,7 @@ import { configRouter } from './routes/v1/Config';
 import { Subscription } from './entities/payments/Subscription';
 import { AppleLog } from './entities/payments/AppleLog';
 import { paymentsRouter } from './routes/v1/Payments';
+import axios from 'axios';
 
 const app = express();
 app.use(json());
@@ -102,13 +103,14 @@ const onExpressStarted = async () => {
 const setupCron = async () => {
     cron.schedule('*/10 * * * * *', () => {
         //TODO: for now it's every 10 seconds, but on productions set it to every second
-        TokenManager.updateTokensPrices();        
+        TokenManager.updateTokensPrices();
     });
 
     cron.schedule('* * * * *', () => {
         // once a minute
         TokenManager.fetchTokensInfo();
         UserManager.cleanOldCache();
+        YellowstoneManager.cleanupProcessedSignatures();
 
         // console.log('Cron', 'tokens:', TokenManager.tokens);
     });

@@ -152,11 +152,17 @@ export class YellowstoneManager {
         if (transaction.meta.err){ return; }
 
         const signature = base58.encode(transaction.signature);
+
+        // check if this transaction is already processed by this server
+        const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
+        if (!shouldProcess){
+            return;
+        }
+
         console.log(new Date(), process.env.SERVER_NAME, 'listener', this.id, `receivedTx`, signature);
         // fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
         //     if (err) console.error(err);
         // });
-
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
         if (parsedTransactionWithMeta){
@@ -217,5 +223,31 @@ export class YellowstoneManager {
             await Helpers.sleep(1);
         }
     }
+
+    static processedSignatures: { [key: string]: number } = {};
+    static processedSignaturesTimestamps: { [key: string]: number } = {};
+
+    static shouldProcessSignature(signature: string){
+        this.processedSignatures[signature] = ++this.processedSignatures[signature] || 1;
+
+        console.log(`count`, this.processedSignatures[signature]);
+        if (this.processedSignatures[signature] > 1){
+            return false;
+        }
+
+        this.processedSignaturesTimestamps[signature] = Date.now();
+        return true;
+    }
+
+    static cleanupProcessedSignatures(){
+        const now = Date.now();
+        for (const signature in this.processedSignaturesTimestamps){
+            if (now - this.processedSignaturesTimestamps[signature] > 1000 * 60 * 10){
+                delete this.processedSignatures[signature];
+                delete this.processedSignaturesTimestamps[signature];
+            }
+        }
+    }
+
 
 }
