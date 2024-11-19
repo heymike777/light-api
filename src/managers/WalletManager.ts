@@ -298,10 +298,9 @@ export class WalletManager {
             for (const chat of chats) {
                 // console.log('!!!chat', chat);
                 const info = await this.processTx(parsedTx, asset, chat);
-                // console.log('!!!info', JSON.stringify(info));
                 asset = info.asset;
 
-                // if (info.hasWalletsChanges){
+                if (info.hasWalletsChanges || info.asset){
                     if (chat.id != -1){
                         BotManager.sendMessage({ 
                             chatId: chat.id, 
@@ -324,7 +323,7 @@ export class WalletManager {
                     userTx.asset = asset;
                     userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                     await userTx.save();
-                // }
+                }
 
 
             }
