@@ -11,6 +11,7 @@ import { PublicKey } from "@solana/web3.js";
 import { MetaplexManager } from "./MetaplexManager";
 import { WalletManager } from "./WalletManager";
 import { getTokenMetadata } from "@solana/spl-token";
+import fs from "fs";
 
 export interface ParsedTx {
     title: string;
@@ -133,24 +134,39 @@ export class ProgramManager {
     }
 
     static async parseIx(programId: string, ixData: string): Promise<{output: ParserOutput, programName?: string} | undefined>{
-        const idl = await this.getIDL(programId);
-        // console.log('idl', idl);
-        if (idl){
-            const parser = new SolanaFMParser(idl, programId);
-            const instructionParser = parser.createParser(ParserType.INSTRUCTION);
-            
-            if (instructionParser && checkIfInstructionParser(instructionParser)) {
-                const output = instructionParser.parseInstructions(ixData);
+        let parser: SolanaFMParser | undefined;
+        let idl: IdlItem | undefined;
 
-                let programName: string | undefined = kPrograms[programId]?.name;
-                if (!programName){
-                    programName = (idl.idl as any).name || undefined;
-                    programName = programName?.replaceAll('_', ' ');
-                    programName = programName?.toUpperCase();
-                }
-
-                return  { output, programName };
+        let customIdl = kPrograms[programId]?.customIdl;
+        if (customIdl){
+            const customParser = this.setupCustomParser(programId, customIdl.path, customIdl.type);
+            parser = customParser.parser;
+            idl = customParser.idlItem;
+        }
+        else {
+            idl = await this.getIDL(programId);
+            if (idl){
+                parser = new SolanaFMParser(idl, programId);
             }
+
+        }
+
+        if (!parser || !idl){
+            return undefined;
+        }
+
+        const instructionParser = parser.createParser(ParserType.INSTRUCTION);
+        if (instructionParser && checkIfInstructionParser(instructionParser)) {
+            const output = instructionParser.parseInstructions(ixData);
+
+            let programName: string | undefined = kPrograms[programId]?.name;
+            if (!programName){
+                programName = (idl.idl as any).name || undefined;
+                programName = programName?.replaceAll('_', ' ');
+                programName = programName?.toUpperCase();
+            }
+
+            return  { output, programName };
         }
 
         return undefined;
@@ -360,5 +376,18 @@ export class ProgramManager {
         return undefined;
     }
 
+    static setupCustomParser(programId: string, idlPath: string, idlType: "anchor" | "shank" | "kinobi"): { parser: SolanaFMParser, idlItem: IdlItem } {
+        const jsonString = fs.readFileSync(idlPath, "utf8");
+        const idlFile = JSON.parse(jsonString);
+        
+        const idlItem: IdlItem = {
+            programId: programId,
+            idl: idlFile,
+            idlType: idlType,
+        };
+        
+        const parser = new SolanaFMParser(idlItem, programId);
+        return {parser, idlItem};
+    }
 
 }

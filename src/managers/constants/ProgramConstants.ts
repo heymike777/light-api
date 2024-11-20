@@ -16,6 +16,7 @@ export enum kProgram {
     MAGIC_EDEN_V3 = 'M3mxk5W2tt27WGT7THox7PmgRDp4m6NEhL5xvxrBfS1',
     BUBBLEGUM = 'BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY',
     BONK_REWARDS = 'STAKEkKzbdeKkqzKpLkNQD3SUuLgshDKCD7U8duxAbB',
+    PUMPFUN = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P',
 }
 
 export interface KnownInstruction {
@@ -27,6 +28,7 @@ export const kPrograms: { [key: string]: {
     name?: string,
     knownInstructions: {[key: string]: KnownInstruction}[],
     skip?: boolean,
+    customIdl?: { path: string, type: 'anchor' | 'shank' | 'kinobi' },
 } } = {
     [kProgram.SOLANA]: {
         name: undefined,
@@ -105,6 +107,20 @@ export const kPrograms: { [key: string]: {
             { 'claimToken': {title: 'CLAIM', priority: 5} },
         ],
         skip: false,
+    },
+    [kProgram.PUMPFUN]: {
+        name: 'PUMPFUN',
+        knownInstructions: [
+            { 'buy': {title: 'BUY', priority: 3} },
+            { 'sell': {title: 'SELL', priority: 3} },
+            { 'create': {title: 'CREATE TOKEN', priority: 2} },
+            { 'withdraw': {title: 'WITHDRAW LIQUIDITY', priority: 3} },
+        ],
+        skip: false,
+        customIdl: {
+            path: 'src/idls/pumpfun.json',
+            type: 'anchor',
+        },
     },
     [kProgram.SOL_INCINERATOR]: {
         name: 'SOL INCINERATOR',

@@ -34,7 +34,7 @@ export class MigrationManager {
 
         // await AppStoreManager.receivedPaymentWebhook(receipt2, '66ef97ab618c7ff9c1bbf17d');
         
-        // const signature = '36QHEXaj8VEkPhYprCdFViz2mHJoPtn1TW6JBTxCULQn42od9AePeiUVaBompWy4ShyZGZ4z6TRarae9Yh5nH1HH';
+        // const signature = '2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL';
         // await this.processTx(signature, chatId);
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
@@ -48,11 +48,6 @@ export class MigrationManager {
         // });
 
         // await AppStoreManager.sendTestPaymentWebhook();
-
-        
-        // const realParsedTxs = await SolanaManager.getParsedTransactions(newConnection(), ['DPCPsHa5D3ptocGrApQHnhMKAhjzXh1vVa8g5dn34ciZLpdsX1eGoJJ8T8VPprsPVYP4JEz77cMChoovN6stUUe']);
-        // console.log('!!!realParsedTxs', JSON.stringify(realParsedTxs));
-
         
         // fs.writeFileSync('transactions.txt', `${new Date()} start\n`);
         // fs.writeFileSync('transactions_account_keys.txt', `${new Date()} start\n`);
@@ -63,7 +58,8 @@ export class MigrationManager {
     }
 
     static async processTx(signature: string, chatId: number) {
-        const wallets = await Wallet.find({ userId: '66eefe2c8fed7f2c60d147ef' });
+        const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
+        const wallets = await Wallet.find({ userId: userId });
         const chats = [{
             id: chatId,
             wallets: wallets,

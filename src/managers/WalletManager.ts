@@ -300,7 +300,7 @@ export class WalletManager {
                 const info = await this.processTx(parsedTx, asset, chat);
                 asset = info.asset;
 
-                if (info.hasWalletsChanges || info.asset){
+                if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
                     if (chat.id != -1){
                         BotManager.sendMessage({ 
                             chatId: chat.id, 
