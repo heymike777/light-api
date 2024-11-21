@@ -12,6 +12,7 @@ import { MetaplexManager } from "./MetaplexManager";
 import { WalletManager } from "./WalletManager";
 import { getTokenMetadata } from "@solana/spl-token";
 import fs from "fs";
+import { kSolAddress } from "../services/solana/Constants";
 
 export interface ParsedTx {
     title: string;
@@ -128,12 +129,6 @@ export class ProgramManager {
             }
         }
         else if (programId == kProgram.PUMPFUN){
-            // const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
-            // description = {
-            //     plain: `{address0} staked ${stakeAmountString} with {address1}`,
-            //     html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked ${stakeAmountString} with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
-            //     addresses,
-            // };
             const walletAddress = accounts?.[6]?.toBase58();
             const tokenMint = accounts?.[2]?.toBase58();
             if (walletAddress && tokenMint){
@@ -160,7 +155,49 @@ export class ProgramManager {
                     };    
                 }
             }
-            console.log('!!!PUMPFUN', ixParsed, accounts);
+        }
+        else if (programId == kProgram.RAYDIUM){
+            if (['swapBaseIn', 'swapBaseOut'].indexOf(ixParsed.name) != -1){
+                const walletAddress = accounts?.[17]?.toBase58();
+                if (walletAddress && tx?.meta){
+                    const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
+                    console.log('!changes:', changes);
+
+                    if (changes.length > 0){
+                        const tokenMint = changes[0].mint;
+                        const amount = changes[0].uiAmountChange;
+
+                        const addresses = [walletAddress, tokenMint];
+                        description = {
+                            plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Raydium`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Raydium`,
+                            addresses: addresses,
+                        };    
+                    }
+                }    
+            }
+        }
+        else if (programId == kProgram.JUPITER){
+            if (['routeWithTokenLedger', 'sharedAccountsRoute', 'route', 'exactOutRoute', 'sharedAccountsRouteWithTokenLedger', 'sharedAccountsExactOutRoute'].indexOf(ixParsed.name) != -1){
+                const walletAddress = accounts?.[2]?.toBase58();
+                if (walletAddress && tx?.meta){
+                    const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
+                    console.log('!changes:', changes);
+
+                    if (changes.length > 0){
+                        const tokenMint = changes[0].mint;
+                        const amount = changes[0].uiAmountChange;
+
+                        const addresses = [walletAddress, tokenMint];
+                        description = {
+                            plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Jupiter`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Jupiter`,
+                            addresses: addresses,
+                        };    
+                    }
+                }    
+            }
+
         }
 
         return {
@@ -426,6 +463,49 @@ export class ProgramManager {
         
         const parser = new SolanaFMParser(idlItem, programId);
         return {parser, idlItem};
+    }
+
+    static findChangedTokenBalances(walletAddress: string, meta: web3.ParsedTransactionMeta, inclideWsol = true): {mint: string, uiAmountChange: number}[] {
+        const preBalances = meta.preTokenBalances || [];
+        const postBalances = meta.postTokenBalances || [];
+
+        const preBalancesMap: {[key: string]: web3.TokenBalance | undefined} = {};
+        for (const balance of preBalances) {
+            if (balance.owner == walletAddress){
+                preBalancesMap[balance.mint] = balance;
+            }
+        }
+
+        let changedBalances: {mint: string, uiAmountChange: number}[] = [];
+        for (const postBalance of postBalances) {
+            if (postBalance.owner == walletAddress){
+                const preBalance = preBalancesMap[postBalance.mint];
+                if (!preBalance || preBalance.uiTokenAmount.uiAmount != postBalance.uiTokenAmount.uiAmount){
+                    const uiAmountChange = (postBalance.uiTokenAmount.uiAmount || 0) - (preBalance?.uiTokenAmount.uiAmount || 0);
+                    if (uiAmountChange != 0){
+                        changedBalances.push({ mint: postBalance.mint, uiAmountChange: uiAmountChange });
+                    }
+
+                    preBalancesMap[postBalance.mint] = undefined;
+                }
+                else if (preBalance && preBalance.uiTokenAmount.uiAmount == postBalance.uiTokenAmount.uiAmount){
+                    preBalancesMap[postBalance.mint] = undefined;
+                }
+            }
+        }
+
+        for (const mint in preBalancesMap) {
+            const balance = preBalancesMap[mint];
+            if (balance && balance.uiTokenAmount.uiAmount && balance.uiTokenAmount.uiAmount != 0){
+                changedBalances.push({ mint: balance.mint, uiAmountChange: balance.uiTokenAmount.uiAmount });
+            }
+        }
+
+        if (!inclideWsol){
+            changedBalances = changedBalances.filter((balance) => balance.mint != kSolAddress);
+        }
+
+        return changedBalances;
     }
 
 }
