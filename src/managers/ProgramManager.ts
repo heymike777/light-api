@@ -74,7 +74,7 @@ export class ProgramManager {
         return SFMIdlItem || undefined;    
     }
 
-    static parseParsedIx(programId: string, ixParsed: any, previousIxs?: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[]): {description?: TxDescription} {
+    static parseParsedIx(programId: string, ixParsed: any | ParserOutput, previousIxs?: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[], accounts?: web3.PublicKey[], tx?: web3.ParsedTransactionWithMeta): {description?: TxDescription} {
         if (!ixParsed){
             return {};
         }
@@ -126,6 +126,41 @@ export class ProgramManager {
         else if (programId == kProgram.TOKEN_PROGRAM){
             if (ixParsed.type == 'transferChecked'){
             }
+        }
+        else if (programId == kProgram.PUMPFUN){
+            // const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
+            // description = {
+            //     plain: `{address0} staked ${stakeAmountString} with {address1}`,
+            //     html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked ${stakeAmountString} with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+            //     addresses,
+            // };
+            const walletAddress = accounts?.[6]?.toBase58();
+            const tokenMint = accounts?.[2]?.toBase58();
+            if (walletAddress && tokenMint){
+                const addresses = [walletAddress, tokenMint];
+                const meta = tx?.meta;
+                const preAmount = meta?.preTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
+                const postAmount = meta?.postTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
+                let amount = postAmount - preAmount;
+
+                if (ixParsed.name == 'buy') {
+                    description = {
+                        plain: `{address0} bought ${amount} {address1} on Pump Fun`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
+                        addresses: addresses,
+                    };    
+                }
+                else if (ixParsed.name == 'sell') {
+                    amount = -amount;
+
+                    description = {
+                        plain: `{address0} sold ${amount} {address1} on Pump Fun`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
+                        addresses: addresses,
+                    };    
+                }
+            }
+            console.log('!!!PUMPFUN', ixParsed, accounts);
         }
 
         return {
@@ -223,7 +258,7 @@ export class ProgramManager {
             if ('parsed' in instruction){
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
 
-                const info = this.parseParsedIx(ixProgramId, instruction.parsed, previousIxs);
+                const info = this.parseParsedIx(ixProgramId, instruction.parsed, previousIxs, undefined, tx);
                 
                 let programName: string | undefined = kPrograms[ixProgramId]?.name;
                 let ixTitle: string | undefined = instruction.parsed.type;
@@ -243,6 +278,8 @@ export class ProgramManager {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
 
+                const info = this.parseParsedIx(ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx);
+
                 let ixTitle = ixData?.output?.name;
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
@@ -252,6 +289,7 @@ export class ProgramManager {
                     program: ixData?.programName || undefined,
                     title: ixTitle,
                     data: ixData?.output,
+                    description: info?.description,
                     priority: knownInstruction?.priority || 1000,
                     accountKeys: instruction.accounts || [],
                 });

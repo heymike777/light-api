@@ -1,5 +1,5 @@
 import { IWallet } from "../entities/Wallet";
-import { TokenNft } from "../managers/TokenManager";
+import { Token, TokenNft } from "../managers/TokenManager";
 
 export enum Environment {
     PRODUCTION = 'PRODUCTION',
@@ -19,6 +19,7 @@ export interface TransactionApiResponse {
     signature: string,
     blockTime: number,
     wallets: ChangedWallet[],
+    tokens: Token[],
 }
 
 export interface ChangedWallet {

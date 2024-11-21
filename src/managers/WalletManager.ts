@@ -11,7 +11,7 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
-import { TokenManager, TokenNft } from "./TokenManager";
+import { Token, TokenManager, TokenNft } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { MetaplexManager } from "./MetaplexManager";
@@ -320,8 +320,9 @@ export class WalletManager {
                     userTx.userId = chat.wallets[0].userId;
                     userTx.chatId = chat.id;
                     userTx.parsedTx = parsedTx;
-                    userTx.asset = asset;
+                    // userTx.asset = asset;
                     userTx.createdAt = new Date(parsedTx.blockTime * 1000);
+                    userTx.tokens = info.transactionApiResponse.tokens;
                     await userTx.save();
                 }
 
@@ -339,16 +340,14 @@ export class WalletManager {
         let message = `[${parsedTx.title}]\n`;
 
         if (parsedTx.description){
-            let description = parsedTx.description.html;
-            description = Helpers.replaceAddressesWithPretty(description, parsedTx.description.addresses, chat.wallets);
-
-            message += '\n' + description + '\n';
+            message += '\n{description}\n';
         }
 
         const txPreBalances = parsedTx.preBalances || [];
         const txPostBalances = parsedTx.postBalances || [];
         const txPreTokenBalances = parsedTx.preTokenBalances || [];
         const txPostTokenBalances = parsedTx.postTokenBalances || [];
+        const tokens: Token[] = [];
 
         const changedWallets: ChangedWallet[] = [];
         // console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
@@ -406,6 +405,7 @@ export class WalletManager {
                     hasBalanceChange = true;
                     hasWalletsChanges = true;
                     const token = await TokenManager.getToken(kSolAddress);
+                    if (token) tokens.push(token);
 
                     // const amount = +Helpers.prettyNumber(balanceChange, 3);
                     let amountUSD = token && token.price ? Math.round(Math.abs(balanceChange) * token.price * 100)/100 : undefined;
@@ -427,6 +427,8 @@ export class WalletManager {
                         hasBalanceChange = true;
                         hasWalletsChanges = true;
                         const token = await TokenManager.getToken(mint);
+                        if (token) tokens.push(token);
+
                         if (token?.nft && !asset){
                             asset = token.nft;
                         }
@@ -518,12 +520,20 @@ export class WalletManager {
             }
         }
 
+        // tokens.push(asset);
+
         message += '\n\n';
 
         const explorerUrl = ExplorerManager.getUrlToTransaction(parsedTx.signature);
         message += `<a href="${explorerUrl}">Explorer</a>`;
 
-        const txDescription = parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, chat.wallets) : undefined;
+        if (parsedTx.description){
+            let description = parsedTx.description.html;
+            description = Helpers.replaceAddressesWithPretty(description, parsedTx.description.addresses, chat.wallets, tokens);
+            message = message.replace('{description}', description);
+        }
+
+        const txDescription = parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, chat.wallets, tokens) : undefined;
 
         const txApiResponse: TransactionApiResponse = {
             title: parsedTx.title,
@@ -532,6 +542,7 @@ export class WalletManager {
             signature: parsedTx.signature,
             blockTime: parsedTx.blockTime,
             wallets: [],
+            tokens: tokens,
         };
 
         while (message.includes('\n\n\n')){

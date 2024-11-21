@@ -1,5 +1,6 @@
 import { IWallet } from "../../entities/Wallet";
 import { kValidators } from "../../managers/constants/ValidatorConstants";
+import { Token } from "../../managers/TokenManager";
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 
@@ -106,20 +107,25 @@ export class Helpers {
         return pageToken;
     }
 
-    static replaceAddressesWithPretty(text: string, addresses: string[] | undefined, wallets: IWallet[]): string {
+    static replaceAddressesWithPretty(text: string, addresses: string[] | undefined, wallets: IWallet[], txTokens?: Token[]): string {
         if (addresses && addresses.length > 0){
             for (let index = 0; index < addresses.length; index++) {
                 const address = addresses[index];
                 const wallet = wallets.find(w => w.walletAddress == address);
-                
-                let title = '';
+                const txToken = txTokens?.find(t => t.address == address);
+
+                let title = undefined;
                 if (wallet?.title){
                     title = wallet?.title;
                 }
                 else if (kValidators[address]){
                     title = kValidators[address].name;
                 }
-                else {
+                else if (txToken){
+                    title = txToken.nft ? txToken.nft.title : (txToken.symbol || txToken.name);
+                }
+
+                if (!title || title==''){
                     title = this.prettyWallet(address);
                 }
                 
