@@ -5,6 +5,7 @@ export let ObjectId = mongoose.Schema.Types.ObjectId;
 export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface IAuth extends mongoose.Document {
+    verificationService: string;
     email: string;
     code: string;
     tries: number;
@@ -16,14 +17,15 @@ export interface IAuth extends mongoose.Document {
 }
 
 export const AuthSchema = new mongoose.Schema<IAuth>({
-    email: { type: String, required: true },
-    code: { type: String, required: true },
-    tries: { type: Number, required: true, default: 0 },
-    lastSentAt: { type: Date, required: false },
-    success: { type: Boolean, required: false },
+    verificationService: { type: String },
+    email: { type: String },
+    code: { type: String },
+    tries: { type: Number },
+    lastSentAt: { type: Date },
+    success: { type: Boolean },
 
-    updatedAt: { type: Date, required: false },
-    createdAt: { type: Date, required: false },
+    updatedAt: { type: Date },
+    createdAt: { type: Date },
 });
 
 AuthSchema.pre('save', function (next) {

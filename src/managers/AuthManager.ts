@@ -6,8 +6,15 @@ import { IUser, User } from '../entities/User';
 import { AccessToken } from '../models/AccessToken';
 import { BrevoManager } from './BrevoManager';
 import { SystemNotificationsManager } from './SytemNotificationsManager';
+import { TwilioManager } from '../services/TwilioManager';
+
+export enum VerificationService {
+    TWILIO = 'TWILIO',
+    BREVO = 'BREVO'
+}
 
 export class AuthManager {
+    static kVerificationService: VerificationService = process.env.VERIFICATION_SERVICE! as VerificationService;
 
     static async createAuth(email: string): Promise<string> {
         const requestsCount = await Auth.countDocuments({ email, createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60) } });
@@ -17,57 +24,94 @@ export class AuthManager {
 
         await BrevoManager.createContact({email}, [BrevoManager.allUsersListId]);
 
-        const code = (email=='test@sololabs.io' || email=='test@heynova.xyz') ? '111111' : this.generateCode();
-
         const request = new Auth();
+        request.verificationService = this.kVerificationService;
         request.email = email;
-        request.code = code;
-        request.tries = 0;
-        request.lastSentAt = new Date();
         request.createdAt = new Date();
+        request.tries = 0;
+
+        if (this.kVerificationService == VerificationService.BREVO){
+            request.code = (email=='test@sololabs.io' || email=='test@heynova.xyz') ? '111111' : this.generateCode();
+            request.lastSentAt = new Date();
+        }
+
         await request.save();
 
+
         // send email
-        await BrevoManager.sendAuthTransactionalEmail(request.email, request.code);
+        if (this.kVerificationService == VerificationService.TWILIO){
+            await TwilioManager.sendVerifyRequest(request.email);
+        }
+        else if (this.kVerificationService == VerificationService.BREVO){            
+            await BrevoManager.sendAuthTransactionalEmail(request.email, request.code);
+        }
+        else {
+            throw new BadRequestError('Invalid verification service');
+        }
 
         return request.id;
     }
 
     static async resendAuthRequest(requestId: string): Promise<void> {        
         const request = await Auth.findById(requestId);
-        if (!request || request.createdAt!.getTime() < Date.now() - 1000 * 60 * 10) { // request is valid for 10 minutes
+
+        if (!request){
             throw new BadRequestError('Invalid request', 'requestId');
         }
-        if (request.tries >= 5) {
-            throw new BadRequestError('Too many wrong tries.', 'requestId');
-        }
-        if (request.lastSentAt.getTime() > Date.now() - 1000 * 60) {
-            throw new BadRequestError('Try again in a minute', 'requestId');
-        }
 
-        await Auth.updateOne({ _id: requestId }, { lastSentAt: new Date()  });
+        if (request.verificationService == VerificationService.TWILIO){
+            await TwilioManager.sendVerifyRequest(request.email);
+        }
+        else if (request.verificationService == VerificationService.BREVO){
+            if (request.createdAt!.getTime() < Date.now() - 1000 * 60 * 10) { // request is valid for 10 minutes
+                throw new BadRequestError('Invalid request', 'requestId');
+            }
+            if (request.tries >= 5) {
+                throw new BadRequestError('Too many wrong tries.', 'requestId');
+            }
+            if (request.lastSentAt.getTime() > Date.now() - 1000 * 60) {
+                throw new BadRequestError('Try again in a minute', 'requestId');
+            }
+    
+            await Auth.updateOne({ _id: requestId }, { lastSentAt: new Date()  });
 
-        // send email
-        await BrevoManager.sendAuthTransactionalEmail(request.email, request.code);
+            await BrevoManager.sendAuthTransactionalEmail(request.email, request.code);
+        }
+        else {
+            throw new BadRequestError('Invalid verification service');
+        }
     }
 
     static async validate(requestId: string, code: string): Promise<IAuth> {        
         const request = await Auth.findByIdAndUpdate(requestId, { $inc: { tries: 1 } }, { new: true });
 
-        if (!request || request.createdAt!.getTime() < Date.now() - 1000 * 60 * 10) { // request is valid for 10 minutes
+        if (!request){
             throw new BadRequestError('Invalid request', 'requestId');
         }
-        if (request.tries >= 5) {
-            throw new BadRequestError('Too many wrong tries.', 'requestId');
-        }
-        if (request.success){
-            throw new BadRequestError('Already validated', 'requestId');
-        }
-        if (request.code != code){
-            throw new BadRequestError('Invalid code', 'code');
-        }
 
-        await Auth.updateOne({ _id: requestId }, { success: true });
+        if (request.verificationService == VerificationService.TWILIO){
+            const valid = await TwilioManager.verify(request.email, code);
+            if (!valid){
+                throw new BadRequestError('Invalid code', 'code');
+            }
+            await Auth.updateOne({ _id: requestId }, { success: true });
+        }
+        else if (request.verificationService == VerificationService.BREVO){
+            if (request.createdAt!.getTime() < Date.now() - 1000 * 60 * 10) { // request is valid for 10 minutes
+                throw new BadRequestError('Invalid request', 'requestId');
+            }
+            if (request.tries >= 5) {
+                throw new BadRequestError('Too many wrong tries.', 'requestId');
+            }
+            if (request.success){
+                throw new BadRequestError('Already validated', 'requestId');
+            }
+            if (request.code != code){
+                throw new BadRequestError('Invalid code', 'code');
+            }
+
+            await Auth.updateOne({ _id: requestId }, { success: true });
+        }
 
         return request;
     }
@@ -101,6 +145,5 @@ export class AuthManager {
 
         return user;
     }
-
 
 }

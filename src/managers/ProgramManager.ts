@@ -182,8 +182,6 @@ export class ProgramManager {
                 const walletAddress = accounts?.[2]?.toBase58();
                 if (walletAddress && tx?.meta){
                     const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
-                    console.log('!changes:', changes);
-
                     if (changes.length > 0){
                         const tokenMint = changes[0].mint;
                         const amount = changes[0].uiAmountChange;
@@ -197,8 +195,23 @@ export class ProgramManager {
                     }
                 }    
             }
-
         }
+        else if (programId == kProgram.TENSOR){
+            console.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
+        }
+        else if (programId == kProgram.TENSOR_CNFT){
+            console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
+        }
+        else if (programId == kProgram.MAGIC_EDEN_AMM){
+            console.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
+        }
+        else if (programId == kProgram.MAGIC_EDEN_V2){
+            console.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
+        }
+        else if (programId == kProgram.MAGIC_EDEN_V3){
+            console.log('!!!MAGIC_EDEN_V3', 'ixParsed:', ixParsed, 'accounts:', accounts);
+        }
+        
 
         return {
             description,
