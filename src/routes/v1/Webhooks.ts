@@ -8,8 +8,7 @@ router.post(
     '/api/v1/subscriptions/apple/webhook/:environment',
     async (req: Request, res: Response) => {
         const { environment } = req.params;
-        console.log('Webhook received: subscriptions/apple/webhook');
-        console.log('environment:', environment);
+        console.log(`Webhook received: subscriptions/apple/webhook/${environment}`);
 
         fs.appendFileSync('apple_webhooks.txt', 'environment:' + environment + '\n' + JSON.stringify(req.body, null, 2) + '\n\n');
 

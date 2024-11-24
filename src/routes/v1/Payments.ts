@@ -28,6 +28,8 @@ router.post(
         const platform = req.params.platform;
         const receipt = req.body.receipt;
 
+        console.log(`/api/v1/payments/${platform}`, 'userId:', userId, 'receipt:', receipt);
+
         if (!receipt){
             throw new BadRequestError('receipt is required', 'receipt');
         }
