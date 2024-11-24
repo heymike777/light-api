@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose';
 import { ParsedTx } from '../managers/ProgramManager';
 import { Token, TokenNft } from '../managers/TokenManager';
+import { ChangedWallet } from '../models/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -13,6 +14,7 @@ export interface IUserTransaction extends mongoose.Document {
     parsedTx: ParsedTx;
     // asset?: TokenNft;
     tokens?: Token[];
+    changedWallets?: ChangedWallet[];
 
     updatedAt?: Date;
     createdAt: Date;
@@ -25,6 +27,7 @@ export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
     parsedTx: { type: Mixed },
     // asset: { type: Mixed },
     tokens: { type: Mixed },
+    changedWallets: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }

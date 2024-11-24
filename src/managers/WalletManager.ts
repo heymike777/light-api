@@ -320,6 +320,7 @@ export class WalletManager {
                     userTx.userId = chat.wallets[0].userId;
                     userTx.chatId = chat.id;
                     userTx.parsedTx = parsedTx;
+                    userTx.changedWallets = info.changedWallets;
                     // userTx.asset = asset;
                     userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                     userTx.tokens = info.transactionApiResponse.tokens;

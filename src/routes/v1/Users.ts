@@ -109,17 +109,19 @@ router.post(
         const parsedTransactions: TransactionApiResponse[] = [];
         for (const transaction of transactions) {
             const parsedTx = transaction.parsedTx;
-            const assetToken = transaction.tokens?.find((token) => token.nft);
-            const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
+            const changedWallets = transaction.changedWallets || [];
+            const tokens = transaction.tokens || [];
+            const assetToken = tokens?.find((token) => token.nft);
+            // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
             parsedTransactions.push({
                 title: parsedTx.title,
-                description: parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, wallets, info.transactionApiResponse.tokens) : undefined,
+                description: parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, wallets, tokens) : undefined,
                 explorerUrl: ExplorerManager.getUrlToTransaction(parsedTx.signature),
-                asset: info.asset,
+                asset: assetToken?.nft,
                 signature: parsedTx.signature,
                 blockTime: parsedTx.blockTime,
-                wallets: info.changedWallets,
-                tokens: info.transactionApiResponse.tokens,
+                wallets: changedWallets,
+                tokens: tokens,
             });
         }
 
