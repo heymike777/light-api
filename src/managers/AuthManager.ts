@@ -7,6 +7,7 @@ import { AccessToken } from '../models/AccessToken';
 import { BrevoManager } from './BrevoManager';
 import { SystemNotificationsManager } from './SytemNotificationsManager';
 import { TwilioManager } from '../services/TwilioManager';
+import { UserManager } from './UserManager';
 
 export enum VerificationService {
     TWILIO = 'TWILIO',
@@ -133,6 +134,7 @@ export class AuthManager {
     static async findOrCreateUser(email: string): Promise<IUser> {
         const existingUser = await User.findOne({ email });
         if (existingUser){
+            await UserManager.fillUserWithData(existingUser);
             return existingUser;
         }
 

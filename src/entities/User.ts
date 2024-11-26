@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import { ISubscription, SubscriptionTier } from './payments/Subscription';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -14,22 +15,16 @@ export interface TelegramUser {
     is_premium: boolean;
 }
 
-export interface UserSubscription {
-    subscriptionId: string;
-    platform: 'ios' | 'android' | 'sol';
-    tier: 'free' | 'silver' | 'gold' | 'platinum';
-    expirationDate: Date;
-}
-
 export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
     referralCode?: string;
-    isSubscriptionActive?: boolean;
-    subscription?: UserSubscription;
 
     updatedAt?: Date;
     createdAt: Date;
+
+    // --- Relations ---
+    subscription?: ISubscription;
 }
 
 export const UserSchema = new mongoose.Schema<IUser>({
@@ -43,9 +38,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
         language_code: { type: String },
         is_premium: { type: Boolean }
     },
-    subscription: { type: Mixed },
     referralCode: { type: String },
-    isSubscriptionActive: { type: Boolean },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -65,7 +58,6 @@ UserSchema.methods.toJSON = function () {
         id: this._id,
         email: this.email,
         subscription: this.subscription,
-        isSubscriptionActive: this.isSubscriptionActive,
     };
 };
 

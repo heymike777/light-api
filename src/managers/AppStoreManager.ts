@@ -1,8 +1,5 @@
 import { AppStoreServerAPIClient, AppTransaction, Environment, JWSRenewalInfoDecodedPayload, JWSTransactionDecodedPayload, ResponseBodyV2, ResponseBodyV2DecodedPayload, SignedDataVerifier } from "@apple/app-store-server-library"
 import { readFileSync } from "fs";
-import jwt from "jsonwebtoken";
-import { AppleLog } from "../entities/payments/AppleLog";
-import { Subscription } from "../entities/payments/Subscription";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { PaymentLog } from "../entities/payments/PaymentLog";
 import { IUser, User } from "../entities/User";
@@ -16,7 +13,7 @@ export interface DecodedReceipt {
 
 export class AppStoreManager {
     static bundleId = 'xyz.heynova';
-    static environment = Environment.XCODE;
+    static environment = Environment.SANDBOX;
     static appAppleId = 6736581652;
     static appleRootCAs: Buffer[] = this.loadRootCAs() 
 
@@ -25,23 +22,6 @@ export class AppStoreManager {
         const appleRoot2 = readFileSync('keys/AppleRootCA-G2.cer');
         return [appleRoot, appleRoot2];
     }
-
-    // static async sendTestPaymentWebhook() {
-    //     const filePath = 'keys/SubscriptionKey_VXDQ9BS3R6.p8';
-    //     const encodedKey = readFileSync(filePath).toString();
-    //     const keyId = 'VXDQ9BS3R6';
-    //     const issuerId = '81a5b015-01e1-4961-bfc3-932271536d67';
-    //     const environment = process.env.ENVIRONMENT == 'PRODUCTION' ? Environment.PRODUCTION : Environment.SANDBOX;
-
-    //     const client = new AppStoreServerAPIClient(encodedKey, keyId, issuerId, this.bundleId, environment);
-
-    //     try {
-    //         const response: SendTestNotificationResponse = await client.requestTestNotification()
-    //         console.log('AppStoreManager', 'sendTestPaymentWebhook', response)
-    //     } catch (e) {
-    //         console.error('AppStoreManager', 'sendTestPaymentWebhook', e)
-    //     }
-    // }
 
     static async receivedPaymentWebhook(signedPayload: string, userId?: string): Promise<boolean> {
         try {

@@ -22,6 +22,7 @@ import { IUser } from "../entities/User";
 import { BadRequestError } from "../errors/BadRequestError";
 import { PremiumError } from "../errors/PremiumError";
 import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager";
+import { SubscriptionManager } from "./SubscriptionManager";
 
 export class WalletManager {
 
@@ -49,12 +50,10 @@ export class WalletManager {
         }
         else {
             const walletsCount = await Wallet.countDocuments({userId: user.id});
-            console.log('walletsCount', walletsCount);
-            const kMaxWallets = user.isSubscriptionActive ? 500 : 10;
-            console.log('kMaxWallets', kMaxWallets);
+            const kMaxWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
             if (walletsCount >= kMaxWallets){
-                if (user.isSubscriptionActive){
-                    throw new PremiumError(`You have reached the maximum number of wallets. Please contact support if you need to track more than ${kMaxWallets} wallets.`);
+                if (user.subscription){
+                    throw new PremiumError(`You have reached the maximum number of wallets. Please get the higher plan to track more than ${kMaxWallets} wallets.`);
                 }
                 else {
                     throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');

@@ -1,37 +1,48 @@
 import * as mongoose from 'mongoose';
-import { Environment } from "@apple/app-store-server-library"
+import { Environment, Status } from "@apple/app-store-server-library"
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
 export let Mixed = mongoose.Schema.Types.Mixed;
 
+export enum SubscriptionTier {
+    SILVER = 'silver',
+    GOLD = 'gold',
+    PLATINUM = 'platinum',
+}
+
+export enum SubscriptionStatus {
+    ACTIVE = 'ACTIVE',
+    INACTIVE = 'INACTIVE',
+}
+
+export enum SubscriptionPlatform {
+    IOS = 'ios',
+    ANDROID = 'android',
+    SOLANA = 'solana',
+}
+
 export interface ISubscription extends mongoose.Document {
     userId: string;
-    expiresDate: Date;
-    isActive: boolean;
-    ios?: {
-        originalTransactionId: string;
-        environment: Environment;
-    };
+    tier: SubscriptionTier;
+    status: SubscriptionStatus;
+    platform: SubscriptionPlatform;
+    expiresAt: Date;
     updatedAt?: Date;
     createdAt: Date;
 }
 
 export const SubscriptionSchema = new mongoose.Schema<ISubscription>({
     userId: { type: String },
-    expiresDate: { type: Date },
-    isActive: { type: Boolean },
-    ios: {
-        originalTransactionId: { type: String },
-        environment: { type: String },
-    },
-
+    tier: { type: String, enum: Object.values(SubscriptionTier) },
+    status: { type: String, enum: Object.values(SubscriptionStatus) },
+    platform: { type: String, enum: Object.values(SubscriptionPlatform) },
+    expiresAt: { type: Date },
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
 });
 
-SubscriptionSchema.index({ userId: 1, isActive: 1 });
-SubscriptionSchema.index({ 'ios.originalTransactionId': 1 });
+SubscriptionSchema.index({ userId: 1, status: 1 });
 
 SubscriptionSchema.pre('save', function (next) {
     this.updatedAt = new Date();
@@ -41,11 +52,9 @@ SubscriptionSchema.pre('save', function (next) {
 
 SubscriptionSchema.methods.toJSON = function () {
     return {
-        id: this._id,
-        userId: this.userId,
-        originalTransactionId: this.originalTransactionId,
-        isActive: this.isActive,
-        createdAt: this.createdAt,
+        tier: this.tier,
+        platform: this.platform,
+        expiresAt: this.expiresAt,
     };
 };
 
