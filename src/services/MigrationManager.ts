@@ -30,7 +30,9 @@ import { SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Sub
 export class MigrationManager {
 
     static async migrate() {
-        SystemNotificationsManager.sendSystemMessage('Server started');
+        if (process.env.SERVER_NAME != 'heynova0'){
+            SystemNotificationsManager.sendSystemMessage('Server started');
+        }
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;

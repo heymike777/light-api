@@ -520,7 +520,18 @@ export class WalletManager {
             }
         }
 
-        // tokens.push(asset);
+        if (asset){
+            const assetToken: Token = {
+                address: asset.id,
+                name: asset.title,
+                symbol: asset.title,
+                decimals: 0,
+                // price?: number,
+                priceUpdatedAt: Date.now(),                    
+                nft: asset,
+            };
+            tokens.push(assetToken);
+        }
 
         message += '\n\n';
 
