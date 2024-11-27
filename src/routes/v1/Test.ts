@@ -11,7 +11,7 @@ router.post(
         const message = req.body.message;
         const data = req.body.data;
 
-        const tmp = await FirebaseManager.sendPushToUser(userId, title, message, data);
+        const tmp = await FirebaseManager.sendPushToUser(userId, title, message, undefined, data);
 
         res.status(200).send({ success: true });
     }

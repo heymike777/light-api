@@ -6,6 +6,7 @@ export interface PushNotificationMessage {
     token?: string;
     title: string;
     subtitle: string;
+    image?: string;
     data?: {
         open?: 'transactions' | 'airdrops' | 'profile'
     };
@@ -32,17 +33,23 @@ export class FirebaseManager {
                 title: data.title,
                 body: data.subtitle,
             },
+            android: {
+                notification: {
+                    imageUrl: data.image,
+                }
+            },
             apns: {
                 payload: {
-                  aps: {
-                    badge: 1,
-                    sound: 'default',
-                    contentAvailable: true,
-                  }
+                    aps: {
+                        badge: 1,
+                        sound: 'default',
+                        contentAvailable: true,
+                        mutableContent: true,
+                    },
                 },
-                // fcm_options: {
-                //   image: 'https://foo.bar.pizza-monster.png'
-                // }
+                fcmOptions: {
+                    imageUrl: data.image,
+                }
               },
             data: data.data,
         };
@@ -118,7 +125,7 @@ export class FirebaseManager {
         await PushToken.deleteMany({ token });
     }
 
-    static async sendPushToUser(userId: string, title: string, subtitle?: string, data?: PushNotificationMessage['data']){
+    static async sendPushToUser(userId: string, title: string, subtitle?: string, image?: string, data?: PushNotificationMessage['data']){
         console.log('sendPushToUser', userId, title, subtitle, data);
         try {
             const firebaseManager = FirebaseManager.getInstance();
@@ -132,6 +139,7 @@ export class FirebaseManager {
                     title: title,
                     subtitle: subtitle || '',
                     data: data,
+                    image: image,
                 };
 
                 await firebaseManager.sendMessage(message);

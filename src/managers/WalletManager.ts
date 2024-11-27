@@ -299,6 +299,8 @@ export class WalletManager {
                 const info = await this.processTx(parsedTx, asset, chat);
                 asset = info.asset;
 
+                
+
                 if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
                     if (chat.id != -1){
                         BotManager.sendMessage({ 
@@ -311,7 +313,7 @@ export class WalletManager {
                     const userId = chat.wallets?.[0]?.userId;
                     if (userId && !sentUserIds.includes(userId)){
                         sentUserIds.push(userId);
-                        FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, { open: 'transactions' });
+                        FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
                     }
 
                     //TODO: don't save tx if that's a channel or group chat
