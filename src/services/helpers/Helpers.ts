@@ -1,5 +1,5 @@
 import { IWallet } from "../../entities/Wallet";
-import { kValidators } from "../../managers/constants/ValidatorConstants";
+import { kKnownAddresses, kValidators } from "../../managers/constants/ValidatorConstants";
 import { Token } from "../../managers/TokenManager";
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
@@ -120,6 +120,9 @@ export class Helpers {
                 }
                 else if (kValidators[address]){
                     title = kValidators[address].name;
+                }
+                else if (kKnownAddresses[address]){
+                    title = kKnownAddresses[address].name;
                 }
                 else if (txToken){
                     title = txToken.nft ? txToken.nft.title : (txToken.symbol || txToken.name);

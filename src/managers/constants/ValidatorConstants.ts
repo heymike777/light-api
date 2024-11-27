@@ -147,3 +147,14 @@ export const kValidators: {[key: string]: {name: string}} = {
     '6JfBwvcz5QUKQJ37BMKTLrf968DDJBtwoZLw19aHwFtQ': {name: `Spectrum Staking +MEV`},
     'punK4RDD3pFbcum79ACHatYPLLE1hr5UNnQVUGNfeyP': {name: `Sol Strategies`},
 }
+
+export const kKnownAddresses: {[key: string]: {name: string}} = {
+    '96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5': {name: `Jitotip 1`},
+    'HFqU5x63VTqvQss8hp11i4wVV8bD44PvwucfZ2bU7gRe': {name: `Jitotip 2`},
+    'Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY': {name: `Jitotip 3`},
+    'ADaUMid9yfUytqMBgopwjb2DTLSokTSzL1zt6iGPaS49': {name: `Jitotip 4`},
+    'DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh': {name: `Jitotip 5`},
+    'ADuUkR4vqLUMWXxW9gh6D6L8pMSawimctcNZ5pGwDcEt': {name: `Jitotip 6`},
+    'DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL': {name: `Jitotip 7`},
+    '3AVi9Tg9Uo68tJfuvoKvqKNWKkC5wPdSSdeBnizKZ6jT': {name: `Jitotip 8`},
+}
