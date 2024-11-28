@@ -1,5 +1,6 @@
 import { ISubscription, Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
 import { IUser, TelegramUser, User } from "../entities/User";
+import { MixpanelManager } from "./MixpanelManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export class UserManager {
@@ -53,6 +54,8 @@ export class UserManager {
                 createdAt: now,
             });
 
+            MixpanelManager.updateProfile(newUser, undefined);
+
             SystemNotificationsManager.sendSystemMessage(`New user: @${from.username}`);
 
             this.cachedUsers.push({ user: newUser, createdAt: now });
@@ -60,31 +63,33 @@ export class UserManager {
         }
     }
 
-    static async getUserByEmail(email: string): Promise<IUser> {
-        const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.email === email);
-        if (cachedUser){
-            return cachedUser.user;
-        }
+    // static async getUserByEmail(email: string): Promise<IUser> {
+    //     const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.email === email);
+    //     if (cachedUser){
+    //         return cachedUser.user;
+    //     }
 
-        const now = new Date();
-        const user = await User.findOne({ 'email': email });
-        if (user){
-            await UserManager.fillUserWithData(user);
-            this.cachedUsers.push({ user: user, createdAt: now });
-            return user;
-        }
-        else {
-            const newUser = await User.create({
-                email: email,
-                createdAt: now,
-            });
+    //     const now = new Date();
+    //     const user = await User.findOne({ 'email': email });
+    //     if (user){
+    //         await UserManager.fillUserWithData(user);
+    //         this.cachedUsers.push({ user: user, createdAt: now });
+    //         return user;
+    //     }
+    //     else {
+    //         const newUser = await User.create({
+    //             email: email,
+    //             createdAt: now,
+    //         });
+
+    //         MixpanelManager.updateProfile(newUser, undefined);
             
-            SystemNotificationsManager.sendSystemMessage(`New user: ${email}`);
+    //         SystemNotificationsManager.sendSystemMessage(`New user: ${email}`);
 
-            this.cachedUsers.push({ user: newUser, createdAt: now });
-            return newUser;
-        }
-    }
+    //         this.cachedUsers.push({ user: newUser, createdAt: now });
+    //         return newUser;
+    //     }
+    // }
 
     static async cleanOldCache(){
         const now = new Date();

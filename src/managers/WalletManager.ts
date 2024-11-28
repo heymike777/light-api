@@ -23,6 +23,7 @@ import { BadRequestError } from "../errors/BadRequestError";
 import { PremiumError } from "../errors/PremiumError";
 import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager";
 import { SubscriptionManager } from "./SubscriptionManager";
+import { MixpanelManager } from "./MixpanelManager";
 
 export class WalletManager {
 
@@ -53,9 +54,11 @@ export class WalletManager {
             const kMaxWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
             if (walletsCount >= kMaxWallets){
                 if (user.subscription){
+                    MixpanelManager.track('Error', user.id, { text: `Wallets limit reached with ${user.subscription.tier} subscription` });
                     throw new PremiumError(`You have reached the maximum number of wallets. Please get the higher plan to track more than ${kMaxWallets} wallets.`);
                 }
                 else {
+                    MixpanelManager.track('Error', user.id, { text: `Wallets limit reached with free subscription` });
                     throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
                 }
             }
@@ -70,6 +73,8 @@ export class WalletManager {
                 createdAt: new Date()
             });
             await wallet.save();
+
+            MixpanelManager.track('Add wallet', user.id, { walletAddress: walletAddress });
 
             // Update cache
             let tmpWallets = this.walletsMap.get(walletAddress);
@@ -90,6 +95,10 @@ export class WalletManager {
     static async removeWallets(chatId: number, userId: string, walletAddresses: string[]){
         await Wallet.deleteMany({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
 
+        for (let walletAddress of walletAddresses){
+            MixpanelManager.track('Remove wallet', userId, { walletAddress: walletAddress });
+        }
+
         // Remove from cache
         for (let walletAddress of walletAddresses){
             const tmpWallets = this.walletsMap.get(walletAddress);
@@ -109,6 +118,8 @@ export class WalletManager {
 
     static async removeWallet(wallet: IWallet){
         await Wallet.deleteOne({_id: wallet.id});
+
+        MixpanelManager.track('Remove wallet', wallet.userId, { walletAddress: wallet.walletAddress });
 
         // Remove from cache
         const tmpWallets = this.walletsMap.get(wallet.walletAddress);
@@ -310,10 +321,12 @@ export class WalletManager {
                         });
                     }
 
+                    let isPushSent = false;
                     const userId = chat.wallets?.[0]?.userId;
                     if (userId && !sentUserIds.includes(userId)){
                         sentUserIds.push(userId);
                         FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
+                        isPushSent = true;
                     }
 
                     //TODO: don't save tx if that's a channel or group chat
@@ -326,9 +339,9 @@ export class WalletManager {
                     userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                     userTx.tokens = info.transactionApiResponse.tokens;
                     await userTx.save();
+
+                    MixpanelManager.track('Process transaction', userTx.userId, { chatId: userTx.chatId, isPushSent: isPushSent });
                 }
-
-
             }
         }
         catch (err) {

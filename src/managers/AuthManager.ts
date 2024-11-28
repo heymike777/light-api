@@ -8,6 +8,8 @@ import { BrevoManager } from './BrevoManager';
 import { SystemNotificationsManager } from './SytemNotificationsManager';
 import { TwilioManager } from '../services/TwilioManager';
 import { UserManager } from './UserManager';
+import { MixpanelManager } from './MixpanelManager';
+import { StringSchemaDefinition } from 'mongoose';
 
 export enum VerificationService {
     TWILIO = 'TWILIO',
@@ -143,6 +145,8 @@ export class AuthManager {
         user.createdAt = new Date();
         await user.save();
 
+        MixpanelManager.updateProfile(user, undefined);
+    
         SystemNotificationsManager.sendSystemMessage(`New user: ${email}`);
 
         return user;

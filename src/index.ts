@@ -36,6 +36,7 @@ import { Subscription } from './entities/payments/Subscription';
 import { AppleLog } from './entities/payments/AppleLog';
 import { paymentsRouter } from './routes/v1/Payments';
 import axios from 'axios';
+import { MixpanelManager } from './managers/MixpanelManager';
 
 const app = express();
 app.use(json());
@@ -91,6 +92,7 @@ const onExpressStarted = async () => {
     setupCron();
     setupBot();
 
+    await MixpanelManager.init();
     await WalletManager.fetchAllWalletAddresses();
     await TokenManager.updateTokensPrices();
     JitoWebsocketManager.getInstance();
