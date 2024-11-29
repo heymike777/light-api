@@ -23,9 +23,10 @@ router.post(
 );
 
 router.post(
-    '/api/v1/webhooks/revenuecat',
+    '/api/v1/webhooks/revenuecat/:environment',
     async (req: Request, res: Response) => {
-        console.log(`RevenueCat webhook received:`, req.body);
+        const { environment } = req.params;
+        console.log(`RevenueCat webhook received: webhooks/revenuecat/${environment}`, req.body);
 
 		res.status(200).send({
             success: true,
