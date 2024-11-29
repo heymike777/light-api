@@ -34,8 +34,6 @@ import { webhooksRouter } from './routes/v1/Webhooks';
 import { configRouter } from './routes/v1/Config';
 import { Subscription } from './entities/payments/Subscription';
 import { AppleLog } from './entities/payments/AppleLog';
-import { paymentsRouter } from './routes/v1/Payments';
-import axios from 'axios';
 import { MixpanelManager } from './managers/MixpanelManager';
 
 const app = express();
@@ -57,7 +55,6 @@ if (process.env.API_ENABLED == 'true'){
     app.use(testRouter);
     app.use(webhooksRouter);
     app.use(configRouter);
-    app.use(paymentsRouter);
 }
 
 app.all('*', async () => {
