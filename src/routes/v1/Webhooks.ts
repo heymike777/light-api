@@ -9,7 +9,7 @@ router.post(
     '/api/v1/webhooks/apple/:environment',
     async (req: Request, res: Response) => {
         const { environment } = req.params;
-        console.log(`Apple webhook received: webhooks/apple/${environment}`, req.body);
+        // console.log(`Apple webhook received: webhooks/apple/${environment}`, req.body);
 
         fs.appendFileSync('apple_webhooks.txt', 'environment:' + environment + '\n' + JSON.stringify(req.body, null, 2) + '\n\n');
 
@@ -25,13 +25,13 @@ router.post(
             console.log('Unauthorized', req.headers['authorization']);
             throw new BadRequestError('Unauthorized');
         }
-        console.log(`RevenueCat webhook received: webhooks/revenuecat/${environment}`, req.body);
+        // console.log(`RevenueCat webhook received: webhooks/revenuecat/${environment}`, req.body);
 
         const event = req.body.event;
         const userId = event?.app_user_id;
         const originalUserId = event?.original_app_user_id;
 
-        console.log('!!! RevenueCat webhook', 'userId:', userId, 'originalUserId:', originalUserId, event);
+        // console.log('!!! RevenueCat webhook', 'userId:', userId, 'originalUserId:', originalUserId, event);
 
         if (userId){
             await SubscriptionManager.updateUserSubscription(userId);
