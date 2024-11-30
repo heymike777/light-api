@@ -23,10 +23,11 @@ export class RevenueCatManager {
 
             const activeEntitlements = response.data.active_entitlements;
             const subscriptions: {tier: SubscriptionTier, expiresAt: Date}[] = [];
-
+            console.log('RevenueCat', 'getCustomer', userId, 'activeEntitlements:', JSON.stringify(activeEntitlements));
             if (activeEntitlements && activeEntitlements.length > 0){
                 for (const activeEntitlement of activeEntitlements) {
                     const entitlement = this.entitlements[activeEntitlement.entitlement_id];
+                    console.log('RevenueCat', 'entitlement', entitlement);
                     if (entitlement){
                         const expiresAt = new Date(activeEntitlement.expires_at);  
                         subscriptions.push({tier: entitlement.tier, expiresAt});                      
