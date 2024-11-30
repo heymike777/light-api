@@ -25,6 +25,7 @@ import jwt from "express-jwt";
 import { SubscribeRequest } from "@triton-one/yellowstone-grpc";
 import { SubscriptionManager } from "../managers/SubscriptionManager";
 import { SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Subscription";
+import { RevenueCatManager } from "../managers/RevenueCatManager";
 
 export class MigrationManager {
 
@@ -36,6 +37,8 @@ export class MigrationManager {
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
         const mikeUserId = '66eefe2c8fed7f2c60d147ef';
+
+        // await RevenueCatManager.getCustomerSubscriptions(mikeUserId);
         
         // await SubscriptionManager.createSubscription(mikeUserId, SubscriptionTier.PLATINUM, SubscriptionPlatform.SOLANA, new Date('2024-12-31'));
         

@@ -17,9 +17,8 @@ export enum SubscriptionStatus {
 }
 
 export enum SubscriptionPlatform {
-    IOS = 'ios',
-    ANDROID = 'android',
-    SOLANA = 'solana',
+    REVENUECAT = 'REVENUECAT',
+    SOLANA = 'SOLANA',
 }
 
 export interface ISubscription extends mongoose.Document {
@@ -43,6 +42,7 @@ export const SubscriptionSchema = new mongoose.Schema<ISubscription>({
 });
 
 SubscriptionSchema.index({ userId: 1, status: 1 });
+SubscriptionSchema.index({ userId: 1, platform: 1, createdAt: 1 });
 
 SubscriptionSchema.pre('save', function (next) {
     this.updatedAt = new Date();
