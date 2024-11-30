@@ -21,7 +21,7 @@ router.post(
     '/api/v1/webhooks/revenuecat/:environment',
     async (req: Request, res: Response) => {
         const { environment } = req.params;
-        if (req.headers['authorization'] !== process.env.REVENUE_CAT_AUTH_HEADER){
+        if (req.headers['authorization'] !== process.env.REVENUE_CAT_AUTH_HEADER && req.headers['authorization'] !== process.env.REVENUE_CAT_AUTH_HEADER_SANDBOX){
             console.log('Unauthorized', req.headers['authorization']);
             throw new BadRequestError('Unauthorized');
         }
