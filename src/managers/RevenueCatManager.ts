@@ -24,16 +24,16 @@ export class RevenueCatManager {
             const activeEntitlements = response.data.active_entitlements;
             const subscriptions: {tier: SubscriptionTier, expiresAt: Date}[] = [];
             console.log('RevenueCat', 'getCustomer', userId, 'activeEntitlements:', JSON.stringify(activeEntitlements));
-            if (activeEntitlements && activeEntitlements.length > 0){
-                for (const activeEntitlement of activeEntitlements) {
-                    const entitlement = this.entitlements[activeEntitlement.entitlement_id];
+            if (activeEntitlements && activeEntitlements.items && activeEntitlements.items > 0){
+                for (const item of activeEntitlements.items) {
+                    const entitlement = this.entitlements[item.entitlement_id];
                     console.log('RevenueCat', 'entitlement', entitlement);
                     if (entitlement){
-                        const expiresAt = new Date(activeEntitlement.expires_at);  
+                        const expiresAt = new Date(item.expires_at);  
                         subscriptions.push({tier: entitlement.tier, expiresAt});                      
                     }
                     else {
-                        console.error('Unknown entitlement', activeEntitlement.entitlement_id);
+                        console.error('Unknown entitlement', item.entitlement_id);
                     }
                 }
             }
