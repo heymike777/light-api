@@ -138,5 +138,31 @@ export class Helpers {
 
         return text;
     }
+
+    static dateDiffString(date1: Date, date2: Date): string {
+        const ms = Math.abs(date2.getTime() - date1.getTime());
+
+        const days = Math.floor(ms / (24*60*60*1000));
+        const daysms = ms % (24*60*60*1000);
+        const hours = Math.floor(daysms / (60*60*1000));
+        const hoursms = ms % (60*60*1000);
+        const minutes = Math.floor(hoursms / (60*1000));
+        const minutesms = ms % (60*1000);
+        const sec = Math.floor(minutesms / 1000);
+
+        const str = '';
+        if (days > 0){
+            return days + " days" + (hours > 0 ? ' ' + hours + ' hours' : '');
+        }
+        else if (hours > 0){
+            return hours + " hours" + (minutes > 0 ? ' ' + minutes + ' minutes' : '');
+        }
+        else if (minutes > 0){
+            return minutes + " minutes" + (sec > 0 ? ' ' + sec + ' seconds' : '');
+        }
+        else {
+            return sec + " seconds";
+        }
+    }
     
 }

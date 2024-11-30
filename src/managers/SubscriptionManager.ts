@@ -78,8 +78,8 @@ export class SubscriptionManager {
                 const newExpiresAt = newSub.expiresAt.getTime();
                 const existingExpiresAt = existingSub.expiresAt.getTime();
                 if (newExpiresAt != existingExpiresAt){
-                    const days = Math.floor((newExpiresAt - existingExpiresAt) / (1000 * 60 * 60 * 24));
-                    const message = `${username} ${existingSub.tier} subscription extended by ${days} days`;
+                    const dateString = Helpers.dateDiffString(newSub.expiresAt, existingSub.expiresAt);
+                    const message = `${username} ${existingSub.tier} subscription extended by ${dateString}`;
                     SystemNotificationsManager.sendSystemMessage(message);
                 }
             }
@@ -89,8 +89,9 @@ export class SubscriptionManager {
         for (const sub of subs) {
             const existingSub = existingSubs.find(s => s.tier == sub.tier);
             if (!existingSub){
-                const days = Math.floor((sub.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                const message = `${username} ${sub.tier} subscription started for ${days} days`;
+                const dateString = Helpers.dateDiffString(sub.expiresAt, now);
+
+                const message = `${username} ${sub.tier} subscription started for ${dateString}`;
                 SystemNotificationsManager.sendSystemMessage(message);
             }
         }
