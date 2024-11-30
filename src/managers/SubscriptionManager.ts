@@ -37,6 +37,7 @@ export class SubscriptionManager {
             // try to fetch one more time
             subs = await RevenueCatManager.getCustomerSubscriptions(userId);
         }
+        console.log('SubscriptionManager', 'updateUserSubscription', userId, subs);
 
         if (!subs){
             MixpanelManager.track('Error', userId, { text: 'Cannot fetch RevenueCat subscriptions for user' });
