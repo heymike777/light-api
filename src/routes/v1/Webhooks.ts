@@ -31,6 +31,8 @@ router.post(
         const userId = event?.app_user_id;
         const originalUserId = event?.original_app_user_id;
 
+        console.log('!!! RevenueCat webhook', 'userId:', userId, 'originalUserId:', originalUserId, event);
+
         if (userId){
             await SubscriptionManager.updateUserSubscription(userId);
         }
