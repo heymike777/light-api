@@ -1,9 +1,9 @@
 import { ISubscription, Subscription, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
 import { User } from "../entities/User";
 import { Helpers } from "../services/helpers/Helpers";
-import { BotManager } from "./bot/BotManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { ISub, RevenueCatManager } from "./RevenueCatManager";
+import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export class SubscriptionManager {
 
@@ -72,7 +72,7 @@ export class SubscriptionManager {
             const newSub = subs.find(s => s.tier == existingSub.tier);
             if (!newSub){
                 const message = `${username} ${existingSub.tier} subscription canceled`;
-                BotManager.sendSystemMessage(message);
+                SystemNotificationsManager.sendSystemMessage(message);
             }
             else {
                 const newExpiresAt = newSub.expiresAt.getTime();
@@ -80,7 +80,7 @@ export class SubscriptionManager {
                 if (newExpiresAt != existingExpiresAt){
                     const days = Math.floor((newExpiresAt - existingExpiresAt) / (1000 * 60 * 60 * 24));
                     const message = `${username} ${existingSub.tier} subscription extended by ${days} days`;
-                    BotManager.sendSystemMessage(message);
+                    SystemNotificationsManager.sendSystemMessage(message);
                 }
             }
         }
@@ -91,7 +91,7 @@ export class SubscriptionManager {
             if (!existingSub){
                 const days = Math.floor((sub.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                 const message = `${username} ${sub.tier} subscription started for ${days} days`;
-                BotManager.sendSystemMessage(message);
+                SystemNotificationsManager.sendSystemMessage(message);
             }
         }
     }
