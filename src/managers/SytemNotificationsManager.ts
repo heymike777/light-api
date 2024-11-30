@@ -8,6 +8,7 @@ export class SystemNotificationsManager {
     }
 
     private static async sendTextMessage(text: string){
+        console.log('SystemNotificationsManager', 'send:', text);
         try {
             const url = 'https://tg-bot-api.sololabs.io/api/v1/messages/system';
             const data = { message: text };
