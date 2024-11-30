@@ -1,4 +1,6 @@
 import { Subscription, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
+import { User } from "../entities/User";
+import { Helpers } from "../services/helpers/Helpers";
 import { MixpanelManager } from "./MixpanelManager";
 import { RevenueCatManager } from "./RevenueCatManager";
 
@@ -53,10 +55,15 @@ export class SubscriptionManager {
         }
 
         await Subscription.deleteMany({ userId, platform: SubscriptionPlatform.REVENUECAT, createdAt: { $lt: now } });
+    }
 
-        //TODO: remove subs with type=RevenueCat, userId, and createdAt < now
-
-
+    static async fetchAllRevenueCatSubscriptions() {
+        const users = await User.find({ email: { $exists: true } });
+        //TODO: once I have 10k+ users, I will need to refactor this. And fetch all users in chunks to speed up the process
+        for (const user of users) {
+            await this.updateUserSubscription(user.id);
+            await Helpers.sleep(0.5);
+        }
     }
 
 }

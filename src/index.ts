@@ -9,7 +9,6 @@ import './services/helpers/Secrets'
 import { NotFoundError } from './errors/NotFoundError';
 import { errorHandler } from './middlewares/ErrorHandler';
 
-import cron from 'node-cron';
 import { MigrationManager } from './services/MigrationManager';
 import { BotManager } from './managers/bot/BotManager';
 import { User } from './entities/User';
@@ -35,6 +34,7 @@ import { configRouter } from './routes/v1/Config';
 import { Subscription } from './entities/payments/Subscription';
 import { AppleLog } from './entities/payments/AppleLog';
 import { MixpanelManager } from './managers/MixpanelManager';
+import { CronManager } from './managers/CronManager';
 
 const app = express();
 app.use(json());
@@ -86,7 +86,7 @@ const start = async () => {
 }
 
 const onExpressStarted = async () => {
-    setupCron();
+    CronManager.setup();
     setupBot();
 
     await MixpanelManager.init();
@@ -97,23 +97,6 @@ const onExpressStarted = async () => {
     YellowstoneManager.createInstances();
 
     await MigrationManager.migrate();
-}
-
-const setupCron = async () => {
-    cron.schedule('*/10 * * * * *', () => {
-        //TODO: for now it's every 10 seconds, but on productions set it to every second
-        TokenManager.updateTokensPrices();
-    });
-
-    cron.schedule('* * * * *', () => {
-        // once a minute
-        TokenManager.fetchTokensInfo();
-        UserManager.cleanOldCache();
-        YellowstoneManager.cleanupProcessedSignatures();
-
-        // console.log('Cron', 'tokens:', TokenManager.tokens);
-    });
-
 }
 
 const setupBot = async () => {
