@@ -13,6 +13,8 @@ export class SubscriptionManager {
         subscription.status = SubscriptionStatus.ACTIVE;
         subscription.createdAt = createdAt;
         await subscription.save();
+
+        console.log('SubscriptionManager', 'createSubscription', userId, tier, platform, expiresAt);
     }
 
     static getMaxNumberOfWallets(tier?: SubscriptionTier): number {
