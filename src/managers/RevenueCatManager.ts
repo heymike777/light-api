@@ -1,6 +1,11 @@
 import axios from "axios";
 import { SubscriptionTier } from "../entities/payments/Subscription";
 
+export interface ISub {
+    tier: SubscriptionTier, 
+    expiresAt: Date,
+}
+
 export class RevenueCatManager {
 
     static kBaseUrl = 'https://api.revenuecat.com/v2';
@@ -12,7 +17,7 @@ export class RevenueCatManager {
         'entl487e7353d2': { tier: SubscriptionTier.PLATINUM },
     }
 
-    static async getCustomerSubscriptions(userId: string): Promise<{tier: SubscriptionTier, expiresAt: Date}[] | undefined> {
+    static async getCustomerSubscriptions(userId: string): Promise<ISub[] | undefined> {
         try {
             const url = `${this.kBaseUrl}/projects/${this.kProjectId}/customers/${userId}`;
             const response = await axios.get(url, {
@@ -22,7 +27,7 @@ export class RevenueCatManager {
             });
 
             const activeEntitlements = response.data.active_entitlements;
-            const subscriptions: {tier: SubscriptionTier, expiresAt: Date}[] = [];
+            const subscriptions: ISub[] = [];
             console.log('RevenueCat', 'getCustomer', userId, 'activeEntitlements:', JSON.stringify(activeEntitlements));
             if (activeEntitlements && activeEntitlements.items && activeEntitlements.items.length > 0){
                 for (const item of activeEntitlements.items) {

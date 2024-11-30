@@ -1,8 +1,9 @@
-import { Subscription, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
+import { ISubscription, Subscription, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
 import { User } from "../entities/User";
 import { Helpers } from "../services/helpers/Helpers";
+import { BotManager } from "./bot/BotManager";
 import { MixpanelManager } from "./MixpanelManager";
-import { RevenueCatManager } from "./RevenueCatManager";
+import { ISub, RevenueCatManager } from "./RevenueCatManager";
 
 export class SubscriptionManager {
 
@@ -47,6 +48,8 @@ export class SubscriptionManager {
             return;
         }
 
+        const existingSubs = await Subscription.find({ userId, platform: SubscriptionPlatform.REVENUECAT, status: SubscriptionStatus.ACTIVE });
+
         const now = new Date();
         if (subs.length > 0){
             for (const sub of subs) {
@@ -55,6 +58,42 @@ export class SubscriptionManager {
         }
 
         await Subscription.deleteMany({ userId, platform: SubscriptionPlatform.REVENUECAT, createdAt: { $lt: now } });
+
+        this.sendSystemNotification(userId, subs, existingSubs);
+    }
+
+    static async sendSystemNotification(userId: string, subs: ISub[], existingSubs: ISubscription[]){
+        // find the difference and send events to telegram bot
+        const user = await User.findById(userId);
+        const username = user?.email || user?.telegram?.username || `user_${userId}`;
+
+
+        for (const existingSub of existingSubs) {
+            const newSub = subs.find(s => s.tier == existingSub.tier);
+            if (!newSub){
+                const message = `${username} ${existingSub.tier} subscription canceled`;
+                BotManager.sendSystemMessage(message);
+            }
+            else {
+                const newExpiresAt = newSub.expiresAt.getTime();
+                const existingExpiresAt = existingSub.expiresAt.getTime();
+                if (newExpiresAt != existingExpiresAt){
+                    const days = Math.floor((newExpiresAt - existingExpiresAt) / (1000 * 60 * 60 * 24));
+                    const message = `${username} ${existingSub.tier} subscription extended by ${days} days`;
+                    BotManager.sendSystemMessage(message);
+                }
+            }
+        }
+
+        const now = new Date();
+        for (const sub of subs) {
+            const existingSub = existingSubs.find(s => s.tier == sub.tier);
+            if (!existingSub){
+                const days = Math.floor((sub.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                const message = `${username} ${sub.tier} subscription started for ${days} days`;
+                BotManager.sendSystemMessage(message);
+            }
+        }
     }
 
     static async fetchAllRevenueCatSubscriptions() {
