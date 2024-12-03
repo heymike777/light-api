@@ -1,6 +1,7 @@
 import { ISubscription, Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
 import { IUser, TelegramUser, User } from "../entities/User";
 import { MixpanelManager } from "./MixpanelManager";
+import { SubscriptionManager } from "./SubscriptionManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export class UserManager {
@@ -130,6 +131,8 @@ export class UserManager {
                 user.subscription = activeSubscription;
             }
         }
+
+        user.maxNumberOfWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
 
         return user;
     }
