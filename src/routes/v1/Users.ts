@@ -96,8 +96,6 @@ router.post(
             user.save();
         }
 
-        console.log('!headers', req.headers);
-
         let pageToken = Helpers.parsePageToken(req);
         let existingIds = pageToken?.ids || [];
         const kPageSize = pageToken?.pageSize || 10;
