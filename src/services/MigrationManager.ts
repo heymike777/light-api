@@ -1,6 +1,6 @@
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { Program } from "../entities/Program";
-import { IWallet, Wallet } from "../entities/Wallet";
+import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
 import { BotManager, InlineKeyboardType } from "../managers/bot/BotManager";
 import { ProgramManager } from "../managers/ProgramManager";
 import { ExplorerManager } from "./explorers/ExplorerManager";
@@ -38,6 +38,8 @@ export class MigrationManager {
         const chatId = 862473;
         const mikeUserId = '66eefe2c8fed7f2c60d147ef';
 
+        await Wallet.updateMany({ status: {$exists: false} }, { status: WalletStatus.ACTIVE });
+
         // await RevenueCatManager.getCustomerSubscriptions(mikeUserId);
         
         // await SubscriptionManager.createSubscription(mikeUserId, SubscriptionTier.PLATINUM, SubscriptionPlatform.SOLANA, new Date('2024-12-31'));
@@ -71,7 +73,7 @@ export class MigrationManager {
 
     static async processTx(signature: string, chatId: number) {
         const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
-        const wallets = await Wallet.find({ userId: userId });
+        const wallets = await Wallet.find({ userId: userId, status: WalletStatus.ACTIVE });
         const chats = [{
             id: chatId,
             wallets: wallets,

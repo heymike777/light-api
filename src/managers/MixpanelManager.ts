@@ -22,6 +22,18 @@ export class MixpanelManager {
         }
     }
 
+    static async trackError(profileId: string, properties: any, ipAddress?: string) {
+        if (this.mixpanel) {
+            properties['distinct_id'] = profileId;
+            properties['ip'] = ipAddress;
+
+            if (process.env.ENVIRONMENT == Environment.DEVELOPMENT) {
+                console.log('Mixpanel track', 'Error', properties);
+            }
+            this.mixpanel.track('Error', properties);
+        }
+    }
+
     static async updateProfile(user: IUser, ipAddress: string | undefined) {
         let fullName = user.telegram ? `${user.telegram.first_name} ${user.telegram.last_name}` : undefined;
         if (fullName) { fullName = fullName.trim(); }

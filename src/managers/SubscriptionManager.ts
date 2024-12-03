@@ -1,9 +1,12 @@
 import { ISubscription, Subscription, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
-import { User } from "../entities/User";
+import { IUser, User } from "../entities/User";
+import { Wallet, WalletStatus } from "../entities/Wallet";
 import { Helpers } from "../services/helpers/Helpers";
 import { MixpanelManager } from "./MixpanelManager";
 import { ISub, RevenueCatManager } from "./RevenueCatManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
+import { UserManager } from "./UserManager";
+import { WalletManager } from "./WalletManager";
 
 export class SubscriptionManager {
 
@@ -43,7 +46,7 @@ export class SubscriptionManager {
         console.log('SubscriptionManager', 'updateUserSubscription', userId, subs);
 
         if (!subs){
-            MixpanelManager.track('Error', userId, { text: 'Cannot fetch RevenueCat subscriptions for user' });
+            MixpanelManager.trackError(userId, { text: 'Cannot fetch RevenueCat subscriptions for user' });
             console.error('Cannot fetch RevenueCat subscriptions for user', userId);
             return;
         }
@@ -59,14 +62,44 @@ export class SubscriptionManager {
 
         await Subscription.deleteMany({ userId, platform: SubscriptionPlatform.REVENUECAT, createdAt: { $lt: now } });
 
-        this.sendSystemNotification(userId, subs, existingSubs);
+        const user = await User.findById(userId);
+        if (user){
+            await UserManager.fillUserWithData(user);
+
+            //TODO: check if user has a subscription and update the number of wallets
+            const tier = user.subscription?.tier;
+            const maxNumberOfWallets = this.getMaxNumberOfWallets(tier);
+            const wallets = await Wallet.find({ userId });
+            if (wallets.length > maxNumberOfWallets){
+                const walletsToPause = wallets.slice(maxNumberOfWallets);
+                for (const wallet of walletsToPause){
+                    wallet.status = WalletStatus.PAUSED;
+                    await wallet.save();
+
+                    await WalletManager.pauseWallet(wallet);
+                }
+            }
+            else {
+                for (const wallet of wallets) {
+                    if (wallet.status == WalletStatus.PAUSED){
+                        wallet.status = WalletStatus.ACTIVE;
+                        await wallet.save();
+
+                        await WalletManager.activateWallet(wallet);
+                    }
+                }
+            }
+        }
+        else {
+            MixpanelManager.trackError(userId, { text: 'Cannot find user' });
+        }
+
+        this.sendSystemNotification(user || undefined, subs, existingSubs);
     }
 
-    static async sendSystemNotification(userId: string, subs: ISub[], existingSubs: ISubscription[]){
+    static async sendSystemNotification(user: IUser | undefined, subs: ISub[], existingSubs: ISubscription[]){
         // find the difference and send events to telegram bot
-        const user = await User.findById(userId);
-        const username = user?.email || user?.telegram?.username || `user_${userId}`;
-
+        const username = user?.email || user?.telegram?.username || `user_${user?.id || 'unknown'}`;
 
         for (const existingSub of existingSubs) {
             const newSub = subs.find(s => s.tier == existingSub.tier);

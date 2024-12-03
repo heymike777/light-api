@@ -1,5 +1,5 @@
 import { CompiledInstruction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
-import { IWallet, Wallet } from "../entities/Wallet";
+import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
 import { BotManager } from "./bot/BotManager";
 import { ParsedTx, ProgramManager } from "./ProgramManager";
 import * as web3 from '@solana/web3.js';
@@ -54,11 +54,11 @@ export class WalletManager {
             const kMaxWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
             if (walletsCount >= kMaxWallets){
                 if (user.subscription){
-                    MixpanelManager.track('Error', user.id, { text: `Wallets limit reached with ${user.subscription.tier} subscription` });
+                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with ${user.subscription.tier} subscription` });
                     throw new PremiumError(`You have reached the maximum number of wallets. Please get the higher plan to track more than ${kMaxWallets} wallets.`);
                 }
                 else {
-                    MixpanelManager.track('Error', user.id, { text: `Wallets limit reached with free subscription` });
+                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with free subscription` });
                     throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
                 }
             }
@@ -70,21 +70,15 @@ export class WalletManager {
                 walletAddress: walletAddress,
                 title: title,
                 isVerified: false,
-                createdAt: new Date()
+                createdAt: new Date(),
+                status: WalletStatus.ACTIVE,
             });
             await wallet.save();
 
             MixpanelManager.track('Add wallet', user.id, { walletAddress: walletAddress });
 
             // Update cache
-            let tmpWallets = this.walletsMap.get(walletAddress);
-            if (tmpWallets){
-                tmpWallets.push(wallet);
-            }
-            else {
-                tmpWallets = [wallet];
-            }
-            this.walletsMap.set(walletAddress, tmpWallets);
+            this.addWalletToCache(wallet);
 
             YellowstoneManager.resubscribeAll();
 
@@ -92,25 +86,43 @@ export class WalletManager {
         }
     }
 
+    static addWalletToCache(wallet: IWallet){
+        let tmpWallets = this.walletsMap.get(wallet.walletAddress);
+        if (tmpWallets){
+            const isExists = tmpWallets.find((tmpWallet) => tmpWallet.id == wallet.id);
+            if (!isExists){
+                tmpWallets.push(wallet);
+            }
+        }
+        else {
+            tmpWallets = [wallet];
+        }
+        this.walletsMap.set(wallet.walletAddress, tmpWallets);
+    }
+
+    static removeWalletFromCache(wallet: IWallet){
+        const tmpWallets = this.walletsMap.get(wallet.walletAddress);
+        if (tmpWallets){
+            const newWallets = tmpWallets.filter((tmpWallet) => tmpWallet.id != wallet.id);
+            if (newWallets.length == 0){
+                this.walletsMap.delete(wallet.walletAddress);
+            }
+            else {
+                this.walletsMap.set(wallet.walletAddress, newWallets);
+            }
+        }
+    }
+
     static async removeWallets(chatId: number, userId: string, walletAddresses: string[]){
+        const wallets = await Wallet.find({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
         await Wallet.deleteMany({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
 
         for (let walletAddress of walletAddresses){
             MixpanelManager.track('Remove wallet', userId, { walletAddress: walletAddress });
         }
 
-        // Remove from cache
-        for (let walletAddress of walletAddresses){
-            const tmpWallets = this.walletsMap.get(walletAddress);
-            if (tmpWallets){
-                const newWallets = tmpWallets.filter((wallet) => wallet.chatId != chatId);
-                if (newWallets.length == 0){
-                    this.walletsMap.delete(walletAddress);
-                }
-                else {
-                    this.walletsMap.set(walletAddress, newWallets);
-                }
-            }
+        for (let wallet of wallets){
+            this.removeWalletFromCache(wallet);
         }
 
         YellowstoneManager.resubscribeAll();
@@ -122,16 +134,7 @@ export class WalletManager {
         MixpanelManager.track('Remove wallet', wallet.userId, { walletAddress: wallet.walletAddress });
 
         // Remove from cache
-        const tmpWallets = this.walletsMap.get(wallet.walletAddress);
-        if (tmpWallets){
-            const newWallets = tmpWallets.filter((tmpWallet) => tmpWallet.id != wallet.id);
-            if (newWallets.length == 0){
-                this.walletsMap.delete(wallet.walletAddress);
-            }
-            else {
-                this.walletsMap.set(wallet.walletAddress, newWallets);
-            }
-        }
+        this.removeWalletFromCache(wallet);
 
         YellowstoneManager.resubscribeAll();
     }
@@ -145,7 +148,7 @@ export class WalletManager {
     }
 
     static async fetchAllWalletAddresses() {
-        const wallets = await Wallet.find();
+        const wallets = await Wallet.find({status: WalletStatus.ACTIVE});
         this.walletsMap.clear();
         for (let wallet of wallets){
             if (this.walletsMap.has(wallet.walletAddress)){
@@ -612,6 +615,22 @@ export class WalletManager {
             }
         }
         return wallets;
+    }
+
+    static async pauseWallet(wallet: IWallet){
+        if (wallet.status != WalletStatus.PAUSED){
+            await Wallet.updateOne({ _id: wallet.id }, { status: WalletStatus.PAUSED });
+            this.removeWalletFromCache(wallet);
+            YellowstoneManager.resubscribeAll();
+        }
+    }
+
+    static async activateWallet(wallet: IWallet){
+        if (wallet.status != WalletStatus.ACTIVE){
+            await Wallet.updateOne({ _id: wallet.id }, { status: WalletStatus.ACTIVE });
+            this.addWalletToCache(wallet);
+            YellowstoneManager.resubscribeAll();
+        }
     }
 
 }
