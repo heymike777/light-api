@@ -32,7 +32,6 @@ import { testRouter } from './routes/v1/Test';
 import { webhooksRouter } from './routes/v1/Webhooks';
 import { configRouter } from './routes/v1/Config';
 import { Subscription } from './entities/payments/Subscription';
-import { AppleLog } from './entities/payments/AppleLog';
 import { MixpanelManager } from './managers/MixpanelManager';
 import { CronManager } from './managers/CronManager';
 
@@ -76,7 +75,6 @@ const start = async () => {
     await Auth.syncIndexes();
     await PushToken.syncIndexes();
     await Subscription.syncIndexes();
-    await AppleLog.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {
