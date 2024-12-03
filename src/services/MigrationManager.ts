@@ -38,8 +38,6 @@ export class MigrationManager {
         const chatId = 862473;
         const mikeUserId = '66eefe2c8fed7f2c60d147ef';
 
-        await Wallet.updateMany({ status: {$exists: false} }, { status: WalletStatus.ACTIVE });
-
         // await RevenueCatManager.getCustomerSubscriptions(mikeUserId);
         
         // await SubscriptionManager.createSubscription(mikeUserId, SubscriptionTier.PLATINUM, SubscriptionPlatform.SOLANA, new Date('2024-12-31'));
