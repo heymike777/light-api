@@ -164,5 +164,9 @@ export class Helpers {
             return sec + " seconds";
         }
     }
+
+    static getIpAddress(req: Request): string | undefined {
+        return req.headers['cf-connecting-ip'] as string || undefined
+    }
     
 }

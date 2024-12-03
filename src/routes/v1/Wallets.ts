@@ -9,6 +9,7 @@ import { WalletManager } from "../../managers/WalletManager";
 import { IWallet, Wallet } from "../../entities/Wallet";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { PremiumError } from "../../errors/PremiumError";
+import { Helpers } from "../../services/helpers/Helpers";
 
 const router = express.Router();
 
@@ -51,10 +52,11 @@ router.post(
 
         const walletAddress = '' + req.body.walletAddress;
         const walletTitle = (req.body.title && req.body.title!=null && req.body.title!='') ? '' + req.body.title : undefined;
+        const ipAddress = Helpers.getIpAddress(req);
 
         let wallet: IWallet | undefined;
         try {
-            wallet = await WalletManager.addWallet(-1, user, walletAddress, walletTitle);
+            wallet = await WalletManager.addWallet(-1, user, walletAddress, walletTitle, ipAddress);
         }
         catch (err){
             console.log('AddWallet (API)', 'error', err);
@@ -83,6 +85,7 @@ router.delete(
     async (req: Request, res: Response) => {
 		const userId = req.accessToken?.userId;
         if (!userId) { throw new NotAuthorizedError(); }
+        const ipAddress = Helpers.getIpAddress(req);
 
         const user = await UserManager.getUserById(userId);
         if (!user) { throw new NotAuthorizedError(); }
@@ -93,7 +96,7 @@ router.delete(
             throw new BadRequestError('Wallet not found');
         }
 
-        await WalletManager.removeWallet(wallet);
+        await WalletManager.removeWallet(wallet, ipAddress);
 
 		const response = {
             success: true

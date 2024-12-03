@@ -89,6 +89,13 @@ router.post(
             throw new NotAuthorizedError();
         }
 
+        const ipAddress = Helpers.getIpAddress(req);
+        const user = await UserManager.getUserById(userId);
+        if (ipAddress && user.lastIpAddress != ipAddress){
+            user.lastIpAddress = ipAddress;
+            user.save();
+        }
+
         console.log('!headers', req.headers);
 
         let pageToken = Helpers.parsePageToken(req);

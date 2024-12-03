@@ -30,7 +30,7 @@ export class WalletManager {
     static walletsMap: Map<string, IWallet[]> = new Map();
     static programIds: string[] = [];
 
-    static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string): Promise<IWallet>{
+    static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string, ipAddress?: string): Promise<IWallet>{
         const existingWallet = await Wallet.findOne({chatId: chatId, userId: user.id, walletAddress: walletAddress});
         if (existingWallet){
             existingWallet.title = title;
@@ -54,11 +54,11 @@ export class WalletManager {
             const kMaxWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
             if (walletsCount >= kMaxWallets){
                 if (user.subscription){
-                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with ${user.subscription.tier} subscription` });
+                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with ${user.subscription.tier} subscription` }, ipAddress);
                     throw new PremiumError(`You have reached the maximum number of wallets. Please get the higher plan to track more than ${kMaxWallets} wallets.`);
                 }
                 else {
-                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with free subscription` });
+                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with free subscription` }, ipAddress);
                     throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
                 }
             }
@@ -75,7 +75,7 @@ export class WalletManager {
             });
             await wallet.save();
 
-            MixpanelManager.track('Add wallet', user.id, { walletAddress: walletAddress });
+            MixpanelManager.track('Add wallet', user.id, { walletAddress: walletAddress }, ipAddress);
 
             // Update cache
             this.addWalletToCache(wallet);
@@ -113,12 +113,12 @@ export class WalletManager {
         }
     }
 
-    static async removeWallets(chatId: number, userId: string, walletAddresses: string[]){
+    static async removeWallets(chatId: number, userId: string, walletAddresses: string[], ipAddress?: string){
         const wallets = await Wallet.find({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
         await Wallet.deleteMany({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
 
         for (let walletAddress of walletAddresses){
-            MixpanelManager.track('Remove wallet', userId, { walletAddress: walletAddress });
+            MixpanelManager.track('Remove wallet', userId, { walletAddress: walletAddress }, ipAddress);
         }
 
         for (let wallet of wallets){
@@ -128,10 +128,10 @@ export class WalletManager {
         YellowstoneManager.resubscribeAll();
     }
 
-    static async removeWallet(wallet: IWallet){
+    static async removeWallet(wallet: IWallet, ipAddress?: string){
         await Wallet.deleteOne({_id: wallet.id});
 
-        MixpanelManager.track('Remove wallet', wallet.userId, { walletAddress: wallet.walletAddress });
+        MixpanelManager.track('Remove wallet', wallet.userId, { walletAddress: wallet.walletAddress }, ipAddress);
 
         // Remove from cache
         this.removeWalletFromCache(wallet);

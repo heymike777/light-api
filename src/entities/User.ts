@@ -19,6 +19,7 @@ export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
     referralCode?: string;
+    lastIpAddress?: string;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -40,6 +41,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
         is_premium: { type: Boolean }
     },
     referralCode: { type: String },
+    lastIpAddress: { type: String },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
