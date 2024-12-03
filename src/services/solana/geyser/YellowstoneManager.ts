@@ -4,6 +4,8 @@ import { Helpers } from '../../helpers/Helpers';
 import { WalletManager } from '../../../managers/WalletManager';
 import { TxParser } from "./TxParser";
 import fs from "fs";
+import { SystemNotificationsManager } from "../../../managers/SytemNotificationsManager";
+import { MixpanelManager } from "../../../managers/MixpanelManager";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -78,7 +80,9 @@ export class YellowstoneManager {
         console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
 
         if (accountInclude.length == 0){
-            throw new Error('No wallets to subscribe');
+            SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 No wallets to subscribe (grpc)');
+            MixpanelManager.trackError(undefined, { text: 'No wallets to subscribe (grpc)' });
+            return;
         }
 
         const request: SubscribeRequest = {

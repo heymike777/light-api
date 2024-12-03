@@ -22,7 +22,7 @@ export class MixpanelManager {
         }
     }
 
-    static async trackError(profileId: string, properties: any, ipAddress?: string) {
+    static async trackError(profileId: string | undefined, properties: any, ipAddress?: string) {
         if (this.mixpanel) {
             properties['distinct_id'] = profileId;
             properties['ip'] = ipAddress;
