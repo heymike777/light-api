@@ -77,6 +77,10 @@ export class YellowstoneManager {
         const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
         console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
 
+        if (accountInclude.length == 0){
+            throw new Error('No wallets to subscribe');
+        }
+
         const request: SubscribeRequest = {
             "transactions": {
                 "all_transactions": {
