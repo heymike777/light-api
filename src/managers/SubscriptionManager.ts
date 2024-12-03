@@ -66,27 +66,19 @@ export class SubscriptionManager {
         if (user){
             await UserManager.fillUserWithData(user);
 
-            //TODO: check if user has a subscription and update the number of wallets
+            // check if user has a subscription and update the number of wallets
             const tier = user.subscription?.tier;
             const maxNumberOfWallets = this.getMaxNumberOfWallets(tier);
             const wallets = await Wallet.find({ userId });
             if (wallets.length > maxNumberOfWallets){
                 const walletsToPause = wallets.slice(maxNumberOfWallets);
                 for (const wallet of walletsToPause){
-                    wallet.status = WalletStatus.PAUSED;
-                    await wallet.save();
-
                     await WalletManager.pauseWallet(wallet);
                 }
             }
             else {
                 for (const wallet of wallets) {
-                    if (wallet.status == WalletStatus.PAUSED){
-                        wallet.status = WalletStatus.ACTIVE;
-                        await wallet.save();
-
-                        await WalletManager.activateWallet(wallet);
-                    }
+                    await WalletManager.activateWallet(wallet);
                 }
             }
         }
