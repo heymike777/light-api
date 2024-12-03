@@ -97,9 +97,7 @@ export class UserManager {
     }
 
     static async fillUserWithData(user: IUser): Promise<IUser> {
-        if (user.id != '66eefe2c8fed7f2c60d147ef'){
-            await UserManager.fillUserWithSubscription(user);
-        }
+        await UserManager.fillUserWithSubscription(user);
         return user;
     }
 
