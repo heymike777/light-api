@@ -10,6 +10,7 @@ export interface IGiftCard extends mongoose.Document {
     startAt: Date;
     endAt: Date;
     entries: number;
+    referralCode?: string;
 
     subscription?: {
         tier: SubscriptionTier;
@@ -25,6 +26,7 @@ export const GiftCardSchema = new mongoose.Schema<IGiftCard>({
     startAt: { type: Date },
     endAt: { type: Date },
     entries: { type: Number },
+    referralCode: { type: String },
 
     subscription: {
         tier: { type: String },

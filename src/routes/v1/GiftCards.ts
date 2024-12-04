@@ -17,6 +17,7 @@ import { GiftCardClaim } from "../../entities/giftCards/GiftCardClaim";
 import { MixpanelManager } from "../../managers/MixpanelManager";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
 import { timers } from "jquery";
+import { UserRefClaim } from "../../entities/UserRefClaim";
 
 const router = express.Router();
 
@@ -43,6 +44,7 @@ router.post(
         if (!user.isAdmin) { throw new PermissionError(); }
         
         const code = ('' + req.body.code).toLowerCase();
+        const referralCode = req.body.referralCode ? ('' + req.body.referralCode) : undefined;
         const entries = parseInt('' + req.body.entries);
         const startAt = new Date(req.body.startAt);
         const endAt = new Date(req.body.endAt);
@@ -61,6 +63,7 @@ router.post(
         giftCard.entries = entries;
         giftCard.startAt = startAt;
         giftCard.endAt = endAt;
+        giftCard.referralCode = referralCode;
         giftCard.subscription = {
             tier: subscription.tier,
             days: subscription.days
@@ -133,6 +136,17 @@ router.post(
 
         // create subscription
         await SubscriptionManager.createSubscription(userId, tier, SubscriptionPlatform.GIFT_CARD, expiresAt, now);
+
+        if (giftCard.referralCode){
+            await UserRefClaim.create({
+                userId: user.id,
+                referralCode: giftCard.referralCode,
+                claimedAt: new Date()
+            });
+
+            user.referralCode = giftCard.referralCode;
+            await user.save();
+        }
 
         MixpanelManager.track('GiftCardClaim', userId, { code, tier, days }, ipAddress);
 
