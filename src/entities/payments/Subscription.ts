@@ -19,6 +19,7 @@ export enum SubscriptionStatus {
 export enum SubscriptionPlatform {
     REVENUECAT = 'REVENUECAT',
     SOLANA = 'SOLANA',
+    GIFT_CARD = 'GIFT_CARD',
 }
 
 export interface ISubscription extends mongoose.Document {

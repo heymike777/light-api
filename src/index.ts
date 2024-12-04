@@ -19,7 +19,6 @@ import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager'
 import { WalletManager } from './managers/WalletManager';
 import { Program } from './entities/Program';
 import { TokenManager } from './managers/TokenManager';
-import { UserManager } from './managers/UserManager';
 import { authRouter } from './routes/v1/Auth';
 import { AccessToken } from './models/AccessToken';
 import { walletsRouter } from './routes/v1/Wallets';
@@ -34,6 +33,9 @@ import { configRouter } from './routes/v1/Config';
 import { Subscription } from './entities/payments/Subscription';
 import { MixpanelManager } from './managers/MixpanelManager';
 import { CronManager } from './managers/CronManager';
+import { GiftCard } from './entities/giftCards/GiftCard';
+import { GiftCardClaim } from './entities/giftCards/GiftCardClaim';
+import { giftCardsRouter } from './routes/v1/GiftCards';
 
 const app = express();
 app.use(json());
@@ -54,6 +56,7 @@ if (process.env.API_ENABLED == 'true'){
     app.use(testRouter);
     app.use(webhooksRouter);
     app.use(configRouter);
+    app.use(giftCardsRouter);
 }
 
 app.all('*', async () => {
@@ -75,6 +78,8 @@ const start = async () => {
     await Auth.syncIndexes();
     await PushToken.syncIndexes();
     await Subscription.syncIndexes();
+    await GiftCard.syncIndexes();
+    await GiftCardClaim.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {
