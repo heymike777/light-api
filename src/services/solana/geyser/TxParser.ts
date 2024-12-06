@@ -7,6 +7,7 @@ import { } from "@solana/buffer-layout";
 import { decodeTransferInstruction } from "@solana/spl-token";
 import { SystemInstruction } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
+import { Ix } from "../../../managers/ProgramManager";
 
 //TODO: open-source TxParser
 export class TxParser {
@@ -191,10 +192,10 @@ export class TxParser {
         return parsedTransactionWithMeta;
     }
 
-    static parseYellowstoneGrpcCompiledInstructions(compiledInstructions: grpc.CompiledInstruction[] | undefined, accountKeys: web3.ParsedMessageAccount[], signature?: string): (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] {
+    static parseYellowstoneGrpcCompiledInstructions(compiledInstructions: grpc.CompiledInstruction[] | undefined, accountKeys: web3.ParsedMessageAccount[], signature?: string): Ix[] {
         if (!compiledInstructions) { return []; }
 
-        const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [];
+        const instructions: Ix[] = [];
 
         for (const instruction of compiledInstructions){
             const ixProgramId = (accountKeys.length > instruction.programIdIndex) ? accountKeys[instruction.programIdIndex].pubkey : undefined;

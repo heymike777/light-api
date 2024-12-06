@@ -14,6 +14,13 @@ import { getTokenMetadata } from "@solana/spl-token";
 import fs from "fs";
 import { kSolAddress } from "../services/solana/Constants";
 
+export type Ix = web3.ParsedInstruction | web3.PartiallyDecodedInstruction;
+
+export interface ParsedIxData {
+    output: ParserOutput, 
+    programName?: string
+}
+
 export interface ParsedTx {
     title: string;
     description?: TxDescription;
@@ -75,7 +82,7 @@ export class ProgramManager {
         return SFMIdlItem || undefined;    
     }
 
-    static parseParsedIx(programId: string, ixParsed: any | ParserOutput, previousIxs?: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[], accounts?: web3.PublicKey[], tx?: web3.ParsedTransactionWithMeta): {description?: TxDescription} {
+    static async parseParsedIx(programId: string, ixParsed: any | ParserOutput, previousIxs?: Ix[], accounts?: web3.PublicKey[], tx?: web3.ParsedTransactionWithMeta, instructions?: Ix[]): Promise<{description?: TxDescription}> {
         if (!ixParsed){
             return {};
         }
@@ -198,15 +205,61 @@ export class ProgramManager {
         }
         else if (programId == kProgram.TENSOR){
             console.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
+            if (ixParsed.name == 'sellNftTokenPool'){
+                const buyerWalletAddress = accounts?.[10]?.toBase58();
+                const sellerWalletAddress = accounts?.[9]?.toBase58();
+                const tokenMint = accounts?.[6]?.toBase58();
+                if (buyerWalletAddress && sellerWalletAddress && tokenMint){
+                    const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
+                    const solAmount = +ixParsed.data?.config?.startingPrice / web3.LAMPORTS_PER_SOL;
+
+                    description = {
+                        plain: `{address1} bought {address2} from {address0} for ${solAmount} SOL on Tensor`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                        addresses: addresses,
+                    };    
+                }
+            }
         }
         else if (programId == kProgram.TENSOR_CNFT){
             console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
+            if (ixParsed.name == 'buy'){
+                const sellIx = await this.findIx(instructions, kProgram.TENSOR_CNFT, 'tcompNoop');
+
+                console.log('!!!TENSOR_CNFT', 'sellIx:', sellIx, "instructions:", instructions);
+                const buyerWalletAddress = accounts?.[10]?.toBase58();
+                const tokenMint = sellIx?.ixData?.output?.data?.event?.taker?.['0']?.assetId;
+                if (buyerWalletAddress && tokenMint){
+                    const addresses = [buyerWalletAddress, tokenMint];
+                    const solAmount = +ixParsed.data?.maxAmount / web3.LAMPORTS_PER_SOL;
+
+                    description = {
+                        plain: `{address0} bought {address1} for ${solAmount} SOL on Tensor`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                        addresses: addresses,
+                    };    
+                }
+            }
         }
         else if (programId == kProgram.MAGIC_EDEN_AMM){
             console.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
         }
         else if (programId == kProgram.MAGIC_EDEN_V2){
             console.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
+            if (ixParsed.name == 'buyV2'){
+                const walletAddress = accounts?.[0]?.toBase58();
+                const tokenMint = accounts?.[2]?.toBase58();
+                if (walletAddress && tokenMint){
+                    const addresses = [walletAddress, tokenMint];
+                    const solAmount = +ixParsed.data?.buyerPrice / web3.LAMPORTS_PER_SOL;
+
+                    description = {
+                        plain: `{address0} bought {address1} for ${solAmount} SOL on Magic Eden`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
+                        addresses: addresses,
+                    };    
+                }
+            }
         }
         else if (programId == kProgram.MAGIC_EDEN_V3){
             console.log('!!!MAGIC_EDEN_V3', 'ixParsed:', ixParsed, 'accounts:', accounts);
@@ -218,7 +271,33 @@ export class ProgramManager {
         };
     }
 
-    static async parseIx(programId: string, ixData: string): Promise<{output: ParserOutput, programName?: string} | undefined>{
+    static async findIx(instructions: Ix[] | undefined, programId: string, name: string): Promise<{ix: Ix, ixData: ParsedIxData} | undefined> {
+        if (!instructions){
+            return undefined;
+        }
+
+        for (const instruction of instructions) {
+            if ('parsed' in instruction){
+                if (instruction.programId.toBase58() == programId){
+                    // most likely this will never be used
+                }
+            }
+            else {
+                if (instruction.programId.toBase58() == programId){
+                    const ixData = await ProgramManager.parseIx(programId, instruction.data);
+                    console.log('programId', programId, 'ixData?.output:', ixData?.output);
+                    if (ixData?.output?.name == name){                        
+                        return { ix: instruction, ixData };
+                    }
+                }
+                
+            }
+        }
+
+        return undefined;
+    }
+
+    static async parseIx(programId: string, ixData: string): Promise<ParsedIxData | undefined>{
         let parser: SolanaFMParser | undefined;
         let idl: IdlItem | undefined;
 
@@ -288,7 +367,7 @@ export class ProgramManager {
         let parsedInstructions: ParsedIx[] = [];
 
         const walletsInvolved = WalletManager.getInvolvedWallets(tx);
-        const instructions: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [
+        const instructions: Ix[] = [
             ...tx.transaction.message.instructions,
         ];
         if (tx.meta?.innerInstructions){
@@ -298,7 +377,7 @@ export class ProgramManager {
         }
         
         let ixIndex = 0;
-        let previousIxs: (web3.ParsedInstruction | web3.PartiallyDecodedInstruction)[] = [];
+        let previousIxs: Ix[] = [];
         for (const instruction of instructions) {
             const ixProgramId = instruction.programId.toBase58();
             if (kSkipProgramIds.indexOf(ixProgramId) != -1){
@@ -308,7 +387,7 @@ export class ProgramManager {
             if ('parsed' in instruction){
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
 
-                const info = this.parseParsedIx(ixProgramId, instruction.parsed, previousIxs, undefined, tx);
+                const info = await this.parseParsedIx(ixProgramId, instruction.parsed, previousIxs, undefined, tx);
                 
                 let programName: string | undefined = kPrograms[ixProgramId]?.name;
                 let ixTitle: string | undefined = instruction.parsed.type;
@@ -328,7 +407,7 @@ export class ProgramManager {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
                 console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
 
-                const info = this.parseParsedIx(ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx);
+                const info = await this.parseParsedIx(ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx, instructions);
 
                 let ixTitle = ixData?.output?.name;
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
