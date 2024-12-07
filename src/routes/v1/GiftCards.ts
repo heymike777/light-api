@@ -5,10 +5,7 @@ import jwt from "express-jwt";
 import { validateAuth } from "../../middlewares/ValidateAuth";
 import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { UserManager } from "../../managers/UserManager";
-import { WalletManager } from "../../managers/WalletManager";
-import { IWallet, Wallet } from "../../entities/Wallet";
 import { BadRequestError } from "../../errors/BadRequestError";
-import { PremiumError } from "../../errors/PremiumError";
 import { Helpers } from "../../services/helpers/Helpers";
 import { PermissionError } from "../../errors/PermissionError";
 import { SubscriptionPlatform, SubscriptionTier } from "../../entities/payments/Subscription";
@@ -16,7 +13,6 @@ import { GiftCard } from "../../entities/giftCards/GiftCard";
 import { GiftCardClaim } from "../../entities/giftCards/GiftCardClaim";
 import { MixpanelManager } from "../../managers/MixpanelManager";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
-import { timers } from "jquery";
 import { UserRefClaim } from "../../entities/UserRefClaim";
 
 const router = express.Router();
