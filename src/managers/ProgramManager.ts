@@ -226,7 +226,6 @@ export class ProgramManager {
             if (ixParsed.name == 'buy'){
                 const sellIx = await this.findIx(instructions, kProgram.TENSOR_CNFT, 'tcompNoop');
 
-                console.log('!!!TENSOR_CNFT', 'sellIx:', sellIx, "instructions:", instructions);
                 const buyerWalletAddress = accounts?.[10]?.toBase58();
                 const tokenMint = sellIx?.ixData?.output?.data?.event?.taker?.['0']?.assetId;
                 if (buyerWalletAddress && tokenMint){
@@ -290,7 +289,7 @@ export class ProgramManager {
                         return { ix: instruction, ixData };
                     }
                 }
-                
+
             }
         }
 
