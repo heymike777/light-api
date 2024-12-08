@@ -46,7 +46,9 @@ export class MigrationManager {
         // const signature = '63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'; // raydium
         // const signature = '54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'; // jupiter
         // const signature = '26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'; // NFT SALE on !!!MAGIC_EDEN_V2
-        // const signature = '5zDEApR6A998AdbmhebMFqbsSvVFwMmA7f6RR4QK5V4VNG99Yrgf4NdhfB3SpKK4wEBzCWXZvr3fazgBSyrfQWg3'; // cNFT on Tensor_CNFT
+        // const signature = '5FRKJBrcGBcERCgWLWdR5YRvK3mPMYJnhbePjX6g4ywYgeV4u6ypJeh9FyduvkXiesHqyrTKw9XCEiBWjCWKPXnq'; // Tensor 
+        // const signature = '2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'; // cNFT on Tensor_CNFT
+        // const signature = '5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'; // TENSOR
         // await this.processTx(signature, chatId);
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
