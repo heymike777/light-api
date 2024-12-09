@@ -144,6 +144,9 @@ router.post(
             await user.save();
         }
 
+        user.usedGiftCardsCount = (user.usedGiftCardsCount || 0) + 1;
+        await user.save();
+
         MixpanelManager.track('GiftCardClaim', userId, { code, tier, days }, ipAddress);
 
 		const response = {

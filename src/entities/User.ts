@@ -21,6 +21,7 @@ export interface IUser extends mongoose.Document {
     referralCode?: string;
     lastIpAddress?: string;
     isAdmin?: boolean;
+    usedGiftCardsCount?: number;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -44,6 +45,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
     referralCode: { type: String },
     lastIpAddress: { type: String },
     isAdmin: { type: Boolean },
+    usedGiftCardsCount: { type: Number },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -65,6 +67,7 @@ UserSchema.methods.toJSON = function () {
         subscription: this.subscription,
         maxNumberOfWallets: this.maxNumberOfWallets,
         isAdmin: this.isAdmin,
+        usedGiftCardsCount: this.usedGiftCardsCount,
     };
 };
 
