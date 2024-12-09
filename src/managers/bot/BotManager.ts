@@ -188,21 +188,26 @@ export class BotManager {
     }
 
     async sendMessage(data: SendMessageData){
-        if (data.imageUrl){
-            this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
-                caption: data.text,
-                parse_mode: 'HTML', 
-                reply_markup: data.inlineKeyboard,
-            });    
+        try {
+            if (data.imageUrl){
+                this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
+                    caption: data.text,
+                    parse_mode: 'HTML', 
+                    reply_markup: data.inlineKeyboard,
+                });    
+            }
+            else {
+                this.bot.api.sendMessage(data.chatId, data.text || '', {
+                    parse_mode: 'HTML', 
+                    link_preview_options: {
+                        is_disabled: true
+                    },
+                    reply_markup: data.inlineKeyboard,
+                });    
+            }
         }
-        else {
-            this.bot.api.sendMessage(data.chatId, data.text || '', {
-                parse_mode: 'HTML', 
-                link_preview_options: {
-                    is_disabled: true
-                },
-                reply_markup: data.inlineKeyboard,
-            });    
+        catch (error){
+            console.error('sendMessage', error);
         }
     }
 
