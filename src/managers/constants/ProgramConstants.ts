@@ -1,5 +1,3 @@
-import { TxDescription } from "../ProgramManager";
-
 export enum kProgram {
     SOLANA = '11111111111111111111111111111111',
     TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',

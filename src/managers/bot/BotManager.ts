@@ -72,6 +72,7 @@ export class BotManager {
             const e = err.error;
             if (e instanceof GrammyError) {
                 console.error("!catched by bot. GrammyError. Error in request:", e.description);
+
             } else if (e instanceof HttpError) {
                 console.error("!catched by bot. HttpError. Could not contact Telegram:", e);
             } else {

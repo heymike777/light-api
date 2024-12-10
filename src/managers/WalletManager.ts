@@ -1,7 +1,7 @@
 import { CompiledInstruction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
 import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
 import { BotManager } from "./bot/BotManager";
-import { ParsedTx, ProgramManager } from "./ProgramManager";
+import { ParsedTx, ProgramManager, TxDescription } from "./ProgramManager";
 import * as web3 from '@solana/web3.js';
 import { newConnection } from "../services/solana/lib/solana";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
@@ -338,7 +338,6 @@ export class WalletManager {
                     userTx.chatId = chat.id;
                     userTx.parsedTx = parsedTx;
                     userTx.changedWallets = info.changedWallets;
-                    // userTx.asset = asset;
                     userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                     userTx.tokens = info.transactionApiResponse.tokens;
                     await userTx.save();
@@ -357,7 +356,9 @@ export class WalletManager {
         let hasWalletsChanges = false;
         let message = `[${parsedTx.title}]\n`;
 
-        if (parsedTx.description){
+        const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
+
+        if (txDescription){
             message += '\n{description}\n';
         }
 
@@ -556,17 +557,17 @@ export class WalletManager {
         const explorerUrl = ExplorerManager.getUrlToTransaction(parsedTx.signature);
         message += `<a href="${explorerUrl}">Explorer</a>`;
 
-        if (parsedTx.description){
-            let description = parsedTx.description.html;
-            description = Helpers.replaceAddressesWithPretty(description, parsedTx.description.addresses, chat.wallets, tokens);
+        if (txDescription){
+            let description = txDescription.html;
+            description = Helpers.replaceAddressesWithPretty(description, txDescription.addresses, chat.wallets, tokens);
             message = message.replace('{description}', description);
         }
 
-        const txDescription = parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, chat.wallets, tokens) : undefined;
+        const description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, chat.wallets, tokens) : undefined;
 
         const txApiResponse: TransactionApiResponse = {
             title: parsedTx.title,
-            description: txDescription,
+            description: description,
             explorerUrl: explorerUrl,
             signature: parsedTx.signature,
             blockTime: parsedTx.blockTime,

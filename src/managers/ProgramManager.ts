@@ -13,6 +13,7 @@ import { WalletManager } from "./WalletManager";
 import { getTokenMetadata } from "@solana/spl-token";
 import fs from "fs";
 import { kSolAddress } from "../services/solana/Constants";
+import { IWallet } from "../entities/Wallet";
 
 export type Ix = web3.ParsedInstruction | web3.PartiallyDecodedInstruction;
 
@@ -23,7 +24,7 @@ export interface ParsedIxData {
 
 export interface ParsedTx {
     title: string;
-    description?: TxDescription;
+    // description?: TxDescription;
     assetId?: string;
     signature: string;
     walletsInvolved: string[];
@@ -33,6 +34,7 @@ export interface ParsedTx {
     postTokenBalances?: web3.TokenBalance[];
     blockTime: number;
     accounts: string[];
+    parsedInstructions?: ParsedIx[];
 }
 
 export interface ParsedIx {
@@ -428,7 +430,7 @@ export class ProgramManager {
 
 
         let txTitle = '';
-        let txDescription: TxDescription | undefined;
+        // let txDescription: TxDescription | undefined;
         let assetId: string | undefined;
 
         parsedInstructions = parsedInstructions.sort((a, b) => a.priority - b.priority);
@@ -452,7 +454,7 @@ export class ProgramManager {
                     txTitle += parsedInstruction.program;
                 }
 
-                txDescription = parsedInstruction.description;
+                // txDescription = parsedInstruction.description;
 
                 if (parsedInstruction.programId == kProgram.TENSOR_CNFT){
                     if (!assetId){
@@ -491,7 +493,7 @@ export class ProgramManager {
 
         return {
             title: txTitle,
-            description: txDescription,
+            // description: txDescription,
             assetId,
             signature: tx?.transaction?.signatures?.[0] || '',
             walletsInvolved,
@@ -501,6 +503,7 @@ export class ProgramManager {
             postBalances: tx.meta?.postBalances || undefined,
             blockTime: tx.blockTime || Math.floor(Date.now() / 1000),
             accounts: tx.transaction.message.accountKeys.map((key) => key.pubkey.toBase58()),
+            parsedInstructions: parsedInstructions,
         }
     }
 
@@ -597,6 +600,42 @@ export class ProgramManager {
         }
 
         return changedBalances;
+    }
+
+    static findTxDescription(parsedInstructions: ParsedIx[] | undefined, wallets: IWallet[]): TxDescription | undefined {
+        console.log('findTxDescription', 'wallets:', wallets.map((w) => w.walletAddress), 'parsedInstructions:', parsedInstructions);
+
+        if (!parsedInstructions || parsedInstructions.length == 0){
+            return undefined;
+        }
+
+        let txDescription: TxDescription | undefined = undefined;
+        if (parsedInstructions){
+            for (const ix of parsedInstructions) {
+                if (ix.program && ix.title){
+                    let hasAccount = false;
+                    for (const accountKey of ix.description?.addresses || []) {
+                        if (wallets.find((w) => w.walletAddress == accountKey)){
+                            hasAccount = true;
+                            break;
+                        }
+                    }
+                    if (hasAccount){
+                        txDescription = ix.description;
+                        break;    
+                    }
+                }
+            }  
+            if (!txDescription){
+                for (const ix of parsedInstructions) {
+                    if (ix.program && ix.title){
+                        txDescription = ix.description;
+                        break;
+                    }
+                } 
+            }
+        }
+        return txDescription;
     }
 
 }

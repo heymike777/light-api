@@ -12,6 +12,7 @@ import { WalletManager } from "../../managers/WalletManager";
 import { ChatWallets, TransactionApiResponse } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { UserManager } from "../../managers/UserManager";
+import { ProgramManager } from "../../managers/ProgramManager";
 
 const router = express.Router();
 
@@ -120,9 +121,13 @@ router.post(
             const tokens = transaction.tokens || [];
             const assetToken = tokens?.find((token) => token.nft);
             // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
+
+            const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
+
+
             parsedTransactions.push({
                 title: parsedTx.title,
-                description: parsedTx.description?.plain ? Helpers.replaceAddressesWithPretty(parsedTx.description.plain, parsedTx.description?.addresses, wallets, tokens) : undefined,
+                description: txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, wallets, tokens) : undefined,
                 explorerUrl: ExplorerManager.getUrlToTransaction(parsedTx.signature),
                 asset: assetToken?.nft,
                 signature: parsedTx.signature,
