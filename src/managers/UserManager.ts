@@ -57,7 +57,9 @@ export class UserManager {
 
             MixpanelManager.updateProfile(newUser, undefined);
 
-            SystemNotificationsManager.sendSystemMessage(`New user: @${from.username}`);
+            let fullName = from.first_name || '' + (from.last_name ? ' ' + from.last_name : '');
+            fullName = fullName.trim();
+            SystemNotificationsManager.sendSystemMessage(`New user: @${from.username} (${fullName})`);
 
             this.cachedUsers.push({ user: newUser, createdAt: now });
             return newUser;
