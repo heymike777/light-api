@@ -66,6 +66,14 @@ export class BotManager {
             this.onMessage(ctx.update.message as TgMessage, ctx);
         });
 
+        this.bot.on("message:new_chat_members:is_bot", async (ctx) => {
+            console.log('Bot joined chat', ctx.chat.id);
+        });
+
+        this.bot.on("message:left_chat_member:me", async (ctx) => {
+            console.log('Bot left chat', ctx.chat.id);
+        });
+
         this.bot.on("callback_query:data", async (ctx) => {
             const data = ctx.callbackQuery.data.split('_');
             if (data.length < 2){
