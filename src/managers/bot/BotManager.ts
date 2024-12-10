@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot, GrammyError, HttpError, InlineKeyboard } from "grammy";
 import { IMessage, Message } from "../../entities/Message";
 import { BotAddWalletHelper } from "./helpers/BotAddWalletHelper";
 import { BotHelper } from "./helpers/BotHelper";
@@ -64,6 +64,19 @@ export class BotManager {
     
         this.bot.on('message', (ctx) => {
             this.onMessage(ctx.update.message as TgMessage, ctx);
+        });
+
+        this.bot.catch((err) => {
+            const ctx = err.ctx;
+            console.error(`Error while handling update from chatId: ${ctx.chat?.id}:`);
+            const e = err.error;
+            if (e instanceof GrammyError) {
+                console.error("!catched by bot. GrammyError. Error in request:", e.description);
+            } else if (e instanceof HttpError) {
+                console.error("!catched by bot. HttpError. Could not contact Telegram:", e);
+            } else {
+                console.error("!catched by bot. Unknown error:", e);
+            }
         });
 
         // this.bot.on("message:new_chat_members:is_bot", async (ctx) => {
@@ -196,26 +209,21 @@ export class BotManager {
     }
 
     async sendMessage(data: SendMessageData){
-        try {
-            if (data.imageUrl){
-                this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
-                    caption: data.text,
-                    parse_mode: 'HTML', 
-                    reply_markup: data.inlineKeyboard,
-                });    
-            }
-            else {
-                this.bot.api.sendMessage(data.chatId, data.text || '', {
-                    parse_mode: 'HTML', 
-                    link_preview_options: {
-                        is_disabled: true
-                    },
-                    reply_markup: data.inlineKeyboard,
-                });    
-            }
+        if (data.imageUrl){
+            this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
+                caption: data.text,
+                parse_mode: 'HTML', 
+                reply_markup: data.inlineKeyboard,
+            });    
         }
-        catch (error){
-            console.error('sendMessage', error);
+        else {
+            this.bot.api.sendMessage(data.chatId, data.text || '', {
+                parse_mode: 'HTML', 
+                link_preview_options: {
+                    is_disabled: true
+                },
+                reply_markup: data.inlineKeyboard,
+            });    
         }
     }
 
