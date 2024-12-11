@@ -52,7 +52,7 @@ export class MigrationManager {
         // await this.processTx(signature, chatId);
 
         // await this.processTx('2KyJ3jATJhfc2kjbfeNRNtULdSpDzGxRjMA477RtkJSeDcYL1zzQTQWSSYT7nYgDxy74r4riuFmGgpHZgjmGZ5v2', chatId);
-        await this.processTx('Ub5ZKPusoSXzyp76A8Pdqd7hXEVFaQp6ActLxjshB696E1XkLd8Eui6vK8FNEEgon4f3V2FZVZupHAf2pzghTfz', chatId);
+        // await this.processTx('Ub5ZKPusoSXzyp76A8Pdqd7hXEVFaQp6ActLxjshB696E1XkLd8Eui6vK8FNEEgon4f3V2FZVZupHAf2pzghTfz', chatId);
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
