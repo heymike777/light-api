@@ -51,7 +51,8 @@ export class MigrationManager {
         // const signature = '5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'; // TENSOR
         // await this.processTx(signature, chatId);
 
-        // await this.processTx('29EyPa76iFtB6345qdTgRRqJs17wuuTbCBxNybS9HHCpiS3CAaP8pUFop2MisobDMdKXp4KQ94ceikjarr3Vsx4C', chatId);
+        // await this.processTx('2KyJ3jATJhfc2kjbfeNRNtULdSpDzGxRjMA477RtkJSeDcYL1zzQTQWSSYT7nYgDxy74r4riuFmGgpHZgjmGZ5v2', chatId);
+        await this.processTx('Ub5ZKPusoSXzyp76A8Pdqd7hXEVFaQp6ActLxjshB696E1XkLd8Eui6vK8FNEEgon4f3V2FZVZupHAf2pzghTfz', chatId);
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
@@ -74,16 +75,16 @@ export class MigrationManager {
     }
 
     static async processTx(signature: string, chatId: number) {
-        const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66fd20f48d764a140bb9238d';
+        const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
         const wallets = await Wallet.find({ userId: userId, status: WalletStatus.ACTIVE });
         const chats = [{
             id: chatId,
             wallets: wallets,
         }];
-        console.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
+        // console.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
         const connection = newConnection();
         const tx = await SolanaManager.getParsedTransaction(connection, signature);
-        console.log('!tx', JSON.stringify(tx));
+        // console.log('!tx', JSON.stringify(tx));
         if (tx){
             await WalletManager.processTxForChats(signature, tx, chats);
         }
