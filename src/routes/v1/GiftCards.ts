@@ -35,7 +35,7 @@ router.post(
 		const userId = req.accessToken?.userId;
         if (!userId) { throw new NotAuthorizedError(); }
 
-        const user = await UserManager.getUserById(userId);
+        const user = await UserManager.getUserById(userId, true);
         if (!user) { throw new NotAuthorizedError(); }
         if (!user.isAdmin) { throw new PermissionError(); }
         
@@ -82,7 +82,7 @@ router.post(
 		const userId = req.accessToken?.userId;
         if (!userId) { throw new NotAuthorizedError(); }
 
-        const user = await UserManager.getUserById(userId);
+        const user = await UserManager.getUserById(userId, true);
         if (!user) { throw new NotAuthorizedError(); }
         
         await UserManager.fillUserWithData(user);

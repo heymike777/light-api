@@ -26,7 +26,7 @@ router.get(
         throw new NotAuthorizedError();
       }
 
-      const user = await UserManager.getUserById(userId);
+      const user = await UserManager.getUserById(userId, true);
       if (!user){
         throw new NotAuthorizedError();
       }
@@ -91,7 +91,7 @@ router.post(
         }
 
         const ipAddress = Helpers.getIpAddress(req);
-        const user = await UserManager.getUserById(userId);
+        const user = await UserManager.getUserById(userId, true);
         if (ipAddress && user.lastIpAddress != ipAddress){
             user.lastIpAddress = ipAddress;
             user.save();

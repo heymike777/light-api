@@ -21,7 +21,7 @@ router.get(
 		const userId = req.accessToken?.userId;
         if (!userId) { throw new NotAuthorizedError(); }
 
-        const user = await UserManager.getUserById(userId);
+        const user = await UserManager.getUserById(userId, true);
         if (!user) { throw new NotAuthorizedError(); }
 
         const wallets = await WalletManager.fetchWalletsByUserId(user.id);
@@ -47,7 +47,7 @@ router.post(
 		const userId = req.accessToken?.userId;
         if (!userId) { throw new NotAuthorizedError(); }
 
-        const user = await UserManager.getUserById(userId);
+        const user = await UserManager.getUserById(userId, true);
         if (!user) { throw new NotAuthorizedError(); }
 
         const walletAddress = '' + req.body.walletAddress;
@@ -87,7 +87,7 @@ router.delete(
         if (!userId) { throw new NotAuthorizedError(); }
         const ipAddress = Helpers.getIpAddress(req);
 
-        const user = await UserManager.getUserById(userId);
+        const user = await UserManager.getUserById(userId, true);
         if (!user) { throw new NotAuthorizedError(); }
 
         const id = '' + req.params.id;

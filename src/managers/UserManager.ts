@@ -8,10 +8,12 @@ export class UserManager {
 
     static cachedUsers: {user: IUser, createdAt: Date}[] = [];
 
-    static async getUserById(id: string): Promise<IUser> {
-        const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.id == id);
-        if (cachedUser){
-            return cachedUser.user;
+    static async getUserById(id: string, forceCleanCache = false): Promise<IUser> {
+        if (!forceCleanCache){
+            const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.id == id);
+            if (cachedUser){
+                return cachedUser.user;
+            }
         }
 
         const now = new Date();
@@ -26,12 +28,14 @@ export class UserManager {
         }
     }
 
-    static async getUserByTelegramUser(from: TelegramUser): Promise<IUser> {
-        const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.telegram?.id === from.id);
-        if (cachedUser){
-            return cachedUser.user;
+    static async getUserByTelegramUser(from: TelegramUser, forceCleanCache = false): Promise<IUser> {
+        if (!forceCleanCache){
+            const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.telegram?.id === from.id);
+            if (cachedUser){
+                return cachedUser.user;
+            }
         }
-
+        
         const now = new Date();
         const user = await User.findOne({ 'telegram.id': from.id });
         if (user){
