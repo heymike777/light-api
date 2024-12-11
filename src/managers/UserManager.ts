@@ -111,7 +111,7 @@ export class UserManager {
     static async fillUserWithSubscription(user: IUser): Promise<IUser> {
         const subscriptions = await Subscription.find({ userId: user.id, status: SubscriptionStatus.ACTIVE });
 
-        console.log('fillUserWithSubscription', user.id, subscriptions);
+        // console.log('fillUserWithSubscription', user.id, subscriptions);
 
         subscriptions.sort((a, b) => {
             const aImportance = SubscriptionManager.getTierImportance(a.tier);
@@ -121,7 +121,7 @@ export class UserManager {
             return 0;
         });
 
-        console.log('fillUserWithSubscription (sorted)', user.id, subscriptions);
+        // console.log('fillUserWithSubscription (sorted)', user.id, subscriptions);
 
         if (subscriptions.length > 0){
             user.subscription = subscriptions[0];
