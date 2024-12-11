@@ -131,4 +131,18 @@ export class SubscriptionManager {
         }
     }
 
+    static getTierImportance(tier: SubscriptionTier): number {
+        if (tier == SubscriptionTier.PLATINUM){
+            return 3;
+        }
+        else if (tier == SubscriptionTier.GOLD){
+            return 2;
+        }
+        else if (tier == SubscriptionTier.SILVER){
+            return 1;
+        }
+        
+        return 0;
+    }
+
 }

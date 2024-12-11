@@ -51,6 +51,8 @@ export class MigrationManager {
         // const signature = '5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'; // TENSOR
         // await this.processTx(signature, chatId);
 
+        // await this.processTx('29EyPa76iFtB6345qdTgRRqJs17wuuTbCBxNybS9HHCpiS3CAaP8pUFop2MisobDMdKXp4KQ94ceikjarr3Vsx4C', chatId);
+
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
         // const inlineKeyboard = BotManager.buildInlineKeyboardForToken(Chain.SOLANA, InlineKeyboardType.TOKEN_TX, mint, tokenName);

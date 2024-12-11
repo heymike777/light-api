@@ -107,31 +107,20 @@ export class UserManager {
     static async fillUserWithSubscription(user: IUser): Promise<IUser> {
         const subscriptions = await Subscription.find({ userId: user.id, status: SubscriptionStatus.ACTIVE });
 
-        if (subscriptions.length == 1){
+        console.log('fillUserWithSubscription', user.id, subscriptions);
+
+        subscriptions.sort((a, b) => {
+            const aImportance = SubscriptionManager.getTierImportance(a.tier);
+            const bImportance = SubscriptionManager.getTierImportance(b.tier);
+            if (aImportance < bImportance){ return -1; }
+            else if (aImportance > bImportance){ return 1; }
+            return 0;
+        });
+
+        console.log('fillUserWithSubscription (sorted)', user.id, subscriptions);
+
+        if (subscriptions.length > 1){
             user.subscription = subscriptions[0];
-        }
-        else if (subscriptions.length > 1){
-            // find the highers tier: platinum > gold > silver
-            // this is almost impossible to happen, but just in case
-
-            let activeSubscription: ISubscription | undefined = undefined
-
-            for (const subscription of subscriptions){
-                if (subscription.tier == SubscriptionTier.PLATINUM){
-                    activeSubscription = subscription;
-                    break;
-                }
-                else if (subscription.tier == SubscriptionTier.GOLD && (!activeSubscription || activeSubscription.tier == SubscriptionTier.SILVER)){
-                    activeSubscription = subscription;
-                }
-                else if (subscription.tier == SubscriptionTier.SILVER && !activeSubscription){
-                    activeSubscription = subscription;
-                }
-            }
-
-            if (activeSubscription){
-                user.subscription = activeSubscription;
-            }
         }
 
         user.maxNumberOfWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
