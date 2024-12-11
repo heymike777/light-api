@@ -35,7 +35,7 @@ export class UserManager {
                 return cachedUser.user;
             }
         }
-        
+
         const now = new Date();
         const user = await User.findOne({ 'telegram.id': from.id });
         if (user){
@@ -123,7 +123,7 @@ export class UserManager {
 
         console.log('fillUserWithSubscription (sorted)', user.id, subscriptions);
 
-        if (subscriptions.length > 1){
+        if (subscriptions.length > 0){
             user.subscription = subscriptions[0];
         }
 
