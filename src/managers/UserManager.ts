@@ -112,8 +112,8 @@ export class UserManager {
         subscriptions.sort((a, b) => {
             const aImportance = SubscriptionManager.getTierImportance(a.tier);
             const bImportance = SubscriptionManager.getTierImportance(b.tier);
-            if (aImportance < bImportance){ return -1; }
-            else if (aImportance > bImportance){ return 1; }
+            if (aImportance < bImportance){ return 1; }
+            else if (aImportance > bImportance){ return -1; }
             return 0;
         });
 
