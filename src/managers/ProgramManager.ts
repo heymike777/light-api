@@ -216,7 +216,15 @@ export class ProgramManager {
             }
             else if (programId == kProgram.JUPITER){
                 if (['routeWithTokenLedger', 'sharedAccountsRoute', 'route', 'exactOutRoute', 'sharedAccountsRouteWithTokenLedger', 'sharedAccountsExactOutRoute'].indexOf(ixParsed.name) != -1){
-                    const walletAddress = accounts?.[2]?.toBase58();
+                    const walletIndexMap: {[key: string]: number} = {
+                        'exactOutRoute': 1,
+                        'sharedAccountsExactOutRoute': 2,
+                        'route': 1,
+                        'sharedAccountsRoute': 2,//?
+                        'routeWithTokenLedger': 1,//?
+                        'sharedAccountsRouteWithTokenLedger': 2,//?
+                    } 
+                    const walletAddress = accounts?.[walletIndexMap[ixParsed.name]]?.toBase58();
                     if (walletAddress && tx?.meta){
                         const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
                         if (changes.length > 0){
