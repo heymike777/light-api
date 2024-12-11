@@ -72,12 +72,13 @@ export class MigrationManager {
     }
 
     static async processTx(signature: string, chatId: number) {
-        const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
+        const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66fd20f48d764a140bb9238d';
         const wallets = await Wallet.find({ userId: userId, status: WalletStatus.ACTIVE });
         const chats = [{
             id: chatId,
             wallets: wallets,
         }];
+        console.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
         const connection = newConnection();
         const tx = await SolanaManager.getParsedTransaction(connection, signature);
         console.log('!tx', JSON.stringify(tx));

@@ -134,7 +134,31 @@ export class ProgramManager {
             }
         }
         else if (programId == kProgram.TOKEN_PROGRAM){
-            if (ixParsed.type == 'transferChecked'){
+            console.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
+            if (ixParsed.type == 'transfer' || ixParsed.type == 'transferChecked'){
+                if (tx){
+                    const sourceAccount = ixParsed.info.source;
+                    const destinationAccount = ixParsed.info.destination;
+
+                    const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
+                    const walletSort: {[key: string]: string | undefined} = {};
+                    for (const account of allAccounts) {
+                        walletSort[tx.transaction.message.accountKeys[account.accountIndex].pubkey.toBase58()] = account.owner;
+                    }
+
+                    const sourceWalletAddress = walletSort[sourceAccount] || 'someone';
+                    const destinationWalletAddress = walletSort[destinationAccount] || 'someone';
+                    const tokenMint = ixParsed.info.mint;
+                    const amount = ixParsed.info.tokenAmount.uiAmountString;
+
+                    const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
+
+                    description = {
+                        plain: `{address0} transfered ${amount} {address2} to {address1}`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                        addresses,
+                    };
+                }
             }
         }
         else if (programId == kProgram.PUMPFUN){
@@ -603,37 +627,40 @@ export class ProgramManager {
     }
 
     static findTxDescription(parsedInstructions: ParsedIx[] | undefined, wallets: IWallet[]): TxDescription | undefined {
-        console.log('findTxDescription', 'wallets:', wallets.map((w) => w.walletAddress), 'parsedInstructions:', parsedInstructions);
+        console.log('findTxDescription', 'wallets:', wallets.map((w) => w.walletAddress), 'parsedInstructions:', JSON.stringify(parsedInstructions));
 
         if (!parsedInstructions || parsedInstructions.length == 0){
             return undefined;
         }
 
         let txDescription: TxDescription | undefined = undefined;
-        if (parsedInstructions){
-            for (const ix of parsedInstructions) {
-                if (ix.program && ix.title){
-                    let hasAccount = false;
-                    for (const accountKey of ix.description?.addresses || []) {
-                        if (wallets.find((w) => w.walletAddress == accountKey)){
-                            hasAccount = true;
-                            break;
-                        }
-                    }
-                    if (hasAccount){
-                        txDescription = ix.description;
-                        break;    
-                    }
-                }
-            }  
-            if (!txDescription){
-                for (const ix of parsedInstructions) {
-                    if (ix.program && ix.title){
-                        txDescription = ix.description;
+
+        for (const ix of parsedInstructions) {
+            if (ix.title){
+                let hasAccount = false;
+                for (const accountKey of ix.description?.addresses || []) {
+                    if (wallets.find((w) => w.walletAddress == accountKey)){
+                        hasAccount = true;
                         break;
                     }
-                } 
+                }
+                if (hasAccount){
+                    console.log('findTxDescription', 'found (1) ix:', ix);
+                    txDescription = ix.description;
+                    break;    
+                }
             }
+        }  
+
+        if (!txDescription){
+            for (const ix of parsedInstructions) {
+                if (ix.title){
+                    console.log('findTxDescription', 'found (2) ix:', ix);
+
+                    txDescription = ix.description;
+                    break;
+                }
+            } 
         }
         return txDescription;
     }
