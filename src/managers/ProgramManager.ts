@@ -142,15 +142,18 @@ export class ProgramManager {
                         const destinationAccount = ixParsed.info.destination;
 
                         const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
-                        const walletSort: {[key: string]: string | undefined} = {};
+                        const walletSort: {[key: string]: {owner?: string, mint: string}} = {};
                         for (const account of allAccounts) {
-                            walletSort[tx.transaction.message.accountKeys[account.accountIndex].pubkey.toBase58()] = account.owner;
+                            walletSort[tx.transaction.message.accountKeys[account.accountIndex].pubkey.toBase58()] = {
+                                owner: account.owner,
+                                mint: account.mint,
+                            };
                         }
 
-                        const sourceWalletAddress = walletSort[sourceAccount] || 'someone';
-                        const destinationWalletAddress = walletSort[destinationAccount] || 'someone';
-                        const tokenMint = ixParsed.info.mint;
-                        const amount = ixParsed.info.tokenAmount.uiAmountString;
+                        const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'someone';
+                        const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'someone';
+                        const tokenMint = ixParsed.info.mint || walletSort[destinationAccount]?.mint || undefined;
+                        const amount = ixParsed.info?.tokenAmount?.uiAmountString || ixParsed.info?.amount;
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
 
