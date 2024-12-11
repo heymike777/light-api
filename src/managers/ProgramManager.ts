@@ -88,206 +88,211 @@ export class ProgramManager {
         if (!ixParsed){
             return {};
         }
-
+        
         let description: TxDescription | undefined;
 
-        if (programId == kProgram.SOLANA){
-            if (ixParsed.type == 'transfer' || ixParsed.type == 'transferWithSeed'){
-                const addresses = [ixParsed.info.source, ixParsed.info.destination];
-                description = {
-                    plain: `{address0} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
-                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
-                    addresses,
-                };
-            }
-        }
-        else if (programId == kProgram.STAKE_PROGRAM){
-            if (ixParsed.type == 'delegate'){
-                const createAccountIx = previousIxs?.find((ix) => ('parsed' in ix) && ix.programId.toBase58() == kProgram.SOLANA && ix.parsed.type == 'createAccount');
-                const lamports = createAccountIx && ('parsed' in createAccountIx) ? createAccountIx?.parsed.info.lamports : undefined;
-                const stakeAmountString = lamports ? `${lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
-
-                const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
-                description = {
-                    plain: `{address0} staked ${stakeAmountString} with {address1}`,
-                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked ${stakeAmountString} with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
-                    addresses,
-                };
-            }
-            else if (ixParsed.type == 'withdraw'){
-                const stakeAmountString = ixParsed.info.lamports ? `${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
-
-                const addresses = [ixParsed.info.destination, ixParsed.info.withdrawAuthority, ixParsed.info.stakeAccount];
-                description = {
-                    plain: `{address0} unstaked ${stakeAmountString} from {address1}`,
-                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> unstaked ${stakeAmountString} from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
-                    addresses,
-                };
-            }
-            else if (ixParsed.type == 'deactivate'){
-                const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.stakeAccount];
-                description = {
-                    plain: `{address0} deactivated stake account {address1}`,
-                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> deactivated stake account <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
-                    addresses,
-                };
-            }
-        }
-        else if (programId == kProgram.TOKEN_PROGRAM){
-            console.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
-            if (ixParsed.type == 'transfer' || ixParsed.type == 'transferChecked'){
-                if (tx){
-                    const sourceAccount = ixParsed.info.source;
-                    const destinationAccount = ixParsed.info.destination;
-
-                    const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
-                    const walletSort: {[key: string]: string | undefined} = {};
-                    for (const account of allAccounts) {
-                        walletSort[tx.transaction.message.accountKeys[account.accountIndex].pubkey.toBase58()] = account.owner;
-                    }
-
-                    const sourceWalletAddress = walletSort[sourceAccount] || 'someone';
-                    const destinationWalletAddress = walletSort[destinationAccount] || 'someone';
-                    const tokenMint = ixParsed.info.mint;
-                    const amount = ixParsed.info.tokenAmount.uiAmountString;
-
-                    const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
-
+        try {
+            if (programId == kProgram.SOLANA){
+                if (ixParsed.type == 'transfer' || ixParsed.type == 'transferWithSeed'){
+                    const addresses = [ixParsed.info.source, ixParsed.info.destination];
                     description = {
-                        plain: `{address0} transfered ${amount} {address2} to {address1}`,
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                        plain: `{address0} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                         addresses,
                     };
                 }
             }
-        }
-        else if (programId == kProgram.PUMPFUN){
-            const walletAddress = accounts?.[6]?.toBase58();
-            const tokenMint = accounts?.[2]?.toBase58();
-            if (walletAddress && tokenMint){
-                const addresses = [walletAddress, tokenMint];
-                const meta = tx?.meta;
-                const preAmount = meta?.preTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
-                const postAmount = meta?.postTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
-                let amount = postAmount - preAmount;
+            else if (programId == kProgram.STAKE_PROGRAM){
+                if (ixParsed.type == 'delegate'){
+                    const createAccountIx = previousIxs?.find((ix) => ('parsed' in ix) && ix.programId.toBase58() == kProgram.SOLANA && ix.parsed.type == 'createAccount');
+                    const lamports = createAccountIx && ('parsed' in createAccountIx) ? createAccountIx?.parsed.info.lamports : undefined;
+                    const stakeAmountString = lamports ? `${lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
 
-                if (ixParsed.name == 'buy') {
+                    const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
                     description = {
-                        plain: `{address0} bought ${amount} {address1} on Pump Fun`,
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
-                        addresses: addresses,
-                    };    
+                        plain: `{address0} staked ${stakeAmountString} with {address1}`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked ${stakeAmountString} with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                        addresses,
+                    };
                 }
-                else if (ixParsed.name == 'sell') {
-                    amount = -amount;
+                else if (ixParsed.type == 'withdraw'){
+                    const stakeAmountString = ixParsed.info.lamports ? `${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
 
+                    const addresses = [ixParsed.info.destination, ixParsed.info.withdrawAuthority, ixParsed.info.stakeAccount];
                     description = {
-                        plain: `{address0} sold ${amount} {address1} on Pump Fun`,
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
-                        addresses: addresses,
-                    };    
+                        plain: `{address0} unstaked ${stakeAmountString} from {address1}`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> unstaked ${stakeAmountString} from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                        addresses,
+                    };
+                }
+                else if (ixParsed.type == 'deactivate'){
+                    const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.stakeAccount];
+                    description = {
+                        plain: `{address0} deactivated stake account {address1}`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> deactivated stake account <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                        addresses,
+                    };
                 }
             }
-        }
-        else if (programId == kProgram.RAYDIUM){
-            if (['swapBaseIn', 'swapBaseOut'].indexOf(ixParsed.name) != -1){
-                const walletAddress = accounts?.[17]?.toBase58();
-                if (walletAddress && tx?.meta){
-                    const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
-                    console.log('!changes:', changes);
+            else if (programId == kProgram.TOKEN_PROGRAM){
+                console.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (ixParsed.type == 'transfer' || ixParsed.type == 'transferChecked'){
+                    if (tx){
+                        const sourceAccount = ixParsed.info.source;
+                        const destinationAccount = ixParsed.info.destination;
 
-                    if (changes.length > 0){
-                        const tokenMint = changes[0].mint;
-                        const amount = changes[0].uiAmountChange;
+                        const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
+                        const walletSort: {[key: string]: string | undefined} = {};
+                        for (const account of allAccounts) {
+                            walletSort[tx.transaction.message.accountKeys[account.accountIndex].pubkey.toBase58()] = account.owner;
+                        }
 
-                        const addresses = [walletAddress, tokenMint];
+                        const sourceWalletAddress = walletSort[sourceAccount] || 'someone';
+                        const destinationWalletAddress = walletSort[destinationAccount] || 'someone';
+                        const tokenMint = ixParsed.info.mint;
+                        const amount = ixParsed.info.tokenAmount.uiAmountString;
+
+                        const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
+
                         description = {
-                            plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Raydium`,
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Raydium`,
-                            addresses: addresses,
-                        };    
+                            plain: `{address0} transfered ${amount} {address2} to {address1}`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                            addresses,
+                        };
                     }
-                }    
-            }
-        }
-        else if (programId == kProgram.JUPITER){
-            if (['routeWithTokenLedger', 'sharedAccountsRoute', 'route', 'exactOutRoute', 'sharedAccountsRouteWithTokenLedger', 'sharedAccountsExactOutRoute'].indexOf(ixParsed.name) != -1){
-                const walletAddress = accounts?.[2]?.toBase58();
-                if (walletAddress && tx?.meta){
-                    const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
-                    if (changes.length > 0){
-                        const tokenMint = changes[0].mint;
-                        const amount = changes[0].uiAmountChange;
-
-                        const addresses = [walletAddress, tokenMint];
-                        description = {
-                            plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Jupiter`,
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Jupiter`,
-                            addresses: addresses,
-                        };    
-                    }
-                }    
-            }
-        }
-        else if (programId == kProgram.TENSOR){
-            console.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
-            if (ixParsed.name == 'sellNftTokenPool'){
-                const buyerWalletAddress = accounts?.[10]?.toBase58();
-                const sellerWalletAddress = accounts?.[9]?.toBase58();
-                const tokenMint = accounts?.[6]?.toBase58();
-                if (buyerWalletAddress && sellerWalletAddress && tokenMint){
-                    const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                    const solAmount = +ixParsed.data?.config?.startingPrice / web3.LAMPORTS_PER_SOL;
-
-                    description = {
-                        plain: `{address1} bought {address2} from {address0} for ${solAmount} SOL on Tensor`,
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> for <b>${solAmount} SOL</b> on Tensor`,
-                        addresses: addresses,
-                    };    
                 }
             }
-        }
-        else if (programId == kProgram.TENSOR_CNFT){
-            console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
-            if (ixParsed.name == 'buy'){
-                const sellIx = await this.findIx(instructions, kProgram.TENSOR_CNFT, 'tcompNoop');
-
-                const buyerWalletAddress = accounts?.[10]?.toBase58();
-                const tokenMint = sellIx?.ixData?.output?.data?.event?.taker?.['0']?.assetId;
-                if (buyerWalletAddress && tokenMint){
-                    const addresses = [buyerWalletAddress, tokenMint];
-                    const solAmount = +ixParsed.data?.maxAmount / web3.LAMPORTS_PER_SOL;
-
-                    description = {
-                        plain: `{address0} bought {address1} for ${solAmount} SOL on Tensor`,
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
-                        addresses: addresses,
-                    };    
-                }
-            }
-        }
-        else if (programId == kProgram.MAGIC_EDEN_AMM){
-            console.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
-        }
-        else if (programId == kProgram.MAGIC_EDEN_V2){
-            console.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
-            if (ixParsed.name == 'buyV2'){
-                const walletAddress = accounts?.[0]?.toBase58();
+            else if (programId == kProgram.PUMPFUN){
+                const walletAddress = accounts?.[6]?.toBase58();
                 const tokenMint = accounts?.[2]?.toBase58();
                 if (walletAddress && tokenMint){
                     const addresses = [walletAddress, tokenMint];
-                    const solAmount = +ixParsed.data?.buyerPrice / web3.LAMPORTS_PER_SOL;
+                    const meta = tx?.meta;
+                    const preAmount = meta?.preTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
+                    const postAmount = meta?.postTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
+                    let amount = postAmount - preAmount;
 
-                    description = {
-                        plain: `{address0} bought {address1} for ${solAmount} SOL on Magic Eden`,
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
-                        addresses: addresses,
-                    };    
+                    if (ixParsed.name == 'buy') {
+                        description = {
+                            plain: `{address0} bought ${amount} {address1} on Pump Fun`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
+                            addresses: addresses,
+                        };    
+                    }
+                    else if (ixParsed.name == 'sell') {
+                        amount = -amount;
+
+                        description = {
+                            plain: `{address0} sold ${amount} {address1} on Pump Fun`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
+                            addresses: addresses,
+                        };    
+                    }
                 }
             }
+            else if (programId == kProgram.RAYDIUM){
+                if (['swapBaseIn', 'swapBaseOut'].indexOf(ixParsed.name) != -1){
+                    const walletAddress = accounts?.[17]?.toBase58();
+                    if (walletAddress && tx?.meta){
+                        const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
+                        console.log('!changes:', changes);
+
+                        if (changes.length > 0){
+                            const tokenMint = changes[0].mint;
+                            const amount = changes[0].uiAmountChange;
+
+                            const addresses = [walletAddress, tokenMint];
+                            description = {
+                                plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Raydium`,
+                                html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Raydium`,
+                                addresses: addresses,
+                            };    
+                        }
+                    }    
+                }
+            }
+            else if (programId == kProgram.JUPITER){
+                if (['routeWithTokenLedger', 'sharedAccountsRoute', 'route', 'exactOutRoute', 'sharedAccountsRouteWithTokenLedger', 'sharedAccountsExactOutRoute'].indexOf(ixParsed.name) != -1){
+                    const walletAddress = accounts?.[2]?.toBase58();
+                    if (walletAddress && tx?.meta){
+                        const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
+                        if (changes.length > 0){
+                            const tokenMint = changes[0].mint;
+                            const amount = changes[0].uiAmountChange;
+
+                            const addresses = [walletAddress, tokenMint];
+                            description = {
+                                plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Jupiter`,
+                                html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Jupiter`,
+                                addresses: addresses,
+                            };    
+                        }
+                    }    
+                }
+            }
+            else if (programId == kProgram.TENSOR){
+                console.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (ixParsed.name == 'sellNftTokenPool'){
+                    const buyerWalletAddress = accounts?.[10]?.toBase58();
+                    const sellerWalletAddress = accounts?.[9]?.toBase58();
+                    const tokenMint = accounts?.[6]?.toBase58();
+                    if (buyerWalletAddress && sellerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
+                        const solAmount = +ixParsed.data?.config?.startingPrice / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address1} bought {address2} from {address0} for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
+            }
+            else if (programId == kProgram.TENSOR_CNFT){
+                console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (ixParsed.name == 'buy'){
+                    const sellIx = await this.findIx(instructions, kProgram.TENSOR_CNFT, 'tcompNoop');
+
+                    const buyerWalletAddress = accounts?.[10]?.toBase58();
+                    const tokenMint = sellIx?.ixData?.output?.data?.event?.taker?.['0']?.assetId;
+                    if (buyerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, tokenMint];
+                        const solAmount = +ixParsed.data?.maxAmount / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} bought {address1} for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
+            }
+            else if (programId == kProgram.MAGIC_EDEN_AMM){
+                console.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
+            }
+            else if (programId == kProgram.MAGIC_EDEN_V2){
+                console.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (ixParsed.name == 'buyV2'){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    const tokenMint = accounts?.[2]?.toBase58();
+                    if (walletAddress && tokenMint){
+                        const addresses = [walletAddress, tokenMint];
+                        const solAmount = +ixParsed.data?.buyerPrice / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} bought {address1} for ${solAmount} SOL on Magic Eden`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
+            }
+            else if (programId == kProgram.MAGIC_EDEN_V3){
+                console.log('!!!MAGIC_EDEN_V3', 'ixParsed:', ixParsed, 'accounts:', accounts);
+            }
         }
-        else if (programId == kProgram.MAGIC_EDEN_V3){
-            console.log('!!!MAGIC_EDEN_V3', 'ixParsed:', ixParsed, 'accounts:', accounts);
+        catch (error){
+            console.error('!catched parseParsedIx', error);
         }
         
 
