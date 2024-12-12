@@ -154,7 +154,21 @@ export class ProgramManager {
                         const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'unknown';
                         const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'unknown';
                         const tokenMint = ixParsed.info?.mint || walletSort[destinationAccount]?.mint || accounts?.[1]?.toBase58() || 'unknown';
-                        const amount = ixParsed.info?.tokenAmount?.uiAmountString || ixParsed.info?.amount || (new BN(ixParsed.data?.data?.amount || 0).div(new BN(10 ** ixParsed.data?.data?.decimals || 0)).toString()); //TODO: for ixParsed.info?.amount shouldn't I divide it to 10**decimals?
+                        let amount: string | undefined = undefined;
+                        if (ixParsed.info?.tokenAmount?.uiAmountString != undefined && ixParsed.info?.tokenAmount?.uiAmountString != null){
+                            amount = ixParsed.info.tokenAmount.uiAmountString;
+                        }
+                        else if (ixParsed.info?.amount != undefined && ixParsed.info?.amount != null){
+                            amount = ixParsed.info.amount;
+                        }
+                        else if (ixParsed.data?.amount != undefined && ixParsed.data?.amount != null && ixParsed.data?.decimals != undefined && ixParsed.data?.decimals != null){
+                            amount = new BN(ixParsed.data.amount).div(new BN(10 ** ixParsed.data.decimals)).toString();
+                        }
+                        else if (ixParsed.data?.data?.amount != undefined && ixParsed.data?.data?.amount != null && ixParsed.data?.data?.decimals != undefined && ixParsed.data?.data?.decimals != null){
+                            amount = new BN(ixParsed.data.data.amount).div(new BN(10 ** ixParsed.data.data.decimals)).toString();
+                        }
+
+                        console.log('!sourceWalletAddress:', sourceWalletAddress, 'destinationWalletAddress:', destinationWalletAddress, 'tokenMint:', tokenMint, 'amount:', amount, 'ixParsed', ixParsed);
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
 
