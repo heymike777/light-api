@@ -137,7 +137,7 @@ export class ProgramManager {
             }
             else if (programId == kProgram.TOKEN_PROGRAM){
                 console.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
-                if (ixParsed.type == 'transfer' || ixParsed.type == 'transferChecked'){
+                if (ixParsed.name == 'transfer' || ixParsed.name == 'transferChecked'){
                     if (tx){
                         const sourceAccount = ixParsed.info?.source || accounts?.[2]?.toBase58();
                         const destinationAccount = ixParsed.info?.destination || accounts?.[0]?.toBase58();
