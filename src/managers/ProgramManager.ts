@@ -137,10 +137,10 @@ export class ProgramManager {
             }
             else if (programId == kProgram.TOKEN_PROGRAM){
                 console.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
-                if (ixParsed.type == 'transfer'){
+                if (ixParsed.type == 'transfer' || ixParsed.type == 'transferChecked'){
                     if (tx){
-                        const sourceAccount = ixParsed.info.source;
-                        const destinationAccount = ixParsed.info.destination;
+                        const sourceAccount = ixParsed.info?.source || accounts?.[2]?.toBase58();
+                        const destinationAccount = ixParsed.info?.destination || accounts?.[0]?.toBase58();
 
                         const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
                         const walletSort: {[key: string]: {owner?: string, mint: string}} = {};
@@ -151,10 +151,10 @@ export class ProgramManager {
                             };
                         }
 
-                        const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'someone';
-                        const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'someone';
-                        const tokenMint = ixParsed.info.mint || walletSort[destinationAccount]?.mint || undefined;
-                        const amount = ixParsed.info?.tokenAmount?.uiAmountString || ixParsed.info?.amount;
+                        const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'unknown';
+                        const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'unknown';
+                        const tokenMint = ixParsed.info?.mint || walletSort[destinationAccount]?.mint || accounts?.[1]?.toBase58() || 'unknown';
+                        const amount = ixParsed.info?.tokenAmount?.uiAmountString || ixParsed.info?.amount || (new BN(ixParsed.data?.data?.amount || 0).div(new BN(10 ** ixParsed.data?.data?.decimals || 0)).toString()); //TODO: for ixParsed.info?.amount shouldn't I divide it to 10**decimals?
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
 
@@ -163,39 +163,6 @@ export class ProgramManager {
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                             addresses,
                         };
-                    }
-                }
-                else if (ixParsed.type == 'transferChecked'){
-                    if (tx){
-                        const sourceAccount = accounts?.[2]?.toBase58();
-                        const destinationAccount = accounts?.[0]?.toBase58();
-
-                        console.log('!transferChecked sourceAccount:', sourceAccount, 'destinationAccount:', destinationAccount);
-
-                        if (sourceAccount && destinationAccount){
-                            const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
-                            const walletSort: {[key: string]: {owner?: string, mint: string}} = {};
-                            for (const account of allAccounts) {
-                                walletSort[tx.transaction.message.accountKeys[account.accountIndex].pubkey.toBase58()] = {
-                                    owner: account.owner,
-                                    mint: account.mint,
-                                };
-                            }
-
-                            const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'someone';
-                            const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'someone';
-                            const tokenMint = walletSort[destinationAccount]?.mint || accounts?.[1]?.toBase58() || 'unknown';
-                            const amount = new BN(ixParsed.data?.data?.amount || 0).div(new BN(10 ** ixParsed.data?.data?.decimals || 0)).toString();
-                            console.log('!transferChecked', 'sourceWalletAddress:', sourceWalletAddress, 'destinationWalletAddress:', destinationWalletAddress, 'tokenMint:', tokenMint, 'amount:', amount);
-
-                            const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
-
-                            description = {
-                                plain: `{address0} transfered ${amount} {address2} to {address1}`,
-                                html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
-                                addresses,
-                            };
-                        }
                     }
                 }
             }
