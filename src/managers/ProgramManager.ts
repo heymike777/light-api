@@ -476,6 +476,8 @@ export class ProgramManager {
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
 
+                console.log('!description1', info?.description);
+
                 parsedInstructions.push({
                     programId: ixProgramId,
                     program: programName,
@@ -494,6 +496,8 @@ export class ProgramManager {
                 let ixTitle = ixData?.output?.name;
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
+
+                console.log('!description2', info?.description);
 
                 parsedInstructions.push({
                     programId: ixProgramId,
