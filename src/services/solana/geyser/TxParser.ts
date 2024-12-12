@@ -19,7 +19,6 @@ export class TxParser {
         const isVote: boolean = geyserTxData.transaction.isVote;
         const isVersioned = confirmedTx.transaction?.message?.versioned || false;
         const signatures = confirmedTx.transaction?.signatures.map((sig) => base58.encode(sig)) || [];
-        const connection = newConnection();
         const geyserMessage: any = geyserTxData.transaction.transaction.message;
 
         // console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));

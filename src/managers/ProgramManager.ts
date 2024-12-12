@@ -89,12 +89,14 @@ export class ProgramManager {
         if (!ixParsed){
             return {};
         }
+
+        const ixType = ixParsed.type || ixParsed.name;
         
         let description: TxDescription | undefined;
 
         try {
             if (programId == kProgram.SOLANA){
-                if (ixParsed.type == 'transfer' || ixParsed.type == 'transferWithSeed'){
+                if (ixType == 'transfer' || ixType == 'transferWithSeed'){
                     const addresses = [ixParsed.info.source, ixParsed.info.destination];
                     description = {
                         plain: `{address0} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
@@ -104,7 +106,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.STAKE_PROGRAM){
-                if (ixParsed.type == 'delegate'){
+                if (ixType == 'delegate'){
                     const createAccountIx = previousIxs?.find((ix) => ('parsed' in ix) && ix.programId.toBase58() == kProgram.SOLANA && ix.parsed.type == 'createAccount');
                     const lamports = createAccountIx && ('parsed' in createAccountIx) ? createAccountIx?.parsed.info.lamports : undefined;
                     const stakeAmountString = lamports ? `${lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
@@ -116,7 +118,7 @@ export class ProgramManager {
                         addresses,
                     };
                 }
-                else if (ixParsed.type == 'withdraw'){
+                else if (ixType == 'withdraw'){
                     const stakeAmountString = ixParsed.info.lamports ? `${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
 
                     const addresses = [ixParsed.info.destination, ixParsed.info.withdrawAuthority, ixParsed.info.stakeAccount];
@@ -126,7 +128,7 @@ export class ProgramManager {
                         addresses,
                     };
                 }
-                else if (ixParsed.type == 'deactivate'){
+                else if (ixType == 'deactivate'){
                     const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.stakeAccount];
                     description = {
                         plain: `{address0} deactivated stake account {address1}`,
@@ -137,10 +139,10 @@ export class ProgramManager {
             }
             else if (programId == kProgram.TOKEN_PROGRAM){
                 console.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
-                if (ixParsed.name == 'transfer' || ixParsed.name == 'transferChecked'){
+                if (ixType == 'transfer' || ixType == 'transferChecked'){
                     if (tx){
-                        const sourceAccount = ixParsed.info?.source || accounts?.[2]?.toBase58();
-                        const destinationAccount = ixParsed.info?.destination || accounts?.[0]?.toBase58();
+                        const sourceAccount = ixParsed.info?.source || accounts?.[0]?.toBase58();
+                        const destinationAccount = ixParsed.info?.destination || accounts?.[2]?.toBase58();
 
                         const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
                         const walletSort: {[key: string]: {owner?: string, mint: string}} = {};
@@ -168,8 +170,6 @@ export class ProgramManager {
                             amount = new BN(ixParsed.data.data.amount).div(new BN(10 ** ixParsed.data.data.decimals)).toString();
                         }
 
-                        console.log('!sourceWalletAddress:', sourceWalletAddress, 'destinationWalletAddress:', destinationWalletAddress, 'tokenMint:', tokenMint, 'amount:', amount, 'ixParsed', ixParsed);
-
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
 
                         description = {
@@ -190,14 +190,14 @@ export class ProgramManager {
                     const postAmount = meta?.postTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
                     let amount = postAmount - preAmount;
 
-                    if (ixParsed.name == 'buy') {
+                    if (ixType == 'buy') {
                         description = {
                             plain: `{address0} bought ${amount} {address1} on Pump Fun`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
                             addresses: addresses,
                         };    
                     }
-                    else if (ixParsed.name == 'sell') {
+                    else if (ixType == 'sell') {
                         amount = -amount;
 
                         description = {
@@ -258,7 +258,7 @@ export class ProgramManager {
             }
             else if (programId == kProgram.TENSOR){
                 console.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
-                if (ixParsed.name == 'sellNftTokenPool'){
+                if (ixType == 'sellNftTokenPool'){
                     const buyerWalletAddress = accounts?.[10]?.toBase58();
                     const sellerWalletAddress = accounts?.[9]?.toBase58();
                     const tokenMint = accounts?.[6]?.toBase58();
@@ -276,7 +276,7 @@ export class ProgramManager {
             }
             else if (programId == kProgram.TENSOR_CNFT){
                 console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
-                if (ixParsed.name == 'buy'){
+                if (ixType == 'buy'){
                     const sellIx = await this.findIx(instructions, kProgram.TENSOR_CNFT, 'tcompNoop');
 
                     const buyerWalletAddress = accounts?.[10]?.toBase58();
@@ -307,7 +307,7 @@ export class ProgramManager {
             // { 'solExtFulfillSell': {title: 'NFT SALE', priority: 3} },
             // { 'solMplCoreFulfillSell': {title: 'NFT SALE', priority: 3} },
 
-                // if (ixParsed.name == 'solMip1FulfillBuy'){
+                // if (ixType == 'solMip1FulfillBuy'){
                 //     const walletAddress = accounts?.[0]?.toBase58();
                 //     const tokenMint = accounts?.[2]?.toBase58();
                 //     if (walletAddress && tokenMint){
@@ -324,7 +324,7 @@ export class ProgramManager {
             }
             else if (programId == kProgram.MAGIC_EDEN_V2){
                 console.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
-                if (ixParsed.name == 'buyV2'){
+                if (ixType == 'buyV2'){
                     const walletAddress = accounts?.[0]?.toBase58();
                     const tokenMint = accounts?.[2]?.toBase58();
                     if (walletAddress && tokenMint){

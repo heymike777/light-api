@@ -359,7 +359,7 @@ export class WalletManager {
         const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
 
         if (txDescription){
-            message += '\n{description}\n';
+            message += '{description}\n';
         }
 
         const txPreBalances = parsedTx.preBalances || [];
