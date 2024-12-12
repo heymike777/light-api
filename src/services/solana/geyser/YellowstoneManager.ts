@@ -76,6 +76,7 @@ export class YellowstoneManager {
     async subscribeToConfirmedTransactions(stream: any){
         console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
 
+        //TODO: uncomment prod accounts
         const accountInclude: string[] = ['FUCww3SgAmqiP4CswfgY2r2Nsf6PPzARrXraEnGCn4Ln', 'HnwPe4oW2JY9y1H7RMZoa41RU5KDav1PhrD9zp3QDUjL', '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL'];
         // const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
         console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
