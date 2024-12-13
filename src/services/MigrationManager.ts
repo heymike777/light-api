@@ -26,6 +26,7 @@ import { SubscribeRequest } from "@triton-one/yellowstone-grpc";
 import { SubscriptionManager } from "../managers/SubscriptionManager";
 import { SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Subscription";
 import { RevenueCatManager } from "../managers/RevenueCatManager";
+import { UserManager } from "../managers/UserManager";
 
 export class MigrationManager {
 
@@ -77,10 +78,8 @@ export class MigrationManager {
     static async processTx(signature: string, chatId: number) {
         const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
         const wallets = await Wallet.find({ userId: userId, status: WalletStatus.ACTIVE });
-        const chats = [{
-            id: chatId,
-            wallets: wallets,
-        }];
+        const user = await UserManager.getUserById(userId, true);
+        const chats = [{user, wallets}];
         // console.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
         const connection = newConnection();
         const tx = await SolanaManager.getParsedTransaction(connection, signature);

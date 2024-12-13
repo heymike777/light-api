@@ -1,3 +1,4 @@
+import { IUser } from "../entities/User";
 import { IWallet } from "../entities/Wallet";
 import { Token, TokenNft } from "../managers/TokenManager";
 
@@ -7,7 +8,7 @@ export enum Environment {
 }
 
 export interface ChatWallets {
-    id: number;
+    user: IUser;
     wallets: IWallet[];
 }
 

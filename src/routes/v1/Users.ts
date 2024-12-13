@@ -112,7 +112,7 @@ router.post(
         const newPageToken: PageToken = new PageToken(existingIds, kPageSize);
 
         const wallets = await WalletManager.fetchWalletsByUserId(userId);
-        const chat: ChatWallets = { id: -1, wallets: wallets };
+        const chat: ChatWallets = { user: user, wallets: wallets };
 
         const parsedTransactions: TransactionApiResponse[] = [];
         for (const transaction of transactions) {

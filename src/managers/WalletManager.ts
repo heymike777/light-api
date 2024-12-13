@@ -24,6 +24,7 @@ import { PremiumError } from "../errors/PremiumError";
 import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { MixpanelManager } from "./MixpanelManager";
+import { UserManager } from "./UserManager";
 
 export class WalletManager {
 
@@ -31,7 +32,7 @@ export class WalletManager {
     static programIds: string[] = [];
 
     static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string, ipAddress?: string): Promise<IWallet>{
-        const existingWallet = await Wallet.findOne({chatId: chatId, userId: user.id, walletAddress: walletAddress});
+        const existingWallet = await Wallet.findOne({userId: user.id, walletAddress: walletAddress});
         if (existingWallet){
             existingWallet.title = title;
             await existingWallet.save();
@@ -40,7 +41,7 @@ export class WalletManager {
             const tmpWallets = this.walletsMap.get(walletAddress);
             if (tmpWallets){
                 for (let wallet of tmpWallets){
-                    if (wallet.chatId == chatId){
+                    if (wallet.userId == user.id){
                         wallet.title = title;
                         break;
                     }
@@ -114,8 +115,8 @@ export class WalletManager {
     }
 
     static async removeWallets(chatId: number, userId: string, walletAddresses: string[], ipAddress?: string){
-        const wallets = await Wallet.find({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
-        await Wallet.deleteMany({chatId: chatId, userId: userId, walletAddress: {$in: walletAddresses}});
+        const wallets = await Wallet.find({userId: userId, walletAddress: {$in: walletAddresses}});
+        await Wallet.deleteMany({userId: userId, walletAddress: {$in: walletAddresses}});
 
         for (let walletAddress of walletAddresses){
             MixpanelManager.track('Remove wallet', userId, { walletAddress: walletAddress }, ipAddress);
@@ -137,10 +138,6 @@ export class WalletManager {
         this.removeWalletFromCache(wallet);
 
         YellowstoneManager.resubscribeAll();
-    }
-
-    static async fetchWalletsByChatId(chatId: number): Promise<IWallet[]> {
-        return Wallet.find({chatId: chatId});
     }
 
     static async fetchWalletsByUserId(userId: string): Promise<IWallet[]> {
@@ -207,20 +204,16 @@ export class WalletManager {
 
             const chats: ChatWallets[] = [];
             for (let wallet of wallets){
-                if (wallet.chatId){
-                    // if chat.id == -1 - it's mobile app.
-                    // if chat.id != -1 - it's telegram chat.
-                    const chat = wallet.chatId == -1 ? chats.find((c) => c.id == -1 && c.wallets[0].userId == wallet.userId) : chats.find((c) => c.id == wallet.chatId);
+                const chat = chats.find((c) => c.user.id == wallet.userId);
 
-                    if (chat){
-                        chat.wallets.push(wallet);
-                    }
-                    else {
-                        chats.push({id: wallet.chatId, wallets: [wallet]});
-                    }
+                if (chat){
+                    chat.wallets.push(wallet);
+                }
+                else {
+                    const user = await UserManager.getUserById(wallet.userId);
+                    chats.push({user: user, wallets: [wallet]});
                 }
             }
-
 
             if (chats.length == 0){
                 return;
@@ -286,7 +279,7 @@ export class WalletManager {
         return bs58.encode(byteArray);
     }
 
-    static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: {id: number, wallets: IWallet[]}[]){
+    static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: ChatWallets[]){
         try {
             if (!tx.meta){
                 console.error('MigrationManager', 'migrate', 'tx not found', signature);
@@ -325,12 +318,14 @@ export class WalletManager {
                         userTx.signature = parsedTx.signature;
                         await userTx.save();
 
-                        if (chat.id != -1){
+                        let isTelegramSent = false;
+                        if (chat.user.telegram?.id){
                             BotManager.sendMessage({ 
-                                chatId: chat.id, 
+                                chatId: chat.user.telegram?.id, 
                                 text: info.message, 
                                 imageUrl: asset?.image 
                             });
+                            isTelegramSent = true;
                         }
 
                         let isPushSent = false;
@@ -341,7 +336,7 @@ export class WalletManager {
                             isPushSent = true;
                         }
 
-                        MixpanelManager.track('Process transaction', userTx.userId, { chatId: chat.id, isPushSent: isPushSent });
+                        MixpanelManager.track('Process transaction', userTx.userId, { isPushSent: isPushSent, isTelegramSent: isTelegramSent });
                     }
                     catch (err) {
                         // console.error(new Date(), 'WalletManager', 'processTxForChats', 'Error:', err);
@@ -355,7 +350,7 @@ export class WalletManager {
 
     }
 
-    static async processTx(parsedTx: ParsedTx, asset: TokenNft | undefined, chat: {id: number, wallets: IWallet[]}){
+    static async processTx(parsedTx: ParsedTx, asset: TokenNft | undefined, chat: ChatWallets){
         console.log(new Date(), 'processTx', 'parsedTx', parsedTx, 'asset', asset, 'chat', chat);
         let hasWalletsChanges = false;
         let message = `[${parsedTx.title}]\n`;

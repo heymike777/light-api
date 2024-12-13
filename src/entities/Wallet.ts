@@ -10,7 +10,6 @@ export enum WalletStatus {
 }
 
 export interface IWallet extends mongoose.Document {
-    chatId: number;
     userId: string;
     walletAddress: string;
     title?: string;
@@ -22,7 +21,6 @@ export interface IWallet extends mongoose.Document {
 }
 
 export const WalletSchema = new mongoose.Schema<IWallet>({
-    chatId: { type: Number },
     userId: { type: String },
     walletAddress: { type: String },
     title: { type: String },
@@ -33,14 +31,9 @@ export const WalletSchema = new mongoose.Schema<IWallet>({
     createdAt: { type: Date, default: new Date() }
 });
 
-WalletSchema.index({ chatId: 1 });
 WalletSchema.index({ userId: 1 });
-WalletSchema.index({ chatId: 1, wallletAddress: 1 });
-WalletSchema.index({ chatId: 1, userId: 1, wallletAddress: 1 });
-WalletSchema.index({ chatId: 1, status: 1 });
+WalletSchema.index({ userId: 1, wallletAddress: 1 });
 WalletSchema.index({ userId: 1, status: 1 });
-WalletSchema.index({ chatId: 1, wallletAddress: 1, status: 1 });
-WalletSchema.index({ chatId: 1, userId: 1, wallletAddress: 1, status: 1 });
 WalletSchema.index({ status: 1 });
 
 WalletSchema.pre('save', function (next) {
