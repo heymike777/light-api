@@ -71,21 +71,7 @@ export class MigrationManager {
 
         // await this.migrateValidators();
 
-
-        const txs = await UserTransaction.find({ signature: { $exists: false } });
-        console.log('txs', txs.length);
-        let index = 0;
-        for (const tx of txs) {
-            const existing = await UserTransaction.findOne({ signature: tx.parsedTx.signature, userId: tx.userId });
-            if (existing){
-                console.log('tx', index++, tx.signature, 'exists');
-                continue;
-            }
-
-            tx.signature = tx.parsedTx.signature;
-            await tx.save();
-            console.log('tx', index++, tx.signature);
-        }
+        await UserTransaction.deleteMany({ signature: { $exists: false } });
 
         console.log('MigrationManager', 'migrate', 'done');
     }
