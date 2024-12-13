@@ -52,7 +52,7 @@ export class MigrationManager {
         // await this.processTx(signature, chatId);
 
         // await this.processTx('2KyJ3jATJhfc2kjbfeNRNtULdSpDzGxRjMA477RtkJSeDcYL1zzQTQWSSYT7nYgDxy74r4riuFmGgpHZgjmGZ5v2', chatId);
-        // await this.processTx('Ub5ZKPusoSXzyp76A8Pdqd7hXEVFaQp6ActLxjshB696E1XkLd8Eui6vK8FNEEgon4f3V2FZVZupHAf2pzghTfz', chatId);
+        // await this.processTx('Ei5rPNZsoXnSLDWMktzQgiN5NLseSP5DkqXNfCSKedwtaXvpzKer2JNJgKcfvmNgyX6PKrNZKhBvwEYm2jiehoX', chatId);
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
@@ -70,6 +70,22 @@ export class MigrationManager {
         // fs.writeFileSync('transactions_account_keys.txt', `${new Date()} start\n`);
 
         // await this.migrateValidators();
+
+
+        const txs = await UserTransaction.find({ signature: { $exists: false } });
+        console.log('txs', txs.length);
+        let index = 0;
+        for (const tx of txs) {
+            const existing = await UserTransaction.findOne({ signature: tx.signature, userId: tx.userId });
+            if (existing){
+                console.log('tx', index++, tx.signature, 'exists');
+                continue;
+            }
+
+            tx.signature = tx.parsedTx.signature;
+            await tx.save();
+            console.log('tx', index++, tx.signature);
+        }
 
         console.log('MigrationManager', 'migrate', 'done');
     }
