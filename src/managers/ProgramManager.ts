@@ -152,11 +152,12 @@ export class ProgramManager {
                                 mint: account.mint,
                             };
                         }
-                        const decimals = allAccounts.find((account) => account.mint == tokenMint && account.uiTokenAmount?.decimals)?.uiTokenAmount.decimals || 0;
 
                         const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'unknown';
                         const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'unknown';
                         const tokenMint = ixParsed.info?.mint || walletSort[destinationAccount]?.mint || accounts?.[1]?.toBase58() || 'unknown';
+                        const decimals = allAccounts.find((account) => account.mint == tokenMint && account.uiTokenAmount?.decimals)?.uiTokenAmount.decimals || 0;
+                        
                         let amount: string | undefined = undefined;
                         if (ixParsed.info?.tokenAmount?.uiAmountString != undefined && ixParsed.info?.tokenAmount?.uiAmountString != null){
                             amount = ixParsed.info.tokenAmount.uiAmountString;
