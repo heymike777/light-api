@@ -76,7 +76,7 @@ export class MigrationManager {
         console.log('txs', txs.length);
         let index = 0;
         for (const tx of txs) {
-            const existing = await UserTransaction.findOne({ signature: tx.signature, userId: tx.userId });
+            const existing = await UserTransaction.findOne({ signature: tx.parsedTx.signature, userId: tx.userId });
             if (existing){
                 console.log('tx', index++, tx.signature, 'exists');
                 continue;
