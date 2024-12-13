@@ -313,8 +313,6 @@ export class WalletManager {
                 const info = await this.processTx(parsedTx, asset, chat);
                 asset = info.asset;
 
-                
-
                 if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
                     if (chat.id != -1){
                         BotManager.sendMessage({ 
@@ -340,6 +338,7 @@ export class WalletManager {
                     userTx.changedWallets = info.changedWallets;
                     userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                     userTx.tokens = info.transactionApiResponse.tokens;
+                    userTx.signature = parsedTx.signature;
                     await userTx.save();
 
                     MixpanelManager.track('Process transaction', userTx.userId, { chatId: userTx.chatId, isPushSent: isPushSent });
