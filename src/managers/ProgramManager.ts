@@ -90,7 +90,7 @@ export class ProgramManager {
             return {};
         }
 
-        const ixType = ixParsed.type || ixParsed.name;
+        const ixType = ixParsed.name || ixParsed.type;
         
         let description: TxDescription | undefined;
 
