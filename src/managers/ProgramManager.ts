@@ -152,6 +152,7 @@ export class ProgramManager {
                                 mint: account.mint,
                             };
                         }
+                        const decimals = allAccounts.find((account) => account.mint == tokenMint && account.uiTokenAmount?.decimals)?.uiTokenAmount.decimals || 0;
 
                         const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'unknown';
                         const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'unknown';
@@ -161,13 +162,13 @@ export class ProgramManager {
                             amount = ixParsed.info.tokenAmount.uiAmountString;
                         }
                         else if (ixParsed.info?.amount != undefined && ixParsed.info?.amount != null){
-                            amount = ixParsed.info.amount;
+                            amount = new BN(ixParsed.data.amount).div(new BN(10 ** decimals)).toString();
                         }
                         else if (ixParsed.data?.amount != undefined && ixParsed.data?.amount != null && ixParsed.data?.decimals != undefined && ixParsed.data?.decimals != null){
-                            amount = new BN(ixParsed.data.amount).div(new BN(10 ** ixParsed.data.decimals)).toString();
+                            amount = new BN(ixParsed.data.amount).div(new BN(10 ** decimals)).toString();
                         }
-                        else if (ixParsed.data?.data?.amount != undefined && ixParsed.data?.data?.amount != null && ixParsed.data?.data?.decimals != undefined && ixParsed.data?.data?.decimals != null){
-                            amount = new BN(ixParsed.data.data.amount).div(new BN(10 ** ixParsed.data.data.decimals)).toString();
+                        else if (ixParsed.data?.data?.amount != undefined && ixParsed.data?.data?.amount != null){
+                            amount = new BN(ixParsed.data.data.amount).div(new BN(10 ** decimals)).toString();
                         }
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];

@@ -50,10 +50,10 @@ export class MigrationManager {
         // const signature = '5FRKJBrcGBcERCgWLWdR5YRvK3mPMYJnhbePjX6g4ywYgeV4u6ypJeh9FyduvkXiesHqyrTKw9XCEiBWjCWKPXnq'; // Tensor 
         // const signature = '2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'; // cNFT on Tensor_CNFT
         // const signature = '5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'; // TENSOR
-        // await this.processTx(signature, chatId);
+        // await this.processTx(signature);
 
-        // await this.processTx('2KyJ3jATJhfc2kjbfeNRNtULdSpDzGxRjMA477RtkJSeDcYL1zzQTQWSSYT7nYgDxy74r4riuFmGgpHZgjmGZ5v2', chatId);
-        // await this.processTx('Ei5rPNZsoXnSLDWMktzQgiN5NLseSP5DkqXNfCSKedwtaXvpzKer2JNJgKcfvmNgyX6PKrNZKhBvwEYm2jiehoX', chatId);
+        // await this.processTx('2KyJ3jATJhfc2kjbfeNRNtULdSpDzGxRjMA477RtkJSeDcYL1zzQTQWSSYT7nYgDxy74r4riuFmGgpHZgjmGZ5v2');
+        // await this.processTx('Ei5rPNZsoXnSLDWMktzQgiN5NLseSP5DkqXNfCSKedwtaXvpzKer2JNJgKcfvmNgyX6PKrNZKhBvwEYm2jiehoX');
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
@@ -75,8 +75,11 @@ export class MigrationManager {
         console.log('MigrationManager', 'migrate', 'done');
     }
 
-    static async processTx(signature: string, chatId: number) {
+    static async processTx(signature: string) {
         const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
+
+        await UserTransaction.deleteOne({ signature, userId });
+
         const wallets = await Wallet.find({ userId: userId, status: WalletStatus.ACTIVE });
         const user = await UserManager.getUserById(userId, true);
         const chats = [{user, wallets}];
@@ -96,9 +99,7 @@ export class MigrationManager {
             if (tmp.moniker && tmp.moniker.length > 0) {
                 console.log(`'${tmp.votePubkey}': {name: \`${tmp.moniker}\`},`);
             }
-
         }
-
     }
 
 }
