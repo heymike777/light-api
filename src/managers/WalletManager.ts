@@ -314,34 +314,39 @@ export class WalletManager {
                 asset = info.asset;
 
                 if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
-                    if (chat.id != -1){
-                        BotManager.sendMessage({ 
-                            chatId: chat.id, 
-                            text: info.message, 
-                            imageUrl: asset?.image 
-                        });
+                    try {
+                        //TODO: don't save tx if that's a channel or group chat
+                        const userTx = new UserTransaction();
+                        userTx.userId = chat.wallets[0].userId;
+                        userTx.chatId = chat.id;
+                        userTx.parsedTx = parsedTx;
+                        userTx.changedWallets = info.changedWallets;
+                        userTx.createdAt = new Date(parsedTx.blockTime * 1000);
+                        userTx.tokens = info.transactionApiResponse.tokens;
+                        userTx.signature = parsedTx.signature;
+                        await userTx.save();
+
+                        if (chat.id != -1){
+                            BotManager.sendMessage({ 
+                                chatId: chat.id, 
+                                text: info.message, 
+                                imageUrl: asset?.image 
+                            });
+                        }
+
+                        let isPushSent = false;
+                        const userId = chat.wallets?.[0]?.userId;
+                        if (userId && !sentUserIds.includes(userId)){
+                            sentUserIds.push(userId);
+                            FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
+                            isPushSent = true;
+                        }
+
+                        MixpanelManager.track('Process transaction', userTx.userId, { chatId: userTx.chatId, isPushSent: isPushSent });
                     }
-
-                    let isPushSent = false;
-                    const userId = chat.wallets?.[0]?.userId;
-                    if (userId && !sentUserIds.includes(userId)){
-                        sentUserIds.push(userId);
-                        FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
-                        isPushSent = true;
+                    catch (err) {
+                        // console.error(new Date(), 'WalletManager', 'processTxForChats', 'Error:', err);
                     }
-
-                    //TODO: don't save tx if that's a channel or group chat
-                    const userTx = new UserTransaction();
-                    userTx.userId = chat.wallets[0].userId;
-                    userTx.chatId = chat.id;
-                    userTx.parsedTx = parsedTx;
-                    userTx.changedWallets = info.changedWallets;
-                    userTx.createdAt = new Date(parsedTx.blockTime * 1000);
-                    userTx.tokens = info.transactionApiResponse.tokens;
-                    userTx.signature = parsedTx.signature;
-                    await userTx.save();
-
-                    MixpanelManager.track('Process transaction', userTx.userId, { chatId: userTx.chatId, isPushSent: isPushSent });
                 }
             }
         }

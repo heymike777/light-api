@@ -71,8 +71,6 @@ export class MigrationManager {
 
         // await this.migrateValidators();
 
-        await UserTransaction.deleteMany({ signature: { $exists: false } });
-
         console.log('MigrationManager', 'migrate', 'done');
     }
 
