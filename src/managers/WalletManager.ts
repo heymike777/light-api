@@ -353,6 +353,7 @@ export class WalletManager {
     }
 
     static async processTx(parsedTx: ParsedTx, asset: TokenNft | undefined, chat: {id: number, wallets: IWallet[]}){
+        console.log(new Date(), 'processTx', 'parsedTx', parsedTx, 'asset', asset, 'chat', chat);
         let hasWalletsChanges = false;
         let message = `[${parsedTx.title}]\n`;
 
@@ -464,6 +465,8 @@ export class WalletManager {
                     }
                 }
 
+                console.log('!hasBalanceChange', hasBalanceChange, 'walletAddress', wallet.walletAddress, 'blockMessage:', blockMessage);
+
                 if (hasBalanceChange){
                     message += blockMessage;
 
@@ -565,6 +568,8 @@ export class WalletManager {
 
         const description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, chat.wallets, tokens) : undefined;
 
+        console.log('!changedWallets', JSON.stringify(changedWallets));
+
         const txApiResponse: TransactionApiResponse = {
             title: parsedTx.title,
             description: description,
@@ -578,6 +583,8 @@ export class WalletManager {
         while (message.includes('\n\n\n')){
             message = message.replace('\n\n\n', '\n\n');
         }
+
+        console.log('!message', message);
 
         return {
             hasWalletsChanges,
