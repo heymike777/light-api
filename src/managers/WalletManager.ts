@@ -318,7 +318,6 @@ export class WalletManager {
                         //TODO: don't save tx if that's a channel or group chat
                         const userTx = new UserTransaction();
                         userTx.userId = chat.wallets[0].userId;
-                        userTx.chatId = chat.id;
                         userTx.parsedTx = parsedTx;
                         userTx.changedWallets = info.changedWallets;
                         userTx.createdAt = new Date(parsedTx.blockTime * 1000);
@@ -342,7 +341,7 @@ export class WalletManager {
                             isPushSent = true;
                         }
 
-                        MixpanelManager.track('Process transaction', userTx.userId, { chatId: userTx.chatId, isPushSent: isPushSent });
+                        MixpanelManager.track('Process transaction', userTx.userId, { chatId: chat.id, isPushSent: isPushSent });
                     }
                     catch (err) {
                         // console.error(new Date(), 'WalletManager', 'processTxForChats', 'Error:', err);

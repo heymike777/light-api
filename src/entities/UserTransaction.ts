@@ -9,7 +9,6 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface IUserTransaction extends mongoose.Document {
     userId: string;
-    chatId?: number;
     signature?: string;
 
     parsedTx: ParsedTx;
@@ -23,7 +22,6 @@ export interface IUserTransaction extends mongoose.Document {
 
 export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
     userId: { type: String },
-    chatId: { type: Number },
     signature: { type: String },
 
     parsedTx: { type: Mixed },
