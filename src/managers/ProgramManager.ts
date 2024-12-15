@@ -291,6 +291,21 @@ export class ProgramManager {
                         };    
                     }
                 }
+                else if (ixType == 'sellNftTradePool'){
+                    const buyerWalletAddress = accounts?.[8]?.toBase58();
+                    const sellerWalletAddress = accounts?.[10]?.toBase58();
+                    const tokenMint = accounts?.[6]?.toBase58();
+                    if (buyerWalletAddress && sellerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
+                        const solAmount = +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
             }
             else if (programId == kProgram.TENSOR_CNFT){
                 console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
