@@ -37,23 +37,18 @@ export class MigrationManager {
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
-        const mikeUserId = '66eefe2c8fed7f2c60d147ef';
-
-        // await RevenueCatManager.getCustomerSubscriptions(mikeUserId);
         
-        // await SubscriptionManager.createSubscription(mikeUserId, SubscriptionTier.PLATINUM, SubscriptionPlatform.SOLANA, new Date('2024-12-31'));
-        
-        // const signature = '2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL'; // pumpfun
-        // const signature = '63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'; // raydium
-        // const signature = '54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'; // jupiter
-        // const signature = '26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'; // NFT SALE on !!!MAGIC_EDEN_V2
-        // const signature = '5FRKJBrcGBcERCgWLWdR5YRvK3mPMYJnhbePjX6g4ywYgeV4u6ypJeh9FyduvkXiesHqyrTKw9XCEiBWjCWKPXnq'; // Tensor 
-        // const signature = '2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'; // cNFT on Tensor_CNFT
-        // const signature = '5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'; // TENSOR
-        // await this.processTx(signature);
+        // await this.processTx('2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL'); // pumpfun
+        // await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium
+        // await this.processTx('54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'); // jupiter
+        // await this.processTx('5snNUQUXKY7iJFnaBBv6LjWYuBAryQX3mTdtHorboe6mXrZpv694mXCQucho2W2PDGumsTAqykkqsqhs5FNLuAph'); // MAGIC EDEN AMM
+        // await this.processTx('26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'); // NFT SALE on !!!MAGIC_EDEN_V2
+        // await this.processTx('42Jybm1JcyGWQx3AAMZffwK3QagUb2RkWgJ3v3bHgoF7vV7xAXuGxiGouNE5K6czPtBNKcAqkY1kcLprmWJwf8Sn');
 
-        // await this.processTx('2KyJ3jATJhfc2kjbfeNRNtULdSpDzGxRjMA477RtkJSeDcYL1zzQTQWSSYT7nYgDxy74r4riuFmGgpHZgjmGZ5v2');
-        // await this.processTx('Ei5rPNZsoXnSLDWMktzQgiN5NLseSP5DkqXNfCSKedwtaXvpzKer2JNJgKcfvmNgyX6PKrNZKhBvwEYm2jiehoX');
+
+        // await this.processTx('5FRKJBrcGBcERCgWLWdR5YRvK3mPMYJnhbePjX6g4ywYgeV4u6ypJeh9FyduvkXiesHqyrTKw9XCEiBWjCWKPXnq'); // Tensor 
+        // await this.processTx('2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'); // cNFT on Tensor_CNFT
+        // await this.processTx('5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'); // TENSOR
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
@@ -64,12 +59,7 @@ export class MigrationManager {
         //     text: 'BONK BONK BONK 🔥🔥🔥',
         //     inlineKeyboard
         // });
-
-        // await AppStoreManager.sendTestPaymentWebhook();
         
-        // fs.writeFileSync('transactions.txt', `${new Date()} start\n`);
-        // fs.writeFileSync('transactions_account_keys.txt', `${new Date()} start\n`);
-
         // await this.migrateValidators();
 
         console.log('MigrationManager', 'migrate', 'done');
