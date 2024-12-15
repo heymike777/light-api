@@ -89,6 +89,7 @@ export class ProgramManager {
         if (!ixParsed){
             return {};
         }
+        console.log('!parseParsedIx', 'programId:', programId);
 
         const ixType = ixParsed.name || ixParsed.type;
         
@@ -157,7 +158,7 @@ export class ProgramManager {
                         const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'unknown';
                         const tokenMint = ixParsed.info?.mint || walletSort[destinationAccount]?.mint || accounts?.[1]?.toBase58() || 'unknown';
                         const decimals = allAccounts.find((account) => account.mint == tokenMint && account.uiTokenAmount?.decimals)?.uiTokenAmount.decimals || 0;
-                        
+
                         let amount: string | undefined = undefined;
                         if (ixParsed.info?.tokenAmount?.uiAmountString != undefined && ixParsed.info?.tokenAmount?.uiAmountString != null){
                             amount = ixParsed.info.tokenAmount.uiAmountString;
@@ -298,31 +299,33 @@ export class ProgramManager {
             else if (programId == kProgram.MAGIC_EDEN_AMM){
                 console.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
 
-            // { 'solFulfillBuy': {title: 'NFT SALE', priority: 3} },
-            // { 'solMip1FulfillBuy': {title: 'NFT SALE', priority: 3} },
-            // { 'solOcpFulfillBuy': {title: 'NFT SALE', priority: 3} },
-            // { 'solExtFulfillBuy': {title: 'NFT SALE', priority: 3} },
-            // { 'solMplCoreFulfillBuy': {title: 'NFT SALE', priority: 3} },
-            // { 'solFulfillSell': {title: 'NFT SALE', priority: 3} },
-            // { 'solMip1FulfillSell': {title: 'NFT SALE', priority: 3} },
-            // { 'solOcpFulfillSell': {title: 'NFT SALE', priority: 3} },
-            // { 'solExtFulfillSell': {title: 'NFT SALE', priority: 3} },
-            // { 'solMplCoreFulfillSell': {title: 'NFT SALE', priority: 3} },
+                // { 'solFulfillBuy': {title: 'NFT SALE', priority: 3} },
+                // { 'solMip1FulfillBuy': {title: 'NFT SALE', priority: 3} },
+                // { 'solOcpFulfillBuy': {title: 'NFT SALE', priority: 3} },
+                // { 'solExtFulfillBuy': {title: 'NFT SALE', priority: 3} },
+                // { 'solMplCoreFulfillBuy': {title: 'NFT SALE', priority: 3} },
+                // { 'solFulfillSell': {title: 'NFT SALE', priority: 3} },
+                // { 'solMip1FulfillSell': {title: 'NFT SALE', priority: 3} },
+                // { 'solOcpFulfillSell': {title: 'NFT SALE', priority: 3} },
+                // { 'solExtFulfillSell': {title: 'NFT SALE', priority: 3} },
+                // { 'solMplCoreFulfillSell': {title: 'NFT SALE', priority: 3} },
 
-                // if (ixType == 'solMip1FulfillBuy'){
-                //     const walletAddress = accounts?.[0]?.toBase58();
-                //     const tokenMint = accounts?.[2]?.toBase58();
-                //     if (walletAddress && tokenMint){
-                //         const addresses = [walletAddress, tokenMint];
-                //         const solAmount = +ixParsed.data?.buyerPrice / web3.LAMPORTS_PER_SOL;
+                if (ixType == 'solMip1FulfillBuy'){
+                    const sellerWalletAddress = accounts?.[0]?.toBase58();
+                    const buyerWalletAddress = accounts?.[1]?.toBase58();
+                    const tokenMint = accounts?.[7]?.toBase58();
+                    if (buyerWalletAddress && sellerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
+                        const solAmount = ixParsed.data?.args?.minPaymentAmount / web3.LAMPORTS_PER_SOL;
 
-                //         description = {
-                //             plain: `{address0} bought {address1} for ${solAmount} SOL on Magic Eden`,
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
-                //             addresses: addresses,
-                //         };    
-                //     }
-                // }
+                        description = {
+                            plain: `{address1} bought {address2} from {address0} for ${solAmount} SOL on Magic Eden`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
+                            addresses: addresses,
+                        };    
+                    }
+
+                }
             }
             else if (programId == kProgram.MAGIC_EDEN_V2){
                 console.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
