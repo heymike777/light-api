@@ -367,6 +367,31 @@ export class ProgramManager {
                         };    
                     }
                 }
+                else if (ixType == 'list'){
+                    const buyerWalletAddress = accounts?.[1]?.toBase58();
+                    if (buyerWalletAddress){
+                        const addresses = [buyerWalletAddress];
+                        const solAmount = +ixParsed.data?.amount / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} listed compressed NFT for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> listed compressed NFT for <b>${solAmount} SOL</b> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
+                else if (ixType == 'delist'){
+                    const buyerWalletAddress = accounts?.[7]?.toBase58();
+                    if (buyerWalletAddress){
+                        const addresses = [buyerWalletAddress];
+
+                        description = {
+                            plain: `{address0} delisted compressed NFT on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> delisted compressed NFT on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
             }
             else if (programId == kProgram.MAGIC_EDEN_AMM){
                 console.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
