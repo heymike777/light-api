@@ -262,16 +262,31 @@ export class ProgramManager {
             else if (programId == kProgram.TENSOR){
                 console.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if (ixType == 'sellNftTokenPool'){
-                    const buyerWalletAddress = accounts?.[10]?.toBase58();
-                    const sellerWalletAddress = accounts?.[9]?.toBase58();
+                    const buyerWalletAddress = accounts?.[9]?.toBase58();
+                    const sellerWalletAddress = accounts?.[10]?.toBase58();
                     const tokenMint = accounts?.[6]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
                         const solAmount = +ixParsed.data?.config?.startingPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address1} bought {address2} from {address0} for ${solAmount} SOL on Tensor`,
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
+                else if (ixType == 'buyNft'){
+                    const buyerWalletAddress = accounts?.[11]?.toBase58();
+                    const sellerWalletAddress = accounts?.[9]?.toBase58();
+                    const tokenMint = accounts?.[5]?.toBase58();
+                    if (buyerWalletAddress && sellerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
+                        const solAmount = +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
                     }
@@ -311,16 +326,16 @@ export class ProgramManager {
                 // { 'solMplCoreFulfillSell': {title: 'NFT SALE', priority: 3} },
 
                 if (ixType == 'solMip1FulfillBuy'){
-                    const sellerWalletAddress = accounts?.[0]?.toBase58();
-                    const buyerWalletAddress = accounts?.[1]?.toBase58();
+                    const buyerWalletAddress = accounts?.[0]?.toBase58();
+                    const sellerWalletAddress = accounts?.[1]?.toBase58();
                     const tokenMint = accounts?.[7]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
                         const solAmount = ixParsed.data?.args?.minPaymentAmount / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address1} bought {address2} from {address0} for ${solAmount} SOL on Magic Eden`,
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
+                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Magic Eden`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
                             addresses: addresses,
                         };    
                     }
@@ -346,6 +361,24 @@ export class ProgramManager {
             }
             else if (programId == kProgram.MAGIC_EDEN_V3){
                 console.log('!!!MAGIC_EDEN_V3', 'ixParsed:', ixParsed, 'accounts:', accounts);
+
+                // { 'buyNow': {title: 'NFT SALE', priority: 3} },
+                // { 'sell': {title: 'NFT LISTING', priority: 5} },
+                if (ixType == 'buyNow'){
+                    const buyerWalletAddress = accounts?.[0]?.toBase58();
+                    const sellerWalletAddress = accounts?.[1]?.toBase58();
+                    if (buyerWalletAddress && sellerWalletAddress){
+                        const addresses = [buyerWalletAddress, sellerWalletAddress];
+                        const solAmount = ixParsed.data?.args?.buyerPrice / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} bought NFT from {address1} for ${solAmount} SOL on Magic Eden`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought NFT from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
+                            addresses: addresses,
+                        };    
+                    }
+
+                }
             }
         }
         catch (error){
