@@ -61,6 +61,7 @@ export class MigrationManager {
         // });
         
         // await this.migrateValidators();
+        // await this.findTransactionsWithoutDescription();
 
         console.log('MigrationManager', 'migrate', 'done');
     }
@@ -90,6 +91,30 @@ export class MigrationManager {
                 console.log(`'${tmp.votePubkey}': {name: \`${tmp.moniker}\`},`);
             }
         }
+    }
+
+    static async findTransactionsWithoutDescription() {
+        console.log('findTransactionsWithoutDescription start');
+        const transactions = await UserTransaction.find({"parsedTx.parsedInstructions.0.description": { $exists: false }}).limit(1000);
+
+        let programs: { id: string, count: number }[] = [];
+        for (const tx of transactions) {
+            for (const ix of tx.parsedTx.parsedInstructions || []) {
+                const program = programs.find((p) => p.id === ix.programId);
+                if (program) {
+                    program.count++;
+                } else {
+                    programs.push({ id: ix.programId, count: 1 });
+                }
+            }   
+        }
+
+        programs = programs.sort((a, b) => b.count - a.count);
+        let index = 0;
+        for (const p of programs) {
+            console.log(index++, 'programId:', p.id, 'count:', p.count);
+        }
+        console.log('findTransactionsWithoutDescription done');
     }
 
 }
