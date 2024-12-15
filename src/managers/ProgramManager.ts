@@ -306,6 +306,48 @@ export class ProgramManager {
                         };    
                     }
                 }
+                else if (ixType == 'buySingleListing'){
+                    const buyerWalletAddress = accounts?.[8]?.toBase58();
+                    const sellerWalletAddress = accounts?.[7]?.toBase58();
+                    const tokenMint = accounts?.[4]?.toBase58();
+                    if (buyerWalletAddress && sellerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
+                        const solAmount = +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
+                else if (ixType == 'list'){
+                    const buyerWalletAddress = accounts?.[5]?.toBase58();
+                    const tokenMint = accounts?.[2]?.toBase58();
+                    if (buyerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, tokenMint];
+                        const solAmount = +ixParsed.data?.price / web3.LAMPORTS_PER_SOL;
+
+                        description = {
+                            plain: `{address0} listed {address1} for ${solAmount} SOL on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> listed <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
+                else if (ixType == 'delist'){
+                    const buyerWalletAddress = accounts?.[5]?.toBase58();
+                    const tokenMint = accounts?.[2]?.toBase58();
+                    if (buyerWalletAddress && tokenMint){
+                        const addresses = [buyerWalletAddress, tokenMint];
+
+                        description = {
+                            plain: `{address0} delisted {address1} on Tensor`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> delisted <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Tensor`,
+                            addresses: addresses,
+                        };    
+                    }
+                }
             }
             else if (programId == kProgram.TENSOR_CNFT){
                 console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
