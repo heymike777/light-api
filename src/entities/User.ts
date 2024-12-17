@@ -29,6 +29,7 @@ export interface IUser extends mongoose.Document {
     // --- Relations ---
     subscription?: ISubscription;
     maxNumberOfWallets?: number;
+    maxNumberOfTradingProfiles?: number;
 }
 
 export const UserSchema = new mongoose.Schema<IUser>({
@@ -66,6 +67,7 @@ UserSchema.methods.toJSON = function () {
         email: this.email,
         subscription: this.subscription,
         maxNumberOfWallets: this.maxNumberOfWallets,
+        maxNumberOfTradingProfiles: this.maxNumberOfTradingProfiles,
         isAdmin: this.isAdmin,
         usedGiftCardsCount: this.usedGiftCardsCount,
     };

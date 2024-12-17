@@ -2,7 +2,9 @@ import express, { Request, Response } from "express";
 import { validateRequest } from "../../middlewares/ValidateRequest";
 import { body } from "express-validator";
 import { AuthManager } from "../../managers/AuthManager";
-import { SubscriptionConfig } from "../../services/solana/types";
+import { Engine, SubscriptionConfig } from "../../services/solana/types";
+import { SubscriptionManager } from "../../managers/SubscriptionManager";
+import { SubscriptionTier } from "../../entities/payments/Subscription";
 
 const router = express.Router();
 
@@ -17,56 +19,117 @@ router.get(
                 {
                     type: 'free',
                     title: 'FREE',
-                    description: 'Track up to 10 wallets',
-                    default: false,
+                    maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(),
+                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(),
                 },
                 {
-                    type: 'silver',
+                    type: SubscriptionTier.SILVER,
                     title: 'SILVER',
-                    description: 'Track up to 100 wallets\nTrack airdrops',
-                    default: false,
-                    month: {
-                        id: 'xyz.heynova.subscriptions.silver.month',
-                        default: true,
-                    },
-                    year: {
-                        id: 'xyz.heynova.subscriptions.silver.year',
-                        default: false,
-                    },
+                    maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(SubscriptionTier.SILVER),
+                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(SubscriptionTier.SILVER),
                 },
                 {
-                    type: 'gold',
+                    type: SubscriptionTier.GOLD,
                     title: 'GOLD',
-                    description: 'Track up to 500 wallets\nTrack airdrops\nPriority notifications\nCustom referral links',
-                    default: true,
-                    month: {
-                        id: 'xyz.heynova.subscriptions.gold.month',
-                        default: false,
-                    },
-                    year: {
-                        id: 'xyz.heynova.subscriptions.gold.year',
-                        default: true,
-                    },
+                    maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(SubscriptionTier.GOLD),
+                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(SubscriptionTier.GOLD),
                 },
                 {
-                    type: 'platinum',
+                    type: SubscriptionTier.PLATINUM,
                     title: 'PLATINUM',
-                    description: 'Track up to 1000 wallets\nTrack airdrops\nHigh priority notifications\nCustom referral links',
-                    default: false,
-                    month: {
-                        id: 'xyz.heynova.subscriptions.platinum.month',
-                        default: true,
-                    },
-                    year: {
-                        id: 'xyz.heynova.subscriptions.platinum.year',
-                        default: false,
-                    },
+                    maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(SubscriptionTier.PLATINUM),
+                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(SubscriptionTier.PLATINUM),
                 },
             ];
         }
 
+        //TODO: add urls
+        const engines: Engine[] = [
+            {
+                id: 'light',
+                title: 'Light',
+                logo: 'https://light.dangervalley.com/static/light.png',
+                isSubscriptionRequired: false,
+                isExternal: false,
+            },
+            {
+                id: 'bonkbot',
+                title: 'BonkBot',
+                logo: 'https://light.dangervalley.com/static/bonkbot.png',
+                isSubscriptionRequired: true,
+                isExternal: true,
+                url: '',
+                tokenUrl: '',
+            },
+            {
+                id: 'maestro',
+                title: 'Maestro',
+                logo: 'https://light.dangervalley.com/static/maestro.png',
+                isSubscriptionRequired: true,
+                isExternal: true,
+                url: '',
+                tokenUrl: '',
+            },
+            {
+                id: 'trojan',
+                title: 'Trojan',
+                logo: 'https://light.dangervalley.com/static/trojan.png',
+                isSubscriptionRequired: true,
+                isExternal: true,
+                url: '',
+                tokenUrl: '',
+            },
+            {
+                id: 'bananagun',
+                title: 'BananaGun',
+                logo: 'https://light.dangervalley.com/static/bananagun.png',
+                isSubscriptionRequired: true,
+                isExternal: true,
+                url: '',
+                tokenUrl: '',
+            },
+        ];
+
+        const farm: {
+            types: {id: string, title: string}[],
+            modes: {id: string, title: string}[],
+            amounts: {id: string, title: string}[],
+            dexes: {id: string, title: string, logo: string}[],
+        } = {
+            types: [
+                {id: 'pump_one_token', title: 'Pump one token'},
+                {id: 'farm_dex_volume', title: 'Farm volume on DEX'},
+            ],
+            modes: [
+                {id: 'fast', title: 'Fast (up to 6 hours)'},
+                {id: 'normal', title: 'Normal (up to 24 hours)'},
+                {id: 'steady', title: 'Stready (up to 7 days)'},
+            ],
+            amounts: [
+                {id: 'light_pump', title: 'Light pump (3 SOL)'},
+                {id: 'boost', title: 'Boost (9 SOL)'},
+                {id: 'growth', title: 'Growth (18 SOL)'},
+                {id: 'dominance', title: 'Dominance (30 SOL)'},
+                {id: 'meme_master', title: 'Meme master (60 SOL)'},
+            ],
+            dexes: [
+                {
+                    id: 'pumpfun',
+                    title: 'PumpFun',
+                    logo: 'https://light.dangervalley.com/static/pumpfun.png',
+                },
+                {
+                    id: 'raydium',
+                    title: 'Raydium',
+                    logo: 'https://light.dangervalley.com/static/raydium.png',
+                },
+            ]
+        }
+
         const config = {
             subscriptions,
+            engines,
+            farm,
         }
 
 		const response = {

@@ -37,6 +37,20 @@ export class SubscriptionManager {
         return 10;
     }
 
+    static getMaxNumberOfTradingProfiles(tier?: SubscriptionTier): number {
+        if (tier == SubscriptionTier.PLATINUM){
+            return 10;
+        }
+        else if (tier == SubscriptionTier.GOLD){
+            return 5;
+        }
+        else if (tier == SubscriptionTier.SILVER){
+            return 3;
+        }
+        
+        return 1;
+    }
+
     static async updateUserSubscription(userId: string) {
         let subs = await RevenueCatManager.getCustomerSubscriptions(userId);
         if (subs == undefined){

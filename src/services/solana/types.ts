@@ -1,3 +1,5 @@
+import { SubscriptionTier } from "../../entities/payments/Subscription";
+
 export interface TransactionStatus {
   status: Status;
   signature?: string;
@@ -78,16 +80,24 @@ export enum Chain {
 }
 
 export interface SubscriptionConfig {
-    type: 'free' | 'silver' | 'gold' | 'platinum',
+    type: 'free' | SubscriptionTier,
     title: string,
-    description: string,
-    default: boolean,
-    month?: {
-        id: string,
-        default: boolean,
-    },
-    year?: {
-        id: string,
-        default: boolean,
-    },                
+    maxNumberOfWallets: number,
+    maxNumberOfTradingProfiles: number,
+}
+
+export interface Engine {
+    id: string,
+    title: string,
+    logo: string,
+    isSubscriptionRequired: boolean,
+    isExternal: boolean,
+    url?: string,
+    tokenUrl?: string,
+}
+
+export interface Dex {
+    id: string,
+    title: string,
+    logo: string,
 }

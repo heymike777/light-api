@@ -128,6 +128,7 @@ export class UserManager {
         }
 
         user.maxNumberOfWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
+        user.maxNumberOfTradingProfiles = SubscriptionManager.getMaxNumberOfTradingProfiles(user.subscription?.tier);
 
         return user;
     }
