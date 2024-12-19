@@ -1,68 +1,49 @@
+import { IToken, Token } from "../entities/tokens/Token";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
+import { Chain } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { MetaplexManager } from "./MetaplexManager";
 
-export interface TokenNftAttribute {
-    trait_type: string;
-    value: string;
-}
-
-export interface TokenNft {
-    id: string;
-    image?: string;
-    title?: string;
-    uri?: string;
-    attributes?: TokenNftAttribute[];
-    marketplace: {title: string, url: string};
-}
-
-export interface Token {
-    address: string;
-    name?: string;
-    symbol?: string;
-    decimals?: number;
-    // logo?: string;
-    price?: number;
-    priceUpdatedAt: number;
-
-    nft?: TokenNft;
-}
-
-export const kDefaultTokens: Token[] = [
-    {
-        address: 'So11111111111111111111111111111111111111112',
-        name: 'Wrapped SOL',
-        symbol: 'WSOL',
-        decimals: 9,
-        // logo: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-        priceUpdatedAt: 0,
-    },
-    {
-        address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
-        name: 'Jupiter',
-        symbol: 'JUP',
-        decimals: 9,
-        // logo: 'https://static.jup.ag/jup/icon.png',
-        priceUpdatedAt: 0,
-    },
-    {
-        address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-        name: 'USD Coin',
-        symbol: 'USDC',
-        decimals: 6,
-        // logo: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
-        priceUpdatedAt: 0,
-    },
-    //TODO: add more tokens - USDT
-];
+// export const kDefaultTokens: Token[] = [
+//     {
+//         address: 'So11111111111111111111111111111111111111112',
+//         name: 'Wrapped SOL',
+//         symbol: 'WSOL',
+//         decimals: 9,
+//         // logo: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+//         priceUpdatedAt: 0,
+//     },
+//     {
+//         address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+//         name: 'Jupiter',
+//         symbol: 'JUP',
+//         decimals: 9,
+//         // logo: 'https://static.jup.ag/jup/icon.png',
+//         priceUpdatedAt: 0,
+//     },
+//     {
+//         address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+//         name: 'USD Coin',
+//         symbol: 'USDC',
+//         decimals: 6,
+//         // logo: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
+//         priceUpdatedAt: 0,
+//     },
+//     //TODO: add more tokens - USDT
+// ];
 
 export class TokenManager {
 
-    static tokens: Token[] = kDefaultTokens;
+    static tokens: IToken[] = [];
+
+    static async init(){
+        TokenManager.tokens = await Token.find();
+        console.log('TokenManager', 'init', 'tokens.length =', TokenManager.tokens.length);
+    }
 
     static async updateTokensPrices() {
-        const tokens = TokenManager.tokens.sort((a, b) => a.priceUpdatedAt - b.priceUpdatedAt);
+        const tokens = TokenManager.tokens.sort((a, b) => (a.priceUpdatedAt || 0) - (b.priceUpdatedAt || 0));
         const tokensToUpdate = tokens.slice(0, 100);
         const mints = tokensToUpdate.map(token => token.address);
         const prices = await JupiterManager.getPrices(mints);
@@ -76,19 +57,40 @@ export class TokenManager {
         }
     }
 
-    static async fetchDigitalAsset(address: string): Promise<Token> {
-        const token: Token = {
-            address,
-            priceUpdatedAt: 0,
-        }
+    static async fetchDigitalAsset(address: string): Promise<IToken> {
+        const token: IToken = new Token();
+        token.chain = Chain.SOLANA;
+        token.address = address;
+        token.priceUpdatedAt = 0;
 
         const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
         // console.log('TokenManager', 'getToken', address, '=', digitalAssets);
         if (digitalAssets && digitalAssets.length > 0){
             const digitalAsset = digitalAssets[0];
+
+            const uri = digitalAsset.metadata.uri;
+            let metadata: any = undefined;
+            if (uri){
+                try {
+                    const metadataData = await fetch(uri);
+                    metadata = await metadataData.json() as any;                       
+                }
+                catch (error) {
+                    // console.error('TokenManager', 'getToken', 'metadata', error);
+                }
+            }
+
             token.name = digitalAsset.metadata.name;
             token.symbol = digitalAsset.metadata.symbol;
             token.decimals = digitalAsset.mint.decimals;
+            token.supply = digitalAsset.mint.supply.toString();
+            token.isVerified = false;
+            token.mintAuthority = digitalAsset.mint.mintAuthority?.toString();
+            token.freezeAuthority = digitalAsset.mint.freezeAuthority?.toString();
+            token.logo = metadata?.image || metadata?.logo || undefined;
+            token.description = metadata?.description || undefined;
+
+            console.log('!digitalAsset:', digitalAsset, 'metadata:', metadata);
 
             if (digitalAsset.mint.supply === BigInt(1)) {
                 // NFT
@@ -100,34 +102,28 @@ export class TokenManager {
                     marketplace: ExplorerManager.getMarketplace(nftId),
                 };
 
-                const uri = digitalAsset.metadata.uri;
-                if (uri){
-                    try {
-                        const metadata = await fetch(uri);
-                        const metadataJson = await metadata.json() as any;
-                        // console.log('TokenManager', 'getToken', 'metadata', metadataJson);    
-
-                        if (metadataJson.attributes){
-                            token.nft.attributes = metadataJson.attributes;
-                        }
-                        if (metadataJson.image){
-                            token.nft.image = metadataJson.image;
-                        }                            
-                    }
-                    catch (error) {
-                        // console.error('TokenManager', 'getToken', 'metadata', error);
-                    }
+                if (metadata?.attributes){
+                    token.nft.attributes = metadata.attributes;
                 }
+                if (metadata?.image){
+                    token.nft.image = metadata.image;
+                }     
             }
             else {
                 TokenManager.tokens.push(token);
+                try{
+                    await token.save();
+                }
+                catch (error){
+                    console.error('!catched', 'TokenManager', 'fetchDigitalAsset', 'save', error);
+                }
             }
         }
 
         return token;
     }
 
-    static async getToken(address: string): Promise<Token | undefined> {
+    static async getToken(address: string): Promise<IToken | undefined> {
         let token = TokenManager.tokens.find(token => token.address === address);
         if (!token){
             token = await this.fetchDigitalAsset(address);

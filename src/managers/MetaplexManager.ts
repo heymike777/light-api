@@ -3,9 +3,9 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { getRpc } from '../services/solana/lib/solana';
 import { publicKey } from '@metaplex-foundation/umi';
 import { dasApi, DasApiAsset } from '@metaplex-foundation/digital-asset-standard-api';
-import { TokenNft, TokenNftAttribute } from './TokenManager';
 import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
 import { ExplorerManager } from '../services/explorers/ExplorerManager';
+import { TokenNft, TokenNftAttribute } from '../entities/tokens/Token';
 
 export class MetaplexManager {
 

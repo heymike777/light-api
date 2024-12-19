@@ -36,6 +36,7 @@ import { CronManager } from './managers/CronManager';
 import { GiftCard } from './entities/giftCards/GiftCard';
 import { GiftCardClaim } from './entities/giftCards/GiftCardClaim';
 import { giftCardsRouter } from './routes/v1/GiftCards';
+import { Token } from './entities/tokens/Token';
 
 const app = express();
 app.use(json());
@@ -80,6 +81,7 @@ const start = async () => {
     await Subscription.syncIndexes();
     await GiftCard.syncIndexes();
     await GiftCardClaim.syncIndexes();
+    await Token.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {
@@ -92,6 +94,7 @@ const onExpressStarted = async () => {
     CronManager.setup();
     setupBot();
 
+    await TokenManager.init();
     await MixpanelManager.init();
     await WalletManager.fetchAllWalletAddresses();
     await TokenManager.updateTokensPrices();

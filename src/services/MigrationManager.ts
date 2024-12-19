@@ -30,6 +30,8 @@ import { UserManager } from "../managers/UserManager";
 
 export class MigrationManager {
 
+    static kBonk = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
+
     static async migrate() {
         if (process.env.SERVER_NAME != 'heynova0'){
             SystemNotificationsManager.sendSystemMessage('Server started');
@@ -37,6 +39,8 @@ export class MigrationManager {
 
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
+
+        // await TokenManager.fetchDigitalAsset(this.kBonk);
         
         // await this.processTx('2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL'); // pumpfun
         // await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium

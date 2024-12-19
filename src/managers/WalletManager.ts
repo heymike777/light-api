@@ -11,7 +11,7 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { kSolAddress } from "../services/solana/Constants";
-import { Token, TokenManager, TokenNft } from "./TokenManager";
+import { TokenManager } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { MetaplexManager } from "./MetaplexManager";
@@ -25,6 +25,8 @@ import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager
 import { SubscriptionManager } from "./SubscriptionManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { UserManager } from "./UserManager";
+import { IToken, Token, TokenNft } from "../entities/tokens/Token";
+import { Chain } from "../services/solana/types";
 
 export class WalletManager {
 
@@ -365,7 +367,7 @@ export class WalletManager {
         const txPostBalances = parsedTx.postBalances || [];
         const txPreTokenBalances = parsedTx.preTokenBalances || [];
         const txPostTokenBalances = parsedTx.postTokenBalances || [];
-        const tokens: Token[] = [];
+        const tokens: IToken[] = [];
 
         const changedWallets: ChangedWallet[] = [];
         // console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
@@ -541,15 +543,14 @@ export class WalletManager {
         }
 
         if (asset){
-            const assetToken: Token = {
-                address: asset.id,
-                name: asset.title,
-                symbol: asset.title,
-                decimals: 0,
-                // price?: number,
-                priceUpdatedAt: Date.now(),                    
-                nft: asset,
-            };
+            const assetToken: IToken = new Token();
+            assetToken.chain = Chain.SOLANA;
+            assetToken.address = asset.id;
+            assetToken.name = asset.title;
+            assetToken.symbol = asset.title;
+            assetToken.decimals = 0;
+            assetToken.priceUpdatedAt = Date.now();
+            assetToken.nft = asset;
             tokens.push(assetToken);
         }
 

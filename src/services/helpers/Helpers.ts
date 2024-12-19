@@ -1,6 +1,6 @@
+import { IToken } from "../../entities/tokens/Token";
 import { IWallet } from "../../entities/Wallet";
 import { kKnownAddresses, kValidators } from "../../managers/constants/ValidatorConstants";
-import { Token } from "../../managers/TokenManager";
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 
@@ -107,7 +107,7 @@ export class Helpers {
         return pageToken;
     }
 
-    static replaceAddressesWithPretty(text: string, addresses: string[] | undefined, wallets: IWallet[], txTokens?: Token[]): string {
+    static replaceAddressesWithPretty(text: string, addresses: string[] | undefined, wallets: IWallet[], txTokens?: IToken[]): string {
         if (addresses && addresses.length > 0){
             for (let index = 0; index < addresses.length; index++) {
                 const address = addresses[index];
