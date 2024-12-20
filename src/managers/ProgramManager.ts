@@ -14,7 +14,7 @@ import { getTokenMetadata } from "@solana/spl-token";
 import fs from "fs";
 import { kSolAddress } from "../services/solana/Constants";
 import { IWallet } from "../entities/Wallet";
-import { BN } from "bn.js";
+import BN from "bn.js";
 
 export type Ix = web3.ParsedInstruction | web3.PartiallyDecodedInstruction;
 
@@ -764,7 +764,7 @@ export class ProgramManager {
         return {parser, idlItem};
     }
 
-    static findChangedTokenBalances(walletAddress: string, meta: web3.ParsedTransactionMeta, inclideWsol = true): {mint: string, uiAmountChange: number}[] {
+    static findChangedTokenBalances(walletAddress: string, meta: web3.ParsedTransactionMeta, includeWsol = true): {mint: string, uiAmountChange: number, amountChange: BN}[] {
         const preBalances = meta.preTokenBalances || [];
         const postBalances = meta.postTokenBalances || [];
 
@@ -775,15 +775,19 @@ export class ProgramManager {
             }
         }
 
-        let changedBalances: {mint: string, uiAmountChange: number}[] = [];
+        let changedBalances: {mint: string, uiAmountChange: number, amountChange: BN}[] = [];
         for (const postBalance of postBalances) {
             if (postBalance.owner == walletAddress){
                 const preBalance = preBalancesMap[postBalance.mint];
                 if (!preBalance || preBalance.uiTokenAmount.uiAmount != postBalance.uiTokenAmount.uiAmount){
                     const uiAmountChange = (postBalance.uiTokenAmount.uiAmount || 0) - (preBalance?.uiTokenAmount.uiAmount || 0);
                     if (uiAmountChange != 0){
-                        changedBalances.push({ mint: postBalance.mint, uiAmountChange: uiAmountChange });
+                        const amountChange: BN = new BN(postBalance?.uiTokenAmount.amount || 0).sub(new BN(preBalance?.uiTokenAmount.amount || 0));
+
+                        changedBalances.push({ mint: postBalance.mint, uiAmountChange: uiAmountChange, amountChange: amountChange });
                     }
+
+                    
 
                     preBalancesMap[postBalance.mint] = undefined;
                 }
@@ -796,16 +800,38 @@ export class ProgramManager {
         for (const mint in preBalancesMap) {
             const balance = preBalancesMap[mint];
             if (balance && balance.uiTokenAmount.uiAmount && balance.uiTokenAmount.uiAmount != 0){
-                changedBalances.push({ mint: balance.mint, uiAmountChange: balance.uiTokenAmount.uiAmount });
+                changedBalances.push({ mint: balance.mint, uiAmountChange: balance.uiTokenAmount.uiAmount, amountChange: new BN(balance.uiTokenAmount.amount) });
             }
         }
 
-        if (!inclideWsol){
+        if (!includeWsol){
             changedBalances = changedBalances.filter((balance) => balance.mint != kSolAddress);
         }
 
         return changedBalances;
     }
+
+    static findSolChange(walletAddress: string, tx: web3.ParsedTransactionWithMeta): BN | undefined {
+        if (!tx.meta){
+            return undefined;
+        }
+
+        const changes = this.findChangedTokenBalances(walletAddress, tx.meta, true);
+        const wsolChange = changes.find((change) => change.mint == kSolAddress);
+        if (wsolChange){
+            return wsolChange.amountChange;
+        }
+
+        // tx.transaction.message.accountKeys[0].
+        const index = tx.transaction.message.accountKeys.findIndex((key) => key.pubkey.toBase58() == walletAddress);
+
+        if (index != undefined && tx.meta.preBalances && tx.meta.postBalances && tx.meta.preBalances.length > index && tx.meta.postBalances.length > index){
+            return new BN(tx.meta.postBalances[index] - tx.meta.preBalances[index]);
+        }
+
+        return undefined;
+    }
+
 
     static findTxDescription(parsedInstructions: ParsedIx[] | undefined, wallets: IWallet[]): TxDescription | undefined {
         console.log('findTxDescription', 'wallets:', wallets.map((w) => w.walletAddress), 'parsedInstructions:', JSON.stringify(parsedInstructions));

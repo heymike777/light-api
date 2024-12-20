@@ -37,6 +37,7 @@ import { GiftCard } from './entities/giftCards/GiftCard';
 import { GiftCardClaim } from './entities/giftCards/GiftCardClaim';
 import { giftCardsRouter } from './routes/v1/GiftCards';
 import { Token } from './entities/tokens/Token';
+import { TokenPriceStream } from './services/solana/geyser/TokenPriceStream';
 
 const app = express();
 app.use(json());
@@ -101,6 +102,7 @@ const onExpressStarted = async () => {
     JitoWebsocketManager.getInstance();
     // await JitoManager.initSearcherClient();
     YellowstoneManager.createInstances();
+    TokenPriceStream.createInstances();
 
     await MigrationManager.migrate();
 }
