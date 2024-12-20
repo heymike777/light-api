@@ -102,7 +102,7 @@ const onExpressStarted = async () => {
     JitoWebsocketManager.getInstance();
     // await JitoManager.initSearcherClient();
     YellowstoneManager.createInstances();
-    TokenPriceStream.createInstances();
+    // TokenPriceStream.createInstances();
 
     await MigrationManager.migrate();
 }
