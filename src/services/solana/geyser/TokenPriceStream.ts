@@ -176,7 +176,8 @@ export class TokenPriceStream {
                         const solDivMod = solBalanceChange.divmod(new BN(LAMPORTS_PER_SOL));
                         const solChange = solDivMod.div.toNumber() + solDivMod.mod.toNumber() / LAMPORTS_PER_SOL;
                         const tokenChange = tokenBalanceChange.uiAmountChange;
-                        const tokenPrice = (tokenChange / solChange) * 180; // 180 is the price of 1 SOL in USD
+                        const solPrice = 180; // 1 SOL = $180
+                        const tokenPrice = (solChange * solPrice / tokenChange); 
                         console.log('!jup', 'mint:', tokenBalanceChange.mint, 'balance:', tokenChange, 'sol:', solChange, 'price:', `$${tokenPrice.toFixed(6)}`);
 
                     }
