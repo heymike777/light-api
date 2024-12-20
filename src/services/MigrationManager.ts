@@ -40,6 +40,8 @@ export class MigrationManager {
         console.log('MigrationManager', 'migrate', 'start');
         const chatId = 862473;
 
+        await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
+
         // await TokenManager.fetchDigitalAsset(this.kBonk);
         
         // await this.processTx('2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL'); // pumpfun
