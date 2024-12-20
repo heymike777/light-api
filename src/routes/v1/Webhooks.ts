@@ -25,13 +25,13 @@ router.post(
             console.log('Unauthorized', req.headers['authorization']);
             throw new BadRequestError('Unauthorized');
         }
-        // console.log(`RevenueCat webhook received: webhooks/revenuecat/${environment}`, req.body);
+        console.log(`RevenueCat webhook received: webhooks/revenuecat/${environment}`, req.body);
 
         const event = req.body.event;
         const userId = event?.app_user_id;
         const originalUserId = event?.original_app_user_id;
 
-        // console.log('!!! RevenueCat webhook', 'userId:', userId, 'originalUserId:', originalUserId, event);
+        console.log('!!! RevenueCat webhook', 'userId:', userId, 'originalUserId:', originalUserId, event);
 
         if (userId){
             await SubscriptionManager.updateUserSubscription(userId);
