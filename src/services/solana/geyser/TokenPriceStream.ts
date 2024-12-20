@@ -1,12 +1,10 @@
 import Client, { SubscribeRequest, CommitmentLevel } from "@triton-one/yellowstone-grpc";
 import base58 from 'bs58';
 import { Helpers } from '../../helpers/Helpers';
-import { WalletManager } from '../../../managers/WalletManager';
 import { TxParser } from "./TxParser";
 import { kProgram } from "../../../managers/constants/ProgramConstants";
-import {} from '@jup-ag/instruction-parser';
 import { ProgramManager } from "../../../managers/ProgramManager";
-import { LAMPORTS_PER_SOL, ParsedMessageAccount } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { BN } from "bn.js";
 
 export class TokenPriceStream {
@@ -191,7 +189,7 @@ export class TokenPriceStream {
     static instances?: TokenPriceStream[];
     static createInstances(){
         console.log(new Date(), process.env.SERVER_NAME, 'TokenPriceStream createInstances');
-        
+
         if (!this.instances){
             this.instances = [];
         }
