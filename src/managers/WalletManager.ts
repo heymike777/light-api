@@ -25,7 +25,7 @@ import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager
 import { SubscriptionManager } from "./SubscriptionManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { UserManager } from "./UserManager";
-import { IToken, Token, TokenNft } from "../entities/tokens/Token";
+import { IToken, ITokenModel, Token, TokenNft } from "../entities/tokens/Token";
 import { Chain } from "../services/solana/types";
 
 export class WalletManager {
@@ -367,7 +367,7 @@ export class WalletManager {
         const txPostBalances = parsedTx.postBalances || [];
         const txPreTokenBalances = parsedTx.preTokenBalances || [];
         const txPostTokenBalances = parsedTx.postTokenBalances || [];
-        const tokens: IToken[] = [];
+        const tokens: ITokenModel[] = [];
 
         const changedWallets: ChangedWallet[] = [];
         // console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
@@ -543,14 +543,15 @@ export class WalletManager {
         }
 
         if (asset){
-            const assetToken: IToken = new Token();
-            assetToken.chain = Chain.SOLANA;
-            assetToken.address = asset.id;
-            assetToken.name = asset.title;
-            assetToken.symbol = asset.title;
-            assetToken.decimals = 0;
-            assetToken.priceUpdatedAt = Date.now();
-            assetToken.nft = asset;
+            const assetToken: ITokenModel = {
+                chain: Chain.SOLANA,
+                address: asset.id,
+                decimals: 0,
+                symbol: asset.title,
+                name: asset.title,
+                nft: asset,
+                priceUpdatedAt: Date.now(),
+            }
             tokens.push(assetToken);
         }
 

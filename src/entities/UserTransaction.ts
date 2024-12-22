@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose';
 import { ParsedTx } from '../managers/ProgramManager';
 import { ChangedWallet } from '../models/types';
-import { IToken } from './tokens/Token';
+import { IToken, ITokenModel } from './tokens/Token';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -12,7 +12,7 @@ export interface IUserTransaction extends mongoose.Document {
     signature?: string;
 
     parsedTx: ParsedTx;
-    tokens?: IToken[];
+    tokens?: ITokenModel[];
     changedWallets?: ChangedWallet[];
 
     updatedAt?: Date;

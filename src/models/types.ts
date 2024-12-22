@@ -1,4 +1,4 @@
-import { IToken, TokenNft } from "../entities/tokens/Token";
+import { IToken, ITokenModel, TokenNft } from "../entities/tokens/Token";
 import { IUser } from "../entities/User";
 import { IWallet } from "../entities/Wallet";
 
@@ -20,7 +20,7 @@ export interface TransactionApiResponse {
     signature: string,
     blockTime: number,
     wallets: ChangedWallet[],
-    tokens: IToken[],
+    tokens: ITokenModel[],
 }
 
 export interface ChangedWallet {

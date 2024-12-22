@@ -19,8 +19,9 @@ export interface TokenNft {
     marketplace: {title: string, url: string};
 }
 
-export interface IToken extends mongoose.Document {
+export interface ITokenModel {
     chain: Chain;
+
     address: string;
     decimals?: number;
     symbol?: string;
@@ -32,9 +33,6 @@ export interface IToken extends mongoose.Document {
     description?: string;
 
     supply?: string;
-
-    updatedAt?: Date;
-    createdAt?: Date;
 
     // properties
     price?: number;
@@ -48,6 +46,11 @@ export interface IToken extends mongoose.Document {
     marketCap?: number;
     nft?: TokenNft;
     priceUpdatedAt?: number;
+}
+
+export interface IToken extends mongoose.Document, ITokenModel {
+    updatedAt?: Date;
+    createdAt?: Date;
 }
 
 export const TokenSchema = new mongoose.Schema<IToken>({
