@@ -87,8 +87,12 @@ export class TokenManager {
             token.decimals = digitalAsset.mint.decimals;
             token.supply = digitalAsset.mint.supply.toString();
             token.isVerified = false;
-            token.mintAuthority = umi.unwrapOption(digitalAsset.mint.mintAuthority) || undefined
-            token.freezeAuthority = umi.unwrapOption(digitalAsset.mint.freezeAuthority) || undefined;
+            
+            const mintAuthority = umi.unwrapOption(digitalAsset.mint.mintAuthority) || undefined;
+            token.mintAuthority = mintAuthority ? mintAuthority.toString() : undefined;
+            const freezeAuthority = umi.unwrapOption(digitalAsset.mint.freezeAuthority) || undefined;
+            token.freezeAuthority = freezeAuthority ? freezeAuthority.toString() : undefined;
+
             token.logo = metadata?.image || metadata?.logo || undefined;
             token.description = metadata?.description || undefined;
 
