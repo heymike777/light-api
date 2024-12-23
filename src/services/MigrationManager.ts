@@ -24,9 +24,19 @@ import { SystemNotificationsManager } from "../managers/SytemNotificationsManage
 import jwt from "express-jwt";
 import { SubscribeRequest } from "@triton-one/yellowstone-grpc";
 import { SubscriptionManager } from "../managers/SubscriptionManager";
-import { SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Subscription";
+import { Subscription, SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Subscription";
 import { RevenueCatManager } from "../managers/RevenueCatManager";
 import { UserManager } from "../managers/UserManager";
+import { User } from "../entities/User";
+import { UserRefClaim } from "../entities/UserRefClaim";
+import { Message } from "../entities/Message";
+import { Auth } from "../entities/Auth";
+import { PushToken } from "../entities/PushToken";
+import { GiftCard } from "../entities/giftCards/GiftCard";
+import { GiftCardClaim } from "../entities/giftCards/GiftCardClaim";
+import { Token } from "../entities/tokens/Token";
+import { TokenPair } from "../entities/tokens/TokenPair";
+import { TokenSwap } from "../entities/tokens/TokenSwap";
 
 export class MigrationManager {
 
@@ -36,11 +46,11 @@ export class MigrationManager {
         if (process.env.SERVER_NAME != 'heynova0'){
             SystemNotificationsManager.sendSystemMessage('Server started');
         }
-
         console.log('MigrationManager', 'migrate', 'start');
+        this.syncIndexes();
         const chatId = 862473;
 
-        await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
+        // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
 
         // await TokenManager.fetchDigitalAsset(this.kBonk);
         
@@ -70,6 +80,23 @@ export class MigrationManager {
         // await this.findTransactionsWithoutDescription();
 
         console.log('MigrationManager', 'migrate', 'done');
+    }
+
+    static async syncIndexes(){
+        await User.syncIndexes();
+        await UserRefClaim.syncIndexes();
+        await UserTransaction.syncIndexes();
+        await Message.syncIndexes();
+        await Wallet.syncIndexes();
+        await Program.syncIndexes();
+        await Auth.syncIndexes();
+        await PushToken.syncIndexes();
+        await Subscription.syncIndexes();
+        await GiftCard.syncIndexes();
+        await GiftCardClaim.syncIndexes();
+        await Token.syncIndexes();
+        await TokenPair.syncIndexes();
+        await TokenSwap.syncIndexes();
     }
 
     static async processTx(signature: string) {

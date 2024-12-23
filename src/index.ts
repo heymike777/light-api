@@ -38,6 +38,8 @@ import { GiftCardClaim } from './entities/giftCards/GiftCardClaim';
 import { giftCardsRouter } from './routes/v1/GiftCards';
 import { Token } from './entities/tokens/Token';
 import { TokenPriceStream } from './services/solana/geyser/TokenPriceStream';
+import { TokenPair } from './entities/tokens/TokenPair';
+import { TokenSwap } from './entities/tokens/TokenSwap';
 
 const app = express();
 app.use(json());
@@ -70,19 +72,6 @@ app.use(errorHandler);
 const start = async () => {
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
     console.log('Connected to mongodb!');
-
-    await User.syncIndexes();
-    await UserRefClaim.syncIndexes();
-    await UserTransaction.syncIndexes();
-    await Message.syncIndexes();
-    await Wallet.syncIndexes();
-    await Program.syncIndexes();
-    await Auth.syncIndexes();
-    await PushToken.syncIndexes();
-    await Subscription.syncIndexes();
-    await GiftCard.syncIndexes();
-    await GiftCardClaim.syncIndexes();
-    await Token.syncIndexes();
 
     const port = process.env.PORT;
     app.listen(port, () => {

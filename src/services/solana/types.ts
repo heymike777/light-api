@@ -96,8 +96,16 @@ export interface Engine {
     tokenUrl?: string,
 }
 
-export interface Dex {
-    id: string,
+export interface DexInfo {
+    id: DexId,
     title: string,
     logo: string,
+}
+
+export enum DexId {
+    RAYDIUM = 'raydium',
+    PUMPFUN = 'pumpfun',
+    METEORA = 'meteora',
+    ORCA = 'orca',
+    UNKNOWN = 'unknown',
 }
