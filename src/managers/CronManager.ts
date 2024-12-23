@@ -19,6 +19,11 @@ export class CronManager {
             YellowstoneManager.cleanupProcessedSignatures();
         });
 
+        cron.schedule('0 * * * *', () => {
+            // once an hour
+            TokenManager.clearOldSwaps();
+        });
+
         cron.schedule('0 2 * * *', () => {
             // once a day at 2am UTC
 

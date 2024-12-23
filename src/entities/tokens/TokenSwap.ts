@@ -44,6 +44,7 @@ export const TokenSwapSchema = new mongoose.Schema<ITokenSwap>({
 });
 
 TokenSwapSchema.index({ signature: 1, ixIndex: 1 }, { unique: true });
+TokenSwapSchema.index({ createdAt: 1 });
 
 TokenSwapSchema.pre('save', function (next) {
     this.updatedAt = new Date();

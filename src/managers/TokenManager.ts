@@ -1,4 +1,6 @@
+import * as umi from "@metaplex-foundation/umi";
 import { IToken, Token } from "../entities/tokens/Token";
+import { TokenSwap } from "../entities/tokens/TokenSwap";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { Chain } from "../services/solana/types";
@@ -85,8 +87,8 @@ export class TokenManager {
             token.decimals = digitalAsset.mint.decimals;
             token.supply = digitalAsset.mint.supply.toString();
             token.isVerified = false;
-            token.mintAuthority = digitalAsset.mint.mintAuthority?.toString();
-            token.freezeAuthority = digitalAsset.mint.freezeAuthority?.toString();
+            token.mintAuthority = umi.unwrapOption(digitalAsset.mint.mintAuthority) || undefined
+            token.freezeAuthority = umi.unwrapOption(digitalAsset.mint.freezeAuthority) || undefined;
             token.logo = metadata?.image || metadata?.logo || undefined;
             token.description = metadata?.description || undefined;
 
@@ -154,6 +156,14 @@ export class TokenManager {
                 }
             }
         }
+    }
+
+    static async clearOldSwaps(){
+        // delete swaps older than 1 day
+        const now = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(now.getDate() - 1);
+        await TokenSwap.deleteMany({ createdAt: { $lt: yesterday } });
     }
 
 
