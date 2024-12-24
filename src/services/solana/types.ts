@@ -90,8 +90,8 @@ export interface Engine {
     id: string,
     title: string,
     logo: string,
-    isSubscriptionRequired: boolean,
-    isExternal: boolean,
+    // isSubscriptionRequired: boolean,
+    // isExternal: boolean,
     url?: string,
     tokenUrl?: string,
 }
