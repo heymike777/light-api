@@ -1,5 +1,7 @@
 import * as mongoose from 'mongoose';
 import { Chain } from '../../services/solana/types';
+import { BN } from 'bn.js';
+import { TokenManager } from '../../managers/TokenManager';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -36,6 +38,7 @@ export interface ITokenModel {
 
     // properties
     price?: number;
+    marketCap?: number;
     volume?: {
         '5m': number;
         '1h': number;
@@ -43,9 +46,29 @@ export interface ITokenModel {
         '24h': number;
     };
     liquidity?: number;
-    marketCap?: number;
     nft?: TokenNft;
     priceUpdatedAt?: number;
+}
+
+export function tokenToTokenModel(token: IToken): ITokenModel {
+    return {
+        chain: token.chain,
+        address: token.address,
+        decimals: token.decimals,
+        symbol: token.symbol,
+        name: token.name,
+        logo: token.logo,
+        isVerified: token.isVerified,
+        supply: token.supply,
+        mintAuthority: token.mintAuthority,
+        freezeAuthority: token.freezeAuthority,
+        description: token.description,
+        price: token.price,
+        volume: token.volume,
+        liquidity: token.liquidity,
+        nft: token.nft,
+        marketCap: TokenManager.calculateMarketCap(token),
+    };
 }
 
 export interface IToken extends mongoose.Document, ITokenModel {
@@ -80,7 +103,6 @@ TokenSchema.pre('save', function (next) {
 
 TokenSchema.methods.toJSON = function () {
     return {
-        id: this._id,
         chain: this.chain,
         address: this.address,
         decimals: this.decimals,
@@ -96,7 +118,7 @@ TokenSchema.methods.toJSON = function () {
         price: this.price,
         volume: this.volume,
         liquidity: this.liquidity,
-        marketCap: this.marketCap,
+        marketCap: TokenManager.calculateMarketCap(this as IToken),
 
         nft: this.nft,
 

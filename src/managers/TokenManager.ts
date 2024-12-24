@@ -1,11 +1,13 @@
 import * as umi from "@metaplex-foundation/umi";
-import { IToken, Token } from "../entities/tokens/Token";
+import { IToken, ITokenModel, Token, tokenToTokenModel } from "../entities/tokens/Token";
 import { TokenSwap } from "../entities/tokens/TokenSwap";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { Chain } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { MetaplexManager } from "./MetaplexManager";
+import { kSolAddress } from "../services/solana/Constants";
+import { BN } from "bn.js";
 
 // export const kDefaultTokens: Token[] = [
 //     {
@@ -46,8 +48,9 @@ export class TokenManager {
 
     static async updateTokensPrices() {
         const tokens = TokenManager.tokens.sort((a, b) => (a.priceUpdatedAt || 0) - (b.priceUpdatedAt || 0));
-        const tokensToUpdate = tokens.slice(0, 100);
+        const tokensToUpdate = tokens.slice(0, 99);
         const mints = tokensToUpdate.map(token => token.address);
+        mints.push(kSolAddress);
         const prices = await JupiterManager.getPrices(mints);
         const now = Date.now();
         for (const price of prices) {
@@ -129,7 +132,7 @@ export class TokenManager {
         return token;
     }
 
-    static async getToken(address: string): Promise<IToken | undefined> {
+    static async getToken(address: string): Promise<ITokenModel | undefined> {
         let token = TokenManager.tokens.find(token => token.address === address);
         if (!token){
             token = await this.fetchDigitalAsset(address);
@@ -142,7 +145,7 @@ export class TokenManager {
             }
             // console.log('TokenManager', 'getToken', 'prices', prices);
         }
-        return token;
+        return tokenToTokenModel(token);
     }
 
     static async fetchTokensInfo(){
@@ -168,6 +171,19 @@ export class TokenManager {
         const yesterday = new Date();
         yesterday.setDate(now.getDate() - 1);
         await TokenSwap.deleteMany({ createdAt: { $lt: yesterday } });
+    }
+
+    static getSolPrice(): number {
+        const token = TokenManager.tokens.find(token => token.address === kSolAddress);
+        return token?.price || 0;
+    }
+
+    static calculateMarketCap(token: IToken): number | undefined {
+        if (token.supply && token.price && token.decimals){
+            const bigNumber = 10 ** 10;
+            return new BN(token.supply).mul(new BN(token.price * bigNumber)).div(new BN(bigNumber)).div(new BN(10).pow(new BN(token.decimals))).toNumber();
+        }
+        return undefined;
     }
 
 
