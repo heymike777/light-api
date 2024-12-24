@@ -38,12 +38,18 @@ export interface ITokenModel {
 
     // properties
     price?: number;
+    priceChange?: {
+        '5m'?: number;
+        '1h'?: number;
+        '6h'?: number;
+        '24h'?: number;
+    };
     marketCap?: number;
     volume?: {
-        '5m': number;
-        '1h': number;
-        '6h': number;
-        '24h': number;
+        '5m'?: number;
+        '1h'?: number;
+        '6h'?: number;
+        '24h'?: number;
     };
     liquidity?: number;
     nft?: TokenNft;
@@ -64,10 +70,11 @@ export function tokenToTokenModel(token: IToken): ITokenModel {
         freezeAuthority: token.freezeAuthority,
         description: token.description,
         price: token.price,
-        volume: token.volume,
-        liquidity: token.liquidity,
         nft: token.nft,
         marketCap: TokenManager.calculateMarketCap(token),
+        priceChange: token.priceChange || {'24h': 1.23},
+        volume: token.volume || {'24h': 1234567890},
+        liquidity: token.liquidity || 987654321,
     };
 }
 
