@@ -50,6 +50,8 @@ export class MigrationManager {
         this.syncIndexes();
         const chatId = 862473;
 
+        // await TokenManager.fetchDigitalAsset(this.kBonk);
+
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
 
         // await TokenManager.fetchDigitalAsset(this.kBonk);
@@ -60,7 +62,7 @@ export class MigrationManager {
         // await this.processTx('5snNUQUXKY7iJFnaBBv6LjWYuBAryQX3mTdtHorboe6mXrZpv694mXCQucho2W2PDGumsTAqykkqsqhs5FNLuAph'); // MAGIC EDEN AMM
         // await this.processTx('26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'); // NFT SALE on !!!MAGIC_EDEN_V2
         // await this.processTx('42Jybm1JcyGWQx3AAMZffwK3QagUb2RkWgJ3v3bHgoF7vV7xAXuGxiGouNE5K6czPtBNKcAqkY1kcLprmWJwf8Sn');
-
+        // await this.processTx('5XuB98XVfwMLLPetV5hzZt65P89WuN4YLTj6NSmz5uoiwc8qpqF2TPPoY8gsPHrFQgQYRWUQTphrU99eQNXTn2HV'); //jupiter
 
         // await this.processTx('5FRKJBrcGBcERCgWLWdR5YRvK3mPMYJnhbePjX6g4ywYgeV4u6ypJeh9FyduvkXiesHqyrTKw9XCEiBWjCWKPXnq'); // Tensor 
         // await this.processTx('2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'); // cNFT on Tensor_CNFT
