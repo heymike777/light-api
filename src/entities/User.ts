@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 import { ISubscription, SubscriptionTier } from './payments/Subscription';
+import { TraderManager } from '../managers/TraderManager';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -22,6 +23,7 @@ export interface IUser extends mongoose.Document {
     lastIpAddress?: string;
     isAdmin?: boolean;
     usedGiftCardsCount?: number;
+    engine?: string;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -47,6 +49,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
     lastIpAddress: { type: String },
     isAdmin: { type: Boolean },
     usedGiftCardsCount: { type: Number },
+    engine: { type: String },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -70,6 +73,7 @@ UserSchema.methods.toJSON = function () {
         maxNumberOfTradingProfiles: this.maxNumberOfTradingProfiles,
         isAdmin: this.isAdmin,
         usedGiftCardsCount: this.usedGiftCardsCount,
+        engine: this.engine || TraderManager.kDefaultEngineId,
     };
 };
 

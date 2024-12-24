@@ -13,6 +13,9 @@ import { ChatWallets, TransactionApiResponse } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { UserManager } from "../../managers/UserManager";
 import { ProgramManager } from "../../managers/ProgramManager";
+import { TraderManager } from "../../managers/TraderManager";
+import { BadRequestError } from "../../errors/BadRequestError";
+import { User } from "../../entities/User";
 
 const router = express.Router();
 
@@ -32,6 +35,39 @@ router.get(
       }
    
       res.status(200).send({ user });
+    }
+);
+
+router.put(
+    '/api/v1/users',
+    [
+        body("engine").optional().isString().withMessage("engine is not valid"),
+    ],
+    validateRequest,
+    jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
+    validateAuth(),  
+    async (req: Request, res: Response) => {
+        const userId = req.accessToken?.userId;
+        if (!userId){
+            throw new NotAuthorizedError();
+        }
+    
+        if (req.body.engine){
+            const engine = req.body.engine;
+            const allEngineIds = TraderManager.engines.map((engine) => engine.id);
+            if (!allEngineIds.includes(engine)){
+                throw new BadRequestError("Engine not found");
+            }
+            await User.updateOne({ _id: userId }, {
+                $set: {
+                    engine: engine,
+                }
+            });
+        }
+
+        const user = await UserManager.getUserById(userId, true);
+
+        res.status(200).send({success: true, user});
     }
 );
 
