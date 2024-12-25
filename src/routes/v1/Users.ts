@@ -16,6 +16,7 @@ import { ProgramManager } from "../../managers/ProgramManager";
 import { TraderManager } from "../../managers/TraderManager";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { User } from "../../entities/User";
+import { Announcement, AnnouncementsManager } from "../../managers/AnnouncementsManager";
 
 const router = express.Router();
 
@@ -175,11 +176,16 @@ router.post(
 
         console.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
 
+        let announcements: Announcement[] | undefined = undefined;
+        if (!pageToken || !pageToken?.ids || pageToken.ids.length==0) {
+            announcements = await AnnouncementsManager.getAnnouncements();
+        }
 
         res.status(200).send({
             hasMore: hasMore,
             pageToken: newPageToken,
             transactions: parsedTransactions,
+            announcements,
         });
     }
 );
