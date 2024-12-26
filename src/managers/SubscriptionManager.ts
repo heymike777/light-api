@@ -103,6 +103,11 @@ export class SubscriptionManager {
         this.sendSystemNotification(user || undefined, subs, existingSubs);
     }
 
+    static async cleanExpiredGiftCardSubscriptions() {
+        const now = new Date();
+        await Subscription.deleteMany({ platform: SubscriptionPlatform.GIFT_CARD, expiresAt: { $lt: now } });
+    }
+
     static async sendSystemNotification(user: IUser | undefined, subs: ISub[], existingSubs: ISubscription[]){
         // find the difference and send events to telegram bot
         const username = user?.email || user?.telegram?.username || `user_${user?.id || 'unknown'}`;

@@ -22,6 +22,7 @@ export class CronManager {
         cron.schedule('0 * * * *', () => {
             // once an hour
             TokenManager.clearOldSwaps();
+            SubscriptionManager.cleanExpiredGiftCardSubscriptions();
         });
 
         cron.schedule('0 2 * * *', () => {
