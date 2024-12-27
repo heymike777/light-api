@@ -4,13 +4,13 @@ export class TraderManager {
 
     static kDefaultEngineId = 'bonkbot';
     static engines: Engine[] = [
-        {
-            id: 'light',
-            title: 'Light',
-            logo: 'https://light.dangervalley.com/static/light.png',
-            // isSubscriptionRequired: false,
-            // isExternal: false,
-        },
+        // {
+        //     id: 'light',
+        //     title: 'Light',
+        //     logo: 'https://light.dangervalley.com/static/light.png',
+        //     // isSubscriptionRequired: false,
+        //     // isExternal: false,
+        // },
         {
             id: 'bonkbot',
             title: 'BonkBot',
