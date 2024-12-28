@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { Chain } from '../../services/solana/types';
+import { Chain, TimeBasedValue } from '../../services/solana/types';
 import { BN } from 'bn.js';
 import { TokenManager } from '../../managers/TokenManager';
 
@@ -38,22 +38,13 @@ export interface ITokenModel {
 
     // properties
     price?: number;
-    priceChange?: {
-        '5m'?: number;
-        '1h'?: number;
-        '6h'?: number;
-        '24h'?: number;
-    };
+    priceChange?: TimeBasedValue;
     marketCap?: number;
-    volume?: {
-        '5m'?: number;
-        '1h'?: number;
-        '6h'?: number;
-        '24h'?: number;
-    };
+    volume?: TimeBasedValue;
     liquidity?: number;
     nft?: TokenNft;
     priceUpdatedAt?: number;
+    infoUpdatedAt?: number;
 }
 
 export function tokenToTokenModel(token: IToken): ITokenModel {

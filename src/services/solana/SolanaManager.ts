@@ -542,6 +542,18 @@ export class SolanaManager {
         return lookupTableAccount || undefined;
     }
 
+    static async getTokenAccountBalance(web3Conn: web3.Connection, tokenAccount: web3.PublicKey): Promise<web3.TokenAmount | undefined>{
+        try {
+            const balance = await web3Conn.getTokenAccountBalance(tokenAccount, 'confirmed');
+            return balance.value;
+        }
+        catch (err){
+            console.error('getTokenAccountBalance', err);
+        }
+
+        return undefined;
+    }
+
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
     static async getRecentBlockhash(): Promise<web3.BlockhashWithExpiryBlockHeight> {

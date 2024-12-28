@@ -109,3 +109,10 @@ export enum DexId {
     ORCA = 'orca',
     UNKNOWN = 'unknown',
 }
+
+export interface TimeBasedValue {
+    '5m'?: number;
+    '1h'?: number;
+    '6h'?: number;
+    '24h'?: number;
+}

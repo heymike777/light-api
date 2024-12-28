@@ -8,6 +8,11 @@ import { JupiterManager } from "./JupiterManager";
 import { MetaplexManager } from "./MetaplexManager";
 import { kSolAddress } from "../services/solana/Constants";
 import { BN } from "bn.js";
+import { SolScanManager } from "../services/solana/SolScanManager";
+import { newConnection } from "../services/solana/lib/solana";
+import { ITokenPair, TokenPair } from "../entities/tokens/TokenPair";
+import { SolanaManager } from "../services/solana/SolanaManager";
+import * as web3 from "@solana/web3.js";
 
 // export const kDefaultTokens: Token[] = [
 //     {
@@ -137,13 +142,80 @@ export class TokenManager {
         if (!token){
             token = await this.fetchDigitalAsset(address);
         }
-        if (token && !token.price){
-            const prices = await JupiterManager.getPrices([address]);
-            if (prices && prices.length > 0){
-                token.price = prices[0].price;
-                token.priceUpdatedAt = Date.now();
+        if (token){
+            if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 60 * 5){
+                const info = await SolScanManager.fetchTokenInfo(address);
+                if (info){
+                    let isInfoUpdated = false;
+                    if (info.supply != undefined){
+                        token.supply = info.supply;
+                        isInfoUpdated = true;
+                    }
+                    if (info.price != undefined){
+                        token.price = info.price;
+                        isInfoUpdated = true;
+                        token.priceUpdatedAt = Date.now();
+                    }
+                    if (info.volume != undefined && info.volume['24h'] != undefined){
+                        token.volume = info.volume;
+                        isInfoUpdated = true;
+                    }
+                    if (info.priceChange != undefined && info.priceChange['24h'] != undefined){
+                        token.priceChange = info.priceChange;
+                        isInfoUpdated = true;
+                    }
+
+                    token.mintAuthority = info.mintAuthority;
+                    token.freezeAuthority = info.freezeAuthority;
+
+                    if (isInfoUpdated){
+                        token.infoUpdatedAt = Date.now();
+                    }
+                }
             }
-            // console.log('TokenManager', 'getToken', 'prices', prices);
+            if (!token.price){
+                const prices = await JupiterManager.getPrices([address]);
+                if (prices && prices.length > 0){
+                    token.price = prices[0].price;
+                    token.priceUpdatedAt = Date.now();
+                }
+                // console.log('TokenManager', 'getToken', 'prices', prices);
+            }
+
+            if (token.price!=undefined && token.supply!=undefined && token.decimals!=undefined){
+                token.marketCap = TokenManager.calculateMarketCap(token);
+
+                if (token.address !== kSolAddress){
+                    let pairs = await TokenManager.getAllTokenPairs(token.address);
+                    if (!pairs || pairs.length === 0){
+                        pairs = await TokenManager.fetchTokenPairs(token.address);
+                    }
+                    let liquidity = { sol: 0, token: 0 };
+                    for (const pair of pairs){
+                        if (pair.liquidity){
+                            if (pair.token1 === kSolAddress){
+                                liquidity.sol += pair.liquidity.token1.uiAmount;
+                            }
+                            else if (pair.token1 === token.address){
+                                liquidity.token += pair.liquidity.token1.uiAmount;
+                            }
+
+                            if (pair.token2 === kSolAddress){
+                                liquidity.sol += pair.liquidity.token2.uiAmount;
+                            }
+                            else if (pair.token2 === token.address){
+                                liquidity.token += pair.liquidity.token2.uiAmount;
+                            }
+                        }
+                    }
+
+                    console.log('!mike', 'TokenManager', 'getToken', 'liquidity', liquidity);
+
+                    token.liquidity = liquidity.sol * this.getSolPrice() + liquidity.token * token.price;
+                }
+            }
+
+            console.log('!mike', 'TokenManager', 'getToken', 'token', token);
         }
         return tokenToTokenModel(token);
     }
@@ -184,6 +256,86 @@ export class TokenManager {
             return new BN(token.supply).mul(new BN(token.price * bigNumber)).div(new BN(bigNumber)).div(new BN(10).pow(new BN(token.decimals))).toNumber();
         }
         return undefined;
+    }
+
+    static async fetchTokenPairs(mint: string): Promise<ITokenPair[]> {
+        const markets = await SolScanManager.fetchTokenMarkets(mint);
+        if (!markets || markets.length === 0){
+            return [];
+        }
+
+        const connection = newConnection();
+        const poolIds = markets.map((market) => market.poolId);
+        const pairs = await TokenPair.find({ pairAddress: { $in: poolIds } });
+        const tokenPairs: ITokenPair[] = [];
+        for (const market of markets) {
+            let pair: ITokenPair | undefined = pairs.find((pair) => pair.pairAddress === market.poolId);
+
+            if (!pair){
+                pair = new TokenPair();
+                pair.chain = Chain.SOLANA;
+                pair.pairAddress = market.poolId;
+                pair.token1 = market.token1;
+                pair.token2 = market.token2;
+                pair.tokenAccount1 = market.tokenAccount1;
+                pair.tokenAccount2 = market.tokenAccount2;
+                pair.programId = market.programId;
+                pair.createdAt = new Date();
+            }
+
+            await this.updateTokenPairLiquidity(pair);
+
+            pair.save();
+            tokenPairs.push(pair);
+        }
+
+        return tokenPairs;
+    }
+
+    static async updateTokenPairLiquidity(pair: ITokenPair) {
+        const connection = newConnection();
+        const solTokenAddress = pair.token1 === kSolAddress ? pair.tokenAccount1 : pair.tokenAccount2;
+        const tokenAddress = pair.token1 !== kSolAddress ? pair.tokenAccount1 : pair.tokenAccount2;
+        
+        const solBalance = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(solTokenAddress));
+        const tokenBalance = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(tokenAddress));
+
+        console.log('TokenManager', 'updateTokenPairLiquidity', 'poolId:', pair.pairAddress, 'balances:', solBalance?.uiAmount, 'SOL', tokenBalance?.uiAmount, 'BONK');
+
+        if (solBalance?.uiAmount && solBalance?.uiAmount>0 && tokenBalance?.uiAmount && tokenBalance?.uiAmount>0){
+            pair.liquidity = {
+                token1: {
+                    amount: solBalance.amount,
+                    uiAmount: solBalance.uiAmount,
+                    decimals: solBalance.decimals,
+                },
+                token2: {
+                    amount: tokenBalance.amount,
+                    uiAmount: tokenBalance.uiAmount,
+                    decimals: tokenBalance.decimals,
+                },
+            };
+        }
+
+        pair.updatedAt = new Date();
+    }
+
+    static async updateTokenPairsLiquidity() {
+        const pairs = await TokenPair.find({}).sort({ updatedAt: 1 }).limit(100);
+        if (!pairs || pairs.length === 0){
+            return;
+        }
+
+        for (const pair of pairs) {
+            await this.updateTokenPairLiquidity(pair);
+            await pair.save();
+        }
+    }
+
+    static async getAllTokenPairs(mint: string): Promise<ITokenPair[]> {
+        //TODO: can get it from RAM
+        const pairs = await TokenPair.find({ $or: [{ token1: mint }, { token2: mint }] });
+        return pairs;
     }
 
 

@@ -542,6 +542,15 @@ export class WalletManager {
             }
         }
 
+        if (tokens && tokens.length > 0){
+            message += '\n';
+            message += '\n';
+            for (const token of tokens) {
+                message += `${token.symbol} LIQ: ${token.liquidity}\n`;
+            }
+            message += '\n';
+        }
+
         if (asset){
             const assetToken: ITokenModel = {
                 chain: Chain.SOLANA,

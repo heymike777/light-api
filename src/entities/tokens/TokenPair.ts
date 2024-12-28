@@ -7,13 +7,25 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface ITokenPair extends mongoose.Document {
     chain: Chain;
-    dexId: DexId;
+    programId: string;
+    // dexId: DexId;
     pairAddress: string;
-    mint: string;
+    token1: string;
+    token2: string;
+    tokenAccount1: string;
+    tokenAccount2: string;
 
     liquidity: {
-        sol: string;
-        token: string
+        token1: {
+            amount: string;
+            uiAmount: number;
+            decimals: number;
+        };
+        token2: {
+            amount: string;
+            uiAmount: number;
+            decimals: number;
+        };
     };
 
     updatedAt?: Date;
@@ -22,14 +34,25 @@ export interface ITokenPair extends mongoose.Document {
 
 export const TokenPairSchema = new mongoose.Schema<ITokenPair>({
     chain: { type: String },
-
-    dexId: { type: String },
+    programId: { type: String },
+    // dexId: { type: String },
     pairAddress: { type: String },
-    mint: { type: String },
+    token1: { type: String },
+    token2: { type: String },
+    tokenAccount1: { type: String },
+    tokenAccount2: { type: String },
     
     liquidity: {
-        sol: { type: String },
-        token: { type: String },
+        token1: {
+            amount: { type: String },
+            uiAmount: { type: Number },
+            decimals: { type: Number },
+        },
+        token2: {
+            amount: { type: String },
+            uiAmount: { type: Number },
+            decimals: { type: Number },
+        },
         updatedAt: { type: Date },
     },
 
@@ -38,7 +61,9 @@ export const TokenPairSchema = new mongoose.Schema<ITokenPair>({
 });
 
 TokenPairSchema.index({ chain: 1, pairAddress: 1 }, { unique: true });
-TokenPairSchema.index({ mint: 1 });
+TokenPairSchema.index({ token1: 1 });
+TokenPairSchema.index({ token2: 1 });
+TokenPairSchema.index({ updatedAt: 1 });
 
 TokenPairSchema.pre('save', function (next) {
     this.updatedAt = new Date();

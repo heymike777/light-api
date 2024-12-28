@@ -157,4 +157,5 @@ export const kKnownAddresses: {[key: string]: {name: string}} = {
     'ADuUkR4vqLUMWXxW9gh6D6L8pMSawimctcNZ5pGwDcEt': {name: `Jitotip 6`},
     'DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL': {name: `Jitotip 7`},
     '3AVi9Tg9Uo68tJfuvoKvqKNWKkC5wPdSSdeBnizKZ6jT': {name: `Jitotip 8`},
+    '43DbAvKxhXh1oSxkJSqGosNw3HpBnmsWiak6tB5wpecN': {name: `Backpack Exchange`},
 }

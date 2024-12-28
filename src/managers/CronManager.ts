@@ -17,6 +17,8 @@ export class CronManager {
             TokenManager.fetchTokensInfo();
             UserManager.cleanOldCache();
             YellowstoneManager.cleanupProcessedSignatures();
+
+            TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
         });
 
         cron.schedule('0 * * * *', () => {
