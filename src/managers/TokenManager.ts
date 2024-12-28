@@ -13,6 +13,7 @@ import { newConnection } from "../services/solana/lib/solana";
 import { ITokenPair, TokenPair } from "../entities/tokens/TokenPair";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import * as web3 from "@solana/web3.js";
+import { Helpers } from "../services/helpers/Helpers";
 
 // export const kDefaultTokens: Token[] = [
 //     {
@@ -186,38 +187,39 @@ export class TokenManager {
                 token.marketCap = TokenManager.calculateMarketCap(token);
 
                 if (token.address !== kSolAddress){
-                    let pairs = await TokenManager.getAllTokenPairs(token.address);
-                    if (!pairs || pairs.length === 0){
-                        pairs = await TokenManager.fetchTokenPairs(token.address);
-                    }
-                    let liquidity = { sol: 0, token: 0 };
-                    for (const pair of pairs){
-                        if (pair.liquidity){
-                            if (pair.token1 === kSolAddress){
-                                liquidity.sol += pair.liquidity.token1.uiAmount;
-                            }
-                            else if (pair.token1 === token.address){
-                                liquidity.token += pair.liquidity.token1.uiAmount;
-                            }
-
-                            if (pair.token2 === kSolAddress){
-                                liquidity.sol += pair.liquidity.token2.uiAmount;
-                            }
-                            else if (pair.token2 === token.address){
-                                liquidity.token += pair.liquidity.token2.uiAmount;
-                            }
-                        }
-                    }
-
-                    console.log('!mike', 'TokenManager', 'getToken', 'liquidity', liquidity);
-
-                    token.liquidity = liquidity.sol * this.getSolPrice() + liquidity.token * token.price;
+                    token.liquidity = await this.getUsdLiquidityForToken(token);
                 }
             }
 
             console.log('!mike', 'TokenManager', 'getToken', 'token', token);
         }
         return tokenToTokenModel(token);
+    }
+
+    static async getUsdLiquidityForToken(token: IToken): Promise<number> {
+        if (!token.price || token.price==0){
+            return 0;
+        }
+
+        let pairs = await TokenManager.getAllTokenPairs(token.address);
+        if (!pairs || pairs.length === 0){
+            pairs = await TokenManager.fetchTokenPairs(token.address);
+        }
+        let liquidity = { sol: 0, token: 0 };
+        for (const pair of pairs){
+            if (pair.liquidity){
+                // console.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pair.token1:', pair.token1, 'pair.token2:', pair.token2);
+                const pairLpSol = pair.token1 === kSolAddress ? pair.liquidity.token1.uiAmount : pair.liquidity.token2.uiAmount;
+                const pairLpToken = pair.token1 === token.address ? pair.liquidity.token1.uiAmount : pair.liquidity.token2.uiAmount;
+
+                liquidity.sol += pairLpSol;
+                liquidity.token += pairLpToken;
+
+                // console.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pairLpSol:', pairLpSol, 'pairLpToken:', pairLpToken);
+            }
+        }
+
+        return Math.round(liquidity.sol * this.getSolPrice() + liquidity.token * token.price);
     }
 
     static async fetchTokensInfo(){
@@ -264,7 +266,6 @@ export class TokenManager {
             return [];
         }
 
-        const connection = newConnection();
         const poolIds = markets.map((market) => market.poolId);
         const pairs = await TokenPair.find({ pairAddress: { $in: poolIds } });
         const tokenPairs: ITokenPair[] = [];
@@ -292,27 +293,38 @@ export class TokenManager {
         return tokenPairs;
     }
 
+    static async fetchNewPoolsForExistingTokens() {
+        const pairs = await TokenPair.find({});
+        const uniqueMints = new Set<string>();
+        for (const pair of pairs){
+            uniqueMints.add(pair.token1);
+            uniqueMints.add(pair.token2);
+        }
+
+        for (const mint of uniqueMints){
+            if (mint != kSolAddress){
+                await this.fetchTokenPairs(mint);
+                await Helpers.sleep(0.05);
+            }
+        }
+    }
+
     static async updateTokenPairLiquidity(pair: ITokenPair) {
         const connection = newConnection();
-        const solTokenAddress = pair.token1 === kSolAddress ? pair.tokenAccount1 : pair.tokenAccount2;
-        const tokenAddress = pair.token1 !== kSolAddress ? pair.tokenAccount1 : pair.tokenAccount2;
-        
-        const solBalance = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(solTokenAddress));
-        const tokenBalance = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(tokenAddress));
+        const tokenBalance1 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount1));
+        const tokenBalance2 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount2));
 
-        console.log('TokenManager', 'updateTokenPairLiquidity', 'poolId:', pair.pairAddress, 'balances:', solBalance?.uiAmount, 'SOL', tokenBalance?.uiAmount, 'BONK');
-
-        if (solBalance?.uiAmount && solBalance?.uiAmount>0 && tokenBalance?.uiAmount && tokenBalance?.uiAmount>0){
+        if (tokenBalance1?.uiAmount && tokenBalance1?.uiAmount>0 && tokenBalance2?.uiAmount && tokenBalance2?.uiAmount>0){
             pair.liquidity = {
                 token1: {
-                    amount: solBalance.amount,
-                    uiAmount: solBalance.uiAmount,
-                    decimals: solBalance.decimals,
+                    amount: tokenBalance1.amount,
+                    uiAmount: tokenBalance1.uiAmount,
+                    decimals: tokenBalance1.decimals,
                 },
                 token2: {
-                    amount: tokenBalance.amount,
-                    uiAmount: tokenBalance.uiAmount,
-                    decimals: tokenBalance.decimals,
+                    amount: tokenBalance2.amount,
+                    uiAmount: tokenBalance2.uiAmount,
+                    decimals: tokenBalance2.decimals,
                 },
             };
         }

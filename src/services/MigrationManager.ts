@@ -54,8 +54,6 @@ export class MigrationManager {
         // await TokenManager.fetchDigitalAsset(this.kBonk);
 
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
-
-        // await TokenManager.fetchDigitalAsset(this.kBonk);
         
         // await this.processTx('2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL'); // pumpfun
         await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium

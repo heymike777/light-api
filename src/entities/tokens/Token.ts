@@ -63,9 +63,9 @@ export function tokenToTokenModel(token: IToken): ITokenModel {
         price: token.price,
         nft: token.nft,
         marketCap: TokenManager.calculateMarketCap(token),
-        priceChange: token.priceChange || {'24h': 1.23},
-        volume: token.volume || {'24h': 1234567890},
-        liquidity: token.liquidity || 987654321,
+        priceChange: token.priceChange,
+        volume: token.volume,
+        liquidity: token.liquidity,
     };
 }
 

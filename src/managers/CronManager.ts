@@ -10,7 +10,7 @@ export class CronManager {
         cron.schedule('*/10 * * * * *', () => {
             //TODO: for now it's every 10 seconds, but on productions set it to every second
             TokenManager.updateTokensPrices();
-        });
+        })
     
         cron.schedule('* * * * *', () => {
             // once a minute
@@ -31,6 +31,7 @@ export class CronManager {
             // once a day at 2am UTC
 
             SubscriptionManager.fetchAllRevenueCatSubscriptions();
+            TokenManager.fetchNewPoolsForExistingTokens();
         });
     
     }
