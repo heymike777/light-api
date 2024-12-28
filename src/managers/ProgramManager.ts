@@ -164,13 +164,22 @@ export class ProgramManager {
                             amount = ixParsed.info.tokenAmount.uiAmountString;
                         }
                         else if (ixParsed.info?.amount != undefined && ixParsed.info?.amount != null){
-                            amount = new BN(ixParsed.data.amount).div(new BN(10 ** decimals)).toString();
+                            const bnAmount = new BN(ixParsed.data.amount);
+                            const bnDecimalsAmount = new BN(10 ** decimals);
+                            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
+                            amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
                         }
                         else if (ixParsed.data?.amount != undefined && ixParsed.data?.amount != null && ixParsed.data?.decimals != undefined && ixParsed.data?.decimals != null){
-                            amount = new BN(ixParsed.data.amount).div(new BN(10 ** decimals)).toString();
+                            const bnAmount = new BN(ixParsed.data.amount);
+                            const bnDecimalsAmount = new BN(10 ** decimals);
+                            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
+                            amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
                         }
                         else if (ixParsed.data?.data?.amount != undefined && ixParsed.data?.data?.amount != null){
-                            amount = new BN(ixParsed.data.data.amount).div(new BN(10 ** decimals)).toString();
+                            const bnAmount = new BN(ixParsed.data.data.amount);
+                            const bnDecimalsAmount = new BN(10 ** decimals);
+                            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
+                            amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
                         }
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
