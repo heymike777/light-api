@@ -69,10 +69,15 @@ export class TokenManager {
     }
 
     static async fetchDigitalAsset(address: string): Promise<IToken> {
-        const token: IToken = new Token();
-        token.chain = Chain.SOLANA;
-        token.address = address;
-        token.priceUpdatedAt = 0;
+        let token = TokenManager.tokens.find(token => token.address === address);
+
+        if (!token){
+            token = new Token();
+            token.chain = Chain.SOLANA;
+            token.address = address;
+            token.priceUpdatedAt = 0;
+            token.isVerified = false;
+        }
 
         const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
         // console.log('TokenManager', 'getToken', address, '=', digitalAssets);
@@ -95,7 +100,6 @@ export class TokenManager {
             token.symbol = digitalAsset.metadata.symbol;
             token.decimals = digitalAsset.mint.decimals;
             token.supply = digitalAsset.mint.supply.toString();
-            token.isVerified = false;
             
             const mintAuthority = umi.unwrapOption(digitalAsset.mint.mintAuthority) || undefined;
             token.mintAuthority = mintAuthority ? mintAuthority.toString() : undefined;
@@ -286,8 +290,13 @@ export class TokenManager {
 
             await this.updateTokenPairLiquidity(pair);
 
-            pair.save();
             tokenPairs.push(pair);
+            try {
+                pair.save();
+            }
+            catch (error){
+                console.error('!catched', 'TokenManager', 'fetchTokenPairs', 'save', error);
+            }
         }
 
         return tokenPairs;
