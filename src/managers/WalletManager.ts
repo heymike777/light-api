@@ -425,7 +425,10 @@ export class WalletManager {
                     hasBalanceChange = true;
                     hasWalletsChanges = true;
                     const token = await TokenManager.getToken(kSolAddress);
-                    if (token) tokens.push(token);
+                    if (token) {
+                        const existing = tokens.find((t) => t.address == token.address);
+                        if (!existing) tokens.push(token);
+                    }
 
                     // const amount = +Helpers.prettyNumber(balanceChange, 3);
                     let amountUSD = token && token.price ? Math.round(Math.abs(balanceChange) * token.price * 100)/100 : undefined;
@@ -447,8 +450,11 @@ export class WalletManager {
                         hasBalanceChange = true;
                         hasWalletsChanges = true;
                         const token = await TokenManager.getToken(mint);
-                        if (token) tokens.push(token);
-
+                        if (token) {
+                            const existing = tokens.find((t) => t.address == token.address);
+                            if (!existing) tokens.push(token);
+                        }
+    
                         if (token?.nft && !asset){
                             asset = token.nft;
                         }
@@ -542,12 +548,32 @@ export class WalletManager {
             }
         }
 
+        let tokensMessage = '';
         if (tokens && tokens.length > 0){
-            message += '\n';
-            message += '\n';
             for (const token of tokens) {
-                message += `${token.symbol} LIQ: ${token.liquidity}\n`;
+                if (token.address != kSolAddress){
+                    tokensMessage += `<b>#${token.symbol}</b>`;
+                    if (token.name){
+                        tokensMessage += ` | ${token.name}`;
+                    }
+                    if (token.liquidity){
+                        tokensMessage += ` | LIQ: $${Helpers.numberFormatter(token.liquidity, 2)}`;
+                    }
+                    if (token.marketCap){
+                        tokensMessage += ` | MC: $${Helpers.numberFormatter(token.marketCap, 2)}`;
+                    }
+                    if (token.price){
+                        tokensMessage += ` | P: $${token.price}`;
+                    }
+
+                    tokensMessage += '\n';
+                }
             }
+        }
+        if (tokensMessage.length > 0){
+            message += '\n';
+            message += '\n';
+            message += tokensMessage;
             message += '\n';
         }
 
@@ -561,8 +587,11 @@ export class WalletManager {
                 nft: asset,
                 priceUpdatedAt: Date.now(),
             }
-            tokens.push(assetToken);
-        }
+            if (assetToken) {
+                const existing = tokens.find((t) => t.address == assetToken.address);
+                if (!existing) tokens.push(assetToken);
+            }
+}
 
         message += '\n\n';
 
