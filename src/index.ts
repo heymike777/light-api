@@ -2,7 +2,7 @@ import express from 'express';
 import 'express-async-errors';
 import { json } from 'body-parser';
 import 'reflect-metadata';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import mongoose from 'mongoose';
 
 import './services/helpers/Secrets'
@@ -41,9 +41,17 @@ import { TokenPriceStream } from './services/solana/geyser/TokenPriceStream';
 import { TokenPair } from './entities/tokens/TokenPair';
 import { TokenSwap } from './entities/tokens/TokenSwap';
 
+const corsOptions: CorsOptions = {
+    allowedHeaders: ['Content-Type', 'Authorization', 'LIGHT_PLATFORM', 'LIGHT_APP_VERSION'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // 'PATCH', 'HEAD'
+    origin: '*',
+    optionsSuccessStatus: 204,
+}
+
 const app = express();
 app.use(json());
-app.use(cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 declare global {
   namespace Express {
