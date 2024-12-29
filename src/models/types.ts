@@ -35,3 +35,9 @@ export interface ChangedWalletTokenChange {
     symbol: string,
     description: string,
 }
+
+export enum AppPlatform {
+    IOS = 'ios',
+    ANDROID = 'android',
+    UNKNOWN = 'unknown',
+}

@@ -3,6 +3,8 @@ import { SubscriptionConfig } from "../../services/solana/types";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
 import { SubscriptionTier } from "../../entities/payments/Subscription";
 import { TraderManager } from "../../managers/TraderManager";
+import { AppPlatform } from "../../models/types";
+import { Helpers } from "../../services/helpers/Helpers";
 
 const router = express.Router();
 
@@ -11,8 +13,11 @@ router.get(
     async (req: Request, res: Response) => {
 		const platform = '' + req.query.platform;
 
+        const appHeaders = Helpers.getAppHeaders(req);
+        console.log('appHeaders:', appHeaders);
+
         let subscriptions: SubscriptionConfig[] = [];
-        if (platform == 'ios' || platform == 'android'){
+        if (platform == AppPlatform.IOS || platform == AppPlatform.ANDROID){
             subscriptions = [
                 {
                     type: 'free',

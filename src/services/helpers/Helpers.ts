@@ -3,6 +3,7 @@ import { IWallet } from "../../entities/Wallet";
 import { kKnownAddresses, kValidators } from "../../managers/constants/ValidatorConstants";
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
+import { AppPlatform } from "../../models/types";
 
 
 export class Helpers {
@@ -168,5 +169,11 @@ export class Helpers {
     static getIpAddress(req: Request): string | undefined {
         return req.headers['cf-connecting-ip'] as string || undefined
     }
-    
+
+    static getAppHeaders(req: Request): { platform: AppPlatform, appVersion: string } {
+        const platform = req.headers['LIGHT_PLATFORM'] as AppPlatform || AppPlatform.UNKNOWN;
+        const appVersion = req.headers['LIGHT_APP_VERSION'] as string || '1.0.0';
+
+        return { platform, appVersion }
+    }
 }
