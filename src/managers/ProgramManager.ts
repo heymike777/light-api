@@ -100,8 +100,8 @@ export class ProgramManager {
                 if (ixType == 'transfer' || ixType == 'transferWithSeed'){
                     const addresses = [ixParsed.info.source, ixParsed.info.destination];
                     description = {
-                        plain: `{address0} transfered ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                        plain: `{address0} transferred ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transferred <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                         addresses,
                     };
                 }
@@ -185,8 +185,8 @@ export class ProgramManager {
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
 
                         description = {
-                            plain: `{address0} transfered ${amount} {address2} to {address1}`,
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transfered ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
+                            plain: `{address0} transferred ${amount} {address2} to {address1}`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transferred ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                             addresses,
                         };
                     }
