@@ -6,7 +6,7 @@ import { HeliusManager } from "../services/solana/HeliusManager";
 import { Chain } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { MetaplexManager } from "./MetaplexManager";
-import { kSolAddress } from "../services/solana/Constants";
+import { kSolAddress, kUsdcAddress, kUsdtAddress } from "../services/solana/Constants";
 import { BN } from "bn.js";
 import { SolScanManager } from "../services/solana/SolScanManager";
 import { newConnection } from "../services/solana/lib/solana";
@@ -190,7 +190,7 @@ export class TokenManager {
             if (token.price!=undefined && token.supply!=undefined && token.decimals!=undefined){
                 token.marketCap = TokenManager.calculateMarketCap(token);
 
-                if (token.address !== kSolAddress){
+                if (token.address !== kSolAddress && token.address !== kUsdcAddress && token.address !== kUsdtAddress && !token.nft){
                     token.liquidity = await this.getUsdLiquidityForToken(token);
                 }
             }
@@ -370,5 +370,14 @@ export class TokenManager {
         return pairs;
     }
 
+    static async fillTokenModelsWithData(tokens: ITokenModel[]): Promise<ITokenModel[]> {
+        for (const token of tokens){
+            const freshToken = TokenManager.tokens.find(t => t.address === token.address);
+            if (freshToken){
+                token.isVerified = freshToken.isVerified;
+            }
+        }
+        return tokens;
+    }
 
 }

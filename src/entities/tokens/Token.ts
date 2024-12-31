@@ -106,7 +106,7 @@ TokenSchema.methods.toJSON = function () {
         decimals: this.decimals,
         symbol: this.symbol,
         name: this.name,
-        logo: this.logo,
+        logo: this.logo || 'https://light.dangervalley.com/static/placeholder.png',
         isVerified: this.isVerified,
         supply: this.supply,
         mintAuthority: this.mintAuthority,

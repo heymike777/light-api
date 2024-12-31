@@ -17,6 +17,8 @@ import { TraderManager } from "../../managers/TraderManager";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { User } from "../../entities/User";
 import { Announcement, AnnouncementsManager } from "../../managers/AnnouncementsManager";
+import { token } from "@coral-xyz/anchor/dist/cjs/utils";
+import { TokenManager } from "../../managers/TokenManager";
 
 const router = express.Router();
 
@@ -159,8 +161,11 @@ router.post(
             const assetToken = tokens?.find((token) => token.nft);
             // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
 
-            const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
+            if (tokens.length > 0){
+                await TokenManager.fillTokenModelsWithData(tokens);
+            }
 
+            const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
 
             parsedTransactions.push({
                 title: parsedTx.title,
@@ -174,7 +179,7 @@ router.post(
             });
         }
 
-        console.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
+        // console.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
 
         let announcements: Announcement[] | undefined = undefined;
         if (!pageToken || !pageToken?.ids || pageToken.ids.length==0) {

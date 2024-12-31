@@ -426,7 +426,7 @@ export class WalletManager {
                     const token = await TokenManager.getToken(kSolAddress);
                     if (token) {
                         const existing = tokens.find((t) => t.address == token.address);
-                        if (!existing) tokens.push(token);
+                        if (!existing && !token.nft) tokens.push(token);
                     }
 
                     // const amount = +Helpers.prettyNumber(balanceChange, 3);
@@ -451,7 +451,7 @@ export class WalletManager {
                         const token = await TokenManager.getToken(mint);
                         if (token) {
                             const existing = tokens.find((t) => t.address == token.address);
-                            if (!existing) tokens.push(token);
+                            if (!existing && !token.nft) tokens.push(token);
                         }
     
                         if (token?.nft && !asset){
@@ -586,10 +586,10 @@ export class WalletManager {
                 nft: asset,
                 priceUpdatedAt: Date.now(),
             }
-            if (assetToken) {
-                const existing = tokens.find((t) => t.address == assetToken.address);
-                if (!existing) tokens.push(assetToken);
-            }
+            // if (assetToken) {
+            //     const existing = tokens.find((t) => t.address == assetToken.address);
+            //     if (!existing) tokens.push(assetToken);
+            // }
 }
 
         message += '\n\n';
