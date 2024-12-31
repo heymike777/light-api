@@ -182,9 +182,9 @@ router.post(
         // console.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
 
         let announcements: Announcement[] | undefined = undefined;
-        // if (!pageToken || !pageToken?.ids || pageToken.ids.length==0) {
-        //     announcements = await AnnouncementsManager.getAnnouncements();
-        // }
+        if (!pageToken || !pageToken?.ids || pageToken.ids.length==0) {
+            announcements = await AnnouncementsManager.getAnnouncements();
+        }
 
         res.status(200).send({
             hasMore: hasMore,
