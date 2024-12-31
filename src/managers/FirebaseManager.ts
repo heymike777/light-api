@@ -125,13 +125,18 @@ export class FirebaseManager {
         await PushToken.deleteMany({ token });
     }
 
-    static async sendPushToUser(userId: string, title: string, subtitle?: string, image?: string, data?: PushNotificationMessage['data']){
+    static async sendPushToUser(userId: string, title: string, subtitle?: string, image?: string, data?: PushNotificationMessage['data']): Promise<boolean> {
         console.log('sendPushToUser', userId, title, subtitle, data);
         try {
             const firebaseManager = FirebaseManager.getInstance();
 
             const pushTokens = await PushToken.find({ userId: userId });
             console.log('pushTokens', pushTokens);
+
+            if (pushTokens.length == 0){
+                console.log('No push tokens found for user', userId);
+                return false;
+            }
             
             for (const pushToken of pushTokens){
                 const message: PushNotificationMessage = {
@@ -144,10 +149,14 @@ export class FirebaseManager {
 
                 await firebaseManager.sendMessage(message);
             }
+
+            return true;
         }
         catch (error){
             console.error('sendPushToUser', userId, error);
         }
+
+        return false;
     }
 
 }

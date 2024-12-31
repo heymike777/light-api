@@ -334,8 +334,7 @@ export class WalletManager {
                         const userId = chat.wallets?.[0]?.userId;
                         if (userId && !sentUserIds.includes(userId)){
                             sentUserIds.push(userId);
-                            FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
-                            isPushSent = true;
+                            isPushSent = await FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
                         }
 
                         MixpanelManager.track('Process transaction', userTx.userId, { isPushSent: isPushSent, isTelegramSent: isTelegramSent });
