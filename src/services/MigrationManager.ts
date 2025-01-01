@@ -38,25 +38,30 @@ import { Token } from "../entities/tokens/Token";
 import { TokenPair } from "../entities/tokens/TokenPair";
 import { TokenSwap } from "../entities/tokens/TokenSwap";
 import { SolScanManager } from "./solana/SolScanManager";
+import { LogManager } from "../managers/LogManager";
 
 export class MigrationManager {
 
     static kBonk = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
+    static kPyth = 'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3';
 
     static async migrate() {
         if (process.env.SERVER_NAME != 'heynova0'){
             SystemNotificationsManager.sendSystemMessage('Server started');
         }
-        console.log('MigrationManager', 'migrate', 'start');
+        LogManager.log('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
         const chatId = 862473;
+
+        // await this.testToken(this.kPyth);
 
         // await TokenManager.fetchDigitalAsset(this.kBonk);
 
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
         
         // await this.processTx('2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL'); // pumpfun
-        await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium
+        // await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium
+        // await this.processTx('4ATvDVMuSPkcBH6QwLtxkV5DG5HhepiCiE5dYF5BjPcnKimLEq4b5nRnANdQ3WGMZeg69WZNh1QY5h9NWioTGnrh'); // raydium
         // await this.processTx('54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'); // jupiter
         // await this.processTx('5snNUQUXKY7iJFnaBBv6LjWYuBAryQX3mTdtHorboe6mXrZpv694mXCQucho2W2PDGumsTAqykkqsqhs5FNLuAph'); // MAGIC EDEN AMM
         // await this.processTx('26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'); // NFT SALE on !!!MAGIC_EDEN_V2
@@ -80,7 +85,18 @@ export class MigrationManager {
         // await this.migrateValidators();
         // await this.findTransactionsWithoutDescription();
 
-        console.log('MigrationManager', 'migrate', 'done');
+        LogManager.log('MigrationManager', 'migrate', 'done');
+    }
+
+    static async testToken(mint: string){
+        const pairs = await TokenPair.find({ $or: [{ token1: mint }, { token2: mint }] });
+        LogManager.log('testToken', mint, 'pairs', pairs.length);
+        const token = await Token.findOne({ address: mint });
+        if (!token){
+            throw new Error('Token not found');
+        }
+        let liquidity = await TokenManager.getUsdLiquidityForToken(token);
+        LogManager.log('testToken', mint, `Liquidity: $${liquidity}`);
     }
 
     static async syncIndexes(){
@@ -108,10 +124,10 @@ export class MigrationManager {
         const wallets = await Wallet.find({ userId: userId, status: WalletStatus.ACTIVE });
         const user = await UserManager.getUserById(userId, true);
         const chats = [{user, wallets}];
-        // console.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
+        // LogManager.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
         const connection = newConnection();
         const tx = await SolanaManager.getParsedTransaction(connection, signature);
-        // console.log('!tx', JSON.stringify(tx));
+        // LogManager.log('!tx', JSON.stringify(tx));
         if (tx){
             await WalletManager.processTxForChats(signature, tx, chats);
         }
@@ -122,13 +138,13 @@ export class MigrationManager {
         const validators = JSON.parse(validatorsJson);
         for (const tmp of validators) {
             if (tmp.moniker && tmp.moniker.length > 0) {
-                console.log(`'${tmp.votePubkey}': {name: \`${tmp.moniker}\`},`);
+                LogManager.log(`'${tmp.votePubkey}': {name: \`${tmp.moniker}\`},`);
             }
         }
     }
 
     static async findTransactionsWithoutDescription() {
-        console.log('findTransactionsWithoutDescription start');
+        LogManager.log('findTransactionsWithoutDescription start');
         const transactions = await UserTransaction.find({"parsedTx.parsedInstructions.0.description": { $exists: false }}).limit(1000);
 
         let programs: { id: string, count: number }[] = [];
@@ -146,9 +162,9 @@ export class MigrationManager {
         programs = programs.sort((a, b) => b.count - a.count);
         let index = 0;
         for (const p of programs) {
-            console.log(index++, 'programId:', p.id, 'count:', p.count);
+            LogManager.log(index++, 'programId:', p.id, 'count:', p.count);
         }
-        console.log('findTransactionsWithoutDescription done');
+        LogManager.log('findTransactionsWithoutDescription done');
     }
 
 }
