@@ -54,16 +54,7 @@ router.post(
         const walletTitle = (req.body.title && req.body.title!=null && req.body.title!='') ? '' + req.body.title : undefined;
         const ipAddress = Helpers.getIpAddress(req);
 
-        let wallet: IWallet | undefined;
-        try {
-            wallet = await WalletManager.addWallet(-1, user, walletAddress, walletTitle, ipAddress);
-        }
-        catch (err){
-            console.log('AddWallet (API)', 'error', err);
-            if (err instanceof PremiumError){
-                throw err;
-            }
-        }
+        const wallet = await WalletManager.addWallet(-1, user, walletAddress, walletTitle, ipAddress);
 
         if (!wallet){
             throw new BadRequestError('Wallet could not be added');
