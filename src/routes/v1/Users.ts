@@ -19,6 +19,7 @@ import { User } from "../../entities/User";
 import { Announcement, AnnouncementsManager } from "../../managers/AnnouncementsManager";
 import { token } from "@coral-xyz/anchor/dist/cjs/utils";
 import { TokenManager } from "../../managers/TokenManager";
+import { LogManager } from "../../managers/LogManager";
 
 const router = express.Router();
 
@@ -109,7 +110,7 @@ router.post(
       }
    
       const deviceId = req.body.deviceId;
-      console.log("LOGOUT", "userId", userId, "deviceId", deviceId, "body:", req.body, "query:", req.query, "params:", req.params);
+      LogManager.log("LOGOUT", "userId", userId, "deviceId", deviceId, "body:", req.body, "query:", req.query, "params:", req.params);
 
       if (deviceId){
         await FirebaseManager.deletePushTokens(userId, deviceId);
@@ -179,7 +180,7 @@ router.post(
             });
         }
 
-        // console.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
+        // LogManager.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
 
         let announcements: Announcement[] | undefined = undefined;
         if (!pageToken || !pageToken?.ids || pageToken.ids.length==0) {

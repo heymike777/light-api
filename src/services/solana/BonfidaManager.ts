@@ -1,5 +1,6 @@
 import { resolve } from "@bonfida/spl-name-service";
 import { newConnection } from "./lib/solana";
+import { LogManager } from "../../managers/LogManager";
 
 export class BonfidaManager {
 
@@ -15,7 +16,7 @@ export class BonfidaManager {
             return walletAddress;
         }
         catch (error){
-            console.error('BonfidaManager', 'resolveDomain', error);
+            LogManager.error('BonfidaManager', 'resolveDomain', error);
         }
 
         return undefined;

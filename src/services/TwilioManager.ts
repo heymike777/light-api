@@ -1,5 +1,6 @@
 import twilio from 'twilio';
 import { TwilioLog } from '../entities/logs/TwilioLog';
+import { LogManager } from '../managers/LogManager';
 
 export enum TwilioVerifyChannel {
     EMAIL = 'email',
@@ -8,7 +9,7 @@ export enum TwilioVerifyChannel {
 export class TwilioManager {
 
     static async sendVerifyRequest(to: string, channel: TwilioVerifyChannel = TwilioVerifyChannel.EMAIL) {
-        console.log('TwilioManager', 'sendVerifyRequest', to);
+        LogManager.log('TwilioManager', 'sendVerifyRequest', to);
 
         try {
             const accountSid = process.env.TWILIO_ACCOUNT_SID!;
@@ -20,7 +21,7 @@ export class TwilioManager {
                     .verifications
                     .create({to: to, channel: channel});
 
-            console.log('Twilio response:', response);
+            LogManager.log('Twilio response:', response);
 
             const log = new TwilioLog();
             log.request = `sendVerifyRequest ${channel}`;
@@ -30,12 +31,12 @@ export class TwilioManager {
             log.save();
         }
         catch (err){
-            console.error('TwilioManager', 'sendVerifyRequest', err);
+            LogManager.error('TwilioManager', 'sendVerifyRequest', err);
         }
     }
 
     static async verify(to: string, code: string, channel: TwilioVerifyChannel = TwilioVerifyChannel.EMAIL): Promise<boolean> {
-        console.log('TwilioManager', 'verify', to, code);
+        LogManager.log('TwilioManager', 'verify', to, code);
 
         try {
             const accountSid = process.env.TWILIO_ACCOUNT_SID!;
@@ -47,7 +48,7 @@ export class TwilioManager {
                 .verificationChecks
                 .create({to: to, code: code})
 
-            console.log('Twilio response:', response);
+            LogManager.log('Twilio response:', response);
 
             const log = new TwilioLog();
             log.request = `verify ${channel}`;
@@ -59,7 +60,7 @@ export class TwilioManager {
             return response.valid;
         }
         catch (err){
-            console.error('TwilioManager', 'verify', err);
+            LogManager.error('TwilioManager', 'verify', err);
         }
         
         return false;

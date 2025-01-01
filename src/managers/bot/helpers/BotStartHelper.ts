@@ -1,12 +1,13 @@
 import { IUser } from "../../../entities/User";
 import { UserRefClaim } from "../../../entities/UserRefClaim";
+import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 
 export class BotStartHelper extends BotHelper {
 
     constructor() {
-        console.log('BotStartHelper', 'constructor');
+        LogManager.log('BotStartHelper', 'constructor');
 
         const replyMessage: Message = {
             text: 'Hey, I am Nova! I can help you with:\n' + 
@@ -28,7 +29,7 @@ export class BotStartHelper extends BotHelper {
         }
 
         const userTelegramId = ctx.update.message.from.id;
-        console.log('BotStartHelper', 'start', 'userTelegramId:', userTelegramId, 'referralCode:', referralCode);
+        LogManager.log('BotStartHelper', 'start', 'userTelegramId:', userTelegramId, 'referralCode:', referralCode);
 
         if (!user.referralCode){
             user.referralCode = referralCode;
@@ -48,7 +49,7 @@ export class BotStartHelper extends BotHelper {
     }
 
     async messageReceived(message: TgMessage, ctx: any){
-        console.log('BotStartHelper', 'messageReceived', message.text, 'ctx.match:', ctx.match);
+        LogManager.log('BotStartHelper', 'messageReceived', message.text, 'ctx.match:', ctx.match);
 
         super.messageReceived(message, ctx);
 

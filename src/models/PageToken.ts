@@ -22,7 +22,7 @@ export class PageToken {
             return pageToken;
         }
         catch (error){
-            // console.error(error);
+            // LogManager.error(error);
         }
 
         return undefined;

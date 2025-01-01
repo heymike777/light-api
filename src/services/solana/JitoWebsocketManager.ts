@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import { LogManager } from '../../managers/LogManager';
 
 export class JitoWebsocketManager {
     url: string = 'ws://bundles-api-rest.jito.wtf/api/v1/bundles/tip_stream';
@@ -20,7 +21,7 @@ export class JitoWebsocketManager {
     };
 
     constructor(){
-        console.log(new Date(), process.env.SERVER_NAME, 'JitoWebsocketManager constructor');
+        LogManager.log(process.env.SERVER_NAME, 'JitoWebsocketManager constructor');
         
         JitoWebsocketManager.instance = this;
 
@@ -29,26 +30,26 @@ export class JitoWebsocketManager {
         });
 
         this.ws.on('open', () => {
-            console.log(new Date(), process.env.SERVER_NAME, 'Jito Websocket connected');
+            LogManager.log(process.env.SERVER_NAME, 'Jito Websocket connected');
         });
 
         this.ws.on('close', () => {
-            console.log(new Date(), process.env.SERVER_NAME, 'Jito Websocket closed');
+            LogManager.log(process.env.SERVER_NAME, 'Jito Websocket closed');
         });
 
         this.ws.on('error', (err) => {
-            console.log(new Date(), process.env.SERVER_NAME, 'Jito Websocket error:', err);
+            LogManager.log(process.env.SERVER_NAME, 'Jito Websocket error:', err);
         });
 
         this.ws.on('message', (data) => {
             try {
-                // console.log(new Date(), process.env.SERVER_NAME, 'Jito Websocket message:', data.toString());
+                // LogManager.log(process.env.SERVER_NAME, 'Jito Websocket message:', data.toString());
                 const msg = JSON.parse(data.toString());
                 this.tipsAmount = msg[0];    
-                // console.log('!!! this.tipsAmount', this.tipsAmount);
+                // LogManager.log('!!! this.tipsAmount', this.tipsAmount);
             }
             catch (error){
-                console.error(new Date(), 'JitoWebsocketManager', 'error:', error);
+                LogManager.error('JitoWebsocketManager', 'error:', error);
             }
         });
     }

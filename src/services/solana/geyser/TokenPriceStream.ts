@@ -6,6 +6,7 @@ import { kProgram } from "../../../managers/constants/ProgramConstants";
 import { ProgramManager } from "../../../managers/ProgramManager";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { BN } from "bn.js";
+import { LogManager } from "../../../managers/LogManager";
 
 export class TokenPriceStream {
     id: string;
@@ -21,7 +22,7 @@ export class TokenPriceStream {
     }
 
     async init(){
-        console.log(new Date(), process.env.SERVER_NAME, 'TokenPriceStream init', this.GRPC_URL, this.X_TOKEN);
+        LogManager.log(process.env.SERVER_NAME, 'TokenPriceStream init', this.GRPC_URL, this.X_TOKEN);
         const client = new Client(this.GRPC_URL, this.X_TOKEN, {
             "grpc.max_receive_message_length": 64 * 1024 * 1024, // 64MiB
         });
@@ -52,7 +53,7 @@ export class TokenPriceStream {
                 this.receivedJupiterTx(data, filter);
             } 
             else if (data.pong) {
-                // console.log(new Date(), process.env.SERVER_NAME, `Processed ping response!`);
+                // LogManager.log(process.env.SERVER_NAME, `Processed ping response!`);
             }
         });
 
@@ -63,14 +64,14 @@ export class TokenPriceStream {
     }
 
     async onError(error: any){
-        console.error(new Date(), process.env.SERVER_NAME, 'TokenPriceStream onError', error);
+        LogManager.error(process.env.SERVER_NAME, 'TokenPriceStream onError', error);
         await Helpers.sleep(5);
         
         TokenPriceStream.reloadInstance(this.id);
     }
 
     async subscribeToDexTransactions(stream: any){
-        console.log(new Date(), process.env.SERVER_NAME, `TokenPriceStream subscribeToDexTransactions`);
+        LogManager.log(process.env.SERVER_NAME, `TokenPriceStream subscribeToDexTransactions`);
 
         const request: SubscribeRequest = {
             "transactions": {
@@ -101,13 +102,13 @@ export class TokenPriceStream {
                 }
             });
         }).catch((reason) => {
-            console.error(reason);
+            LogManager.error(reason);
             throw reason;
         });
     }
 
     async subscribeToPingPong(stream: any){
-        console.log(new Date(), process.env.SERVER_NAME, `TokenPriceStream subscribeToPingPong`);
+        LogManager.log(process.env.SERVER_NAME, `TokenPriceStream subscribeToPingPong`);
         // Send pings every 5s to keep the connection open
         const pingRequest: SubscribeRequest = {
             ping: { id: 1 },
@@ -132,7 +133,7 @@ export class TokenPriceStream {
                         }
                     });
                 }).catch((reason) => {
-                    console.error('pingpong error(catched):', reason);
+                    LogManager.error('pingpong error(catched):', reason);
                     // throw reason;
                 });
             }
@@ -154,9 +155,9 @@ export class TokenPriceStream {
             return;
         }
 
-        console.log(new Date(), process.env.SERVER_NAME, 'listener', this.id, `receivedJupiterTx`, signature);
+        LogManager.log(process.env.SERVER_NAME, 'listener', this.id, `receivedJupiterTx`, signature);
         // fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
-        //     if (err) console.error(err);
+        //     if (err) LogManager.error(err);
         // });
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
@@ -178,7 +179,7 @@ export class TokenPriceStream {
                         const tokenChange = tokenBalanceChange.uiAmountChange;
                         const solPrice = 180; // 1 SOL = $180
                         const tokenPrice = (solChange * solPrice / tokenChange); 
-                        console.log('!jup', 'mint:', tokenBalanceChange.mint, 'balance:', tokenChange, 'sol:', solChange, 'price:', `$${tokenPrice.toFixed(6)}`);
+                        LogManager.log('!jup', 'mint:', tokenBalanceChange.mint, 'balance:', tokenChange, 'sol:', solChange, 'price:', `$${tokenPrice.toFixed(6)}`);
 
                     }
     
@@ -193,7 +194,7 @@ export class TokenPriceStream {
 
     static instances?: TokenPriceStream[];
     static createInstances(){
-        console.log(new Date(), process.env.SERVER_NAME, 'TokenPriceStream createInstances');
+        LogManager.log(process.env.SERVER_NAME, 'TokenPriceStream createInstances');
 
         if (!this.instances){
             this.instances = [];
@@ -248,7 +249,7 @@ export class TokenPriceStream {
     static shouldProcessSignature(signature: string){
         this.processedSignatures[signature] = ++this.processedSignatures[signature] || 1;
 
-        console.log(`count`, this.processedSignatures[signature]);
+        LogManager.log(`count`, this.processedSignatures[signature]);
         if (this.processedSignatures[signature] > 1){
             return false;
         }

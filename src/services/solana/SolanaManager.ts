@@ -11,6 +11,7 @@ import { TransactionMessage } from "@solana/web3.js";
 // import { JitoManager } from "./JitoManager";
 import { Keypair } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
+import { LogManager } from "../../managers/LogManager";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -38,7 +39,7 @@ export class SolanaManager {
             return this.verifyMessage(message, walletId, signature);
         }
         catch (error){
-            console.error(error);
+            LogManager.error(error);
         }
 
         try {
@@ -57,7 +58,7 @@ export class SolanaManager {
             }            
         }
         catch (error){
-            console.error(error);
+            LogManager.error(error);
         }
 
         return false;
@@ -83,17 +84,17 @@ export class SolanaManager {
         const signatures = transaction.signatures;
         for (const signature of signatures) {
             if (!signature.signature){
-                console.log(new Date(), process.env.SERVER_NAME, signature.publicKey.toBase58(), 'have not signed!!!');
+                LogManager.log(process.env.SERVER_NAME, signature.publicKey.toBase58(), 'have not signed!!!');
             }
         }
 
-        console.log(new Date(), process.env.SERVER_NAME, 'isVerifiedSignatures', isVerifiedSignatures);
+        LogManager.log(process.env.SERVER_NAME, 'isVerifiedSignatures', isVerifiedSignatures);
 
         if (isVerifiedSignatures){
-            // console.log(new Date(), process.env.SERVER_NAME, '!transaction', transaction);
+            // LogManager.log(process.env.SERVER_NAME, '!transaction', transaction);
             const wireTransaction = transaction.serialize();
             const signature = await web3Conn.sendRawTransaction(wireTransaction, {skipPreflight: false});    
-            console.log(new Date(), process.env.SERVER_NAME, 'signature', signature);
+            LogManager.log(process.env.SERVER_NAME, 'signature', signature);
             return signature;    
         }
     
@@ -101,7 +102,7 @@ export class SolanaManager {
     }
 
     static async isBlockhashValid(blockhash: string) : Promise<boolean | undefined> {
-        //console.log(new Date(), process.env.SERVER_NAME, '----- isBlockhashValid -----', blockhash);
+        //LogManager.log(process.env.SERVER_NAME, '----- isBlockhashValid -----', blockhash);
         const { data } = await axios.post(getRpc(), {
             "id": 45,
             "jsonrpc": "2.0",
@@ -120,7 +121,7 @@ export class SolanaManager {
     }
 
     static async getRecentPrioritizationFees() : Promise<number | undefined> {
-        //console.log(new Date(), process.env.SERVER_NAME, '----- isBlockhashValid -----', blockhash);
+        //LogManager.log(process.env.SERVER_NAME, '----- isBlockhashValid -----', blockhash);
         const { data } = await axios.post(getRpc(), {
             "id": 1,
             "jsonrpc": "2.0",
@@ -130,7 +131,7 @@ export class SolanaManager {
 
         const value = data?.result;
 
-        console.log(new Date(), process.env.SERVER_NAME, 'getRecentPrioritizationFees', value);
+        LogManager.log(process.env.SERVER_NAME, 'getRecentPrioritizationFees', value);
 
         return undefined;
     }
@@ -187,7 +188,7 @@ export class SolanaManager {
             tokenAddress = await spl.getAssociatedTokenAddress(tokenMintPublicKey, walletPublicKey);
         }
 
-        console.log(new Date(), process.env.SERVER_NAME, 'createSplAccountInstruction', 'tokenAddress', tokenAddress.toBase58());
+        LogManager.log(process.env.SERVER_NAME, 'createSplAccountInstruction', 'tokenAddress', tokenAddress.toBase58());
         return spl.createAssociatedTokenAccountInstruction(
             feePayerPublicKey,
             tokenAddress,
@@ -255,7 +256,7 @@ export class SolanaManager {
         const ataAmount = filteredAccounts.length;
 
         if (filteredAccounts.length > 0){
-            console.log(new Date(), process.env.SERVER_NAME, 'filteredAccounts.length:', filteredAccounts.length);
+            LogManager.log(process.env.SERVER_NAME, 'filteredAccounts.length:', filteredAccounts.length);
 
             const transactions: web3.Transaction[] = [];
             
@@ -272,7 +273,7 @@ export class SolanaManager {
                 for (const account of chunk) {
                     // Add a `closeAccount` instruction for every token account in the chunk
                     if (account.account.data.parsed.info.tokenAmount.uiAmount > 0) {
-                        // console.log('account.account.data.parsed', account.account.data.parsed);
+                        // LogManager.log('account.account.data.parsed', account.account.data.parsed);
                         const inst = await SolanaManager.createSplTransferInstructions(
                             web3Conn, 
                             new web3.PublicKey(account.account.data.parsed.info.mint), 
@@ -291,9 +292,9 @@ export class SolanaManager {
             }
 
 
-            console.log(new Date(), process.env.SERVER_NAME, 'transactions.length:', transactions.length);
+            LogManager.log(process.env.SERVER_NAME, 'transactions.length:', transactions.length);
             if (transactions.length > 1) {
-                console.log(new Date(), process.env.SERVER_NAME, 'TOO MANY TRANSACTIONS');
+                LogManager.log(process.env.SERVER_NAME, 'TOO MANY TRANSACTIONS');
                 return;
             }
 
@@ -303,10 +304,10 @@ export class SolanaManager {
                     tx.partialSign(keypair);
                     tx.partialSign(mainWallet)
                     const signedTransaction = await SolanaManager.partialSignAndSend(web3Conn, tx);
-                    console.log(new Date(), process.env.SERVER_NAME, 'signedTransaction', signedTransaction);        
+                    LogManager.log(process.env.SERVER_NAME, 'signedTransaction', signedTransaction);        
                 }
                 catch (err){
-                    console.error('closeEmptyTokenAccounts', err);
+                    LogManager.error('closeEmptyTokenAccounts', err);
                 }
                 
                 //sleep 100 ms
@@ -324,7 +325,7 @@ export class SolanaManager {
             return {amount: balance, uiAmount: Math.round(100 * balance / web3.LAMPORTS_PER_SOL) / 100, decimals: 9};
         }
         catch (err){
-            console.error('getWalletSolBalance', err);
+            LogManager.error('getWalletSolBalance', err);
         }
 
         return undefined;
@@ -332,11 +333,11 @@ export class SolanaManager {
 
     static async getWalletTokenBalance(web3Conn: web3.Connection, walletAddress: string, tokenAddress: string): Promise<TokenBalance>{
         try {
-            // console.log(new Date(), process.env.SERVER_NAME, 'getWalletTokenBalance', 'walletAddress', walletAddress, 'tokenAddress', tokenAddress);
+            // LogManager.log(process.env.SERVER_NAME, 'getWalletTokenBalance', 'walletAddress', walletAddress, 'tokenAddress', tokenAddress);
             const mainWalletPublicKey = new web3.PublicKey(walletAddress);
             const tokenPublicKey = new web3.PublicKey(tokenAddress);
             const tmp = await web3Conn.getParsedTokenAccountsByOwner(mainWalletPublicKey, {mint: tokenPublicKey});
-            // console.log(new Date(), process.env.SERVER_NAME, 'getWalletTokenBalance', 'tmp', JSON.stringify(tmp));
+            // LogManager.log(process.env.SERVER_NAME, 'getWalletTokenBalance', 'tmp', JSON.stringify(tmp));
 
             return {
                 amount: +(tmp.value[0].account.data.parsed.info.tokenAmount.amount), 
@@ -346,7 +347,7 @@ export class SolanaManager {
             }
         }
         catch (err){
-            // console.error('getWalletTokenBalance', err);
+            // LogManager.error('getWalletTokenBalance', err);
         }
 
         return {amount: 0, uiAmount: 0};
@@ -428,7 +429,7 @@ export class SolanaManager {
             return supply.value;
         }
         catch (err){
-            console.error('getTokenSupply', err);
+            LogManager.error('getTokenSupply', err);
         }
     }
 
@@ -437,7 +438,7 @@ export class SolanaManager {
 
         if (sendThrough?.useJito){
             throw new Error('Jito is not supported');
-            // console.log(new Date(), process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useJito', 'sendTransaction');
+            // LogManager.log(process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useJito', 'sendTransaction');
             // JitoManager.sendTransaction(tx, keypair, true, tx.message.recentBlockhash, sendThrough?.priority);
         }
 
@@ -448,13 +449,13 @@ export class SolanaManager {
         }
 
         if (sendThrough?.useHelius && process.env.HELIUS_RPC){
-            console.log(new Date(), process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useHelius', 'sendTransaction');
+            LogManager.log(process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useHelius', 'sendTransaction');
             const connection = newConnection(process.env.HELIUS_RPC);
             connection.sendRawTransaction(rawTransaction, options);    
         }
 
         if (sendThrough?.useTriton && process.env.TRITON_RPC){
-            console.log(new Date(), process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useTriton', 'sendTransaction');
+            LogManager.log(process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useTriton', 'sendTransaction');
             const connection = newConnection(process.env.TRITON_RPC);
             connection.sendRawTransaction(rawTransaction, options);    
         }
@@ -466,7 +467,7 @@ export class SolanaManager {
             return web3.PublicKey.isOnCurve(pk);
         }
         catch (err){
-            console.error('isValidPublicKey', err);
+            LogManager.error('isValidPublicKey', err);
         }
 
         return false;
@@ -519,7 +520,7 @@ export class SolanaManager {
                 ).value;
             }
             catch (err){
-                console.error('fetchLookupTableAccount (1)', err);
+                LogManager.error('fetchLookupTableAccount (1)', err);
             }
         }
 
@@ -531,7 +532,7 @@ export class SolanaManager {
                 ).value;
             }
             catch (err){
-                console.error('fetchLookupTableAccount (2)', err);
+                LogManager.error('fetchLookupTableAccount (2)', err);
             }
         }
 
@@ -548,7 +549,7 @@ export class SolanaManager {
             return balance.value;
         }
         catch (err){
-            console.error('getTokenAccountBalance', err);
+            LogManager.error('getTokenAccountBalance', err);
         }
 
         return undefined;
@@ -568,7 +569,7 @@ export class SolanaManager {
             SolanaManager.recentBlockhash = await web3Conn.getLatestBlockhash();    
         }
         catch (err){
-            console.error('updateBlockhash', err);
+            LogManager.error('updateBlockhash', err);
         }
     }
     

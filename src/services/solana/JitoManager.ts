@@ -50,13 +50,13 @@
 //             return await this.sendBundle([tx], keypair, addTips, recentBlockhash, priority);
 //         }
 //         catch (error){
-//             console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendTransaction', 'error:', error);
+//             LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendTransaction', 'error:', error);
 //         }
 //     }
 
 //     static lastSendBundleTime: number = 0;
 //     static async sendBundle(txs: web3.VersionedTransaction[], keypair: web3.Keypair, addTips: boolean = true, recentBlockhash?: string, priority: Priority = Priority.HIGH): Promise<string | undefined> {        
-//         console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendBundle', 'txs:', txs.length, 'addTips:', addTips, 'recentBlockhash:', recentBlockhash);
+//         LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendBundle', 'txs:', txs.length, 'addTips:', addTips, 'recentBlockhash:', recentBlockhash);
 //         const now = Date.now();
 
 //         try{
@@ -68,7 +68,7 @@
 //                     recentBlockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
 //                 }
 //                 if (!recentBlockhash) {
-//                     console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendBundle', 'recentBlockhash is not available');
+//                     LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendBundle', 'recentBlockhash is not available');
 //                     return;
 //                 }
 
@@ -80,18 +80,18 @@
 
 //             const bundleId = await this.searcherClient.sendBundle(bundle);
 //             this.myBundleIds.push(bundleId);
-//             console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendBundle', 'bundleId:', bundleId);
+//             LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendBundle', 'bundleId:', bundleId);
 
 //             return bundleId;
 //         }
 //         catch (error){
-//             console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendBundle', 'error:', error);
+//             LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendBundle', 'error:', error);
 //         }
 //     }
 
 //     static async sendBundleThroughJitoSenders(txs: web3.VersionedTransaction[]) {
 //         try{
-//             console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendTransaction', 'as bundle');
+//             LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendTransaction', 'as bundle');
             
 //             const transactions = txs.map(tx => {
 //                 return Buffer.from(tx.serialize()).toString('base64');
@@ -121,26 +121,26 @@
 //                 }
 //             });
 
-//             // console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendBundle', 'result:', result);
+//             // LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendBundle', 'result:', result);
 //         }
 //         catch (error){
-//             console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'sendBundle', 'error:', error);
+//             LogManager.log(process.env.SERVER_NAME, 'JITO', 'sendBundle', 'error:', error);
 //         }
 //     }
 
 //     static async initSearcherClient() {
-//         console.log(new Date(), process.env.SERVER_NAME, 'JITO initSearcherClient');
+//         LogManager.log(process.env.SERVER_NAME, 'JITO initSearcherClient');
 
 //         this.searcherClient.onBundleResult((result) => {
-//             console.log(new Date(), process.env.SERVER_NAME, process.env.SERVER_NAME, 'JITO', 'onBundleResult', 'this.myBundleIds:', this.myBundleIds, 'result:', result);
+//             LogManager.log(process.env.SERVER_NAME, process.env.SERVER_NAME, 'JITO', 'onBundleResult', 'this.myBundleIds:', this.myBundleIds, 'result:', result);
 //             if (this.myBundleIds.includes(result.bundleId) === false) {
 //                 return;
 //             }
 
-//             console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'onBundleResult', 'result:', result);
+//             LogManager.log(process.env.SERVER_NAME, 'JITO', 'onBundleResult', 'result:', result);
 
 //         }, (error) => {
-//             console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'onBundleResult', 'error:', error);        
+//             LogManager.log(process.env.SERVER_NAME, 'JITO', 'onBundleResult', 'error:', error);        
 //         });
 //     }
 
@@ -159,7 +159,7 @@
 //                 'Content-Type': 'application/json'
 //             }
 //         });
-//         console.log(new Date(), process.env.SERVER_NAME, 'JITO', 'getBundleStatus', 'bundleId:', bundleId, 'result:', result.data);
+//         LogManager.log(process.env.SERVER_NAME, 'JITO', 'getBundleStatus', 'bundleId:', bundleId, 'result:', result.data);
 //         return result.data;
 //     }
 

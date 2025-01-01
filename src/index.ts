@@ -40,6 +40,7 @@ import { Token } from './entities/tokens/Token';
 import { TokenPriceStream } from './services/solana/geyser/TokenPriceStream';
 import { TokenPair } from './entities/tokens/TokenPair';
 import { TokenSwap } from './entities/tokens/TokenSwap';
+import { LogManager } from './managers/LogManager';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'LIGHT_PLATFORM', 'LIGHT_APP_VERSION'],
@@ -79,11 +80,11 @@ app.use(errorHandler);
 
 const start = async () => {
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
-    console.log('Connected to mongodb!');
+    LogManager.log('Connected to mongodb!');
 
     const port = process.env.PORT;
     app.listen(port, () => {
-        console.log(`Listening on port ${port}.`);
+        LogManager.log(`Listening on port ${port}.`);
         onExpressStarted();
     });
 }

@@ -14,6 +14,7 @@ import { ITokenPair, TokenPair } from "../entities/tokens/TokenPair";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import * as web3 from "@solana/web3.js";
 import { Helpers } from "../services/helpers/Helpers";
+import { LogManager } from "./LogManager";
 
 // export const kDefaultTokens: Token[] = [
 //     {
@@ -49,7 +50,7 @@ export class TokenManager {
 
     static async init(){
         TokenManager.tokens = await Token.find();
-        console.log('TokenManager', 'init', 'tokens.length =', TokenManager.tokens.length);
+        LogManager.log('TokenManager', 'init', 'tokens.length =', TokenManager.tokens.length);
     }
 
     static async updateTokensPrices() {
@@ -80,7 +81,7 @@ export class TokenManager {
         }
 
         const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
-        // console.log('TokenManager', 'getToken', address, '=', digitalAssets);
+        // LogManager.log('TokenManager', 'getToken', address, '=', digitalAssets);
         if (digitalAssets && digitalAssets.length > 0){
             const digitalAsset = digitalAssets[0];
 
@@ -92,7 +93,7 @@ export class TokenManager {
                     metadata = await metadataData.json() as any;                       
                 }
                 catch (error) {
-                    // console.error('TokenManager', 'getToken', 'metadata', error);
+                    // LogManager.error('TokenManager', 'getToken', 'metadata', error);
                 }
             }
 
@@ -109,7 +110,7 @@ export class TokenManager {
             token.logo = metadata?.image || metadata?.logo || undefined;
             token.description = metadata?.description || undefined;
 
-            console.log('!digitalAsset:', digitalAsset, 'metadata:', metadata);
+            LogManager.log('!digitalAsset:', digitalAsset, 'metadata:', metadata);
 
             if (digitalAsset.mint.supply === BigInt(1)) {
                 // NFT
@@ -134,7 +135,7 @@ export class TokenManager {
                     await token.save();
                 }
                 catch (error){
-                    console.error('!catched', 'TokenManager', 'fetchDigitalAsset', 'save', error);
+                    LogManager.error('!catched', 'TokenManager', 'fetchDigitalAsset', 'save', error);
                 }
             }
         }
@@ -184,7 +185,7 @@ export class TokenManager {
                     token.price = prices[0].price;
                     token.priceUpdatedAt = Date.now();
                 }
-                console.log('TokenManager', 'getToken', 'JUP prices', prices);
+                LogManager.log('TokenManager', 'getToken', 'JUP prices', prices);
             }
 
             if (token.price!=undefined && token.supply!=undefined && token.decimals!=undefined){
@@ -195,13 +196,13 @@ export class TokenManager {
                 }
             }
 
-            console.log('!mike', 'TokenManager', 'getToken', 'token', token);
+            LogManager.log('!mike', 'TokenManager', 'getToken', 'token', token);
         }
         return tokenToTokenModel(token);
     }
 
     static async getUsdLiquidityForToken(token: IToken): Promise<number> {
-        console.log('!mike', 'TokenManager', 'getUsdLiquidityForToken', 'token', token);
+        LogManager.log('!mike', 'TokenManager', 'getUsdLiquidityForToken', 'token', token);
 
         if (!token.price || token.price==0){
             return 0;
@@ -214,7 +215,7 @@ export class TokenManager {
         let liquidity = { sol: 0, token: 0 };
         for (const pair of pairs){
             if (pair.liquidity){
-                console.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pair.token1:', pair.token1, 'pair.token2:', pair.token2);
+                LogManager.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pair.token1:', pair.token1, 'pair.token2:', pair.token2);
                 const pairLpSol = pair.token1 === kSolAddress ? pair.liquidity.token1.uiAmount : pair.liquidity.token2.uiAmount;
                 const pairLpToken = pair.token1 === token.address ? pair.liquidity.token1.uiAmount : pair.liquidity.token2.uiAmount;
 
@@ -223,16 +224,16 @@ export class TokenManager {
                     liquidity.sol += pairLpSol;
                     liquidity.token += pairLpToken;
 
-                    console.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pairLpSol:', pairLpSol, 'pairLpToken:', pairLpToken);
+                    LogManager.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pairLpSol:', pairLpSol, 'pairLpToken:', pairLpToken);
                 }
                 else {
-                    console.log('!catched weird behaviour', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pair.liquidity', pair.liquidity);
+                    LogManager.log('!catched weird behaviour', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pair.liquidity', pair.liquidity);
                 }
 
             }
         }
 
-        console.log('!mike', 'TokenManager', 'getUsdLiquidityForToken', 'liquidity', liquidity);
+        LogManager.log('!mike', 'TokenManager', 'getUsdLiquidityForToken', 'liquidity', liquidity);
 
         return Math.round(liquidity.sol * this.getSolPrice() + liquidity.token * token.price);
     }
@@ -306,7 +307,7 @@ export class TokenManager {
                 pair.save();
             }
             catch (error){
-                console.error('!catched', 'TokenManager', 'fetchTokenPairs', 'save', error);
+                LogManager.error('!catched', 'TokenManager', 'fetchTokenPairs', 'save', error);
             }
         }
 

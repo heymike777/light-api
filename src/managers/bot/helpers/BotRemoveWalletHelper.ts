@@ -1,4 +1,5 @@
 import { SolanaManager } from "../../../services/solana/SolanaManager";
+import { LogManager } from "../../LogManager";
 import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
@@ -7,7 +8,7 @@ import { BotHelper, Message } from "./BotHelper";
 export class BotRemoveWalletHelper extends BotHelper {
 
     constructor() {
-        console.log('BotRemoveWalletHelper', 'constructor');
+        LogManager.log('BotRemoveWalletHelper', 'constructor');
 
         const replyMessage: Message = {
             text: 'Send me wallet address to remove. You can also send me multiple wallets (each wallet address on a new line).'
@@ -17,7 +18,7 @@ export class BotRemoveWalletHelper extends BotHelper {
     }
 
     async messageReceived(message: TgMessage, ctx: any){
-        console.log('BotRemoveWalletHelper', 'messageReceived', message.text);
+        LogManager.log('BotRemoveWalletHelper', 'messageReceived', message.text);
 
         super.messageReceived(message, ctx);
 

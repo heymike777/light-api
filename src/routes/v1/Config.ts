@@ -5,6 +5,7 @@ import { SubscriptionTier } from "../../entities/payments/Subscription";
 import { TraderManager } from "../../managers/TraderManager";
 import { AppPlatform } from "../../models/types";
 import { Helpers } from "../../services/helpers/Helpers";
+import { LogManager } from "../../managers/LogManager";
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.get(
 		const platform = '' + req.query.platform;
 
         const appHeaders = Helpers.getAppHeaders(req);
-        console.log('appHeaders:', appHeaders);
+        LogManager.log('appHeaders:', appHeaders);
 
         let subscriptions: SubscriptionConfig[] = [];
         if (platform == AppPlatform.IOS || platform == AppPlatform.ANDROID){

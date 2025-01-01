@@ -2,6 +2,7 @@ import { PremiumError } from "../../../errors/PremiumError";
 import { BonfidaManager } from "../../../services/solana/BonfidaManager";
 import { newConnection } from "../../../services/solana/lib/solana";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
+import { LogManager } from "../../LogManager";
 import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
@@ -10,7 +11,7 @@ import { BotHelper, Message } from "./BotHelper";
 export class BotAddWalletHelper extends BotHelper {
 
     constructor() {
-        console.log('BotAddWalletHelper', 'constructor');
+        LogManager.log('BotAddWalletHelper', 'constructor');
 
         const replyMessage: Message = {
             text: 'Send me each wallet address on a new line.\n\n' + 
@@ -25,7 +26,7 @@ export class BotAddWalletHelper extends BotHelper {
     }
 
     async messageReceived(message: TgMessage, ctx: any){
-        console.log('BotAddWalletHelper', 'messageReceived', message.text);
+        LogManager.log('BotAddWalletHelper', 'messageReceived', message.text);
 
         super.messageReceived(message, ctx);
 
@@ -72,7 +73,7 @@ export class BotAddWalletHelper extends BotHelper {
                 walletsCounter++;
             }
             catch (err){
-                console.log('BotAddWalletHelper', 'messageReceived', 'error', err);
+                LogManager.log('BotAddWalletHelper', 'messageReceived', 'error', err);
                 if (!hasLimitError && err instanceof PremiumError){
                     hasLimitError = true;
                     ctx.reply(err.message);

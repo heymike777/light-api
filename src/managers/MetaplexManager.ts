@@ -6,6 +6,7 @@ import { dasApi, DasApiAsset } from '@metaplex-foundation/digital-asset-standard
 import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
 import { ExplorerManager } from '../services/explorers/ExplorerManager';
 import { TokenNft, TokenNftAttribute } from '../entities/tokens/Token';
+import { LogManager } from './LogManager';
 
 export class MetaplexManager {
 
@@ -19,13 +20,13 @@ export class MetaplexManager {
             return assets;    
         }
         catch (error) {
-            console.error('MetaplexManager', 'fetchAllDigitalAssets', error);
+            LogManager.error('MetaplexManager', 'fetchAllDigitalAssets', error);
         }        
         return [];
     }
 
     static async fetchAsset(assetId: string): Promise<DasApiAsset | undefined> {
-        console.log('MetaplexManager', '!fetchAsset', assetId);
+        LogManager.log('MetaplexManager', '!fetchAsset', assetId);
         const existingAsset = this.assetsCache[assetId]
         if (existingAsset){
             return existingAsset.asset;
@@ -41,7 +42,7 @@ export class MetaplexManager {
             return asset;
         }
         catch (error) {
-            console.error('MetaplexManager', 'fetchAsset', error);
+            LogManager.error('MetaplexManager', 'fetchAsset', error);
         }        
         return undefined;
     }
@@ -49,10 +50,10 @@ export class MetaplexManager {
     static async fetchAssetAndParseToTokenNft(assetId: string): Promise<TokenNft | undefined> {
         try {
             const asset = await this.fetchAsset(assetId);
-            // console.log('tmp', asset);
+            // LogManager.log('tmp', asset);
             if (asset){
                 if (asset.interface as string == 'FungibleToken'){
-                    console.error('MetaplexManager', 'fetchAssetAndParseToTokenNft', 'asset is not NFT', asset);
+                    LogManager.error('MetaplexManager', 'fetchAssetAndParseToTokenNft', 'asset is not NFT', asset);
                     return undefined;
                 }
 
@@ -87,7 +88,7 @@ export class MetaplexManager {
             }
         }
         catch (error) {
-            console.error('MetaplexManager', 'fetchAsset', error);
+            LogManager.error('MetaplexManager', 'fetchAsset', error);
         }        
         return undefined;
     }
@@ -106,7 +107,7 @@ export class MetaplexManager {
             return assetId.toString();
         }
         catch (error) {
-            console.error('MetaplexManager', 'fetchAsset', error);
+            LogManager.error('MetaplexManager', 'fetchAsset', error);
         }        
         return undefined;
     }

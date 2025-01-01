@@ -4,6 +4,7 @@ import { HeliusAsset, HeliusAssetDisplayOptions, MintApiResult } from './HeliusT
 import { Asset, AssetType, Priority } from './types';
 import { kRaydiumAuthority } from './Constants';
 import axios from 'axios';
+import { LogManager } from '../../managers/LogManager';
 
 export interface TokenHolder {
     owner: string;
@@ -24,7 +25,7 @@ export class HeliusManager {
     }
 
     static async getTransaction(signature: string): Promise<EnrichedTransaction | undefined> {
-        console.log(new Date(), 'HeliusManager', 'getTransaction', signature);
+        LogManager.log('HeliusManager', 'getTransaction', signature);
         this.initHelius();
 
         const apiEndpoint = this.helius.getApiEndpoint('/v0/transactions');
@@ -50,7 +51,7 @@ export class HeliusManager {
             updateAuthorityKeypair: keypair,
             payerKeypair: keypair,
         });
-        console.log(new Date(), process.env.SERVER_NAME, 'delegateCollectionAuthority res', res);
+        LogManager.log(process.env.SERVER_NAME, 'delegateCollectionAuthority res', res);
     }
 
     static async revokeCollectionAuthority(collectionMintAddress: string, keypair: Keypair, delegatedCollectionAuthority: string){
@@ -62,7 +63,7 @@ export class HeliusManager {
             revokeAuthorityKeypair: keypair,
             payerKeypair: keypair,
         });
-        console.log(new Date(), process.env.SERVER_NAME, 'revokeCollectionAuthority res', res);
+        LogManager.log(process.env.SERVER_NAME, 'revokeCollectionAuthority res', res);
     }
 
     static async getAssetsByOwner(walletAddress: string, page = 1): Promise<HeliusAsset[]> {
@@ -101,7 +102,7 @@ export class HeliusManager {
             return items;
         }
         catch (e){
-            console.error('getAssetsByOwner', e);
+            LogManager.error('getAssetsByOwner', e);
             return [];
         }
     }
@@ -137,7 +138,7 @@ export class HeliusManager {
             return items;
         }
         catch (e){
-            console.error('getAssetsByCreator', e);
+            LogManager.error('getAssetsByCreator', e);
             return [];
         }
     }
@@ -163,7 +164,7 @@ export class HeliusManager {
             return result;
         }
         catch (e){
-            // console.error('getAssetBatch', e);
+            // LogManager.error('getAssetBatch', e);
             return [];
         }
     };
@@ -194,7 +195,7 @@ export class HeliusManager {
             return result;
         }
         catch (e){
-            console.error('getAsset', e);
+            LogManager.error('getAsset', e);
             return undefined;
         }
     };
@@ -244,7 +245,7 @@ export class HeliusManager {
 
     static parseAsset(asset: HeliusAsset): Asset | undefined {
         const imagesMimeTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-        // console.log(new Date(), process.env.SERVER_NAME, 'asset', JSON.stringify(asset));
+        // LogManager.log(process.env.SERVER_NAME, 'asset', JSON.stringify(asset));
 
         if (asset.burnt) { return undefined; }
 
@@ -291,7 +292,7 @@ export class HeliusManager {
 
     static recentPrioritizationFees: { fee: number, date: Date } | undefined;
     static async getRecentPrioritizationFees(forceCleanCache = false, priority: Priority = Priority.HIGH): Promise<number> {
-        console.log(new Date(), process.env.SERVER_NAME, 'getRecentPrioritizationFees', 'priority:', priority);
+        LogManager.log(process.env.SERVER_NAME, 'getRecentPrioritizationFees', 'priority:', priority);
         
         if (priority == Priority.LOW){
             return 1_000_000;
@@ -338,7 +339,7 @@ export class HeliusManager {
             this.recentPrioritizationFees = { fee: fees, date: new Date() };
         }
         catch(e){
-            console.error('getRecentPrioritizationFees', e);
+            LogManager.error('getRecentPrioritizationFees', e);
         }
 
         return fees;
@@ -350,18 +351,18 @@ export class HeliusManager {
 
         try{
             const transactionSignature = await this.helius.rpc.sendSmartTransaction(instructions, [keypair], lookupTables, {skipPreflight: true, maxRetries: 1, lastValidBlockHeightOffset: 0});
-            console.log(`Helius sendSmartTransaction - Successful transfer: ${transactionSignature}`);    
+            LogManager.log(`Helius sendSmartTransaction - Successful transfer: ${transactionSignature}`);    
         }
         catch (err){
-            console.error('Helius sendSmartTransaction', err);
+            LogManager.error('Helius sendSmartTransaction', err);
         }
 
         // try{
         //     const transactionSignatureJito = await this.helius.rpc.sendSmartTransactionWithTip(instructions, [keypair], lookupTables, tipsLamports, 'Amsterdam'); 
-        //     console.log(`Helius sendSmartTransactionWithTip - Successful transfer: ${transactionSignatureJito}`);
+        //     LogManager.log(`Helius sendSmartTransactionWithTip - Successful transfer: ${transactionSignatureJito}`);
         // }
         // catch (err){
-        //     console.error('Helius sendSmartTransactionWithTip', err);
+        //     LogManager.error('Helius sendSmartTransactionWithTip', err);
         // }
     }
 
@@ -369,7 +370,7 @@ export class HeliusManager {
         this.initHelius();
 
         const res = await this.helius.rpc.getTokenHolders(mint);
-        // console.log(new Date(), process.env.SERVER_NAME, 'getTokenHolders res', JSON.stringify(res, null, 2));
+        // LogManager.log(process.env.SERVER_NAME, 'getTokenHolders res', JSON.stringify(res, null, 2));
 
         const holders: TokenHolder[] = [];
         const specialWallets: string[] = [

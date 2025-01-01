@@ -8,6 +8,7 @@ import { decodeTransferInstruction } from "@solana/spl-token";
 import { SystemInstruction } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import { Ix } from "../../../managers/ProgramManager";
+import { LogManager } from "../../../managers/LogManager";
 
 //TODO: open-source TxParser
 export class TxParser {
@@ -21,8 +22,8 @@ export class TxParser {
         const signatures = confirmedTx.transaction?.signatures.map((sig) => base58.encode(sig)) || [];
         const geyserMessage: any = geyserTxData.transaction.transaction.message;
 
-        // console.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
-        // console.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
+        // LogManager.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
+        // LogManager.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
 
         const postTokenBalances: web3.TokenBalance[] = [];
         const preTokenBalances: web3.TokenBalance[] = [];
@@ -139,10 +140,10 @@ export class TxParser {
             }
         }
 
-        // console.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
+        // LogManager.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
 
         // fs.appendFile('transactions_account_keys.txt', `${new Date()} ${signature} heymikeAccount:${heymikeAccount} ${JSON.stringify(accountKeys)}\n`, (err) => {
-        //     if (err) console.error(err);
+        //     if (err) LogManager.error(err);
         // });
 
         const instructions = this.parseYellowstoneGrpcCompiledInstructions(confirmedTx.transaction?.message?.instructions, accountKeys, signature);
@@ -205,7 +206,7 @@ export class TxParser {
                     ixAccounts.push(accountKey);
                 }
                 else {
-                    console.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
+                    LogManager.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
                 }
             }
 
@@ -237,7 +238,7 @@ export class TxParser {
                 instructions.push(ix);        
             }
             else {
-                console.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
+                LogManager.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
             }
         }
 
@@ -478,7 +479,7 @@ export class TxParser {
             }
             else if (ixProgramId.toBase58() == web3.StakeProgram.programId.toBase58()){
                 // Stake Program
-                // console.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
+                // LogManager.log('!stake', 'ixProgramId:', ixProgramId.toBase58());
 
                 const ixProgramName = 'Stake Program';
                 const ixType = web3.StakeInstruction.decodeInstructionType(transactionInstruction);
@@ -628,7 +629,7 @@ export class TxParser {
                     }
                 }
 
-                // console.log('!stake', 'ixType:', ixType, 'ix:', ix);
+                // LogManager.log('!stake', 'ixType:', ixType, 'ix:', ix);
 
             }
             else if (ixProgramId.toBase58() == web3.VoteProgram.programId.toBase58()){
@@ -739,8 +740,8 @@ export class TxParser {
             return ix;
         }
         catch (err){            
-            // console.error('!error(catched)', 'signature:', signature, 'decodeSystemInstruction', err);
-            // console.log('!error(catched)', 'decodeSystemInstruction', 'transactionInstruction:', transactionInstruction);
+            // LogManager.error('!error(catched)', 'signature:', signature, 'decodeSystemInstruction', err);
+            // LogManager.log('!error(catched)', 'decodeSystemInstruction', 'transactionInstruction:', transactionInstruction);
             return undefined;
         }
     }

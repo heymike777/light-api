@@ -1,6 +1,7 @@
 import admin from "firebase-admin";
 import { PushToken } from "../entities/PushToken";
 import { Message } from "firebase-admin/lib/messaging/messaging-api";
+import { LogManager } from "./LogManager";
 
 export interface PushNotificationMessage {
     token?: string;
@@ -23,7 +24,7 @@ export class FirebaseManager {
     async sendMessage(data: PushNotificationMessage){
         // This registration token comes from the client FCM SDKs.
         if (!data.token){
-            console.error('Invalid token');
+            LogManager.error('Invalid token');
             return;
         }
 
@@ -59,15 +60,15 @@ export class FirebaseManager {
         admin.messaging().send(message)
             .then((response: any) => {
                 // Response is a message ID string.
-                console.log('Successfully sent message:', response);
+                LogManager.log('Successfully sent message:', response);
             })
             .catch((error: any) => {
                 if (error.errorInfo.code === 'messaging/registration-token-not-registered'){
-                    console.log('Token not registered');
+                    LogManager.log('Token not registered');
                     if (data.token) { FirebaseManager.deletePushToken(data.token); }
                 }
                 else {
-                    console.log('Error sending message:', error);
+                    LogManager.log('Error sending message:', error);
                 }
             });
     }
@@ -126,15 +127,15 @@ export class FirebaseManager {
     }
 
     static async sendPushToUser(userId: string, title: string, subtitle?: string, image?: string, data?: PushNotificationMessage['data']): Promise<boolean> {
-        console.log('sendPushToUser', userId, title, subtitle, data);
+        LogManager.log('sendPushToUser', userId, title, subtitle, data);
         try {
             const firebaseManager = FirebaseManager.getInstance();
 
             const pushTokens = await PushToken.find({ userId: userId });
-            console.log('pushTokens', pushTokens);
+            LogManager.log('pushTokens', pushTokens);
 
             if (pushTokens.length == 0){
-                console.log('No push tokens found for user', userId);
+                LogManager.log('No push tokens found for user', userId);
                 return false;
             }
             
@@ -153,7 +154,7 @@ export class FirebaseManager {
             return true;
         }
         catch (error){
-            console.error('sendPushToUser', userId, error);
+            LogManager.error('sendPushToUser', userId, error);
         }
 
         return false;

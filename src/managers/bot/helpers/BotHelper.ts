@@ -1,4 +1,5 @@
 import { IUser } from "../../../entities/User";
+import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotManager";
 
 export interface Message {
@@ -10,7 +11,7 @@ export class BotHelper {
     private kStartCommandReplyMessage: Message;
 
     constructor(command: string, startCommandReplyMessage: Message) {
-        console.log('BotHelper', 'constructor');
+        LogManager.log('BotHelper', 'constructor');
         this.kCommand = command;
         this.kStartCommandReplyMessage = startCommandReplyMessage;
     }

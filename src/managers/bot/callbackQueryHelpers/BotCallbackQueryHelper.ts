@@ -1,5 +1,6 @@
 import { IUser } from "../../../entities/User";
 import { Chain } from "../../../services/solana/types";
+import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotManager";
 
 export interface Message {
@@ -12,7 +13,7 @@ export class BotCallbackQueryHelper {
     private kStartCommandReplyMessage: Message;
 
     constructor(chain: Chain, command: string, startCommandReplyMessage: Message) {
-        console.log('BotHelper', 'constructor');
+        LogManager.log('BotHelper', 'constructor');
         this.kChain = chain;
         this.kCommand = command;
         this.kStartCommandReplyMessage = startCommandReplyMessage;

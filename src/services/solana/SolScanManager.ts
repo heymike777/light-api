@@ -5,6 +5,7 @@ import { TokenPair } from "../../entities/tokens/TokenPair";
 import { SolanaManager } from "./SolanaManager";
 import { newConnection } from "./lib/solana";
 import { web3 } from "@coral-xyz/anchor";
+import { LogManager } from "../../managers/LogManager";
 
 export interface TokenInfo {
     mint: string;
@@ -45,7 +46,7 @@ export class SolScanManager {
             return response.data;
         }
         catch (error) {
-            console.error('SolScanManager', 'sendGetApiRequest', method, params, error);
+            LogManager.error('SolScanManager', 'sendGetApiRequest', method, params, error);
         }
         return undefined;
     }
@@ -72,7 +73,7 @@ export class SolScanManager {
                 '24h': response?.data?.price_change_24h ? Math.round(response?.data?.price_change_24h * 100) / 100 : undefined,
             },
         };
-        console.log('SolScanManager', 'getTokenInfo', mint, info);
+        LogManager.log('SolScanManager', 'getTokenInfo', mint, info);
         return info;
     }
 
@@ -105,7 +106,7 @@ export class SolScanManager {
             page++;
         }
 
-        console.log('SolScanManager', 'fetchTokenMarkets', mint, markets);
+        LogManager.log('SolScanManager', 'fetchTokenMarkets', mint, markets);
 
         return markets;
     }

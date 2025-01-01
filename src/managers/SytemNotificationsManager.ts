@@ -1,4 +1,5 @@
 import axios from "axios";
+import { LogManager } from "./LogManager";
 
 export class SystemNotificationsManager {
 
@@ -8,14 +9,14 @@ export class SystemNotificationsManager {
     }
 
     private static async sendTextMessage(text: string){
-        console.log('SystemNotificationsManager', 'send:', text);
+        LogManager.log('SystemNotificationsManager', 'send:', text);
         try {
             const url = 'https://tg-bot-api.sololabs.io/api/v1/messages/system';
             const data = { message: text };
             const resp = await axios.post(url, data);    
         }
         catch (error){
-            console.log(new Date(), 'BotManager', 'sendTextMessage', 'error:', error);   
+            LogManager.log('BotManager', 'sendTextMessage', 'error:', error);   
         }
     }
 

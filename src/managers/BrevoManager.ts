@@ -1,4 +1,5 @@
 import axios from "axios";
+import { LogManager } from "./LogManager";
 
 export interface BrevoContact {
     email: string;
@@ -10,7 +11,7 @@ export class BrevoManager {
     static allUsersListId = 10;
 
     static async createContact(contact: BrevoContact, listIds: number[] = [this.allUsersListId]): Promise<{brevoId: number} | undefined> {
-        console.log(`Brevo createContact ${contact.email}`);
+        LogManager.log(`Brevo createContact ${contact.email}`);
         
         const body = {
             email: contact.email,
@@ -28,12 +29,12 @@ export class BrevoManager {
                 data: body
             });
 
-            console.log(data);
+            LogManager.log(data);
 
             return data?.id ? {brevoId: data.id} : undefined;        
         }
         catch (e: any){
-            console.error(e?.response?.data?.message);
+            LogManager.error(e?.response?.data?.message);
         }
 
         return undefined;
@@ -41,7 +42,7 @@ export class BrevoManager {
 
 
     static async sendAuthTransactionalEmail(email: string, code: string): Promise<{brevoId: number} | undefined> {
-        console.log(`Brevo sendAuthTransactionalEmail: ${email} code: ${code}`);
+        LogManager.log(`Brevo sendAuthTransactionalEmail: ${email} code: ${code}`);
         
         const body = {  
             "to":[  
@@ -70,12 +71,12 @@ export class BrevoManager {
                 data: body
             });
 
-            console.log(data);
+            LogManager.log(data);
 
             return data?.id ? {brevoId: data.id} : undefined;        
         }
         catch (e: any){
-            console.error(e?.response?.data?.message);
+            LogManager.error(e?.response?.data?.message);
         }
 
         return undefined;

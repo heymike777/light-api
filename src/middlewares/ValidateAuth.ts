@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { PermissionError } from '../errors/PermissionError';
 import { JWTAccessToken } from '../models/AccessToken';
+import { LogManager } from '../managers/LogManager';
 
 export function validateAuth(forceError: boolean = true) {
     return function(
@@ -32,7 +33,7 @@ export function validateAuth(forceError: boolean = true) {
                 }
             }
             else{
-                console.error('JWT_SECRET_KEY is not set');
+                LogManager.error('JWT_SECRET_KEY is not set');
             }
         } catch(err) {
         }

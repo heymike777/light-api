@@ -1,0 +1,17 @@
+export class LogManager {
+    static isLogsEnabled = false;
+    static isErrorsEnabled = true;
+
+    static log(...args: any[]){
+        if (this.isLogsEnabled){
+            console.log(new Date(), ...args);
+        }
+    }
+
+    static error(...args: any[]){
+        if (this.isErrorsEnabled){
+            console.error(new Date(), ...args);
+        }
+    }
+
+}

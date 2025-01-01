@@ -2,6 +2,7 @@ import { ISubscription, Subscription, SubscriptionPlatform, SubscriptionStatus, 
 import { IUser, User } from "../entities/User";
 import { Wallet, WalletStatus } from "../entities/Wallet";
 import { Helpers } from "../services/helpers/Helpers";
+import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { ISub, RevenueCatManager } from "./RevenueCatManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
@@ -20,7 +21,7 @@ export class SubscriptionManager {
         subscription.createdAt = createdAt;
         await subscription.save();
 
-        console.log('SubscriptionManager', 'createSubscription', userId, tier, platform, expiresAt);
+        LogManager.log('SubscriptionManager', 'createSubscription', userId, tier, platform, expiresAt);
     }
 
     static getMaxNumberOfWallets(tier?: SubscriptionTier): number {
@@ -57,11 +58,11 @@ export class SubscriptionManager {
             // try to fetch one more time
             subs = await RevenueCatManager.getCustomerSubscriptions(userId);
         }
-        console.log('SubscriptionManager', 'updateUserSubscription', userId, subs);
+        LogManager.log('SubscriptionManager', 'updateUserSubscription', userId, subs);
 
         if (!subs){
             MixpanelManager.trackError(userId, { text: 'Cannot fetch RevenueCat subscriptions for user' });
-            console.error('Cannot fetch RevenueCat subscriptions for user', userId);
+            LogManager.error('Cannot fetch RevenueCat subscriptions for user', userId);
             return;
         }
 

@@ -15,6 +15,7 @@ import fs from "fs";
 import { kSolAddress } from "../services/solana/Constants";
 import { IWallet } from "../entities/Wallet";
 import BN from "bn.js";
+import { LogManager } from "./LogManager";
 
 export type Ix = web3.ParsedInstruction | web3.PartiallyDecodedInstruction;
 
@@ -89,7 +90,7 @@ export class ProgramManager {
         if (!ixParsed){
             return {};
         }
-        console.log('!parseParsedIx', 'programId:', programId);
+        LogManager.log('!parseParsedIx', 'programId:', programId);
 
         const ixType = ixParsed.name || ixParsed.type;
         
@@ -139,7 +140,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.TOKEN_PROGRAM){
-                console.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                LogManager.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if (ixType == 'transfer' || ixType == 'transferChecked'){
                     if (tx){
                         const sourceAccount = ixParsed.info?.source || accounts?.[0]?.toBase58();
@@ -225,7 +226,7 @@ export class ProgramManager {
                     const walletAddress = accounts?.[17]?.toBase58();
                     if (walletAddress && tx?.meta){
                         const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
-                        console.log('!changes:', changes);
+                        LogManager.log('!changes:', changes);
 
                         if (changes.length > 0){
                             const tokenMint = changes[0].mint;
@@ -269,7 +270,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.TENSOR){
-                console.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                LogManager.log('!!!TENSOR', 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if (ixType == 'sellNftTokenPool'){
                     const buyerWalletAddress = accounts?.[9]?.toBase58();
                     const sellerWalletAddress = accounts?.[10]?.toBase58();
@@ -359,7 +360,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.TENSOR_CNFT){
-                console.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                LogManager.log('!!!TENSOR_CNFT', 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if (ixType == 'buy'){
                     const sellIx = await this.findIx(instructions, kProgram.TENSOR_CNFT, 'tcompNoop');
 
@@ -403,7 +404,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.MAGIC_EDEN_AMM){
-                console.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                LogManager.log('!!!MAGIC_EDEN_AMM', 'ixParsed:', ixParsed, 'accounts:', accounts);
 
                 // { 'solFulfillBuy': {title: 'NFT SALE', priority: 3} },
                 // { 'solMip1FulfillBuy': {title: 'NFT SALE', priority: 3} },
@@ -434,7 +435,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.MAGIC_EDEN_V2){
-                console.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                LogManager.log('!!!MAGIC_EDEN_V2', 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if (ixType == 'buyV2'){
                     const walletAddress = accounts?.[0]?.toBase58();
                     const tokenMint = accounts?.[2]?.toBase58();
@@ -451,7 +452,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.MAGIC_EDEN_V3){
-                console.log('!!!MAGIC_EDEN_V3', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                LogManager.log('!!!MAGIC_EDEN_V3', 'ixParsed:', ixParsed, 'accounts:', accounts);
 
                 // { 'buyNow': {title: 'NFT SALE', priority: 3} },
                 // { 'sell': {title: 'NFT LISTING', priority: 5} },
@@ -473,7 +474,7 @@ export class ProgramManager {
             }
         }
         catch (error){
-            console.error('!catched parseParsedIx', error);
+            LogManager.error('!catched parseParsedIx', error);
         }
         
 
@@ -496,7 +497,7 @@ export class ProgramManager {
             else {
                 if (instruction.programId.toBase58() == programId){
                     const ixData = await ProgramManager.parseIx(programId, instruction.data);
-                    console.log('programId', programId, 'ixData?.output:', ixData?.output);
+                    LogManager.log('programId', programId, 'ixData?.output:', ixData?.output);
                     if (ixData?.output?.name == name){                        
                         return { ix: instruction, ixData };
                     }
@@ -567,7 +568,7 @@ export class ProgramManager {
             this.programNameCache.set(programId, programName);
             return programName;
         } catch (error) {
-            console.error(`Error fetching program name for ${programId}:`, error);
+            LogManager.error(`Error fetching program name for ${programId}:`, error);
             // Cache the error case as undefined
             this.programNameCache.set(programId, undefined);
             return undefined;
@@ -596,7 +597,7 @@ export class ProgramManager {
             }
 
             if ('parsed' in instruction){
-                console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
+                LogManager.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
 
                 const info = await this.parseParsedIx(ixProgramId, instruction.parsed, previousIxs, undefined, tx);
                 
@@ -605,7 +606,7 @@ export class ProgramManager {
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
 
-                console.log('!description1', info?.description);
+                LogManager.log('!description1', info?.description);
 
                 parsedInstructions.push({
                     programId: ixProgramId,
@@ -618,7 +619,7 @@ export class ProgramManager {
             }
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
-                console.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
+                LogManager.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
 
                 const info = await this.parseParsedIx(ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx, instructions);
 
@@ -626,7 +627,7 @@ export class ProgramManager {
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
 
-                console.log('!description2', info?.description);
+                LogManager.log('!description2', info?.description);
 
                 parsedInstructions.push({
                     programId: ixProgramId,
@@ -648,7 +649,7 @@ export class ProgramManager {
         let assetId: string | undefined;
 
         parsedInstructions = parsedInstructions.sort((a, b) => a.priority - b.priority);
-        console.log('parsedInstructions (sorted by priority)', JSON.stringify(parsedInstructions));
+        LogManager.log('parsedInstructions (sorted by priority)', JSON.stringify(parsedInstructions));
 
         for (const parsedInstruction of parsedInstructions) {
             if (parsedInstruction.program || parsedInstruction.title){
@@ -843,7 +844,7 @@ export class ProgramManager {
 
 
     static findTxDescription(parsedInstructions: ParsedIx[] | undefined, wallets: IWallet[]): TxDescription | undefined {
-        console.log('findTxDescription', 'wallets:', wallets.map((w) => w.walletAddress), 'parsedInstructions:', JSON.stringify(parsedInstructions));
+        LogManager.log('findTxDescription', 'wallets:', wallets.map((w) => w.walletAddress), 'parsedInstructions:', JSON.stringify(parsedInstructions));
 
         if (!parsedInstructions || parsedInstructions.length == 0){
             return undefined;
@@ -864,7 +865,7 @@ export class ProgramManager {
                     }
                 }
                 if (hasAccount){
-                    console.log('findTxDescription', 'found (1) ix:', ix);
+                    LogManager.log('findTxDescription', 'found (1) ix:', ix);
                     txDescription = ix.description;
                     break;    
                 }
@@ -874,7 +875,7 @@ export class ProgramManager {
         if (!txDescription){
             for (const ix of parsedInstructions) {
                 if (ix.title){
-                    console.log('findTxDescription', 'found (2) ix:', ix);
+                    LogManager.log('findTxDescription', 'found (2) ix:', ix);
 
                     txDescription = ix.description;
                     break;

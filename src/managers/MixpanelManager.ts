@@ -1,6 +1,7 @@
 import Mixpanel from 'mixpanel';
 import { Environment } from '../models/types';
 import { IUser } from '../entities/User';
+import { LogManager } from './LogManager';
 
 export class MixpanelManager {
 
@@ -16,7 +17,7 @@ export class MixpanelManager {
             properties['ip'] = ipAddress;
 
             if (process.env.ENVIRONMENT == Environment.DEVELOPMENT) {
-                console.log('Mixpanel track', event, properties);
+                LogManager.log('Mixpanel track', event, properties);
             }
             this.mixpanel.track(event, properties);
         }
@@ -28,7 +29,7 @@ export class MixpanelManager {
             properties['ip'] = ipAddress;
 
             if (process.env.ENVIRONMENT == Environment.DEVELOPMENT) {
-                console.log('Mixpanel track', 'Error', properties);
+                LogManager.log('Mixpanel track', 'Error', properties);
             }
             this.mixpanel.track('Error', properties);
         }

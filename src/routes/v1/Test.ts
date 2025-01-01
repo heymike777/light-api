@@ -1,7 +1,24 @@
 import express, { Request, Response } from "express";
 import { FirebaseManager } from "../../managers/FirebaseManager";
+import { LogManager } from "../../managers/LogManager";
 
 const router = express.Router();
+
+router.post(
+    '/api/v1/test/logs',
+    async (req: Request, res: Response) => {
+        const isLogsEnabled = req.body.isLogsEnabled;
+        const isErrorsEnabled = req.body.isErrorsEnabled;
+
+        LogManager.isLogsEnabled = isLogsEnabled;
+        LogManager.isErrorsEnabled = isErrorsEnabled;
+
+        res.status(200).send({ 
+            isLogsEnabled: LogManager.isLogsEnabled,
+            isErrorsEnabled: LogManager.isErrorsEnabled,
+        });
+    }
+);
 
 router.post(
     '/api/v1/test/:userId/push',

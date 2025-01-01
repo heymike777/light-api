@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { LogManager } from '../../managers/LogManager';
 
 export class BirdEyeManager {
 
@@ -14,11 +15,11 @@ export class BirdEyeManager {
                 }
             });
 
-            console.log(new Date(), process.env.SERVER_NAME, 'response?.data?.data', response?.data?.data);
+            LogManager.log(process.env.SERVER_NAME, 'response?.data?.data', response?.data?.data);
             return response?.data?.data?.value || 0;    
         }
         catch (error) {
-            console.error('BirdEyeManager', 'fetchTokenPrice', error);
+            LogManager.error('BirdEyeManager', 'fetchTokenPrice', error);
         }
 
         return 0;

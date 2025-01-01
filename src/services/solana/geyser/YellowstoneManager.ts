@@ -6,6 +6,7 @@ import { TxParser } from "./TxParser";
 import fs from "fs";
 import { SystemNotificationsManager } from "../../../managers/SytemNotificationsManager";
 import { MixpanelManager } from "../../../managers/MixpanelManager";
+import { LogManager } from "../../../managers/LogManager";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -25,7 +26,7 @@ export class YellowstoneManager {
     }
 
     async init(){
-        console.log(new Date(), process.env.SERVER_NAME, 'YellowstoneManager init', this.GRPC_URL, this.X_TOKEN);
+        LogManager.log(process.env.SERVER_NAME, 'YellowstoneManager init', this.GRPC_URL, this.X_TOKEN);
         const client = new Client(this.GRPC_URL, this.X_TOKEN, {
             "grpc.max_receive_message_length": 64 * 1024 * 1024, // 64MiB
         });
@@ -56,7 +57,7 @@ export class YellowstoneManager {
                 this.receivedTx(data, filter);
             } 
             else if (data.pong) {
-                // console.log(new Date(), process.env.SERVER_NAME, `Processed ping response!`);
+                // LogManager.log(process.env.SERVER_NAME, `Processed ping response!`);
             }
         });
 
@@ -67,19 +68,19 @@ export class YellowstoneManager {
     }
 
     async onError(error: any){
-        console.error(new Date(), process.env.SERVER_NAME, 'YellowstoneManager onError', error);
+        LogManager.error(process.env.SERVER_NAME, 'YellowstoneManager onError', error);
         await Helpers.sleep(5);
         
         YellowstoneManager.reloadInstance(this.id);
     }
 
     async subscribeToConfirmedTransactions(stream: any){
-        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
+        LogManager.log(process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
 
         //TODO: uncomment prod accounts
         // const accountInclude: string[] = ['FUCww3SgAmqiP4CswfgY2r2Nsf6PPzARrXraEnGCn4Ln', 'HnwPe4oW2JY9y1H7RMZoa41RU5KDav1PhrD9zp3QDUjL', '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL', '3ki6JJPC6HXrrvHHrE9mQqbFnAGFuCQ155oNQv1QMH1M'];
         const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
-        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
+        LogManager.log(process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
 
         if (accountInclude.length == 0){
             SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 No wallets to subscribe (grpc)');
@@ -116,13 +117,13 @@ export class YellowstoneManager {
                 }
             });
         }).catch((reason) => {
-            console.error(reason);
+            LogManager.error(reason);
             throw reason;
         });
     }
 
     async subscribeToPingPong(stream: any){
-        console.log(new Date(), process.env.SERVER_NAME, `YellowstoneManager subscribeToPingPong`);
+        LogManager.log(process.env.SERVER_NAME, `YellowstoneManager subscribeToPingPong`);
         // Send pings every 5s to keep the connection open
         const pingRequest: SubscribeRequest = {
             ping: { id: 1 },
@@ -147,7 +148,7 @@ export class YellowstoneManager {
                         }
                     });
                 }).catch((reason) => {
-                    console.error('pingpong error(catched):', reason);
+                    LogManager.error('pingpong error(catched):', reason);
                     // throw reason;
                 });
             }
@@ -169,16 +170,16 @@ export class YellowstoneManager {
             return;
         }
 
-        console.log(new Date(), process.env.SERVER_NAME, 'listener', this.id, `receivedTx`, signature);
+        LogManager.log(process.env.SERVER_NAME, 'listener', this.id, `receivedTx`, signature);
         // fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
-        //     if (err) console.error(err);
+        //     if (err) LogManager.error(err);
         // });
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
         if (parsedTransactionWithMeta){
             WalletManager.processWalletTransaction(parsedTransactionWithMeta);
         }
-        // console.log(new Date(), process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
+        // LogManager.log(process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
         // const signature = base58.encode(transaction.signature);
         // WalletManager.processWalletTransactionBySignature(signature);
     }
@@ -240,7 +241,7 @@ export class YellowstoneManager {
     static shouldProcessSignature(signature: string){
         this.processedSignatures[signature] = ++this.processedSignatures[signature] || 1;
 
-        console.log(`count`, this.processedSignatures[signature]);
+        LogManager.log(`count`, this.processedSignatures[signature]);
         if (this.processedSignatures[signature] > 1){
             return false;
         }

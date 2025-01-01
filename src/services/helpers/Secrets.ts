@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import fs from "fs";
+import { LogManager } from "../../managers/LogManager";
 
 if (process.env.NODE_ENV === "DEVELOPMENT") {
     if (fs.existsSync(".env.development")) {
@@ -11,7 +12,7 @@ else {
         dotenv.config({ path: ".env.production" });
     }
 }
-console.log('process.env.ENVIRONMENT', process.env.ENVIRONMENT);
+LogManager.log('process.env.ENVIRONMENT', process.env.ENVIRONMENT);
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
     throw new Error('TELEGRAM_BOT_TOKEN must be defined');

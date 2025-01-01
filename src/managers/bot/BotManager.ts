@@ -11,6 +11,7 @@ import { autoRetry } from "@grammyjs/auto-retry";
 import { InlineKeyboardMarkup } from "grammy/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { Chain } from "../../services/solana/types";
+import { LogManager } from "../LogManager";
 
 export interface SendMessageData {
     chatId: number;
@@ -55,9 +56,9 @@ export class BotManager {
     ];
 
     constructor() {
-        console.log('BotManager', 'constructor');
+        LogManager.log('BotManager', 'constructor');
 
-        console.log('Starting bot...');
+        LogManager.log('Starting bot...');
         this.bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
 
         this.bot.api.config.use(autoRetry());
@@ -68,30 +69,30 @@ export class BotManager {
 
         this.bot.catch((err) => {
             const ctx = err.ctx;
-            console.error(`Error while handling update from chatId: ${ctx.chat?.id}:`);
+            LogManager.error(`Error while handling update from chatId: ${ctx.chat?.id}:`);
             const e = err.error;
             if (e instanceof GrammyError) {
-                console.error("!catched by bot. GrammyError. Error in request:", e.description);
+                LogManager.error("!catched by bot. GrammyError. Error in request:", e.description);
 
             } else if (e instanceof HttpError) {
-                console.error("!catched by bot. HttpError. Could not contact Telegram:", e);
+                LogManager.error("!catched by bot. HttpError. Could not contact Telegram:", e);
             } else {
-                console.error("!catched by bot. Unknown error:", e);
+                LogManager.error("!catched by bot. Unknown error:", e);
             }
         });
 
         // this.bot.on("message:new_chat_members:is_bot", async (ctx) => {
-        //     console.log('Bot joined chat', ctx.chat.id);
+        //     LogManager.log('Bot joined chat', ctx.chat.id);
         // });
 
         // this.bot.on("message:left_chat_member:me", async (ctx) => {
-        //     console.log('Bot left chat', ctx.chat.id);
+        //     LogManager.log('Bot left chat', ctx.chat.id);
         // });
 
         this.bot.on("callback_query:data", async (ctx) => {
             const data = ctx.callbackQuery.data.split('_');
             if (data.length < 2){
-                console.error('Unknown button event with payload', ctx.callbackQuery.data);
+                LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
                 await ctx.answerCallbackQuery(); // remove loading animation
                 return;
             }
@@ -101,13 +102,13 @@ export class BotManager {
             if (chain == Chain.SOLANA){
                 if (command == 'trade'){
                     if (data.length < 2){
-                        console.error('Unknown button event with payload', ctx.callbackQuery.data);
+                        LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
                         await ctx.answerCallbackQuery(); // remove loading animation
                         return;
                     }
 
                     const mint = data[2];
-                    console.log('trade', mint, 'by', ctx.callbackQuery.from.username);
+                    LogManager.log('trade', mint, 'by', ctx.callbackQuery.from.username);
 
                     //TODO: send message with this token info and buttons to buy/sell
 
@@ -116,14 +117,14 @@ export class BotManager {
                 }
                 else if (command == 'buy'){
                     if (data.length < 3){
-                        console.error('Unknown button event with payload', ctx.callbackQuery.data);
+                        LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
                         await ctx.answerCallbackQuery(); // remove loading animation
                         return;
                     }
 
                     const mint = data[2];
                     const amount = data[3];
-                    console.log('buy', mint, 'for', amount, 'SOL', 'by', ctx.callbackQuery.from.username);
+                    LogManager.log('buy', mint, 'for', amount, 'SOL', 'by', ctx.callbackQuery.from.username);
 
                     //TODO: buy token
 
@@ -133,12 +134,12 @@ export class BotManager {
             }
 
 
-            console.log("Unknown button event with payload", ctx.callbackQuery.data);
+            LogManager.log("Unknown button event with payload", ctx.callbackQuery.data);
             await ctx.answerCallbackQuery(); // remove loading animation
         });
     
         this.bot.start();
-        console.log('Bot started!');    
+        LogManager.log('Bot started!');    
     }
 
     async onCommand(command: string, ctx: any, user: IUser){
@@ -147,12 +148,12 @@ export class BotManager {
             helper.commandReceived(ctx, user);
         }
         else {
-            console.error('Unknown command', command);
+            LogManager.error('Unknown command', command);
         } 
     }
 
     async onMessage(message: TgMessage, ctx: any){
-        console.log('onMessage', message);
+        LogManager.log('onMessage', message);
 
         const user = await UserManager.getUserByTelegramUser(message.from);
         const lastMessage = await Message.findOne({chatId: message.chat.id}).sort({createdAt: -1});
@@ -170,7 +171,7 @@ export class BotManager {
             return;
         }
 
-        console.log('lastMessage', lastMessage.data.text);
+        LogManager.log('lastMessage', lastMessage.data.text);
 
         const lastMessageCommand = lastMessage.data.text.startsWith('/') ? lastMessage.data.text.substring(1) : undefined;
         if (lastMessageCommand){
@@ -256,7 +257,7 @@ export class BotManager {
                 return inlineKeyboard;
             }
             else {
-                console.error('Unknown inline keyboard type', type);
+                LogManager.error('Unknown inline keyboard type', type);
             }
         }
 

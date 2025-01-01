@@ -1,5 +1,6 @@
 import axios from "axios";
 import { SubscriptionTier } from "../entities/payments/Subscription";
+import { LogManager } from "./LogManager";
 
 export interface ISub {
     tier: SubscriptionTier, 
@@ -28,17 +29,17 @@ export class RevenueCatManager {
 
             const activeEntitlements = response.data.active_entitlements;
             const subscriptions: ISub[] = [];
-            console.log('RevenueCat', 'getCustomer', userId, 'activeEntitlements:', JSON.stringify(activeEntitlements));
+            LogManager.log('RevenueCat', 'getCustomer', userId, 'activeEntitlements:', JSON.stringify(activeEntitlements));
             if (activeEntitlements && activeEntitlements.items && activeEntitlements.items.length > 0){
                 for (const item of activeEntitlements.items) {
                     const entitlement = this.entitlements[item.entitlement_id];
-                    console.log('RevenueCat', 'entitlement', entitlement);
+                    LogManager.log('RevenueCat', 'entitlement', entitlement);
                     if (entitlement){
                         const expiresAt = new Date(item.expires_at);  
                         subscriptions.push({tier: entitlement.tier, expiresAt});                      
                     }
                     else {
-                        console.error('Unknown entitlement', item.entitlement_id);
+                        LogManager.error('Unknown entitlement', item.entitlement_id);
                     }
                 }
             }
@@ -46,7 +47,7 @@ export class RevenueCatManager {
             return subscriptions;
         }
         catch (error) {
-            console.error('RevenueCat', 'getCustomer', error);
+            LogManager.error('RevenueCat', 'getCustomer', error);
         }
 
         return undefined;

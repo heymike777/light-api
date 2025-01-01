@@ -28,6 +28,7 @@ import { UserManager } from "./UserManager";
 import { IToken, ITokenModel, Token, TokenNft } from "../entities/tokens/Token";
 import { Chain } from "../services/solana/types";
 import { isAddress } from "@solana/addresses";
+import { LogManager } from "./LogManager";
 
 export class WalletManager {
 
@@ -73,7 +74,7 @@ export class WalletManager {
                     throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
                 }
             }
-            console.log('all good, add wallet');
+            LogManager.log('all good, add wallet');
 
             const wallet = new Wallet({
                 chatId: chatId,
@@ -189,7 +190,7 @@ export class WalletManager {
             }         
         }
         catch (err) {
-            console.error(new Date(), 'processWalletTransaction2', 'Error:', err);
+            LogManager.error('processWalletTransaction2', 'Error:', err);
         }
     }
 
@@ -198,7 +199,7 @@ export class WalletManager {
             const signature = tx.transaction.signatures[0];
                         
             if (!tx.transaction || !tx.meta){
-                console.error(new Date(), 'processWalletTransaction', 'tx not found', signature);
+                LogManager.error('processWalletTransaction', 'tx not found', signature);
                 return;
             }
 
@@ -232,7 +233,7 @@ export class WalletManager {
             await this.processTxForChats(signature, tx, chats);   
         }
         catch (err) {
-            console.error(new Date(), 'processWalletTransaction1', 'Error:', err);
+            LogManager.error('processWalletTransaction1', 'Error:', err);
         }
     }
 
@@ -292,27 +293,27 @@ export class WalletManager {
     static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: ChatWallets[]){
         try {
             if (!tx.meta){
-                console.error('MigrationManager', 'migrate', 'tx not found', signature);
+                LogManager.error('MigrationManager', 'migrate', 'tx not found', signature);
                 return;
             }
 
-            // console.log('processTxForChats', 'signature', signature, 'chats', chats);
+            // LogManager.log('processTxForChats', 'signature', signature, 'chats', chats);
 
             const parsedTx = await ProgramManager.parseTx(tx);
-            // console.log('!!parsedTx', parsedTx);
+            // LogManager.log('!!parsedTx', parsedTx);
             let asset: TokenNft | undefined = undefined;
             
             if (parsedTx.assetId){
                 asset = await MetaplexManager.fetchAssetAndParseToTokenNft(parsedTx.assetId);
-                // console.log('!asset', asset);
+                // LogManager.log('!asset', asset);
             }
 
             let sentUserIds: string[] = [];
 
-            console.log('processTxForChats', 'chats', JSON.stringify(chats));
+            LogManager.log('processTxForChats', 'chats', JSON.stringify(chats));
 
             for (const chat of chats) {
-                // console.log('!!!chat', chat);
+                // LogManager.log('!!!chat', chat);
                 const info = await this.processTx(parsedTx, asset, chat);
                 asset = info.asset;
 
@@ -348,19 +349,19 @@ export class WalletManager {
                         MixpanelManager.track('Process transaction', userTx.userId, { isPushSent: isPushSent, isTelegramSent: isTelegramSent });
                     }
                     catch (err) {
-                        // console.error(new Date(), 'WalletManager', 'processTxForChats', 'Error:', err);
+                        // LogManager.error('WalletManager', 'processTxForChats', 'Error:', err);
                     }
                 }
             }
         }
         catch (err) {
-            console.error(new Date(), 'WalletManager', 'processTxForChats', 'Error:', err);
+            LogManager.error('WalletManager', 'processTxForChats', 'Error:', err);
         }
 
     }
 
     static async processTx(parsedTx: ParsedTx, asset: TokenNft | undefined, chat: ChatWallets){
-        console.log(new Date(), 'processTx', 'parsedTx', parsedTx, 'asset', asset, 'chat', chat);
+        LogManager.log('processTx', 'parsedTx', parsedTx, 'asset', asset, 'chat', chat);
         let hasWalletsChanges = false;
         let message = `[${parsedTx.title}]\n`;
 
@@ -377,7 +378,7 @@ export class WalletManager {
         const tokens: ITokenModel[] = [];
 
         const changedWallets: ChangedWallet[] = [];
-        // console.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
+        // LogManager.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
         for (const walletInvolved of parsedTx.walletsInvolved) {
             const wallet = chat.wallets.find((w) => w.walletAddress === walletInvolved);
             if (wallet){
@@ -478,7 +479,7 @@ export class WalletManager {
                     }
                 }
 
-                console.log('!hasBalanceChange', hasBalanceChange, 'walletAddress', wallet.walletAddress, 'blockMessage:', blockMessage);
+                LogManager.log('!hasBalanceChange', hasBalanceChange, 'walletAddress', wallet.walletAddress, 'blockMessage:', blockMessage);
 
                 if (hasBalanceChange){
                     message += blockMessage;
@@ -613,7 +614,7 @@ export class WalletManager {
 
         const description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, chat.wallets, tokens) : undefined;
 
-        console.log('!changedWallets', JSON.stringify(changedWallets));
+        LogManager.log('!changedWallets', JSON.stringify(changedWallets));
 
         const txApiResponse: TransactionApiResponse = {
             title: parsedTx.title,
@@ -629,7 +630,7 @@ export class WalletManager {
             message = message.replace('\n\n\n', '\n\n');
         }
 
-        console.log('!message', message);
+        LogManager.log('!message', message);
 
         return {
             hasWalletsChanges,
