@@ -66,10 +66,10 @@ export class SolScanManager {
             price: response?.data?.price,
             marketCap: response?.data?.market_cap,
             volume: {
-                '24h': response?.data?.volume_24h,
+                '24h': response?.data?.volume_24h ? Math.round(response?.data?.volume_24h) : undefined,
             },
             priceChange: {
-                '24h': response?.data?.price_change_24h,
+                '24h': response?.data?.price_change_24h ? Math.round(response?.data?.price_change_24h * 100) / 100 : undefined,
             },
         };
         console.log('SolScanManager', 'getTokenInfo', mint, info);
