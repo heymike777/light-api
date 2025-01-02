@@ -6,7 +6,7 @@ import { BotStartHelper } from "./helpers/BotStartHelper";
 import { BotRemoveWalletHelper } from "./helpers/BotRemoveWalletHelper";
 import { BotMyWalletsHelper } from "./helpers/BotMyWalletsHelper";
 import { UserManager } from "../UserManager";
-import { IUser } from "../../entities/User";
+import { IUser } from "../../entities/users/User";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { InlineKeyboardMarkup } from "grammy/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";

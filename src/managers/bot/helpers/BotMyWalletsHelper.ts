@@ -1,4 +1,4 @@
-import { IUser } from "../../../entities/User";
+import { IUser } from "../../../entities/users/User";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { UserManager } from "../../UserManager";

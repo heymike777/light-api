@@ -1,6 +1,6 @@
 import Mixpanel from 'mixpanel';
 import { Environment } from '../models/types';
-import { IUser } from '../entities/User';
+import { IUser } from '../entities/users/User';
 import { LogManager } from './LogManager';
 
 export class MixpanelManager {

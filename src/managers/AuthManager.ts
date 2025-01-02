@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { Auth, IAuth } from '../entities/Auth';
 import { BadRequestError } from '../errors/BadRequestError';
 import { Helpers } from '../services/helpers/Helpers';
-import { IUser, User } from '../entities/User';
+import { IUser, User } from '../entities/users/User';
 import { AccessToken } from '../models/AccessToken';
 import { BrevoManager } from './BrevoManager';
 import { SystemNotificationsManager } from './SytemNotificationsManager';

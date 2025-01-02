@@ -11,7 +11,7 @@ import { errorHandler } from './middlewares/ErrorHandler';
 
 import { MigrationManager } from './services/MigrationManager';
 import { BotManager } from './managers/bot/BotManager';
-import { User } from './entities/User';
+import { User } from './entities/users/User';
 import { Message } from './entities/Message';
 import { Wallet } from './entities/Wallet';
 import { JitoWebsocketManager } from './services/solana/JitoWebsocketManager';
@@ -26,7 +26,7 @@ import { PushToken } from './entities/PushToken';
 import { Auth } from './entities/Auth';
 import { UserRefClaim } from './entities/users/UserRefClaim';
 import { usersRouter } from './routes/v1/Users';
-import { UserTransaction } from './entities/UserTransaction';
+import { UserTransaction } from './entities/users/UserTransaction';
 import { testRouter } from './routes/v1/Test';
 import { webhooksRouter } from './routes/v1/Webhooks';
 import { configRouter } from './routes/v1/Config';

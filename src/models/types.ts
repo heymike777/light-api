@@ -1,5 +1,5 @@
 import { IToken, ITokenModel, TokenNft } from "../entities/tokens/Token";
-import { IUser } from "../entities/User";
+import { IUser } from "../entities/users/User";
 import { IWallet } from "../entities/Wallet";
 
 export enum Environment {

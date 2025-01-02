@@ -1,4 +1,4 @@
-import { IUser } from "../../../entities/User";
+import { IUser } from "../../../entities/users/User";
 import { UserRefClaim } from "../../../entities/users/UserRefClaim";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotManager";

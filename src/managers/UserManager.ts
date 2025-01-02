@@ -1,5 +1,5 @@
 import { ISubscription, Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
-import { IUser, TelegramUser, User } from "../entities/User";
+import { IUser, TelegramUser, User } from "../entities/users/User";
 import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { SubscriptionManager } from "./SubscriptionManager";

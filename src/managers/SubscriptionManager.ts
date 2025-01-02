@@ -1,5 +1,5 @@
 import { ISubscription, Subscription, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
-import { IUser, User } from "../entities/User";
+import { IUser, User } from "../entities/users/User";
 import { Wallet, WalletStatus } from "../entities/Wallet";
 import { Helpers } from "../services/helpers/Helpers";
 import { LogManager } from "./LogManager";
