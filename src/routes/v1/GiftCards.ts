@@ -13,7 +13,7 @@ import { GiftCard } from "../../entities/giftCards/GiftCard";
 import { GiftCardClaim } from "../../entities/giftCards/GiftCardClaim";
 import { MixpanelManager } from "../../managers/MixpanelManager";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
-import { UserRefClaim } from "../../entities/UserRefClaim";
+import { UserRefClaim } from "../../entities/users/UserRefClaim";
 
 const router = express.Router();
 

@@ -24,7 +24,7 @@ import { AccessToken } from './models/AccessToken';
 import { walletsRouter } from './routes/v1/Wallets';
 import { PushToken } from './entities/PushToken';
 import { Auth } from './entities/Auth';
-import { UserRefClaim } from './entities/UserRefClaim';
+import { UserRefClaim } from './entities/users/UserRefClaim';
 import { usersRouter } from './routes/v1/Users';
 import { UserTransaction } from './entities/UserTransaction';
 import { testRouter } from './routes/v1/Test';

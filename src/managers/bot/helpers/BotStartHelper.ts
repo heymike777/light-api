@@ -1,5 +1,5 @@
 import { IUser } from "../../../entities/User";
-import { UserRefClaim } from "../../../entities/UserRefClaim";
+import { UserRefClaim } from "../../../entities/users/UserRefClaim";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";

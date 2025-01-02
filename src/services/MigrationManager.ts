@@ -28,7 +28,7 @@ import { Subscription, SubscriptionPlatform, SubscriptionTier } from "../entitie
 import { RevenueCatManager } from "../managers/RevenueCatManager";
 import { UserManager } from "../managers/UserManager";
 import { User } from "../entities/User";
-import { UserRefClaim } from "../entities/UserRefClaim";
+import { UserRefClaim } from "../entities/users/UserRefClaim";
 import { Message } from "../entities/Message";
 import { Auth } from "../entities/Auth";
 import { PushToken } from "../entities/PushToken";
