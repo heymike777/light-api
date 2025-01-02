@@ -385,7 +385,7 @@ export class WalletManager {
                 const walletAccountIndex = parsedTx.accounts.findIndex((a) => a == walletInvolved);
 
                 let blockMessage = '';
-                const walletTitle = wallet.title || wallet.walletAddress;
+                const walletTitle = wallet.title || Helpers.prettyWallet(wallet.walletAddress);
                 blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`;
 
                 const walletTokenChanges: ChangedWalletTokenChange[] = [];
