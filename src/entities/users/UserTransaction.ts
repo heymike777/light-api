@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose';
-import { ParsedTx } from '../managers/ProgramManager';
-import { ChangedWallet } from '../models/types';
-import { IToken, ITokenModel } from './tokens/Token';
+import { ParsedTx } from '../../managers/ProgramManager';
+import { ChangedWallet } from '../../models/types';
+import { IToken, ITokenModel } from '../tokens/Token';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;

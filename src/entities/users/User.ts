@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
-import { ISubscription, SubscriptionTier } from './payments/Subscription';
-import { TraderManager } from '../managers/TraderManager';
+import { ISubscription, SubscriptionTier } from '../payments/Subscription';
+import { TraderManager } from '../../managers/TraderManager';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
