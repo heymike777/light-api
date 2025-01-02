@@ -158,9 +158,11 @@ router.post(
         for (const transaction of transactions) {
             const parsedTx = transaction.parsedTx;
             const changedWallets = transaction.changedWallets || [];
-            const tokens = transaction.tokens || [];
+            let tokens = transaction.tokens || [];
             const assetToken = tokens?.find((token) => token.nft);
             // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
+
+            tokens = tokens.filter((token) => !token.nft);
 
             if (tokens.length > 0){
                 await TokenManager.fillTokenModelsWithData(tokens);
