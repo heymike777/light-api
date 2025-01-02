@@ -595,11 +595,11 @@ export class WalletManager {
                 nft: asset,
                 priceUpdatedAt: Date.now(),
             }
-            // if (assetToken) {
-            //     const existing = tokens.find((t) => t.address == assetToken.address);
-            //     if (!existing) tokens.push(assetToken);
-            // }
-}
+            if (assetToken) {
+                const existing = tokens.find((t) => t.address == assetToken.address);
+                if (!existing) tokens.push(assetToken);
+            }
+        }
 
         message += '\n\n';
 
