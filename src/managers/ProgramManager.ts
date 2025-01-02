@@ -292,7 +292,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[5]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
                             plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
@@ -307,7 +307,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[6]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
                             plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
@@ -322,7 +322,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[4]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
                             plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
