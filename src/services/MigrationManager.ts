@@ -40,6 +40,7 @@ import { TokenSwap } from "../entities/tokens/TokenSwap";
 import { SolScanManager } from "./solana/SolScanManager";
 import { LogManager } from "../managers/LogManager";
 import { UserTraderProfile } from "../entities/users/TraderProfile";
+import { TraderManager } from "../managers/TraderManager";
 
 export class MigrationManager {
 
@@ -87,8 +88,39 @@ export class MigrationManager {
         
         // await this.migrateValidators();
         // await this.findTransactionsWithoutDescription();
+        
+        // await this.migrateUserEnginesToTraderProfiles();
 
         LogManager.log('MigrationManager', 'migrate', 'done');
+    }
+
+    static async migrateUserEnginesToTraderProfiles() {
+        const users = await User.find({ engine: { $exists: true } });
+        console.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'users', users.length);
+
+        for (const user of users) {
+            const engineId = user.engine;
+            if (!engineId) {
+                continue;
+            }
+
+            const engine = TraderManager.engines.find((e) => e.id === engineId);
+            if (!engine) {
+                console.error('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'engine not found', engineId);
+                continue;
+            }
+
+            const profile = new UserTraderProfile();
+            profile.userId = user.id;
+            profile.engineId = engine.id;
+            profile.title = engine.title;
+            profile.default = true;
+            profile.active = true;
+            profile.createdAt = new Date();
+            await profile.save();
+
+            console.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'userId', user.id, 'engineId', engine.id, engine.title, 'trader profile created');
+        }
     }
 
     static async testToken(mint: string){
