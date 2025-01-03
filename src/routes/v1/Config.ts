@@ -15,7 +15,7 @@ router.get(
 		const platform = '' + req.query.platform;
 
         const appHeaders = Helpers.getAppHeaders(req);
-        LogManager.log('appHeaders:', appHeaders);
+        LogManager.log('appHeaders:', appHeaders, 'allHeaders:', req.headers);
 
         let subscriptions: SubscriptionConfig[] = [];
         if (platform == AppPlatform.IOS || platform == AppPlatform.ANDROID){
