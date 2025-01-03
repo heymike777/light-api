@@ -7,6 +7,11 @@ export class TraderProfilesManager {
         return profiles;
     }
 
+    static async getAllTraderProfiles(): Promise<IUserTraderProfile[]> {
+        const profiles = await UserTraderProfile.find({ engineId: 'light', active: true });
+        return profiles;
+    }
+
     static async findById(id: string): Promise<IUserTraderProfile | undefined> {
         const profile = await UserTraderProfile.findById(id);
         return (profile && profile.active) ? profile : undefined;

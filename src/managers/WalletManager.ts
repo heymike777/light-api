@@ -29,6 +29,7 @@ import { IToken, ITokenModel, Token, TokenNft } from "../entities/tokens/Token";
 import { Chain } from "../services/solana/types";
 import { isAddress } from "@solana/addresses";
 import { LogManager } from "./LogManager";
+import { TraderProfilesManager } from "./TraderProfilesManager";
 
 export class WalletManager {
 
@@ -157,6 +158,20 @@ export class WalletManager {
 
     static async fetchAllWalletAddresses() {
         const wallets = await Wallet.find({status: WalletStatus.ACTIVE});
+        
+        const traderProfiles = await TraderProfilesManager.getAllTraderProfiles();
+        for (let traderProfile of traderProfiles){
+            if (traderProfile.wallet?.publicKey){
+                const wallet = new Wallet();
+                wallet.userId = traderProfile.userId;
+                wallet.walletAddress = traderProfile.wallet?.publicKey;
+                wallet.title = traderProfile.title;
+                wallet.createdAt = new Date();
+                wallet.status = WalletStatus.ACTIVE;
+                wallets.push(wallet);
+            }
+        }
+
         this.walletsMap.clear();
         for (let wallet of wallets){
             if (this.walletsMap.has(wallet.walletAddress)){
@@ -165,7 +180,7 @@ export class WalletManager {
             else {
                 this.walletsMap.set(wallet.walletAddress, [wallet]);
             }
-        }
+        }        
 
         YellowstoneManager.resubscribeAll();
     }

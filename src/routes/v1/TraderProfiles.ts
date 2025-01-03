@@ -25,6 +25,7 @@ import { WalletModel } from "../../services/solana/types";
 import { SolanaManager } from "../../services/solana/SolanaManager";
 import { PremiumError } from "../../errors/PremiumError";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
+import { YellowstoneManager } from "../../services/solana/geyser/YellowstoneManager";
 
 const router = express.Router();
 
@@ -108,6 +109,8 @@ router.post(
         traderProfile.default = (!user.traderProfiles || user.traderProfiles.length == 0); // default=true for the first profile
         traderProfile.wallet = wallet;
         await traderProfile.save();
+
+        YellowstoneManager.resubscribeAll();
 
         res.status(200).send({ traderProfile });
     }
