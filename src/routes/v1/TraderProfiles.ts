@@ -99,6 +99,15 @@ router.post(
             wallet = SolanaManager.createWallet();
         }
 
+        const engine = TraderManager.engines.find((e) => e.id === engineId);
+        if (!engine){
+            throw new BadRequestError("Engine not found");
+        }
+
+        if (engine.isSubscriptionRequired && !user.subscription){
+            throw new PremiumError("Subscription is required to create this trader profile");
+        }
+
         const traderProfile = new UserTraderProfile();
         traderProfile.userId = userId;
         traderProfile.engineId = engineId;
