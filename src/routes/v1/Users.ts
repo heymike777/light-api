@@ -28,17 +28,19 @@ router.get(
     jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
     validateAuth(),  
     async (req: Request, res: Response) => {
-      const userId = req.accessToken?.userId;
-      if (!userId){
-        throw new NotAuthorizedError();
-      }
+        const userId = req.accessToken?.userId;
+        if (!userId){
+            throw new NotAuthorizedError();
+        }
 
-      const user = await UserManager.getUserById(userId, true);
-      if (!user){
-        throw new NotAuthorizedError();
-      }
-   
-      res.status(200).send({ user });
+        const user = await UserManager.getUserById(userId, true);
+        if (!user){
+            throw new NotAuthorizedError();
+        }
+
+        LogManager.log("GET USER", "userId", userId, "user", user);
+    
+        res.status(200).send({ user });
     }
 );
 
