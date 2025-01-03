@@ -81,11 +81,17 @@ router.get(
                     logo: 'https://light.dangervalley.com/static/raydium.png',
                 },
             ]
+        };
+
+        let engines = TraderManager.engines;
+
+        if (appHeaders && appHeaders.appVersion == '1.0'){
+            engines = engines.filter(e => !e.isExternal);
         }
 
         const config = {
             subscriptions,
-            engines: TraderManager.engines,
+            engines: engines,
             farm,
         }
 
