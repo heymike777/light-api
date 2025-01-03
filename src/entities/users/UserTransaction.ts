@@ -34,6 +34,7 @@ export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
 });
 
 UserTransactionSchema.index({ 'userId': 1 });
+UserTransactionSchema.index({ 'userId': 1, createdAt: -1 });
 UserTransactionSchema.index({ 'userId': 1, _id: 1, createdAt: -1 });
 UserTransactionSchema.index({ 'userId': 1, signature: 1 }, { unique: true });
 
