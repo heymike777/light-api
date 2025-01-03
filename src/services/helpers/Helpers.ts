@@ -172,7 +172,7 @@ export class Helpers {
 
     static getAppHeaders(req: Request): { platform: AppPlatform, appVersion: string } {
         const platform = req.headers['LIGHT_PLATFORM'] as AppPlatform || AppPlatform.UNKNOWN;
-        const appVersion = req.headers['LIGHT_APP_VERSION'] as string || '1.0.0';
+        const appVersion = req.headers['LIGHT_APP_VERSION'] as string || '1.0';
 
         return { platform, appVersion }
     }

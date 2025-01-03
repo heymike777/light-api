@@ -91,7 +91,7 @@ router.get(
 
         const config = {
             subscriptions,
-            engines: engines,
+            engines,
             farm,
         }
 
