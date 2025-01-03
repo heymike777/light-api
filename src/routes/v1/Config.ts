@@ -86,7 +86,7 @@ router.get(
         let engines = TraderManager.engines;
 
         if (appHeaders && appHeaders.appVersion == '1.0'){
-            engines = engines.filter(e => !e.isExternal);
+            engines = engines.filter(e => e.isExternal);
         }
 
         const config = {
