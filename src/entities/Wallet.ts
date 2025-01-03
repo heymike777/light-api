@@ -7,6 +7,7 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export enum WalletStatus {
     ACTIVE = 'active',
     PAUSED = 'paused',
+    TRADER = 'trader',
 }
 
 export interface IWallet extends mongoose.Document {
@@ -15,6 +16,7 @@ export interface IWallet extends mongoose.Document {
     title?: string;
     isVerified: boolean;
     status: WalletStatus;
+    traderProfileId?: string;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -26,6 +28,7 @@ export const WalletSchema = new mongoose.Schema<IWallet>({
     title: { type: String },
     isVerified: { type: Boolean, default: false },
     status: { type: String, enum: Object.values(WalletStatus), default: WalletStatus.ACTIVE },
+    traderProfileId: { type: String },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -35,6 +38,8 @@ WalletSchema.index({ userId: 1 });
 WalletSchema.index({ userId: 1, wallletAddress: 1 });
 WalletSchema.index({ userId: 1, status: 1 });
 WalletSchema.index({ status: 1 });
+WalletSchema.index({ traderProfileId: 1 });
+WalletSchema.index({ userId: 1, wallletAddress: 1, status: 1 });
 
 WalletSchema.pre('save', function (next) {
     this.updatedAt = new Date();

@@ -140,12 +140,6 @@ export class TxParser {
             }
         }
 
-        // LogManager.log('!acc', 'signature:', signature, 'accountKeys:', accountKeys);
-
-        // fs.appendFile('transactions_account_keys.txt', `${new Date()} ${signature} heymikeAccount:${heymikeAccount} ${JSON.stringify(accountKeys)}\n`, (err) => {
-        //     if (err) LogManager.error(err);
-        // });
-
         const instructions = this.parseYellowstoneGrpcCompiledInstructions(confirmedTx.transaction?.message?.instructions, accountKeys, signature);
         const innerInstructions: web3.ParsedInnerInstruction[] = [];
         if (confirmedTx.meta?.innerInstructions){

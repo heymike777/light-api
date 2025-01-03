@@ -195,15 +195,11 @@ export class TokenManager {
                     token.liquidity = await this.getUsdLiquidityForToken(token);
                 }
             }
-
-            LogManager.log('!mike', 'TokenManager', 'getToken', 'token', token);
         }
         return tokenToTokenModel(token);
     }
 
     static async getUsdLiquidityForToken(token: IToken): Promise<number> {
-        LogManager.log('!mike', 'TokenManager', 'getUsdLiquidityForToken', 'token', token);
-
         if (!token.price || token.price==0){
             return 0;
         }
@@ -215,7 +211,6 @@ export class TokenManager {
         let liquidity = { sol: 0, token: 0 };
         for (const pair of pairs){
             if (pair.liquidity){
-                LogManager.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pair.token1:', pair.token1, 'pair.token2:', pair.token2);
                 const pairLpSol = pair.token1 === kSolAddress ? pair.liquidity.token1.uiAmount : pair.liquidity.token2.uiAmount;
                 const pairLpToken = pair.token1 === token.address ? pair.liquidity.token1.uiAmount : pair.liquidity.token2.uiAmount;
 
@@ -223,8 +218,6 @@ export class TokenManager {
                 if (pairLpSol!=undefined && pairLpToken!=undefined){
                     liquidity.sol += pairLpSol;
                     liquidity.token += pairLpToken;
-
-                    LogManager.log('!mike', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pairLpSol:', pairLpSol, 'pairLpToken:', pairLpToken);
                 }
                 else {
                     LogManager.log('!catched weird behaviour', 'TokenManager', 'LIQ', 'pair', pair.pairAddress, 'pair.liquidity', pair.liquidity);
@@ -232,8 +225,6 @@ export class TokenManager {
 
             }
         }
-
-        LogManager.log('!mike', 'TokenManager', 'getUsdLiquidityForToken', 'liquidity', liquidity);
 
         return Math.round(liquidity.sol * this.getSolPrice() + liquidity.token * token.price);
     }

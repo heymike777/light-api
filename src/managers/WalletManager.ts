@@ -36,13 +36,12 @@ export class WalletManager {
     static walletsMap: Map<string, IWallet[]> = new Map();
     static programIds: string[] = [];
 
-    static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string, ipAddress?: string): Promise<IWallet>{
+    static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string, ipAddress?: string, traderProfileId?: string): Promise<IWallet>{
         //check if walletAddress is a valid address
         if (!isAddress(walletAddress)) {
             MixpanelManager.trackError(user.id, { text: `Invalid wallet address: ${walletAddress}` }, ipAddress);
             throw new BadRequestError('Invalid wallet address');
         }
-
 
         const existingWallet = await Wallet.findOne({userId: user.id, walletAddress: walletAddress});
         if (existingWallet){
@@ -84,11 +83,12 @@ export class WalletManager {
                 title: title,
                 isVerified: false,
                 createdAt: new Date(),
-                status: WalletStatus.ACTIVE,
+                status: traderProfileId ? WalletStatus.TRADER : WalletStatus.ACTIVE,
+                traderProfileId: traderProfileId,
             });
             await wallet.save();
 
-            MixpanelManager.track('Add wallet', user.id, { walletAddress: walletAddress }, ipAddress);
+            MixpanelManager.track('Add wallet', user.id, { walletAddress, traderProfileId }, ipAddress);
 
             // Update cache
             this.addWalletToCache(wallet);
@@ -102,9 +102,12 @@ export class WalletManager {
     static addWalletToCache(wallet: IWallet){
         let tmpWallets = this.walletsMap.get(wallet.walletAddress);
         if (tmpWallets){
-            const isExists = tmpWallets.find((tmpWallet) => tmpWallet.id == wallet.id);
-            if (!isExists){
+            const existingWallet = tmpWallets.find((tmpWallet) => tmpWallet.id == wallet.id);
+            if (!existingWallet){
                 tmpWallets.push(wallet);
+            }
+            else {
+                existingWallet.title = wallet.title;
             }
         }
         else {
@@ -128,7 +131,7 @@ export class WalletManager {
 
     static async removeWallets(chatId: number, userId: string, walletAddresses: string[], ipAddress?: string){
         const wallets = await Wallet.find({userId: userId, walletAddress: {$in: walletAddresses}});
-        await Wallet.deleteMany({userId: userId, walletAddress: {$in: walletAddresses}});
+        await Wallet.deleteMany({userId: userId, walletAddress: {$in: walletAddresses}, status: {$in: [WalletStatus.ACTIVE, WalletStatus.PAUSED]}});
 
         for (let walletAddress of walletAddresses){
             MixpanelManager.track('Remove wallet', userId, { walletAddress: walletAddress }, ipAddress);
@@ -157,21 +160,8 @@ export class WalletManager {
     }
 
     static async fetchAllWalletAddresses() {
-        const wallets = await Wallet.find({status: WalletStatus.ACTIVE});
+        const wallets = await Wallet.find({status: {$in: [WalletStatus.ACTIVE, WalletStatus.TRADER]}});
         
-        const traderProfiles = await TraderProfilesManager.getAllTraderProfiles();
-        for (let traderProfile of traderProfiles){
-            if (traderProfile.wallet?.publicKey){
-                const wallet = new Wallet();
-                wallet.userId = traderProfile.userId;
-                wallet.walletAddress = traderProfile.wallet?.publicKey;
-                wallet.title = traderProfile.title;
-                wallet.createdAt = new Date();
-                wallet.status = WalletStatus.ACTIVE;
-                wallets.push(wallet);
-            }
-        }
-
         this.walletsMap.clear();
         for (let wallet of wallets){
             if (this.walletsMap.has(wallet.walletAddress)){
@@ -664,7 +654,7 @@ export class WalletManager {
     }
 
     static async pauseWallet(wallet: IWallet){
-        if (wallet.status != WalletStatus.PAUSED){
+        if (wallet.status == WalletStatus.ACTIVE){
             await Wallet.updateOne({ _id: wallet.id }, { status: WalletStatus.PAUSED });
             this.removeWalletFromCache(wallet);
             YellowstoneManager.resubscribeAll();
@@ -672,7 +662,7 @@ export class WalletManager {
     }
 
     static async activateWallet(wallet: IWallet){
-        if (wallet.status != WalletStatus.ACTIVE){
+        if (wallet.status == WalletStatus.PAUSED){
             await Wallet.updateOne({ _id: wallet.id }, { status: WalletStatus.ACTIVE });
             this.addWalletToCache(wallet);
             YellowstoneManager.resubscribeAll();

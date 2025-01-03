@@ -26,6 +26,7 @@ import { SolanaManager } from "../../services/solana/SolanaManager";
 import { PremiumError } from "../../errors/PremiumError";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
 import { YellowstoneManager } from "../../services/solana/geyser/YellowstoneManager";
+import { Wallet } from "../../entities/Wallet";
 
 const router = express.Router();
 
@@ -62,6 +63,7 @@ router.post(
         if (!userId){
             throw new NotAuthorizedError();
         }
+        const ipAddress = Helpers.getIpAddress(req);
 
         const user = await UserManager.getUserById(userId, true);
         if (!user){
@@ -110,7 +112,9 @@ router.post(
         traderProfile.wallet = wallet;
         await traderProfile.save();
 
-        YellowstoneManager.resubscribeAll();
+        if (traderProfile.wallet){
+            await WalletManager.addWallet(-1, user, traderProfile.wallet.publicKey, traderProfile.title, ipAddress, traderProfile.id);
+        }
 
         res.status(200).send({ traderProfile });
     }
@@ -146,6 +150,17 @@ router.put(
 
         if (req.body.title){
             traderProfile.title = req.body.title;
+
+            // update wallet title
+            const wallet = await Wallet.findOne({ traderProfileId: traderProfileId });
+            if (wallet){
+                wallet.title = traderProfile.title;
+                await wallet.save();
+                WalletManager.addWalletToCache(wallet);
+            }
+
+            // update wallet in cache
+            
         }
 
         if (req.body.defaultAmount){
@@ -182,6 +197,7 @@ router.delete(
         if (!userId){
             throw new NotAuthorizedError();
         }
+        const ipAddress = Helpers.getIpAddress(req);
 
         const traderProfileId = req.params.traderProfileId;
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
@@ -195,6 +211,13 @@ router.delete(
 
         traderProfile.active = false;
         await traderProfile.save();
+
+        if (traderProfile.wallet){
+            const traderProfileWallet = await Wallet.findOne({ traderProfileId: traderProfileId });
+            if (traderProfileWallet){
+                await WalletManager.removeWallet(traderProfileWallet, ipAddress);    
+            }
+        }
 
         if (traderProfile.default){
             // if the deleted profile was default, make the first profile default

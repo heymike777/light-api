@@ -157,7 +157,7 @@ export class MigrationManager {
 
         await UserTransaction.deleteOne({ signature, userId });
 
-        const wallets = await Wallet.find({ userId: userId, status: WalletStatus.ACTIVE });
+        const wallets = await Wallet.find({ userId: userId, status: {$in: [WalletStatus.ACTIVE, WalletStatus.TRADER]} });
         const user = await UserManager.getUserById(userId, true);
         const chats = [{user, wallets}];
         // LogManager.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));

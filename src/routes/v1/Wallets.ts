@@ -86,6 +86,9 @@ router.delete(
         if (!wallet || wallet.userId != userId){
             throw new BadRequestError('Wallet not found');
         }
+        if (wallet.traderProfileId){
+            throw new BadRequestError('Wallet is linked to a trader profile. Delete trader profile to delete this wallet.');
+        }
 
         await WalletManager.removeWallet(wallet, ipAddress);
 
