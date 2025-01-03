@@ -157,10 +157,7 @@ router.put(
                 wallet.title = traderProfile.title;
                 await wallet.save();
                 WalletManager.addWalletToCache(wallet);
-            }
-
-            // update wallet in cache
-            
+            }        
         }
 
         if (req.body.defaultAmount){
