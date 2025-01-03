@@ -133,7 +133,7 @@ export class MigrationManager {
         const tx = await SolanaManager.getParsedTransaction(connection, signature);
         // LogManager.log('!tx', JSON.stringify(tx));
         if (tx){
-            await WalletManager.processTxForChats(signature, tx, chats);
+            await WalletManager.processTxForChats(signature, tx, chats, 'test');
         }
     }
 

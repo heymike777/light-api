@@ -8,6 +8,7 @@ export let ObjectId = mongoose.Schema.Types.ObjectId;
 export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface IUserTransaction extends mongoose.Document {
+    geyserId: string;
     userId: string;
     signature?: string;
 
@@ -20,6 +21,7 @@ export interface IUserTransaction extends mongoose.Document {
 }
 
 export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
+    geyserId: { type: String },
     userId: { type: String },
     signature: { type: String },
 

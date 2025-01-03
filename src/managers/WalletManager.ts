@@ -170,31 +170,7 @@ export class WalletManager {
         YellowstoneManager.resubscribeAll();
     }
 
-    static kBatchSize = 200;
-    static signaturesQueue: string[] = [];
-    static async processWalletTransactionBySignature(signature: string) {
-        this.signaturesQueue.push(signature);
-        if (this.signaturesQueue.length >= this.kBatchSize){
-            this.processTransactionsBySignaturesBatch();
-        }
-    }
-
-    static async processTransactionsBySignaturesBatch(){
-        const signatures = this.signaturesQueue.splice(0, this.signaturesQueue.length);
-
-        try {
-            const connection = newConnection();
-            const txs = await SolanaManager.getParsedTransactions(connection, signatures);
-            for (const tx of txs){
-                await this.processWalletTransaction(tx);
-            }         
-        }
-        catch (err) {
-            LogManager.error('processWalletTransaction2', 'Error:', err);
-        }
-    }
-
-    static async processWalletTransaction(tx: web3.ParsedTransactionWithMeta) {
+    static async processWalletTransaction(tx: web3.ParsedTransactionWithMeta, geyserId: string) {
         try{
             const signature = tx.transaction.signatures[0];
                         
@@ -230,7 +206,7 @@ export class WalletManager {
                 return;
             }
 
-            await this.processTxForChats(signature, tx, chats);   
+            await this.processTxForChats(signature, tx, chats, geyserId);   
         }
         catch (err) {
             LogManager.error('processWalletTransaction1', 'Error:', err);
@@ -290,7 +266,7 @@ export class WalletManager {
         return bs58.encode(byteArray);
     }
 
-    static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: ChatWallets[]){
+    static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: ChatWallets[], geyserId: string){
         try {
             if (!tx.meta){
                 LogManager.error('MigrationManager', 'migrate', 'tx not found', signature);
@@ -321,6 +297,7 @@ export class WalletManager {
                     try {
                         //TODO: don't save tx if that's a channel or group chat
                         const userTx = new UserTransaction();
+                        userTx.geyserId = geyserId;
                         userTx.userId = chat.wallets[0].userId;
                         userTx.parsedTx = parsedTx;
                         userTx.changedWallets = info.changedWallets;
