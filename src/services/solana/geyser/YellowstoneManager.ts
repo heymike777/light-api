@@ -78,7 +78,7 @@ export class YellowstoneManager {
         LogManager.log(process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
 
         const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
-        LogManager.log(process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
+        LogManager.forceLog(process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
 
         if (accountInclude.length == 0){
             SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 No wallets to subscribe (grpc)');

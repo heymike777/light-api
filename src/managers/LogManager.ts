@@ -8,6 +8,10 @@ export class LogManager {
         }
     }
 
+    static forceLog(...args: any[]){
+        console.log(new Date(), ...args);
+    }
+
     static error(...args: any[]){
         if (this.isErrorsEnabled){
             console.error(new Date(), ...args);
