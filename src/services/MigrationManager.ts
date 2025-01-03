@@ -39,6 +39,7 @@ import { TokenPair } from "../entities/tokens/TokenPair";
 import { TokenSwap } from "../entities/tokens/TokenSwap";
 import { SolScanManager } from "./solana/SolScanManager";
 import { LogManager } from "../managers/LogManager";
+import { UserTraderProfile } from "../entities/users/TraderProfile";
 
 export class MigrationManager {
 
@@ -68,9 +69,11 @@ export class MigrationManager {
         // await this.processTx('42Jybm1JcyGWQx3AAMZffwK3QagUb2RkWgJ3v3bHgoF7vV7xAXuGxiGouNE5K6czPtBNKcAqkY1kcLprmWJwf8Sn');
         // await this.processTx('5XuB98XVfwMLLPetV5hzZt65P89WuN4YLTj6NSmz5uoiwc8qpqF2TPPoY8gsPHrFQgQYRWUQTphrU99eQNXTn2HV'); //jupiter
 
-        // await this.processTx('5FRKJBrcGBcERCgWLWdR5YRvK3mPMYJnhbePjX6g4ywYgeV4u6ypJeh9FyduvkXiesHqyrTKw9XCEiBWjCWKPXnq'); // Tensor 
+        // await this.processTx('33KvrJbdkLMQPPzeex1idWA9A6oUYi7Fkdnf84Mk52UPxA571v65z2JCBwgHBkwfjcY5zmT9iHrC9RFhaHw8kKAE'); // Tensor 
         // await this.processTx('2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'); // cNFT on Tensor_CNFT
         // await this.processTx('5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'); // TENSOR
+
+
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
@@ -114,6 +117,7 @@ export class MigrationManager {
         await Token.syncIndexes();
         await TokenPair.syncIndexes();
         await TokenSwap.syncIndexes();
+        await UserTraderProfile.syncIndexes();
     }
 
     static async processTx(signature: string) {

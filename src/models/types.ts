@@ -41,3 +41,10 @@ export enum AppPlatform {
     ANDROID = 'android',
     UNKNOWN = 'unknown',
 }
+
+export enum PriorityFee {
+    LOW = 'low', // 0.0001 SOL tips
+    MEDIUM = 'medium', // 0.001 SOL tips
+    HIGH = 'high', // dynamic, but max = 0.01 SOL tips
+    ULTRA = 'ultra', // dynamic. no max value.
+}

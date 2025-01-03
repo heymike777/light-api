@@ -38,7 +38,7 @@ export class SubscriptionManager {
         return 10;
     }
 
-    static getMaxNumberOfTradingProfiles(tier?: SubscriptionTier): number {
+    static getMaxNumberOfTraderProfiles(tier?: SubscriptionTier): number {
         if (tier == SubscriptionTier.PLATINUM){
             return 10;
         }

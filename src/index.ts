@@ -41,6 +41,7 @@ import { TokenPriceStream } from './services/solana/geyser/TokenPriceStream';
 import { TokenPair } from './entities/tokens/TokenPair';
 import { TokenSwap } from './entities/tokens/TokenSwap';
 import { LogManager } from './managers/LogManager';
+import { traderProfilesRouter } from './routes/v1/TraderProfiles';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'LIGHT_PLATFORM', 'LIGHT_APP_VERSION'],
@@ -70,6 +71,7 @@ if (process.env.API_ENABLED == 'true'){
     app.use(webhooksRouter);
     app.use(configRouter);
     app.use(giftCardsRouter);
+    app.use(traderProfilesRouter);
 }
 
 app.all('*', async () => {

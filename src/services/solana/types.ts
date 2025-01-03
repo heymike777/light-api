@@ -83,7 +83,7 @@ export interface SubscriptionConfig {
     type: 'free' | SubscriptionTier,
     title: string,
     maxNumberOfWallets: number,
-    maxNumberOfTradingProfiles: number,
+    maxNumberOfTraderProfiles: number,
 }
 
 export interface Engine {

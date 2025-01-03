@@ -1,9 +1,11 @@
 import { ISubscription, Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
+import { UserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser, TelegramUser, User } from "../entities/users/User";
 import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
+import { TraderProfilesManager } from "./TraderProfilesManager";
 
 export class UserManager {
 
@@ -106,6 +108,7 @@ export class UserManager {
 
     static async fillUserWithData(user: IUser): Promise<IUser> {
         await UserManager.fillUserWithSubscription(user);
+        await UserManager.fillUserWithTraderProfiles(user);
         return user;
     }
 
@@ -129,8 +132,13 @@ export class UserManager {
         }
 
         user.maxNumberOfWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
-        user.maxNumberOfTradingProfiles = SubscriptionManager.getMaxNumberOfTradingProfiles(user.subscription?.tier);
+        user.maxNumberOfTraderProfiles = SubscriptionManager.getMaxNumberOfTraderProfiles(user.subscription?.tier);
 
+        return user;
+    }
+
+    static async fillUserWithTraderProfiles(user: IUser): Promise<IUser> {
+        user.traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id);
         return user;
     }
 

@@ -24,25 +24,25 @@ router.get(
                     type: 'free',
                     title: 'FREE',
                     maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(),
-                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(),
+                    maxNumberOfTraderProfiles: SubscriptionManager.getMaxNumberOfTraderProfiles(),
                 },
                 {
                     type: SubscriptionTier.SILVER,
                     title: 'SILVER',
                     maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(SubscriptionTier.SILVER),
-                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(SubscriptionTier.SILVER),
+                    maxNumberOfTraderProfiles: SubscriptionManager.getMaxNumberOfTraderProfiles(SubscriptionTier.SILVER),
                 },
                 {
                     type: SubscriptionTier.GOLD,
                     title: 'GOLD',
                     maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(SubscriptionTier.GOLD),
-                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(SubscriptionTier.GOLD),
+                    maxNumberOfTraderProfiles: SubscriptionManager.getMaxNumberOfTraderProfiles(SubscriptionTier.GOLD),
                 },
                 {
                     type: SubscriptionTier.PLATINUM,
                     title: 'PLATINUM',
                     maxNumberOfWallets: SubscriptionManager.getMaxNumberOfWallets(SubscriptionTier.PLATINUM),
-                    maxNumberOfTradingProfiles: SubscriptionManager.getMaxNumberOfTradingProfiles(SubscriptionTier.PLATINUM),
+                    maxNumberOfTraderProfiles: SubscriptionManager.getMaxNumberOfTraderProfiles(SubscriptionTier.PLATINUM),
                 },
             ];
         }

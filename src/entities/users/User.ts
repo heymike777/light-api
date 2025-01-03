@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose';
 import { ISubscription, SubscriptionTier } from '../payments/Subscription';
 import { TraderManager } from '../../managers/TraderManager';
+import { IUserTraderProfile } from './TraderProfile';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -30,8 +31,9 @@ export interface IUser extends mongoose.Document {
 
     // --- Relations ---
     subscription?: ISubscription;
+    traderProfiles?: IUserTraderProfile[];
     maxNumberOfWallets?: number;
-    maxNumberOfTradingProfiles?: number;
+    maxNumberOfTraderProfiles?: number;
 }
 
 export const UserSchema = new mongoose.Schema<IUser>({
@@ -70,10 +72,11 @@ UserSchema.methods.toJSON = function () {
         email: this.email,
         subscription: this.subscription,
         maxNumberOfWallets: this.maxNumberOfWallets,
-        maxNumberOfTradingProfiles: this.maxNumberOfTradingProfiles,
+        maxNumberOfTraderProfiles: this.maxNumberOfTraderProfiles,
         isAdmin: this.isAdmin,
         usedGiftCardsCount: this.usedGiftCardsCount,
         engine: this.engine || TraderManager.kDefaultEngineId,
+        traderProfiles: this.traderProfiles,
     };
 };
 
