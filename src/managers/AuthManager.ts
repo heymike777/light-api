@@ -18,6 +18,8 @@ export enum VerificationService {
 
 export class AuthManager {
     static kVerificationService: VerificationService = process.env.VERIFICATION_SERVICE! as VerificationService;
+    static testEmails = ['test@heynova.xyz'];
+    static testCode = '111111';
 
     static async createAuth(email: string): Promise<string> {
         const requestsCount = await Auth.countDocuments({ email, createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60) } });
@@ -29,7 +31,7 @@ export class AuthManager {
 
         let verificationService = this.kVerificationService;
 
-        if (email == 'test@heynova.xyz'){
+        if (this.testEmails.includes(email)){
             verificationService = VerificationService.BREVO;
         }
 
@@ -40,7 +42,7 @@ export class AuthManager {
         request.tries = 0;
 
         if (verificationService == VerificationService.BREVO){
-            request.code = email=='test@heynova.xyz' ? '111111' : this.generateCode();
+            request.code = this.testEmails.includes(email) ? this.testCode : this.generateCode();
             request.lastSentAt = new Date();
         }
 
