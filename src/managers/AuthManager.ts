@@ -27,14 +27,20 @@ export class AuthManager {
 
         await BrevoManager.createContact({email}, [BrevoManager.allUsersListId]);
 
+        let verificationService = this.kVerificationService;
+
+        if (email == 'test@heynova.xyz'){
+            verificationService = VerificationService.BREVO;
+        }
+
         const request = new Auth();
-        request.verificationService = this.kVerificationService;
+        request.verificationService = verificationService;
         request.email = email;
         request.createdAt = new Date();
         request.tries = 0;
 
-        if (this.kVerificationService == VerificationService.BREVO){
-            request.code = (email=='test@sololabs.io' || email=='test@heynova.xyz') ? '111111' : this.generateCode();
+        if (verificationService == VerificationService.BREVO){
+            request.code = email=='test@heynova.xyz' ? '111111' : this.generateCode();
             request.lastSentAt = new Date();
         }
 
@@ -42,10 +48,10 @@ export class AuthManager {
 
 
         // send email
-        if (this.kVerificationService == VerificationService.TWILIO){
+        if (verificationService == VerificationService.TWILIO){
             await TwilioManager.sendVerifyRequest(request.email);
         }
-        else if (this.kVerificationService == VerificationService.BREVO){            
+        else if (verificationService == VerificationService.BREVO){            
             await BrevoManager.sendAuthTransactionalEmail(request.email, request.code);
         }
         else {
