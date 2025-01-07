@@ -10,6 +10,7 @@ import { HeliusManager } from "../services/solana/HeliusManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnection } from "../services/solana/lib/solana";
 import { SolanaManager } from "../services/solana/SolanaManager";
+import { ISwap, StatusType, Swap } from "../entities/payments/Swap";
 
 export class SwapManager {
 
@@ -70,10 +71,12 @@ export class SwapManager {
         // },
     ];
 
-    static async buy(traderProfile: IUserTraderProfile, mint: string, amount: number): Promise<void> {
+    static async buy(swap: ISwap, traderProfile: IUserTraderProfile): Promise<string | undefined> {
         if (!traderProfile.wallet){
             return;
         }
+        const mint = swap.mint;
+        const amount = swap.amountIn;
 
         const quote = await JupiterManager.getQuote(kSolAddress, mint, amount * LAMPORTS_PER_SOL, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
         if (!quote) {
@@ -104,8 +107,6 @@ export class SwapManager {
         
         console.log('SwapManager', 'instructions.length =', instructions.length);
 
-        //TODO: save tx to db (Swap)
-
         const blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
         const keypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey));
         const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
@@ -114,6 +115,19 @@ export class SwapManager {
         const stakedConnection = newConnection(process.env.HELIUS_STAKED_CONNECTIONS_URL!);
         const signature = await stakedConnection.sendTransaction(tx, { skipPreflight: false, maxRetries: 0 });
         console.log('SwapManager', 'signature', signature);
+
+        swap.status.type = StatusType.PENDING;
+        swap.status.tryIndex++;
+        swap.status.tx = {
+            signature,
+            blockhash,
+            sentAt: new Date(),
+        };
+        if (!swap.status.txs) { swap.status.txs = []; };
+        swap.status.txs.push(swap.status.tx);
+        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+
+        return signature;
     }
 
     static createFeeInstruction(swapAmount: number, walletAddress: string): web3.TransactionInstruction {

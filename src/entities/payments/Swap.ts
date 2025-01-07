@@ -24,8 +24,8 @@ export interface SentTx {
     updatedAt?: Date;
 }
 
-export interface SwapDex {
-    JUPITER: 'jupiter',
+export enum SwapDex {
+    JUPITER = 'jupiter',
 }
 
 export interface ISwap extends mongoose.Document {
@@ -38,6 +38,7 @@ export interface ISwap extends mongoose.Document {
     
     status: {
         type: StatusType;
+        tryIndex: number;
         tx?: SentTx;
         txs?: SentTx[];    
     }
@@ -53,18 +54,7 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     dex: { type: String },
     mint: { type: String },
     amountIn: { type: Number },
-    
-    status: {
-        type: { type: String, enum: Object.values(StatusType) },
-        tx: {
-            blockhash: { type: String },
-            signature: { type: String },
-        },
-        txs: [{
-            blockhash: { type: String },
-            signature: { type: String },
-        }]
-    },
+    status: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }

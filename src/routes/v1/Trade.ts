@@ -7,6 +7,7 @@ import { body } from "express-validator";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { SwapManager } from "../../managers/SwapManager";
+import { StatusType, Swap, SwapDex, SwapType } from "../../entities/payments/Swap";
 
 const router = express.Router();
 
@@ -37,9 +38,24 @@ router.post(
             throw new BadRequestError('Only Light engine is supported');
         }
 
-        const resp = await SwapManager.buy(traderProfile, mint, amount);
+        const swap = new Swap();
+        swap.type = SwapType.BUY;
+        swap.dex = SwapDex.JUPITER;
+        swap.userId = userId;
+        swap.traderProfileId = traderProfileId;
+        swap.amountIn = amount;
+        swap.mint = mint;
+        swap.createdAt = new Date();
+        swap.status = {
+            type: StatusType.CREATED,
+            tryIndex: 0,
+        };
+        await swap.save();
 
-        res.status(200).send({ success: true });
+
+        const signature = await SwapManager.buy(swap, traderProfile);
+
+        res.status(200).send({ success: signature ? true : false, signature });
     }
 );
 
