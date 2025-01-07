@@ -577,16 +577,22 @@ export class SolanaManager {
 
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
+    private static recentBlockhashUpdatedAt: Date | undefined;
     static async getRecentBlockhash(): Promise<web3.BlockhashWithExpiryBlockHeight> {
-        if (!SolanaManager.recentBlockhash){
-            await this.updateBlockhash();
-        }
+        await this.updateBlockhash();
         return SolanaManager.recentBlockhash!;
     }
     static async updateBlockhash(){
+        // if now is less than 15 seconds from last update, then skip
+        const now = new Date();
+        if (SolanaManager.recentBlockhashUpdatedAt && now.getTime() - SolanaManager.recentBlockhashUpdatedAt.getTime() < 15000){
+            return;
+        }
+
         try {
             const web3Conn = newConnection();
             SolanaManager.recentBlockhash = await web3Conn.getLatestBlockhash();    
+            SolanaManager.recentBlockhashUpdatedAt = now;
         }
         catch (err){
             LogManager.error('updateBlockhash', err);

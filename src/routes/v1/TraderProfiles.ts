@@ -9,7 +9,6 @@ import { Helpers } from "../../services/helpers/Helpers";
 import { PageToken } from "../../models/PageToken";
 import { UserTransaction } from "../../entities/users/UserTransaction";
 import { WalletManager } from "../../managers/WalletManager";
-import { ChatWallets, PriorityFee, TransactionApiResponse } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { UserManager } from "../../managers/UserManager";
 import { ProgramManager } from "../../managers/ProgramManager";
@@ -52,7 +51,6 @@ router.post(
         body("engineId").isIn(SwapManager.engines.map((engine) => engine.id)).withMessage("engineId is not valid"),
         body("title").notEmpty().withMessage("title is required"),
         body("defaultAmount").optional().isNumeric().withMessage("defaultAmount is not valid"),
-        body("priorityFee").optional().isIn([PriorityFee.LOW, PriorityFee.MEDIUM, PriorityFee.HIGH, PriorityFee.ULTRA]).withMessage("priorityFee is not valid"),
         body("slippage").optional().isNumeric().withMessage("defaultAmount is not valid"),
     ],
     validateRequest,
@@ -78,7 +76,6 @@ router.post(
         const engineId = '' + req.body.engineId;
         const title = '' + req.body.title;
         let defaultAmount: number | undefined;
-        let priorityFee: PriorityFee | undefined;
         let slippage: number | undefined;
         let wallet: WalletModel | undefined;
 
@@ -86,15 +83,11 @@ router.post(
             if (!req.body.defaultAmount){
                 throw new BadRequestError("defaultAmount is not valid");
             }
-            if (!req.body.priorityFee){
-                throw new BadRequestError("priorityFee is not valid");
-            }
             if (!req.body.slippage){
                 throw new BadRequestError("slippage is not valid");
             }
 
             defaultAmount = +req.body.defaultAmount;
-            priorityFee = req.body.priorityFee as PriorityFee;
             slippage = +req.body.slippage;
             wallet = SolanaManager.createWallet();
         }
@@ -113,7 +106,6 @@ router.post(
         traderProfile.engineId = engineId;
         traderProfile.title = title;
         traderProfile.defaultAmount = defaultAmount;
-        traderProfile.priorityFee = priorityFee;
         traderProfile.slippage = slippage;
         traderProfile.createdAt = new Date();
         traderProfile.active = true;
@@ -134,7 +126,6 @@ router.put(
     [
         body("title").optional().notEmpty().withMessage("title is required"),
         body("defaultAmount").optional().isNumeric().withMessage("defaultAmount is not valid"),
-        body("priorityFee").optional().isIn([PriorityFee.LOW, PriorityFee.MEDIUM, PriorityFee.HIGH, PriorityFee.ULTRA]).withMessage("priorityFee is not valid"),
         body("slippage").optional().isNumeric().withMessage("defaultAmount is not valid"),
         body("default").optional().isBoolean().withMessage("default is not valid"),
     ],
@@ -171,10 +162,6 @@ router.put(
 
         if (req.body.defaultAmount){
             traderProfile.defaultAmount = +req.body.defaultAmount;
-        }
-
-        if (req.body.priorityFee){
-            traderProfile.priorityFee = req.body.priorityFee as PriorityFee;
         }
 
         if (req.body.slippage){

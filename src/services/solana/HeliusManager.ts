@@ -291,22 +291,16 @@ export class HeliusManager {
     }
 
     static recentPrioritizationFees: { fee: number, date: Date } | undefined;
-    static async getRecentPrioritizationFees(forceCleanCache = false, priority: Priority = Priority.HIGH): Promise<number> {
-        LogManager.log(process.env.SERVER_NAME, 'getRecentPrioritizationFees', 'priority:', priority);
+    static async getRecentPrioritizationFees(forceCleanCache = false): Promise<number> {
+        LogManager.log(process.env.SERVER_NAME, 'getRecentPrioritizationFees');
         
-        if (priority == Priority.LOW){
-            return 1_000_000;
-        }
-
-        if (!forceCleanCache && this.recentPrioritizationFees && (new Date().getTime() - this.recentPrioritizationFees.date.getTime()) < 60 * 1000){
+        if (!forceCleanCache && this.recentPrioritizationFees && (new Date().getTime() - this.recentPrioritizationFees.date.getTime()) < 15 * 1000){
             return this.recentPrioritizationFees.fee;
         }
 
+        let maxMicroLamports = 100_000_000;
 
-        let minMicroLamports = 100_000_000;
-        let maxMicroLamports = 300_000_000;
-
-        let fees = minMicroLamports;
+        let fees = maxMicroLamports;
 
         try{
             const response = await fetch(this.apiUrl, {
@@ -321,7 +315,7 @@ export class HeliusManager {
                     params: [{
                         "accountKeys": ["JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"],
                         "options": {
-                            "includeAllPriorityFeeLevels": true,
+                            "recommended": true,
                         }
                     }]
                 }),
@@ -329,11 +323,12 @@ export class HeliusManager {
 
             const { result } = await response.json() as any;
 
-            if (result?.priorityFeeLevels?.high){
-                fees = Math.ceil(result.priorityFeeLevels.high);
-            }
+            // if (result?.priorityFeeLevels?.high){
+            //     fees = Math.ceil(result.priorityFeeLevels.high);
+            // }
 
-            if (fees < minMicroLamports){ fees = minMicroLamports; }
+            fees = Math.ceil(result.priorityFeeEstimate * 1.5);
+
             if (fees >= maxMicroLamports){ fees = maxMicroLamports; }
 
             this.recentPrioritizationFees = { fee: fees, date: new Date() };
@@ -345,7 +340,6 @@ export class HeliusManager {
         return fees;
     };
 
-        
     static async sendSmartTransaction(instructions: TransactionInstruction[], keypair: Keypair, lookupTables?: AddressLookupTableAccount[], tipsLamports?: number){
         this.initHelius();
 

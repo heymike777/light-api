@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import { PriorityFee } from '../../models/types';
 import { WalletModel } from '../../services/solana/types';
 import { SwapManager } from '../../managers/SwapManager';
 
@@ -17,7 +16,6 @@ export interface IUserTraderProfile extends mongoose.Document {
     // only for Light engine
     wallet?: WalletModel;
     defaultAmount?: number;
-    priorityFee?: PriorityFee;
     slippage?: number;
 
     updatedAt?: Date;
@@ -33,7 +31,6 @@ export const UserTraderProfileSchema = new mongoose.Schema<IUserTraderProfile>({
 
     wallet: { type: Mixed },
     defaultAmount: { type: Number },
-    priorityFee: { type: String },
     slippage: { type: Number },
 
     updatedAt: { type: Date, default: new Date() },
@@ -54,7 +51,6 @@ UserTraderProfileSchema.methods.toJSON = function () {
         userId: this.userId,
         title: this.title,
         defaultAmount: this.defaultAmount,
-        priorityFee: this.priorityFee,
         slippage: this.slippage,
         engine: SwapManager.engines.find(e => e.id === this.engineId),
         walletAddress: this.wallet?.publicKey,

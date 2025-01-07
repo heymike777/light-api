@@ -71,11 +71,9 @@ export class SwapManager {
     ];
 
     static async buy(traderProfile: IUserTraderProfile, mint: string, amount: number): Promise<void> {
-        if (! traderProfile.wallet){
+        if (!traderProfile.wallet){
             return;
         }
-        await SolanaManager.updateBlockhash();
-
 
         const quote = await JupiterManager.getQuote(kSolAddress, mint, amount * LAMPORTS_PER_SOL, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
         if (!quote) {
@@ -84,8 +82,7 @@ export class SwapManager {
 
         console.log('SwapManager', 'quote', quote);
 
-        //TODO: get prioritizationFeeLamports from Helius
-        const prioritizationFeeLamports = 'auto';
+        const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
 
         const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, traderProfile.slippage || 10, prioritizationFeeLamports, {
             includeTokenLedgerInstruction: true,
@@ -113,7 +110,9 @@ export class SwapManager {
         const keypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey));
         const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
         console.log('SwapManager', 'tx', tx);
-        const signature = await connection.sendTransaction(tx, { skipPreflight: false, maxRetries: 0 });
+
+        const stakedConnection = newConnection(process.env.HELIUS_STAKED_CONNECTIONS_URL!);
+        const signature = await stakedConnection.sendTransaction(tx, { skipPreflight: false, maxRetries: 0 });
         console.log('SwapManager', 'signature', signature);
     }
 
