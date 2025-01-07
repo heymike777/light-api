@@ -1,5 +1,5 @@
 import { AddressLookupTableAccount, Keypair, TransactionInstruction } from '@solana/web3.js';
-import { EnrichedTransaction, Helius, MintApiRequest } from "helius-sdk";
+import { EnrichedTransaction, Helius, MintApiRequest, SmartTransactionContext } from "helius-sdk";
 import { HeliusAsset, HeliusAssetDisplayOptions, MintApiResult } from './HeliusTypes';
 import { Asset, AssetType, Priority } from './types';
 import { kRaydiumAuthority } from './Constants';
@@ -350,20 +350,25 @@ export class HeliusManager {
         this.initHelius();
 
         try{
-            const transactionSignature = await this.helius.rpc.sendSmartTransaction(instructions, [keypair], lookupTables, {skipPreflight: true, maxRetries: 1, lastValidBlockHeightOffset: 0});
+            const transactionSignature = await this.helius.rpc.sendSmartTransaction(instructions, [keypair], lookupTables, {skipPreflight: true, maxRetries: 0, lastValidBlockHeightOffset: 0});
             LogManager.log(`Helius sendSmartTransaction - Successful transfer: ${transactionSignature}`);    
         }
         catch (err){
             LogManager.error('Helius sendSmartTransaction', err);
         }
+    }
 
-        // try{
-        //     const transactionSignatureJito = await this.helius.rpc.sendSmartTransactionWithTip(instructions, [keypair], lookupTables, tipsLamports, 'Amsterdam'); 
-        //     LogManager.log(`Helius sendSmartTransactionWithTip - Successful transfer: ${transactionSignatureJito}`);
-        // }
-        // catch (err){
-        //     LogManager.error('Helius sendSmartTransactionWithTip', err);
-        // }
+    static async createSmartTransaction(instructions: TransactionInstruction[], keypair: Keypair, lookupTables?: AddressLookupTableAccount[]): Promise<SmartTransactionContext | undefined> {
+        this.initHelius();
+
+        try{
+            const txContext = await this.helius.rpc.createSmartTransaction(instructions, [keypair], lookupTables);
+            LogManager.log(`Helius createSmartTransaction txContext: ${txContext}`);    
+            return txContext;
+        }
+        catch (err){
+            LogManager.error('Helius createSmartTransaction', err);
+        }
     }
 
     static async getTokenHolders(mint: string, includeEmpty: Boolean = false, includeSpecialWallets: Boolean = false): Promise<TokenHolder[]> {

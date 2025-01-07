@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { ISubscription, SubscriptionTier } from '../payments/Subscription';
-import { TraderManager } from '../../managers/TraderManager';
+import { SwapManager } from '../../managers/SwapManager';
 import { IUserTraderProfile } from './TraderProfile';
 
 export let Schema = mongoose.Schema;
@@ -75,7 +75,7 @@ UserSchema.methods.toJSON = function () {
         maxNumberOfTraderProfiles: this.maxNumberOfTraderProfiles,
         isAdmin: this.isAdmin,
         usedGiftCardsCount: this.usedGiftCardsCount,
-        engine: this.engine || TraderManager.kDefaultEngineId,
+        engine: this.engine || SwapManager.kDefaultEngineId,
         traderProfiles: this.traderProfiles,
     };
 };

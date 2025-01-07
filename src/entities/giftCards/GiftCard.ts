@@ -22,7 +22,7 @@ export interface IGiftCard extends mongoose.Document {
 }
 
 export const GiftCardSchema = new mongoose.Schema<IGiftCard>({
-    code: { type: String, unique: true },
+    code: { type: String },
     startAt: { type: Date },
     endAt: { type: Date },
     entries: { type: Number },
@@ -37,8 +37,8 @@ export const GiftCardSchema = new mongoose.Schema<IGiftCard>({
     createdAt: { type: Date, default: new Date() }
 });
 
-GiftCardSchema.index({ code: 1, startAt: 1, endAt: 1 });
 GiftCardSchema.index({ code: 1 }, { unique: true });
+GiftCardSchema.index({ code: 1, startAt: 1, endAt: 1 });
 
 GiftCardSchema.pre('save', function (next) {
     this.updatedAt = new Date();

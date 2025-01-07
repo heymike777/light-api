@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose';
 import { PriorityFee } from '../../models/types';
 import { WalletModel } from '../../services/solana/types';
-import { TraderManager } from '../../managers/TraderManager';
+import { SwapManager } from '../../managers/SwapManager';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -56,7 +56,7 @@ UserTraderProfileSchema.methods.toJSON = function () {
         defaultAmount: this.defaultAmount,
         priorityFee: this.priorityFee,
         slippage: this.slippage,
-        engine: TraderManager.engines.find(e => e.id === this.engineId),
+        engine: SwapManager.engines.find(e => e.id === this.engineId),
         walletAddress: this.wallet?.publicKey,
         default: this.default,
     };

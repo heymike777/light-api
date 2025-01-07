@@ -40,7 +40,7 @@ import { TokenSwap } from "../entities/tokens/TokenSwap";
 import { SolScanManager } from "./solana/SolScanManager";
 import { LogManager } from "../managers/LogManager";
 import { UserTraderProfile } from "../entities/users/TraderProfile";
-import { TraderManager } from "../managers/TraderManager";
+import { SwapManager } from "../managers/SwapManager";
 
 export class MigrationManager {
 
@@ -51,7 +51,7 @@ export class MigrationManager {
         if (process.env.SERVER_NAME != 'heynova0'){
             SystemNotificationsManager.sendSystemMessage('Server started');
         }
-        LogManager.log('MigrationManager', 'migrate', 'start');
+        LogManager.forceLog('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
         const chatId = 862473;
 
@@ -91,7 +91,7 @@ export class MigrationManager {
         
         // await this.migrateUserEnginesToTraderProfiles();
 
-        LogManager.log('MigrationManager', 'migrate', 'done');
+        LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
     static async migrateUserEnginesToTraderProfiles() {
@@ -104,7 +104,7 @@ export class MigrationManager {
                 continue;
             }
 
-            const engine = TraderManager.engines.find((e) => e.id === engineId);
+            const engine = SwapManager.engines.find((e) => e.id === engineId);
             if (!engine) {
                 console.error('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'engine not found', engineId);
                 continue;

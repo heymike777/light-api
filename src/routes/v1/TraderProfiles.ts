@@ -13,7 +13,7 @@ import { ChatWallets, PriorityFee, TransactionApiResponse } from "../../models/t
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { UserManager } from "../../managers/UserManager";
 import { ProgramManager } from "../../managers/ProgramManager";
-import { TraderManager } from "../../managers/TraderManager";
+import { SwapManager } from "../../managers/SwapManager";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { User } from "../../entities/users/User";
 import { Announcement, AnnouncementsManager } from "../../managers/AnnouncementsManager";
@@ -49,7 +49,7 @@ router.get(
 router.post(
     '/api/v1/users/:userId/traderProfiles',
     [
-        body("engineId").isIn(TraderManager.engines.map((engine) => engine.id)).withMessage("engineId is not valid"),
+        body("engineId").isIn(SwapManager.engines.map((engine) => engine.id)).withMessage("engineId is not valid"),
         body("title").notEmpty().withMessage("title is required"),
         body("defaultAmount").optional().isNumeric().withMessage("defaultAmount is not valid"),
         body("priorityFee").optional().isIn([PriorityFee.LOW, PriorityFee.MEDIUM, PriorityFee.HIGH, PriorityFee.ULTRA]).withMessage("priorityFee is not valid"),
@@ -99,7 +99,7 @@ router.post(
             wallet = SolanaManager.createWallet();
         }
 
-        const engine = TraderManager.engines.find((e) => e.id === engineId);
+        const engine = SwapManager.engines.find((e) => e.id === engineId);
         if (!engine){
             throw new BadRequestError("Engine not found");
         }

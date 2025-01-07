@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { SubscriptionConfig } from "../../services/solana/types";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
 import { SubscriptionTier } from "../../entities/payments/Subscription";
-import { TraderManager } from "../../managers/TraderManager";
+import { SwapManager } from "../../managers/SwapManager";
 import { AppPlatform } from "../../models/types";
 import { Helpers } from "../../services/helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
@@ -83,7 +83,7 @@ router.get(
             ]
         };
 
-        let engines = TraderManager.engines;
+        let engines = SwapManager.engines;
 
         if (appHeaders && appHeaders.appVersion == '1.0'){
             engines = engines.filter(e => e.isExternal);
@@ -93,6 +93,7 @@ router.get(
             subscriptions,
             engines,
             farm,
+            giftCardsAvailable: false,
         }
 
 		const response = {

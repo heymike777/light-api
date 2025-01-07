@@ -110,7 +110,7 @@ export class SolanaManager {
             "params": [
                 blockhash,
                 {
-                    "commitment": "finalized"
+                    "commitment": "confirmed"
                 }
             ]
         });
@@ -376,7 +376,7 @@ export class SolanaManager {
         return transaction;
     }
 
-    static async createVersionedTransaction(instructions: web3.TransactionInstruction[], keypair: web3.Keypair, blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
+    static async createVersionedTransaction(instructions: web3.TransactionInstruction[], keypair: web3.Keypair, addressLookupTableAccounts?: web3.AddressLookupTableAccount[], blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
         if (!blockhash) {
             blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
         }
@@ -391,7 +391,7 @@ export class SolanaManager {
                 payerKey: keypair.publicKey,
                 recentBlockhash: blockhash,
                 instructions: instructions,
-            }).compileToV0Message()
+            }).compileToV0Message(addressLookupTableAccounts)
         );
 
         versionedTransaction.sign([keypair])
@@ -409,7 +409,7 @@ export class SolanaManager {
             spl.createFreezeAccountInstruction(account, mint, freezeAuthority.publicKey)
         ];
 
-        const transaction = await this.createVersionedTransaction(instructions, freezeAuthority, blockhash, false);
+        const transaction = await this.createVersionedTransaction(instructions, freezeAuthority, undefined, blockhash, false);
         return transaction;
     }
 
@@ -418,7 +418,7 @@ export class SolanaManager {
             spl.createThawAccountInstruction(account, mint, freezeAuthority.publicKey)
         ];
 
-        const transaction = await this.createVersionedTransaction(instructions, freezeAuthority, blockhash, false);
+        const transaction = await this.createVersionedTransaction(instructions, freezeAuthority, undefined, blockhash, false);
         return transaction;
     }
 
@@ -554,6 +554,26 @@ export class SolanaManager {
 
         return undefined;
     }
+
+    static async getAddressLookupTableAccounts(connection: web3.Connection, keys: string[]) {
+        const addressLookupTableAccountInfos = await connection.getMultipleAccountsInfo(
+            keys.map((key) => new web3.PublicKey(key))
+        );
+      
+        const results = addressLookupTableAccountInfos.reduce((acc: web3.AddressLookupTableAccount[], accountInfo, index) => {
+            const addressLookupTableAddress = keys[index];
+            if (accountInfo) {
+                const addressLookupTableAccount = new web3.AddressLookupTableAccount({
+                    key: new web3.PublicKey(addressLookupTableAddress),
+                    state: web3.AddressLookupTableAccount.deserialize(accountInfo.data),
+                });
+                acc.push(addressLookupTableAccount);
+            }
+            return acc;
+        }, []);
+
+        return results;
+    };
 
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;

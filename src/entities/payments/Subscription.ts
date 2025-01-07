@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import { Environment, Status } from "@apple/app-store-server-library"
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;

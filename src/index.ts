@@ -11,37 +11,23 @@ import { errorHandler } from './middlewares/ErrorHandler';
 
 import { MigrationManager } from './services/MigrationManager';
 import { BotManager } from './managers/bot/BotManager';
-import { User } from './entities/users/User';
-import { Message } from './entities/Message';
-import { Wallet } from './entities/Wallet';
 import { JitoWebsocketManager } from './services/solana/JitoWebsocketManager';
 import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager';
 import { WalletManager } from './managers/WalletManager';
-import { Program } from './entities/Program';
 import { TokenManager } from './managers/TokenManager';
 import { authRouter } from './routes/v1/Auth';
 import { AccessToken } from './models/AccessToken';
 import { walletsRouter } from './routes/v1/Wallets';
-import { PushToken } from './entities/PushToken';
-import { Auth } from './entities/Auth';
-import { UserRefClaim } from './entities/users/UserRefClaim';
 import { usersRouter } from './routes/v1/Users';
-import { UserTransaction } from './entities/users/UserTransaction';
 import { testRouter } from './routes/v1/Test';
 import { webhooksRouter } from './routes/v1/Webhooks';
 import { configRouter } from './routes/v1/Config';
-import { Subscription } from './entities/payments/Subscription';
 import { MixpanelManager } from './managers/MixpanelManager';
 import { CronManager } from './managers/CronManager';
-import { GiftCard } from './entities/giftCards/GiftCard';
-import { GiftCardClaim } from './entities/giftCards/GiftCardClaim';
 import { giftCardsRouter } from './routes/v1/GiftCards';
-import { Token } from './entities/tokens/Token';
-import { TokenPriceStream } from './services/solana/geyser/TokenPriceStream';
-import { TokenPair } from './entities/tokens/TokenPair';
-import { TokenSwap } from './entities/tokens/TokenSwap';
 import { LogManager } from './managers/LogManager';
 import { traderProfilesRouter } from './routes/v1/TraderProfiles';
+import { tradeRouter } from './routes/v1/Trade';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'LIGHT_PLATFORM', 'LIGHT_APP_VERSION'],
@@ -72,6 +58,7 @@ if (process.env.API_ENABLED == 'true'){
     app.use(configRouter);
     app.use(giftCardsRouter);
     app.use(traderProfilesRouter);
+    app.use(tradeRouter);
 }
 
 app.all('*', async () => {
@@ -82,11 +69,11 @@ app.use(errorHandler);
 
 const start = async () => {
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
-    LogManager.log('Connected to mongodb!');
+    LogManager.forceLog('Connected to mongodb!');
 
     const port = process.env.PORT;
     app.listen(port, () => {
-        LogManager.log(`Listening on port ${port}.`);
+        LogManager.forceLog(`Listening on port ${port}.`);
         onExpressStarted();
     });
 }

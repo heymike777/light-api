@@ -1,6 +1,6 @@
 export interface Announcement {
     image: string;
-    url: string; // set url through bitly, so I can track clicks
+    url: string; 
 }
 
 export class AnnouncementsManager {

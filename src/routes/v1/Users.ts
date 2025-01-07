@@ -13,7 +13,7 @@ import { ChatWallets, TransactionApiResponse } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { UserManager } from "../../managers/UserManager";
 import { ProgramManager } from "../../managers/ProgramManager";
-import { TraderManager } from "../../managers/TraderManager";
+import { SwapManager } from "../../managers/SwapManager";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { User } from "../../entities/users/User";
 import { Announcement, AnnouncementsManager } from "../../managers/AnnouncementsManager";
@@ -60,7 +60,7 @@ router.put(
     
         if (req.body.engine){
             const engine = req.body.engine;
-            const allEngineIds = TraderManager.engines.map((engine) => engine.id);
+            const allEngineIds = SwapManager.engines.map((engine) => engine.id);
             if (!allEngineIds.includes(engine)){
                 throw new BadRequestError("Engine not found");
             }
