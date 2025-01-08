@@ -7,6 +7,7 @@ import fs from "fs";
 import { SystemNotificationsManager } from "../../../managers/SytemNotificationsManager";
 import { MixpanelManager } from "../../../managers/MixpanelManager";
 import { LogManager } from "../../../managers/LogManager";
+import { SwapManager } from "../../../managers/SwapManager";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -177,6 +178,8 @@ export class YellowstoneManager {
         if (parsedTransactionWithMeta){
             WalletManager.processWalletTransaction(parsedTransactionWithMeta, this.id);
         }
+
+        SwapManager.receivedConfirmationForSignature(signature);
         // LogManager.log(process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
         // const signature = base58.encode(transaction.signature);
         // WalletManager.processWalletTransactionBySignature(signature);

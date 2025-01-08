@@ -11,6 +11,7 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnection } from "../services/solana/lib/solana";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import { ISwap, StatusType, Swap } from "../entities/payments/Swap";
+import { LogManager } from "./LogManager";
 
 export class SwapManager {
 
@@ -72,7 +73,15 @@ export class SwapManager {
     ];
 
     static async buy(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
+        swap.status.type = StatusType.START_PROCESSING;
+        const res = await Swap.updateOne({ _id: swap._id, "swap.status.type": StatusType.CREATED }, { $set: { status: swap.status } });
+        if (res.modifiedCount === 0) {
+            LogManager.error('SwapManager', 'buy', 'Swap status is not CREATED', { swap });
+            return;
+        }
+
         if (!traderProfile.wallet){
+            LogManager.error('SwapManager', 'buy', 'Trader profile wallet not found', { traderProfile });
             return;
         }
         const mint = swap.mint;
@@ -134,7 +143,7 @@ export class SwapManager {
             return await this.buy(swap, traderProfile, triesLeft - 1);
         }
 
-        swap.status.type = StatusType.PENDING;
+        swap.status.type = StatusType.PROCESSING;
         swap.status.tryIndex++;
         swap.status.tx = {
             signature,
@@ -162,6 +171,34 @@ export class SwapManager {
         });
 
         return feeInstruction;
+    }
+
+    static async receivedConfirmationForSignature(signature: string) {
+        const swap = await Swap.findOne({ "status.tx.signature": signature });
+        if (!swap) {
+            LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
+            return;
+        }
+
+        const now = new Date();
+
+        swap.status.type = StatusType.COMPLETED;
+        if (swap.status.tx && swap.status.tx.signature == signature) {
+            swap.status.tx.confirmedAt = new Date();
+        }
+        else {
+            LogManager.error('SwapManager', 'receivedConfirmation', 'Tx not found', { signature });
+        }
+
+        if (swap.status.txs){
+            for (const tx of swap.status.txs) {
+                if (tx.signature == signature) {
+                    tx.confirmedAt = now;
+                }
+            }
+        }
+
+        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
     }
 
 }

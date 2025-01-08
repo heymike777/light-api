@@ -11,7 +11,8 @@ export enum SwapType {
 
 export enum StatusType {
     CREATED = 'created',
-    PENDING = 'pending',
+    START_PROCESSING = 'start_processing',
+    PROCESSING = 'processing',
     COMPLETED = 'completed',
     CANCELLED = 'cancelled',
 }
@@ -62,6 +63,7 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
 
 SwapSchema.index({ userId: 1 });
 SwapSchema.index({ "status.tx.signature": 1 });
+SwapSchema.index({ _id: 1, "swap.status.type": 1 });
 
 SwapSchema.pre('save', function (next) {
     this.updatedAt = new Date();
