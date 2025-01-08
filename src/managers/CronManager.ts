@@ -3,13 +3,14 @@ import { TokenManager } from './TokenManager';
 import { UserManager } from './UserManager';
 import { YellowstoneManager } from '../services/solana/geyser/YellowstoneManager';
 import { SubscriptionManager } from './SubscriptionManager';
+import { SwapManager } from './SwapManager';
 
 export class CronManager {
 
     static async setup() {
         cron.schedule('*/10 * * * * *', () => {
-            //TODO: for now it's every 10 seconds, but on productions set it to every second
             TokenManager.updateTokensPrices();
+            SwapManager.checkPendingSwaps();
         })
     
         cron.schedule('* * * * *', () => {

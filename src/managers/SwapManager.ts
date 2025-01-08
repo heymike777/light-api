@@ -10,8 +10,9 @@ import { HeliusManager } from "../services/solana/HeliusManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnection } from "../services/solana/lib/solana";
 import { SolanaManager } from "../services/solana/SolanaManager";
-import { ISwap, StatusType, Swap } from "../entities/payments/Swap";
+import { ISwap, StatusType, Swap, SwapType } from "../entities/payments/Swap";
 import { LogManager } from "./LogManager";
+import { TraderProfilesManager } from "./TraderProfilesManager";
 
 export class SwapManager {
 
@@ -186,9 +187,6 @@ export class SwapManager {
         if (swap.status.tx && swap.status.tx.signature == signature) {
             swap.status.tx.confirmedAt = new Date();
         }
-        else {
-            LogManager.error('SwapManager', 'receivedConfirmation', 'Tx not found', { signature });
-        }
 
         if (swap.status.txs){
             for (const tx of swap.status.txs) {
@@ -199,6 +197,83 @@ export class SwapManager {
         }
 
         await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+    }
+
+    static async checkPendingSwaps() {
+        const swaps = await Swap.find({ "status.type": StatusType.PROCESSING });
+        LogManager.log('SwapManager', 'checkPendingSwaps', 'Pending swaps:', swaps.length);
+        if (!swaps || swaps.length === 0) {
+            return;
+        }
+
+        const blockhashes: string[] = [];
+        const signatures = swaps.map(swap => swap.status.tx?.signature).filter(signature => signature) as string[];
+
+        if (signatures.length === 0) {
+            return;
+        }
+
+        const connection = newConnection();
+        const signatureStatuses = await connection.getSignatureStatuses(signatures);
+
+        for (let index = 0; index < signatures.length; index++) {
+            const signature = signatures[index];
+            const signatureStatus = signatureStatuses.value[index];
+            const swap = swaps.find(swap => swap.status.tx?.signature == signature);
+            if (!swap) {
+                console.error('SwapManager', 'checkPendingSwaps', 'Swap not found', { signature });
+                continue;
+            }
+
+            if (!signatureStatus) {
+                if (swap.status.tx && swap.status.tx.blockhash) {
+                    if (!blockhashes.includes(swap.status.tx.blockhash)) {
+                        blockhashes.push(swap.status.tx.blockhash);
+                    }
+                }
+                continue;
+            }
+            else {
+                if (signatureStatus.err) {
+                    console.error('SwapManager', 'checkPendingSwaps', signatureStatus.err);
+                    swap.status.type = StatusType.CREATED;
+                    swap.status.tryIndex++;
+                    await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+
+                    continue;
+                }
+                else if (signatureStatus.confirmationStatus === 'confirmed' || signatureStatus.confirmationStatus === 'finalized') {
+                    // should I do anything here? I think at this moment swap is already confirmed from geyser. 
+                    // maybe I should add this tx to geyser, just in case it's missed?
+
+                    swap.status.type = StatusType.COMPLETED;
+                    swap.status.tx!.confirmedAt = new Date();
+                    await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+                }
+            }
+            
+        }
+    }
+
+    static async retrySwaps() {        
+        const swaps = await Swap.find({ "status.type": StatusType.CREATED });
+        LogManager.log('SwapManager', 'retrySwaps', 'Retrying swaps:', swaps.length);
+        if (!swaps || swaps.length === 0) {
+            return;
+        }
+
+        for (const swap of swaps) {
+            const traderProfile = await TraderProfilesManager.findById(swap.traderProfileId);
+            if (traderProfile) {
+                if (swap.type === SwapType.BUY) {
+                    await this.buy(swap, traderProfile);
+                }
+                else {
+                    //TODO: retry sell
+                }
+            }
+        }
+
     }
 
 }
