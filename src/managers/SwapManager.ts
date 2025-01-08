@@ -71,50 +71,68 @@ export class SwapManager {
         // },
     ];
 
-    static async buy(swap: ISwap, traderProfile: IUserTraderProfile): Promise<string | undefined> {
+    static async buy(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
         if (!traderProfile.wallet){
             return;
         }
         const mint = swap.mint;
         const amount = swap.amountIn;
 
-        const quote = await JupiterManager.getQuote(kSolAddress, mint, amount * LAMPORTS_PER_SOL, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
-        if (!quote) {
-            return;
-        }
-
-        console.log('SwapManager', 'quote', quote);
-
-        const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
-
-        const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, traderProfile.slippage || 10, prioritizationFeeLamports, {
-            includeTokenLedgerInstruction: true,
-            includeSwapInstruction: true,
-            includeComputeBudgetInstructions: true,
-            includeCleanupInstruction: true,
-            includeSetupInstructions: true,
-        });
-
-        const instructions = swapData.instructions;
-        const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
-        const connection = newConnection();
-        const addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
-
-        console.log('SwapManager', 'swapData', swapData);
-
-        // add 0.75% fee instruction to tx
-        instructions.push(this.createFeeInstruction(amount, traderProfile.wallet.publicKey));
-        
-        console.log('SwapManager', 'instructions.length =', instructions.length);
-
-        const blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
-        const keypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey));
-        const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
-        console.log('SwapManager', 'tx', tx);
-
         const stakedConnection = newConnection(process.env.HELIUS_STAKED_CONNECTIONS_URL!);
-        const signature = await stakedConnection.sendTransaction(tx, { skipPreflight: false, maxRetries: 0 });
-        console.log('SwapManager', 'signature', signature);
+        const keypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey));
+        const connection = newConnection();
+        let signature: string | undefined;
+        let blockhash: string | undefined
+
+        try {
+            const quote = await JupiterManager.getQuote(kSolAddress, mint, amount * LAMPORTS_PER_SOL, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
+            if (!quote) {
+                return;
+            }
+
+            console.log('SwapManager', 'quote', quote);
+
+            const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
+
+            const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, traderProfile.slippage || 10, prioritizationFeeLamports, {
+                includeTokenLedgerInstruction: true,
+                includeSwapInstruction: true,
+                includeComputeBudgetInstructions: true,
+                includeCleanupInstruction: true,
+                includeSetupInstructions: true,
+            });
+
+            const instructions = swapData.instructions;
+            const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
+            const addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
+
+            console.log('SwapManager', 'swapData', swapData);
+
+            // add 0.75% fee instruction to tx
+            instructions.push(this.createFeeInstruction(amount, traderProfile.wallet.publicKey));
+            
+            console.log('SwapManager', 'instructions.length =', instructions.length);
+
+            blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
+            const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
+            console.log('SwapManager', 'tx', tx);
+
+            signature = await stakedConnection.sendTransaction(tx, { skipPreflight: false, maxRetries: 0 });
+            console.log('SwapManager', 'signature', signature);
+        }
+        catch (error) {
+            console.error('SwapManager', 'buy', error);
+
+            if (triesLeft <= 0) {
+                swap.status.type = StatusType.CREATED;
+                swap.status.tryIndex++;
+                await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+                return;
+            }
+
+            // repeat the transaction            
+            return await this.buy(swap, traderProfile, triesLeft - 1);
+        }
 
         swap.status.type = StatusType.PENDING;
         swap.status.tryIndex++;
