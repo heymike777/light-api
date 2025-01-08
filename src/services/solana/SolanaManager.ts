@@ -102,7 +102,6 @@ export class SolanaManager {
     }
 
     static async isBlockhashValid(blockhash: string) : Promise<boolean | undefined> {
-        //LogManager.log(process.env.SERVER_NAME, '----- isBlockhashValid -----', blockhash);
         const { data } = await axios.post(getRpc(), {
             "id": 45,
             "jsonrpc": "2.0",
@@ -260,7 +259,7 @@ export class SolanaManager {
 
             const transactions: web3.Transaction[] = [];
             
-            const recentBlockhash = (await web3Conn.getLatestBlockhash()).blockhash;
+            const recentBlockhash = (await web3Conn.getLatestBlockhash('confirmed')).blockhash;
             
             const chunksArr = chunks(filteredAccounts);
 
@@ -591,7 +590,7 @@ export class SolanaManager {
 
         try {
             const web3Conn = newConnection();
-            SolanaManager.recentBlockhash = await web3Conn.getLatestBlockhash();    
+            SolanaManager.recentBlockhash = await web3Conn.getLatestBlockhash('confirmed');    
             SolanaManager.recentBlockhashUpdatedAt = now;
         }
         catch (err){

@@ -10,9 +10,9 @@ export class CronManager {
     static async setup() {
         cron.schedule('*/10 * * * * *', () => {
             TokenManager.updateTokensPrices();
-            SwapManager.checkPendingSwaps();
-        })
-    
+            this.checkAndRetrySwaps();
+        });
+
         cron.schedule('* * * * *', () => {
             // once a minute
             TokenManager.fetchTokensInfo();
@@ -34,7 +34,11 @@ export class CronManager {
             SubscriptionManager.fetchAllRevenueCatSubscriptions();
             TokenManager.fetchNewPoolsForExistingTokens();
         });
-    
+    }
+
+    static async checkAndRetrySwaps() {
+        await SwapManager.checkPendingSwaps();
+        await SwapManager.retrySwaps();
     }
 
 }

@@ -75,7 +75,7 @@ export class SwapManager {
 
     static async buy(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
         swap.status.type = StatusType.START_PROCESSING;
-        const res = await Swap.updateOne({ _id: swap._id, "swap.status.type": StatusType.CREATED }, { $set: { status: swap.status } });
+        const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {
             LogManager.error('SwapManager', 'buy', 'Swap status is not CREATED', { swap });
             return;
@@ -158,13 +158,13 @@ export class SwapManager {
         return signature;
     }
 
-    static createFeeInstruction(swapAmount: number, walletAddress: string): web3.TransactionInstruction {
+    static createFeeInstruction(swapAmount: number, walletAddress: string, fee = 0.01): web3.TransactionInstruction {
         const feeWalletAddress = process.env.FEE_SOL_WALLET_ADDRESS;
         if (!feeWalletAddress) {
             throw new BadRequestError('Fee wallet address not found');
         }
 
-        const feeAmount = Math.round(swapAmount * LAMPORTS_PER_SOL * 0.0075);
+        const feeAmount = Math.round(swapAmount * LAMPORTS_PER_SOL * fee);
         const feeInstruction = web3.SystemProgram.transfer({
             fromPubkey: new web3.PublicKey(walletAddress),
             toPubkey: new web3.PublicKey(feeWalletAddress),
@@ -251,7 +251,28 @@ export class SwapManager {
                     await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
                 }
             }
-            
+        }
+
+        // fetch blockhashes statusses
+        for (const blockhash of blockhashes) {
+            const isValid = await SolanaManager.isBlockhashValid(blockhash);
+            if (isValid) {
+                continue;
+            }
+            else if (isValid == false){
+                // then set status from PENDING to CREATED 
+                for (const swap of swaps) {
+                    if (swap.status.tx?.blockhash == blockhash && swap.status.type == StatusType.PROCESSING) {
+                        swap.status.type = StatusType.CREATED;
+                        swap.status.tryIndex++;
+                        await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.PROCESSING }, { $set: { status: swap.status } });
+                    }
+                }
+            }
+            else if (isValid == undefined){
+                LogManager.error('SwapManager', 'checkPendingSwaps', 'Blockhash is undefined', { blockhash });
+                // is this the same as isValid == false ??
+            }
         }
     }
 
@@ -263,6 +284,15 @@ export class SwapManager {
         }
 
         for (const swap of swaps) {
+            if (swap.status.tryIndex >= 10) {
+                swap.status.type = StatusType.CANCELLED;
+                const tmp = await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.CREATED }, { $set: { status: swap.status } });
+                if (tmp.modifiedCount > 0) {
+                    LogManager.error('SwapManager', 'retrySwaps', 'Swap cancelled', { swap });
+                    //TODO: send error message to user
+                }
+            }
+
             const traderProfile = await TraderProfilesManager.findById(swap.traderProfileId);
             if (traderProfile) {
                 if (swap.type === SwapType.BUY) {
