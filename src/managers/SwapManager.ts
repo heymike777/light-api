@@ -83,6 +83,9 @@ export class SwapManager {
 
         if (!traderProfile.wallet){
             LogManager.error('SwapManager', 'buy', 'Trader profile wallet not found', { traderProfile });
+            swap.status.type = StatusType.CREATED;
+            swap.status.tryIndex++;
+            await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
             return;
         }
         const mint = swap.mint;
@@ -97,6 +100,9 @@ export class SwapManager {
         try {
             const quote = await JupiterManager.getQuote(kSolAddress, mint, amount * LAMPORTS_PER_SOL, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
             if (!quote) {
+                swap.status.type = StatusType.CREATED;
+                swap.status.tryIndex++;
+                await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });    
                 return;
             }
 
@@ -136,7 +142,8 @@ export class SwapManager {
             if (triesLeft <= 0) {
                 swap.status.type = StatusType.CREATED;
                 swap.status.tryIndex++;
-                await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+                await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+
                 return;
             }
 
