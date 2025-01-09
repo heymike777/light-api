@@ -164,7 +164,7 @@ router.post(
             const assetToken = tokens?.find((token) => token.nft);
             // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
 
-            tokens = tokens.filter((token) => !token.nft);
+            tokens = tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address) && !token.nft);
 
             if (tokens.length > 0){
                 await TokenManager.fillTokenModelsWithData(tokens);

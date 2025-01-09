@@ -307,7 +307,7 @@ export class WalletManager {
                         userTx.parsedTx = parsedTx;
                         userTx.changedWallets = info.changedWallets;
                         userTx.createdAt = new Date(parsedTx.blockTime * 1000);
-                        userTx.tokens = info.transactionApiResponse.tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address));
+                        userTx.tokens = info.transactionApiResponse.tokens.filter((token) => token.address != kSolAddress);
                         userTx.signature = parsedTx.signature;
                         await userTx.save();
 
@@ -541,7 +541,7 @@ export class WalletManager {
         let tokensMessage = '';
         if (tokens && tokens.length > 0){
             for (const token of tokens) {
-                if (token.address != kSolAddress){
+                if (!TokenManager.excludedTokens.includes(token.address)){
                     tokensMessage += `<b>#${token.symbol}</b>`;
                     if (token.name){
                         tokensMessage += ` | ${token.name}`;
