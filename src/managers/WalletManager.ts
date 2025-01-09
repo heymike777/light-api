@@ -307,7 +307,7 @@ export class WalletManager {
                         userTx.parsedTx = parsedTx;
                         userTx.changedWallets = info.changedWallets;
                         userTx.createdAt = new Date(parsedTx.blockTime * 1000);
-                        userTx.tokens = info.transactionApiResponse.tokens.filter((token) => token.address != kSolAddress);
+                        userTx.tokens = info.transactionApiResponse.tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address));
                         userTx.signature = parsedTx.signature;
                         await userTx.save();
 

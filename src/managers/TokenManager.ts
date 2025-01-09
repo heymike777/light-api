@@ -47,6 +47,11 @@ import { LogManager } from "./LogManager";
 export class TokenManager {
 
     static tokens: IToken[] = [];
+    static excludedTokens: string[] = [
+        kSolAddress,
+        kUsdcAddress,
+        kUsdtAddress,
+    ];
 
     static async init(){
         TokenManager.tokens = await Token.find();
@@ -191,7 +196,7 @@ export class TokenManager {
             if (token.price!=undefined && token.supply!=undefined && token.decimals!=undefined){
                 token.marketCap = TokenManager.calculateMarketCap(token);
 
-                if (token.address !== kSolAddress && token.address !== kUsdcAddress && token.address !== kUsdtAddress && !token.nft){
+                if (!this.excludedTokens.includes(token.address) && !token.nft){
                     token.liquidity = await this.getUsdLiquidityForToken(token);
                 }
             }

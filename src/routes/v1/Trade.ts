@@ -8,6 +8,9 @@ import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { SwapManager } from "../../managers/SwapManager";
 import { StatusType, Swap, SwapDex, SwapType } from "../../entities/payments/Swap";
+import { SolScanManager } from "../../services/solana/SolScanManager";
+import { SolanaManager } from "../../services/solana/SolanaManager";
+import { newConnection } from "../../services/solana/lib/solana";
 
 const router = express.Router();
 
@@ -36,6 +39,17 @@ router.post(
 
         if (traderProfile.engineId !== SwapManager.kNaviteEngineId){
             throw new BadRequestError('Only Light engine is supported');
+        }
+
+        if (!traderProfile.wallet){
+            throw new BadRequestError('Trader profile wallet not found');
+        }
+
+        const connection = newConnection();
+        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
+        const minSolRequired = amount * 1.01 + 0.01;
+        if (!balance || balance.uiAmount < minSolRequired){
+            throw new BadRequestError('Insufficient balance');
         }
 
         const swap = new Swap();
