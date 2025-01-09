@@ -165,8 +165,7 @@ router.post(
             // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
 
             const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
-
-            console.log('!!!tokens1 =', JSON.stringify(tokens));
+            const description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, wallets, tokens) : undefined;
 
             tokens = tokens.filter((token) => !token.nft);
             tokens = tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address));
@@ -175,11 +174,9 @@ router.post(
                 await TokenManager.fillTokenModelsWithData(tokens);
             }
 
-            console.log('!!!tokens2 =', JSON.stringify(tokens));
-
             parsedTransactions.push({
                 title: parsedTx.title,
-                description: txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, wallets, tokens) : undefined,
+                description: description,
                 explorerUrl: ExplorerManager.getUrlToTransaction(parsedTx.signature),
                 asset: assetToken?.nft,
                 signature: parsedTx.signature,
