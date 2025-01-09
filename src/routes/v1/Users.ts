@@ -164,13 +164,14 @@ router.post(
             const assetToken = tokens?.find((token) => token.nft);
             // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
 
-            tokens = tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address) && !token.nft);
+            const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
+
+            tokens = tokens.filter((token) => !token.nft);
+            tokens = tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address));
 
             if (tokens.length > 0){
                 await TokenManager.fillTokenModelsWithData(tokens);
             }
-
-            const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
 
             parsedTransactions.push({
                 title: parsedTx.title,
