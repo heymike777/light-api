@@ -166,12 +166,16 @@ router.post(
 
             const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
 
+            console.log('!!!tokens1 =', JSON.stringify(tokens));
+
             tokens = tokens.filter((token) => !token.nft);
             tokens = tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address));
 
             if (tokens.length > 0){
                 await TokenManager.fillTokenModelsWithData(tokens);
             }
+
+            console.log('!!!tokens2 =', JSON.stringify(tokens));
 
             parsedTransactions.push({
                 title: parsedTx.title,
