@@ -20,6 +20,10 @@ import { Announcement, AnnouncementsManager } from "../../managers/Announcements
 import { token } from "@coral-xyz/anchor/dist/cjs/utils";
 import { TokenManager } from "../../managers/TokenManager";
 import { LogManager } from "../../managers/LogManager";
+import { Subscription } from "../../entities/payments/Subscription";
+import { PushToken } from "../../entities/PushToken";
+import { UserTraderProfile } from "../../entities/users/TraderProfile";
+import { Wallet } from "../../entities/Wallet";
 
 const router = express.Router();
 
@@ -74,6 +78,32 @@ router.put(
         const user = await UserManager.getUserById(userId, true);
 
         res.status(200).send({success: true, user});
+    }
+);
+
+router.delete(
+    '/api/v1/users',
+    jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
+    validateAuth(),  
+    async (req: Request, res: Response) => {
+        const userId = req.accessToken?.userId;
+        if (!userId){
+            throw new NotAuthorizedError();
+        }
+    
+        const user = await UserManager.getUserById(userId, true);
+        if (!user){
+            throw new NotAuthorizedError();
+        }
+
+        await User.deleteOne({ _id: userId });
+        await Subscription.deleteMany({ userId: userId });
+        await PushToken.deleteMany({ userId: userId });
+        await Wallet.deleteMany({ userId: userId });
+        await UserTraderProfile.updateMany({ userId: userId }, { $set: { active: false } });
+        await UserTransaction.deleteMany({ userId: userId });
+
+        res.status(200).send({success: true});
     }
 );
 
@@ -164,8 +194,11 @@ router.post(
             const assetToken = tokens?.find((token) => token.nft);
             // const info = await WalletManager.processTx(parsedTx, assetToken?.nft, chat);
 
-            const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
-            const description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, wallets, tokens) : undefined;
+            let description = transaction.description;
+            if (!description && parsedTx){
+                const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
+                description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, wallets, tokens) : undefined;    
+            }
 
             tokens = tokens.filter((token) => !token.nft);
             tokens = tokens.filter((token) => !TokenManager.excludedTokens.includes(token.address));
@@ -175,12 +208,12 @@ router.post(
             }
 
             parsedTransactions.push({
-                title: parsedTx.title,
+                title: transaction.title || parsedTx?.title || '[TX]',
                 description: description,
-                explorerUrl: ExplorerManager.getUrlToTransaction(parsedTx.signature),
+                explorerUrl: parsedTx ? ExplorerManager.getUrlToTransaction(parsedTx.signature) : undefined,
                 asset: assetToken?.nft,
-                signature: parsedTx.signature,
-                blockTime: parsedTx.blockTime,
+                signature: parsedTx?.signature,
+                blockTime: parsedTx?.blockTime,
                 wallets: changedWallets,
                 tokens: tokens,
             });

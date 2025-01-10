@@ -13,6 +13,11 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { ISwap, StatusType, Swap, SwapType } from "../entities/payments/Swap";
 import { LogManager } from "./LogManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
+import { UserTransaction } from "../entities/users/UserTransaction";
+import { BotManager } from "./bot/BotManager";
+import { UserManager } from "./UserManager";
+import { FirebaseManager } from "./FirebaseManager";
+import { MixpanelManager } from "./MixpanelManager";
 
 export class SwapManager {
 
@@ -297,6 +302,9 @@ export class SwapManager {
                 if (tmp.modifiedCount > 0) {
                     LogManager.error('SwapManager', 'retrySwaps', 'Swap cancelled', { swap });
                     //TODO: send error message to user
+
+                    await this.sendSwapErrorToUser(swap);
+                    continue;
                 }
             }
 
@@ -310,7 +318,37 @@ export class SwapManager {
                 }
             }
         }
+    }
 
+    static async sendSwapErrorToUser(swap: ISwap) {
+        const user = await UserManager.getUserById(swap.userId);
+        if (!user) {
+            LogManager.error('SwapManager', 'sendErrorToUser', 'User not found', { swap });
+            return;
+        }
+
+        //TODO: Swap error: we tried to buy BONK for 1 SOL, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.
+        const message = `Swap error: we tried to process your swap, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.`;
+
+        const userTx = new UserTransaction();
+        userTx.geyserId = 'manual';
+        userTx.userId = swap.userId;
+        userTx.description = message;
+        userTx.createdAt = new Date();
+        await userTx.save();
+
+        let isTelegramSent = false;
+        if (user.telegram?.id){
+            BotManager.sendMessage({ 
+                chatId: user.telegram?.id, 
+                text: message, 
+            });
+            isTelegramSent = true;
+        }
+
+        let isPushSent = await FirebaseManager.sendPushToUser(swap.userId, `[SWAP ERROR]`, message, undefined, { open: 'transactions' });
+
+        MixpanelManager.trackError(swap.userId, { text: message });
     }
 
 }

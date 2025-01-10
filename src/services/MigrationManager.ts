@@ -41,6 +41,7 @@ import { SolScanManager } from "./solana/SolScanManager";
 import { LogManager } from "../managers/LogManager";
 import { UserTraderProfile } from "../entities/users/TraderProfile";
 import { SwapManager } from "../managers/SwapManager";
+import { Swap } from "../entities/payments/Swap";
 
 export class MigrationManager {
 
@@ -54,6 +55,12 @@ export class MigrationManager {
         LogManager.forceLog('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
         const chatId = 862473;
+
+        // const swap = await Swap.findOne({ });
+        // if (swap){
+        //     LogManager.log('MigrationManager', 'migrate', 'swap', swap);
+        //     await SwapManager.sendSwapErrorToUser(swap);
+        // }
 
         // await this.testToken(this.kPyth);
 
@@ -185,7 +192,7 @@ export class MigrationManager {
 
         let programs: { id: string, count: number }[] = [];
         for (const tx of transactions) {
-            for (const ix of tx.parsedTx.parsedInstructions || []) {
+            for (const ix of tx.parsedTx?.parsedInstructions || []) {
                 const program = programs.find((p) => p.id === ix.programId);
                 if (program) {
                     program.count++;

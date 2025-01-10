@@ -12,7 +12,10 @@ export interface IUserTransaction extends mongoose.Document {
     userId: string;
     signature?: string;
 
-    parsedTx: ParsedTx;
+    title?: string;
+    description?: string;
+
+    parsedTx?: ParsedTx;
     tokens?: ITokenModel[];
     changedWallets?: ChangedWallet[];
 
@@ -24,6 +27,9 @@ export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
     geyserId: { type: String },
     userId: { type: String },
     signature: { type: String },
+
+    title: { type: String },
+    description: { type: String },
 
     parsedTx: { type: Mixed },
     tokens: { type: Mixed },

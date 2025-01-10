@@ -15,12 +15,12 @@ export interface ChatWallets {
 export interface TransactionApiResponse {
     title: string,
     description?: string,
-    explorerUrl: string,
+    explorerUrl?: string,
     asset?: TokenNft,
-    signature: string,
-    blockTime: number,
-    wallets: ChangedWallet[],
-    tokens: ITokenModel[],
+    signature?: string,
+    blockTime?: number,
+    wallets?: ChangedWallet[],
+    tokens?: ITokenModel[],
 }
 
 export interface ChangedWallet {
