@@ -7,6 +7,7 @@ import { ProgramManager } from "../../../managers/ProgramManager";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { LogManager } from "../../../managers/LogManager";
+import { TokenManager } from "../../../managers/TokenManager";
 
 export class TokenPriceStream {
     id: string;
@@ -177,7 +178,7 @@ export class TokenPriceStream {
                         const solDivMod = solBalanceChange.divmod(new BN(LAMPORTS_PER_SOL));
                         const solChange = solDivMod.div.toNumber() + solDivMod.mod.toNumber() / LAMPORTS_PER_SOL;
                         const tokenChange = tokenBalanceChange.uiAmountChange;
-                        const solPrice = 180; // 1 SOL = $180
+                        const solPrice = TokenManager.getSolPrice(); 
                         const tokenPrice = (solChange * solPrice / tokenChange); 
                         LogManager.log('!jup', 'mint:', tokenBalanceChange.mint, 'balance:', tokenChange, 'sol:', solChange, 'price:', `$${tokenPrice.toFixed(6)}`);
 

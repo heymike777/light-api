@@ -212,6 +212,7 @@ export class SwapManager {
         }
 
         await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+        this.trackSwapInMixpanel(swap);
     }
 
     static async checkPendingSwaps() {
@@ -264,6 +265,7 @@ export class SwapManager {
                     swap.status.type = StatusType.COMPLETED;
                     swap.status.tx!.confirmedAt = new Date();
                     await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+                    this.trackSwapInMixpanel(swap);
                 }
             }
         }
@@ -361,6 +363,20 @@ export class SwapManager {
         let isPushSent = await FirebaseManager.sendPushToUser(swap.userId, `[SWAP ERROR]`, message, undefined, { open: 'transactions' });
 
         MixpanelManager.trackError(swap.userId, { text: message });
+    }
+
+    static async trackSwapInMixpanel(swap: ISwap) {
+        const solValue = swap.type == SwapType.BUY ? swap.amountIn / LAMPORTS_PER_SOL : 0;//TODO: calculate sol value for sell
+        const usdValue = Math.round(solValue * TokenManager.getSolPrice() * 100)/100;
+
+        MixpanelManager.track(`Swap`, swap.userId, { 
+            type: swap.type,
+            traderProfileId: swap.traderProfileId,
+            dex: swap.dex,
+            mint: swap.mint,
+            solValue,
+            usdValue,
+        });
     }
 
 }
