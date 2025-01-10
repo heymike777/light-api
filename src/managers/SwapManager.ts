@@ -18,6 +18,8 @@ import { BotManager } from "./bot/BotManager";
 import { UserManager } from "./UserManager";
 import { FirebaseManager } from "./FirebaseManager";
 import { MixpanelManager } from "./MixpanelManager";
+import { TokenManager } from "./TokenManager";
+import { lamports } from "@metaplex-foundation/umi";
 
 export class SwapManager {
 
@@ -327,14 +329,24 @@ export class SwapManager {
             return;
         }
 
-        //TODO: Swap error: we tried to buy BONK for 1 SOL, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.
-        const message = `Swap error: we tried to process your swap, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.`;
+        const token = await TokenManager.getToken(swap.mint);
+
+        let internalMessage = `${swap.type} tx`;
+        if (token){
+            const actionString = swap.type == SwapType.BUY 
+                ? `buy ${token.symbol} for ${swap.amountIn / LAMPORTS_PER_SOL} SOL` 
+                : `sell ${swap.amountIn / (10 ** (token.decimals || 0))} ${token.symbol}`;
+            internalMessage = `tx to ${actionString}`
+        }
+        const message = `We tried to process your ${internalMessage}, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.`
 
         const userTx = new UserTransaction();
         userTx.geyserId = 'manual';
         userTx.userId = swap.userId;
+        userTx.title = swap.type == SwapType.BUY ? '[BUY ERROR]' : '[SELL ERROR]';
         userTx.description = message;
         userTx.createdAt = new Date();
+        userTx.tokens = token ? [token] : [];
         await userTx.save();
 
         let isTelegramSent = false;
