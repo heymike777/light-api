@@ -20,6 +20,7 @@ import { FirebaseManager } from "./FirebaseManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { TokenManager } from "./TokenManager";
 import { lamports } from "@metaplex-foundation/umi";
+import { Helpers } from "../services/helpers/Helpers";
 
 export class SwapManager {
 
@@ -333,9 +334,10 @@ export class SwapManager {
 
         let internalMessage = `${swap.type} tx`;
         if (token){
+            Helpers
             const actionString = swap.type == SwapType.BUY 
-                ? `buy ${token.symbol} for ${swap.amountIn / LAMPORTS_PER_SOL} SOL` 
-                : `sell ${swap.amountIn / (10 ** (token.decimals || 0))} ${token.symbol}`;
+                ? `buy ${token.symbol} for ${Helpers.prettyNumber(swap.amountIn / LAMPORTS_PER_SOL, 6)} SOL` 
+                : `sell ${Helpers.prettyNumber(swap.amountIn / (10 ** (token.decimals || 0)), 6)} ${token.symbol}`;
             internalMessage = `tx to ${actionString}`
         }
         const message = `We tried to process your ${internalMessage}, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.`
@@ -343,7 +345,7 @@ export class SwapManager {
         const userTx = new UserTransaction();
         userTx.geyserId = 'manual';
         userTx.userId = swap.userId;
-        userTx.title = swap.type == SwapType.BUY ? '[BUY ERROR]' : '[SELL ERROR]';
+        userTx.title = swap.type == SwapType.BUY ? 'BUY ERROR' : 'SELL ERROR';
         userTx.description = message;
         userTx.createdAt = new Date();
         userTx.tokens = token ? [token] : [];
