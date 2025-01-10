@@ -304,8 +304,6 @@ export class SwapManager {
                 const tmp = await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.CREATED }, { $set: { status: swap.status } });
                 if (tmp.modifiedCount > 0) {
                     LogManager.error('SwapManager', 'retrySwaps', 'Swap cancelled', { swap });
-                    //TODO: send error message to user
-
                     await this.sendSwapErrorToUser(swap);
                     continue;
                 }
