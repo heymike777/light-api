@@ -143,8 +143,7 @@ router.post(
         };
         await swap.save();
 
-
-        const signature = await SwapManager.buy(swap, traderProfile);
+        const signature = await SwapManager.sell(swap, traderProfile);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }

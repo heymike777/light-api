@@ -80,18 +80,28 @@ export class SwapManager {
         //     isSubscriptionRequired: true,
         //     isExternal: true,
         // },
+        // BullX
+        // Photon
     ];
 
     static async buy(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
+        return this.buyAndSell(SwapType.BUY, swap, traderProfile, triesLeft);
+    }
+
+    static async sell(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
+        return this.buyAndSell(SwapType.SELL, swap, traderProfile, triesLeft);
+    }
+
+    static async buyAndSell(type: SwapType, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {
-            LogManager.error('SwapManager', 'buy', 'Swap status is not CREATED', { swap });
+            LogManager.error('SwapManager', type, 'Swap status is not CREATED', { swap });
             return;
         }
 
         if (!traderProfile.wallet){
-            LogManager.error('SwapManager', 'buy', 'Trader profile wallet not found', { traderProfile });
+            LogManager.error('SwapManager', type, 'Trader profile wallet not found', { traderProfile });
             swap.status.type = StatusType.CREATED;
             swap.status.tryIndex++;
             await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
@@ -107,7 +117,10 @@ export class SwapManager {
         let blockhash: string | undefined
 
         try {
-            const quote = await JupiterManager.getQuote(kSolAddress, mint, +amount, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
+            const inputMint = type == SwapType.BUY ? kSolAddress : mint;
+            const outputMint = type == SwapType.BUY ? mint : kSolAddress;
+
+            const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
             if (!quote) {
                 swap.status.type = StatusType.CREATED;
                 swap.status.tryIndex++;
@@ -133,8 +146,13 @@ export class SwapManager {
 
             console.log('SwapManager', 'swapData', swapData);
 
-            // add 0.75% fee instruction to tx
-            instructions.push(this.createFeeInstruction(+amount, traderProfile.wallet.publicKey));
+            // add 1% fee instruction to tx
+            const swapSolAmountInLamports = type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
+            instructions.push(this.createFeeInstruction(+swapSolAmountInLamports, traderProfile.wallet.publicKey));
+            //TODO: pay instantly to referrer wallet his %
+
+            swap.solAmountInLamports = swapSolAmountInLamports;
+            await Swap.updateOne({ _id: swap._id }, { $set: { solAmountInLamports: swapSolAmountInLamports } });
             
             console.log('SwapManager', 'instructions.length =', instructions.length);
 
@@ -142,11 +160,11 @@ export class SwapManager {
             const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
             console.log('SwapManager', 'tx', tx);
 
-            signature = await stakedConnection.sendTransaction(tx, { skipPreflight: false, maxRetries: 0 });
+            signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
             console.log('SwapManager', 'signature', signature);
         }
         catch (error) {
-            console.error('SwapManager', 'buy', error);
+            console.error('SwapManager', type, error);
 
             if (triesLeft <= 0) {
                 swap.status.type = StatusType.CREATED;
@@ -157,7 +175,7 @@ export class SwapManager {
             }
 
             // repeat the transaction            
-            return await this.buy(swap, traderProfile, triesLeft - 1);
+            return type == SwapType.BUY ? await this.buy(swap, traderProfile, triesLeft - 1) : await this.sell(swap, traderProfile, triesLeft - 1);
         }
 
         swap.status.type = StatusType.PROCESSING;
@@ -318,7 +336,7 @@ export class SwapManager {
                     await this.buy(swap, traderProfile);
                 }
                 else {
-                    //TODO: retry sell
+                    await this.sell(swap, traderProfile);
                 }
             }
         }
@@ -371,7 +389,7 @@ export class SwapManager {
     }
 
     static async trackSwapInMixpanel(swap: ISwap) {
-        const solValue = swap.type == SwapType.BUY ? +swap.amountIn / LAMPORTS_PER_SOL : 0;//TODO: calculate sol value for sell
+        const solValue =  +(swap.solAmountInLamports || 0) / LAMPORTS_PER_SOL;
         const usdValue = Math.round(solValue * TokenManager.getSolPrice() * 100)/100;
 
         MixpanelManager.track(`Swap`, swap.userId, { 
