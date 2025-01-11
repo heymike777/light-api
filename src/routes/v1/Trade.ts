@@ -121,9 +121,13 @@ router.post(
 
         const connection = newConnection();
         const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, mint);
-        const decimals = balance?.decimals || 0;
+        if (!balance){
+            throw new BadRequestError('Insufficient balance');
+        }
+
+        const decimals = balance.decimals || 0;
         const amountInLamports = new BN(amount).mul(new BN(10).pow(new BN(decimals)));
-        const balanceAmount = new BN(balance?.amount || 0);
+        const balanceAmount = new BN(balance.amount || 0);
 
         if (balanceAmount < amountInLamports){
             throw new BadRequestError('Insufficient balance');
