@@ -21,6 +21,7 @@ import { MixpanelManager } from "./MixpanelManager";
 import { TokenManager } from "./TokenManager";
 import { lamports } from "@metaplex-foundation/umi";
 import { Helpers } from "../services/helpers/Helpers";
+import { BN } from "bn.js";
 
 export class SwapManager {
 
@@ -106,7 +107,7 @@ export class SwapManager {
         let blockhash: string | undefined
 
         try {
-            const quote = await JupiterManager.getQuote(kSolAddress, mint, amount * LAMPORTS_PER_SOL, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
+            const quote = await JupiterManager.getQuote(kSolAddress, mint, +amount, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
             if (!quote) {
                 swap.status.type = StatusType.CREATED;
                 swap.status.tryIndex++;
@@ -133,7 +134,7 @@ export class SwapManager {
             console.log('SwapManager', 'swapData', swapData);
 
             // add 0.75% fee instruction to tx
-            instructions.push(this.createFeeInstruction(amount, traderProfile.wallet.publicKey));
+            instructions.push(this.createFeeInstruction(+amount, traderProfile.wallet.publicKey));
             
             console.log('SwapManager', 'instructions.length =', instructions.length);
 
@@ -173,13 +174,13 @@ export class SwapManager {
         return signature;
     }
 
-    static createFeeInstruction(swapAmount: number, walletAddress: string, fee = 0.01): web3.TransactionInstruction {
+    static createFeeInstruction(swapAmountInLamports: number, walletAddress: string, fee = 0.01): web3.TransactionInstruction {
         const feeWalletAddress = process.env.FEE_SOL_WALLET_ADDRESS;
         if (!feeWalletAddress) {
             throw new BadRequestError('Fee wallet address not found');
         }
 
-        const feeAmount = Math.round(swapAmount * LAMPORTS_PER_SOL * fee);
+        const feeAmount = Math.round(swapAmountInLamports * fee);
         const feeInstruction = web3.SystemProgram.transfer({
             fromPubkey: new web3.PublicKey(walletAddress),
             toPubkey: new web3.PublicKey(feeWalletAddress),
@@ -334,10 +335,14 @@ export class SwapManager {
 
         let internalMessage = `${swap.type} tx`;
         if (token){
-            Helpers
+            const bnAmount = new BN(swap.amountIn);
+            const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(10**9) : new BN(10 ** (token.decimals || 0))
+            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
+            const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
+
             const actionString = swap.type == SwapType.BUY 
-                ? `buy ${token.symbol} for ${Helpers.prettyNumber(swap.amountIn / LAMPORTS_PER_SOL, 6)} SOL` 
-                : `sell ${Helpers.prettyNumber(swap.amountIn / (10 ** (token.decimals || 0)), 6)} ${token.symbol}`;
+                ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} SOL` 
+                : `sell ${Helpers.prettyNumberFromString(amountIn, 6)} ${token.symbol}`;
             internalMessage = `tx to ${actionString}`
         }
         const message = `We tried to process your ${internalMessage}, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.`
@@ -366,7 +371,7 @@ export class SwapManager {
     }
 
     static async trackSwapInMixpanel(swap: ISwap) {
-        const solValue = swap.type == SwapType.BUY ? swap.amountIn / LAMPORTS_PER_SOL : 0;//TODO: calculate sol value for sell
+        const solValue = swap.type == SwapType.BUY ? +swap.amountIn / LAMPORTS_PER_SOL : 0;//TODO: calculate sol value for sell
         const usdValue = Math.round(solValue * TokenManager.getSolPrice() * 100)/100;
 
         MixpanelManager.track(`Swap`, swap.userId, { 

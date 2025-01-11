@@ -4,6 +4,7 @@ import { kKnownAddresses, kValidators } from "../../managers/constants/Validator
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 import { AppPlatform } from "../../models/types";
+import { BN } from "bn.js";
 
 
 export class Helpers {
@@ -23,6 +24,17 @@ export class Helpers {
     }   
 
     static prettyNumber(n: number, roundDecimals?: number): string {
+        if (roundDecimals != undefined){
+            const tmp = 10 ** roundDecimals;
+
+            // n = (n > 0 ? Math.floor(n * tmp) : Math.ceil(n * tmp)) / tmp;
+            n = Math.round(n * tmp) / tmp;
+        }
+        return this.numberWithCommas(n);
+    }
+
+    static prettyNumberFromString(str: string, roundDecimals?: number): string {
+        let n = +str;
         if (roundDecimals != undefined){
             const tmp = 10 ** roundDecimals;
 

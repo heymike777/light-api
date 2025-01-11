@@ -35,7 +35,7 @@ export interface ISwap extends mongoose.Document {
     type: SwapType;
     dex: SwapDex;
     mint: string;
-    amountIn: number; // lamports
+    amountIn: string; // lamports
     
     status: {
         type: StatusType;
@@ -54,7 +54,7 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     type: { type: String },
     dex: { type: String },
     mint: { type: String },
-    amountIn: { type: Number },
+    amountIn: { type: String },
     status: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
