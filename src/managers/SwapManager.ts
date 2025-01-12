@@ -151,8 +151,11 @@ export class SwapManager {
             instructions.push(this.createFeeInstruction(+swapSolAmountInLamports, traderProfile.wallet.publicKey));
             //TODO: pay instantly to referrer wallet his %
 
-            swap.solAmountInLamports = swapSolAmountInLamports;
-            await Swap.updateOne({ _id: swap._id }, { $set: { solAmountInLamports: swapSolAmountInLamports } });
+            swap.value = {
+                sol: +swapSolAmountInLamports / LAMPORTS_PER_SOL,
+                usd : Math.round((+swapSolAmountInLamports / LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+            }
+            await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
             
             console.log('SwapManager', 'instructions.length =', instructions.length);
 
@@ -389,8 +392,8 @@ export class SwapManager {
     }
 
     static async trackSwapInMixpanel(swap: ISwap) {
-        const solValue =  +(swap.solAmountInLamports || 0) / LAMPORTS_PER_SOL;
-        const usdValue = Math.round(solValue * TokenManager.getSolPrice() * 100)/100;
+        const solValue = swap.value?.sol || 0;
+        const usdValue = swap.value?.usd || 0;
 
         MixpanelManager.track(`Swap`, swap.userId, { 
             type: swap.type,
