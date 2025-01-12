@@ -30,7 +30,7 @@ import { traderProfilesRouter } from './routes/v1/TraderProfiles';
 import { tradeRouter } from './routes/v1/Trade';
 
 const corsOptions: CorsOptions = {
-    allowedHeaders: ['Content-Type', 'Authorization', 'LIGHT_PLATFORM', 'LIGHT_APP_VERSION'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // 'PATCH', 'HEAD'
     origin: '*',
     optionsSuccessStatus: 204,
