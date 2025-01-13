@@ -42,7 +42,7 @@ export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
 UserTransactionSchema.index({ 'userId': 1 });
 UserTransactionSchema.index({ 'userId': 1, createdAt: -1 });
 UserTransactionSchema.index({ 'userId': 1, _id: 1, createdAt: -1 });
-UserTransactionSchema.index({ 'userId': 1, signature: 1 }, { unique: true });
+UserTransactionSchema.index({ 'userId': 1, signature: 1 }, { unique: true, partialFilterExpression: { signature: { $exists: true } } });
 
 UserTransactionSchema.pre('save', function (next) {
     this.updatedAt = new Date();
