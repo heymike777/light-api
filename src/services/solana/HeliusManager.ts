@@ -1,5 +1,5 @@
 import { AddressLookupTableAccount, Keypair, TransactionInstruction } from '@solana/web3.js';
-import { EnrichedTransaction, Helius, MintApiRequest, SmartTransactionContext } from "helius-sdk";
+import { DAS, EnrichedTransaction, Helius, MintApiRequest, SmartTransactionContext } from "helius-sdk";
 import { HeliusAsset, HeliusAssetDisplayOptions, MintApiResult } from './HeliusTypes';
 import { Asset, AssetType, Priority } from './types';
 import { kRaydiumAuthority } from './Constants';
@@ -66,36 +66,22 @@ export class HeliusManager {
         LogManager.log(process.env.SERVER_NAME, 'revokeCollectionAuthority res', res);
     }
 
-    static async getAssetsByOwner(walletAddress: string, page = 1): Promise<HeliusAsset[]> {
+    static async getAssetsByOwner(walletAddress: string, options: DAS.DisplayOptions, page = 1): Promise<DAS.GetAssetResponse[]> {
         try{
-            const limit = 1000;
+            this.initHelius();
 
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    jsonrpc: '2.0',
-                    id: 'my-id',
-                    method: 'getAssetsByOwner',
-                    params: {
-                        ownerAddress: walletAddress,
-                        page: page, // Starts at 1
-                        limit: limit,
-                        options: {
-                            showFungible: true,
-                            showZeroBalance: false,
-                            showNativeBalance: true,
-                        },
-                    },
-                }),
+            const limit = 1000;
+            const response = await this.helius.rpc.getAssetsByOwner({
+                ownerAddress: walletAddress,
+                page: page, // Starts at 1
+                limit: limit,
+                displayOptions: options,
             });
-            const { result } = await response.json() as any;
-            const items = result?.items || [];
+            const items = response.items;
+            console.log('grand_total:', response.grand_total);
 
             if (items.length == limit && page < 3){
-                const nextItems = await this.getAssetsByOwner(walletAddress, page+1);
+                const nextItems = await this.getAssetsByOwner(walletAddress, options, page+1);
                 return items.concat(nextItems);
             }
 
@@ -106,68 +92,6 @@ export class HeliusManager {
             return [];
         }
     }
-
-    static async getAssetsByCreator(walletAddress: string, page = 1): Promise<HeliusAsset[]> {
-        try {
-            const limit = 1000;
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    jsonrpc: '2.0',
-                    id: 'my-id',
-                    method: 'getAssetsByCreator',
-                    params: {
-                        creatorAddress: walletAddress,
-                        onlyVerified: true,
-                        page: page, // Starts at 1
-                        limit: limit,
-                    },
-                }),
-            });
-            const { result } = await response.json() as any;
-            const items = result?.items || [];
-
-            if (items.length == limit && page < 3){
-                const nextItems = await this.getAssetsByCreator(walletAddress, page+1);
-                return items.concat(nextItems);
-            }
-
-            return items;
-        }
-        catch (e){
-            LogManager.error('getAssetsByCreator', e);
-            return [];
-        }
-    }
-
-    static async getAssetBatch(mintTokens: string[], displayOptions: HeliusAssetDisplayOptions): Promise<HeliusAsset[]> {
-        try{
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    jsonrpc: '2.0',
-                    id: 'my-id',
-                    method: 'getAssetBatch',
-                    params: {
-                        ids: mintTokens,
-                        options: displayOptions,
-                    },
-                }),
-            });
-            const { result } = await response.json() as any;
-            return result;
-        }
-        catch (e){
-            // LogManager.error('getAssetBatch', e);
-            return [];
-        }
-    };
 
     static async getAsset(mintToken: string, displayOptions: HeliusAssetDisplayOptions): Promise<HeliusAsset | undefined> {
         try {
@@ -198,36 +122,6 @@ export class HeliusManager {
             LogManager.error('getAsset', e);
             return undefined;
         }
-    };
-
-    static async getFungibleAsset(mintToken: string): Promise<HeliusAsset | undefined> {
-        const displayOptions: HeliusAssetDisplayOptions = {showFungible: true};
-        return this.getAsset(mintToken, displayOptions);
-    };
-
-    static async getFungibleAssetBatch(mintTokens: string[]): Promise<HeliusAsset[]> {
-        const displayOptions: HeliusAssetDisplayOptions = {showFungible: true};
-        return this.getAssetBatch(mintTokens, displayOptions);
-    };
-
-    static async getDetailedAsset(mintToken: string): Promise<HeliusAsset | undefined> {
-        const displayOptions: HeliusAssetDisplayOptions = {
-            showUnverifiedCollections: true,
-            showCollectionMetadata: true,
-            showFungible: true,
-            showInscription: true,
-        };
-        return this.getAsset(mintToken, displayOptions);
-    };
-
-    static async getDetailedAssets(mintTokens: string[]): Promise<HeliusAsset[]> {
-        const displayOptions: HeliusAssetDisplayOptions = {
-            showUnverifiedCollections: true,
-            showCollectionMetadata: true,
-            showFungible: true,
-            showInscription: true,
-        };
-        return this.getAssetBatch(mintTokens, displayOptions);
     };
 
     static parseAssets(assets: HeliusAsset[]): Asset[] {

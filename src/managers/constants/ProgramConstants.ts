@@ -9,6 +9,7 @@ export enum kProgram {
     RAYDIUM_CLMM = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK',
     // RAYDIUM_CPMM
     JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
+    JUPITER_Z = '61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH',
     SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
     TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
     TENSOR_CNFT = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp',
@@ -108,6 +109,13 @@ export const kPrograms: { [key: string]: {
             { 'sharedAccountsExactOutRoute': {title: 'SWAP', priority: 1} },
             { 'claim': {title: 'CLAIM', priority: 5} },
             { 'claimToken': {title: 'CLAIM', priority: 5} },
+        ],
+        skip: false,
+    },
+    [kProgram.JUPITER_Z]: {
+        name: 'JUPITER Z',
+        knownInstructions: [
+            { 'fill': {title: 'SWAP', priority: 1} },
         ],
         skip: false,
     },

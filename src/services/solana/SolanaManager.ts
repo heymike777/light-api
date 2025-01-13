@@ -12,6 +12,7 @@ import { TransactionMessage } from "@solana/web3.js";
 import { Keypair } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
+import { Interface } from "helius-sdk";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -30,6 +31,34 @@ export type SendThrough = {
     useJito?: boolean,
     useHelius?: boolean,
     useTriton?: boolean,
+}
+
+export interface Asset {
+    mint: string;
+    amount: number;
+    uiAmount: number;
+    decimals: number;
+
+    symbol: string;
+    name?: string;
+    description?: string;
+    logo?: string;
+    supply?: number;
+
+    priceInfo?: {
+        pricePerToken: number;
+        totalPrice: number;
+    };
+
+    // mintAuthority?: string;
+    // freezeAuthority?: string;
+    
+    // tokenPrice: number;
+    // tokenPriceChange: number;
+    // tokenMarketCap: number;
+    // tokenVolume: number;
+    // tokenLiquidity: number;
+    // tokenNft: string;
 }
 
 export class SolanaManager {
@@ -573,6 +602,59 @@ export class SolanaManager {
 
         return results;
     };
+
+    static async getAssetsByOwner(walletAddress: string): Promise<Asset[]> {
+        const heliusAssets = await HeliusManager.getAssetsByOwner(walletAddress, {
+            showNativeBalance: true,
+            showFungible: true,
+            showSystemMetadata: true,
+            showGrandTotal: false,
+            showClosedAccounts: false,
+            showZeroBalance: false,
+            showCollectionMetadata: false,
+            showUnverifiedCollections: false,
+            showRawData: false,
+        });
+
+        const assets: Asset[] = [];
+        for (const heliusAsset of heliusAssets) {
+            if (heliusAsset.interface != Interface.FUNGIBLE_TOKEN && heliusAsset.interface != Interface.FUNGIBLE_ASSET) { continue; }
+            if (!heliusAsset.token_info || !heliusAsset.token_info?.symbol) { continue; }
+            if (heliusAsset.compression?.compressed) { continue; }
+
+            const decimals = heliusAsset.token_info?.decimals || 0;
+            const amount = heliusAsset.token_info?.balance || 0;
+            const uiAmount = amount / 10**decimals;
+            const logo = heliusAsset.content?.files?.find(file => file.mime == 'image/png' || file.mime == 'image/jpg' || file.mime == 'image/jpeg')?.uri;
+            const symbol = heliusAsset.token_info.symbol.trim();
+            const name = heliusAsset.content?.metadata?.name ? heliusAsset.content?.metadata?.name.trim() : symbol;
+
+            const pricePerToken = heliusAsset.token_info?.price_info?.price_per_token || 0;
+            const totalPrice = heliusAsset.token_info?.price_info?.total_price || 0;
+
+            const asset: Asset = {
+                mint: heliusAsset.id,
+                amount: amount,
+                uiAmount: uiAmount,
+                decimals: decimals,
+                symbol: symbol,
+                name: name,
+                description: heliusAsset.content?.metadata?.description,
+                logo: logo,
+                supply: (heliusAsset.token_info?.supply || 0) / 10**decimals,
+                priceInfo: heliusAsset.token_info?.price_info ? { pricePerToken, totalPrice } : undefined,
+                // mintAuthority: heliusAsset.authorities?.,
+                // freezeAuthority: heliusAsset.freezeAuthority,
+            };
+
+            console.log('getAssetsByOwner', 'heliusAsset:', JSON.stringify(heliusAsset));
+
+            assets.push(asset);
+        }
+
+        console.log('!assets:', JSON.stringify(assets));
+        return assets;
+    }
 
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;

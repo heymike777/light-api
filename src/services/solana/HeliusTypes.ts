@@ -94,6 +94,12 @@ export interface HeliusAsset {
 export interface HeliusAssetDisplayOptions {​
     showUnverifiedCollections?: boolean;
     showCollectionMetadata?: boolean;
+    showGrandTotal?: boolean;
+    showRawData?: boolean;
     showFungible?: boolean;
-    showInscription?: boolean;
+    requireFullIndex?: boolean;
+    showSystemMetadata?: boolean;
+    showZeroBalance?: boolean;
+    showClosedAccounts?: boolean;
+    showNativeBalance?: boolean;
 }
