@@ -214,7 +214,7 @@ export class SwapManager {
     static async receivedConfirmationForSignature(signature: string) {
         const swap = await Swap.findOne({ "status.tx.signature": signature });
         if (!swap) {
-            LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
+            // LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
             return;
         }
 

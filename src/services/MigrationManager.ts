@@ -56,11 +56,11 @@ export class MigrationManager {
         this.syncIndexes();
         const chatId = 862473;
 
-        const swap = await Swap.findOne({ });
-        if (swap){
-            LogManager.log('MigrationManager', 'migrate', 'swap', swap);
-            await SwapManager.sendSwapErrorToUser(swap);
-        }
+        // const swap = await Swap.findOne({ });
+        // if (swap){
+        //     LogManager.log('MigrationManager', 'migrate', 'swap', swap);
+        //     await SwapManager.sendSwapErrorToUser(swap);
+        // }
 
         // await this.testToken(this.kPyth);
 
