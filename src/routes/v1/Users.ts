@@ -213,9 +213,9 @@ router.post(
                 explorerUrl: parsedTx ? ExplorerManager.getUrlToTransaction(parsedTx.signature) : undefined,
                 asset: assetToken?.nft,
                 signature: parsedTx?.signature,
-                blockTime: parsedTx?.blockTime,
-                wallets: changedWallets,
-                tokens: tokens,
+                blockTime: parsedTx?.blockTime || Math.round(transaction.createdAt.getTime()/1000),
+                wallets: changedWallets && changedWallets.length > 0 ? changedWallets : undefined,
+                tokens: tokens && tokens.length > 0 ? tokens : undefined,
             });
         }
 
