@@ -342,7 +342,7 @@ export class WalletManager {
     }
 
     static async processTx(parsedTx: ParsedTx, asset: TokenNft | undefined, chat: ChatWallets){
-        LogManager.log('processTx', 'parsedTx', parsedTx, 'asset', asset, 'chat', chat);
+        LogManager.log('!processTx', 'parsedTx', JSON.stringify(parsedTx), 'asset', asset, 'chat', chat);
         let hasWalletsChanges = false;
         let message = `[${parsedTx.title}]\n`;
 
