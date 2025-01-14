@@ -62,26 +62,34 @@ export class SwapManager {
             isSubscriptionRequired: true,
             isExternal: true,
         },
-        // {
-        //     id: 'trojan',
-        //     title: 'Trojan',
-        //     logo: 'https://light.dangervalley.com/static/trojan.png',
-        //     url: '',
-        //     tokenUrl: '',
-        //     isSubscriptionRequired: true,
-        //     isExternal: true,
-        // },
-        // {
-        //     id: 'bananagun',
-        //     title: 'BananaGun',
-        //     logo: 'https://light.dangervalley.com/static/bananagun.png',
-        //     url: '',
-        //     tokenUrl: '',
-        //     isSubscriptionRequired: true,
-        //     isExternal: true,
-        // },
-        // BullX
-        // Photon
+        {
+            id: 'photon',
+            title: 'Photon',
+            logo: 'https://light.dangervalley.com/static/photon.jpg',
+            url: 'https://photon-sol.tinyastro.io/@heymike',
+            tokenUrl: 'https://photon-sol.tinyastro.io/en/r/@heymike/{token}',
+            isSubscriptionRequired: true,
+            isExternal: true,
+        },
+        {
+            id: 'trojan',
+            title: 'Trojan',
+            logo: 'https://light.dangervalley.com/static/trojan.png',
+            url: 'https://t.me/solana_trojanbot?start=r-heymike777',
+            tokenUrl: 'https://t.me/solana_trojanbot?start=r-heymike777-{token}',
+            isSubscriptionRequired: true,
+            isExternal: true,
+        },
+        {
+            id: 'bananagun',
+            title: 'BananaGun',
+            logo: 'https://light.dangervalley.com/static/bananagun.png',
+            url: 'https://t.me/BananaGun_bot?start=ref_heymike',
+            tokenUrl: 'https://t.me/BananaGun_bot?start=ref_heymike_{token}',
+            isSubscriptionRequired: true,
+            isExternal: true,
+        },
+        // BullX / BullX NEO
     ];
 
     static async buy(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
