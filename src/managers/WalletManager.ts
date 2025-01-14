@@ -423,7 +423,8 @@ export class WalletManager {
                     let amountUSD = token && token.price ? Math.round(Math.abs(balanceChange) * token.price * 100)/100 : undefined;
                     if (amountUSD!=undefined && balanceChange<0) { amountUSD = -amountUSD; }
 
-                    const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
+                    const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
+                    const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+ totalUsdValue + ')' : '';
                     blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(kSolAddress)}">SOL</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
 
                     walletTokenChanges.push({
@@ -448,7 +449,8 @@ export class WalletManager {
                             asset = token.nft;
                         }
                         const balanceChange = tokenBalance.balanceChange;
-                        const tokenValueString = token && token.price ? '(' + (balanceChange<0?'-':'') + '$'+Math.round(Math.abs(balanceChange) * token.price * 100)/100 + ')' : '';
+                        const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
+                        const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+totalUsdValue + ')' : '';
                         const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
                         blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;            
 
