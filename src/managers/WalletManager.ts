@@ -542,7 +542,7 @@ export class WalletManager {
         let tokensMessage = '';
         if (tokens && tokens.length > 0){
             for (const token of tokens) {
-                if (!TokenManager.excludedTokens.includes(token.address)){
+                if (token.symbol && !TokenManager.excludedTokens.includes(token.address)){
                     tokensMessage += `<b>#${token.symbol}</b>`;
                     if (token.name){
                         tokensMessage += ` | ${token.name}`;

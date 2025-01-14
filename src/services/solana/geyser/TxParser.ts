@@ -709,38 +709,38 @@ export class TxParser {
             }
             else if (ixProgramId.toBase58() == spl.TOKEN_PROGRAM_ID.toBase58()){
                 // Token Program
-                console.log('why no parser for this TOKEN_PROGRAM_ID?');
+                // console.log('why no parser for this TOKEN_PROGRAM_ID?');
                 //TODO: why no parser for this TOKEN_PROGRAM_ID?
 
-                const ixProgramName = 'Token Program';
-                const decodedIx = spl.decodeInstruction(transactionInstruction);   
+                // const ixProgramName = 'Token Program';
+                // const decodedIx = spl.decodeInstruction(transactionInstruction);   
             
-                let ixType: string | undefined = undefined;
-                if (decodedIx.data.instruction == spl.TokenInstruction.InitializeMint){ ixType = 'initializeMint'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeAccount){ ixType = 'initializeAccount'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeMultisig){ ixType = 'initializeMultisig'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.Transfer){ ixType = 'transfer'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.Approve){ ixType = 'approve'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.Revoke){ ixType = 'revoke'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.SetAuthority){ ixType = 'setAuthority'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.MintTo){ ixType = 'mintTo'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.Burn){ ixType = 'burn'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.CloseAccount){ ixType = 'closeAccount'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.FreezeAccount){ ixType = 'freezeAccount'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.ThawAccount){ ixType = 'thawAccount'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.TransferChecked){ ixType = 'transferChecked'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.ApproveChecked){ ixType = 'approveChecked'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.MintToChecked){ ixType = 'mintToChecked'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.BurnChecked){ ixType = 'burnChecked'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeAccount2){ ixType = 'initializeAccount2'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.SyncNative){ ixType = 'syncNative'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeAccount3){ ixType = 'initializeAccount3'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeMint2){ ixType = 'initializeMint2'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.AmountToUiAmount){ ixType = 'amountToUiAmount'; }
-                else if (decodedIx.data.instruction == spl.TokenInstruction.UiAmountToAmount){ ixType = 'uiAmountToAmount'; }
-                else { ixType = 'unknown'; }
+                // let ixType: string | undefined = undefined;
+                // if (decodedIx.data.instruction == spl.TokenInstruction.InitializeMint){ ixType = 'initializeMint'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeAccount){ ixType = 'initializeAccount'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeMultisig){ ixType = 'initializeMultisig'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.Transfer){ ixType = 'transfer'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.Approve){ ixType = 'approve'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.Revoke){ ixType = 'revoke'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.SetAuthority){ ixType = 'setAuthority'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.MintTo){ ixType = 'mintTo'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.Burn){ ixType = 'burn'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.CloseAccount){ ixType = 'closeAccount'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.FreezeAccount){ ixType = 'freezeAccount'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.ThawAccount){ ixType = 'thawAccount'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.TransferChecked){ ixType = 'transferChecked'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.ApproveChecked){ ixType = 'approveChecked'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.MintToChecked){ ixType = 'mintToChecked'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.BurnChecked){ ixType = 'burnChecked'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeAccount2){ ixType = 'initializeAccount2'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.SyncNative){ ixType = 'syncNative'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeAccount3){ ixType = 'initializeAccount3'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.InitializeMint2){ ixType = 'initializeMint2'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.AmountToUiAmount){ ixType = 'amountToUiAmount'; }
+                // else if (decodedIx.data.instruction == spl.TokenInstruction.UiAmountToAmount){ ixType = 'uiAmountToAmount'; }
+                // else { ixType = 'unknown'; }
 
-                console.log('!ixType:', ixType, 'decodedIx:', JSON.stringify(decodedIx));
+                // console.log('!ixType:', ixType, 'decodedIx:', JSON.stringify(decodedIx));
 
                 // ix = {
                 //     programId: ixProgramId,
