@@ -165,7 +165,7 @@ export class ProgramManager {
                             amount = ixParsed.info.tokenAmount.uiAmountString;
                         }
                         else if (ixParsed.info?.amount != undefined && ixParsed.info?.amount != null){
-                            const bnAmount = new BN(ixParsed.data.amount);
+                            const bnAmount = new BN(ixParsed.info.amount);
                             const bnDecimalsAmount = new BN(10 ** decimals);
                             const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
                             amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
