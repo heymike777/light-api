@@ -1,4 +1,4 @@
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Program } from "../entities/Program";
 import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
 import { BotManager, InlineKeyboardType } from "../managers/bot/BotManager";
@@ -42,6 +42,7 @@ import { LogManager } from "../managers/LogManager";
 import { UserTraderProfile } from "../entities/users/TraderProfile";
 import { SwapManager } from "../managers/SwapManager";
 import { Swap } from "../entities/payments/Swap";
+import * as web3 from '@solana/web3.js';
 
 export class MigrationManager {
 
@@ -83,7 +84,12 @@ export class MigrationManager {
         // await this.processTx('2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'); // cNFT on Tensor_CNFT
         // await this.processTx('5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'); // TENSOR
         // await this.processTx('8cEwWEwEhPFLLkb5VjCouPGcnFhQCCz99BvX2pZCeSnWJraY1oGNadMHdeAtNArfgBwUvhPkGgn7UVUFDQ3NFwG'); // Jupiter Z
+        // await this.processTx('4dDop5djqWps9AsFPr7m7oCRKH6MmcNK3bCacXdriC6TnYJ9BaWZcsRLScz12nmbuJUsGHZJjEFWzMfmRjtaFcVf');
 
+        // const connection = newConnection();
+        // for (let index = 0; index < 200; index++) {
+        //     this.ddos(connection, index);
+        // }  
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
@@ -101,6 +107,12 @@ export class MigrationManager {
         // await this.migrateUserEnginesToTraderProfiles();
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
+    }
+
+    static async ddos(connection: web3.Connection, index: number) {
+        const balance = await connection.getBalance(new PublicKey('GPBu4QznMR9QrWVvdeAthimaGRU35zDQjom5PUNM7kek'));
+        console.log(new Date(), 'index', index, 'balance', balance);
+
     }
 
     static async migrateUserEnginesToTraderProfiles() {

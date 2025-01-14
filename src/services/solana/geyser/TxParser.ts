@@ -265,8 +265,6 @@ export class TxParser {
             let ix: web3.ParsedInstruction | undefined = undefined;
             const ixProgramId = transactionInstruction.programId;
 
-            //TODO: for each instruction add description, that we can show in the UI
-
             if (ixProgramId.toBase58() == web3.SystemProgram.programId.toBase58()){
                 // System Program
                 const ixProgramName = 'system';
@@ -711,9 +709,11 @@ export class TxParser {
             }
             else if (ixProgramId.toBase58() == spl.TOKEN_PROGRAM_ID.toBase58()){
                 // Token Program
+                console.log('why no parser for this TOKEN_PROGRAM_ID?');
+                //TODO: why no parser for this TOKEN_PROGRAM_ID?
 
                 const ixProgramName = 'Token Program';
-                // const ixType = spl.decodeInstruction(transactionInstruction);
+                const ixType = spl.decodeInstruction(transactionInstruction);
 
                 // if (ixType === 'CreateLookupTable'){
                 //     const data = web3.AddressLookupTableInstruction.decodeCreateLookupTable(transactionInstruction);
