@@ -490,6 +490,7 @@ export class SolanaManager {
     }
 
     static isValidPublicKey(publicKey: string): boolean {
+        console.log(`isValidPublicKey: "${publicKey}"`);
         try {
             const pk = new web3.PublicKey(publicKey);
             return web3.PublicKey.isOnCurve(pk);
@@ -651,6 +652,9 @@ export class SolanaManager {
 
             assets.push(asset);
         }
+
+        // sort by priceInfo.totalPrice
+        assets.sort((a, b) => (b.priceInfo?.totalPrice || 0) - (a.priceInfo?.totalPrice || 0));
 
         console.log('!assets:', JSON.stringify(assets));
         return assets;

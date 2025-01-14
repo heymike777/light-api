@@ -27,7 +27,6 @@ import { MixpanelManager } from "./MixpanelManager";
 import { UserManager } from "./UserManager";
 import { IToken, ITokenModel, Token, TokenNft } from "../entities/tokens/Token";
 import { Chain } from "../services/solana/types";
-import { isAddress } from "@solana/addresses";
 import { LogManager } from "./LogManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 
@@ -38,7 +37,7 @@ export class WalletManager {
 
     static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string, ipAddress?: string, traderProfileId?: string): Promise<IWallet>{
         //check if walletAddress is a valid address
-        if (!isAddress(walletAddress)) {
+        if (SolanaManager.isValidPublicKey(walletAddress) == false){
             MixpanelManager.trackError(user.id, { text: `Invalid wallet address: ${walletAddress}` }, ipAddress);
             throw new BadRequestError('Invalid wallet address');
         }
