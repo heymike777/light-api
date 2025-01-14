@@ -184,7 +184,7 @@ export class ProgramManager {
                         }
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
-
+                        console.log('addresses:', addresses);
                         description = {
                             plain: `{address0} transferred ${amount} {address2} to {address1}`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transferred ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
