@@ -9,6 +9,9 @@ import { LogManager } from "../../managers/LogManager";
 
 const router = express.Router();
 
+const iosProductionVersions: string[] = ['1.0'];
+const androidProductionVersions: string[] = [];
+
 router.get(
     '/api/v1/config',
     async (req: Request, res: Response) => {
@@ -89,12 +92,14 @@ router.get(
             engines = engines.filter(e => e.isExternal);
         }
 
+        const giftCardsAvailable = iosProductionVersions.includes(appHeaders.appVersion) || androidProductionVersions.includes(appHeaders.appVersion);
+
         const config = {
             subscriptions,
             engines,
             farm,
-            giftCardsAvailable: false,
-        }
+            giftCardsAvailable,
+        };
 
 		const response = {
 			config
