@@ -86,7 +86,7 @@ const onExpressStarted = async () => {
     await MixpanelManager.init();
     await WalletManager.fetchAllWalletAddresses();
     await TokenManager.updateTokensPrices();
-    JitoWebsocketManager.getInstance();
+    // JitoWebsocketManager.getInstance();
     // await JitoManager.initSearcherClient();
     YellowstoneManager.createInstances();
     // TokenPriceStream.createInstances();

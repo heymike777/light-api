@@ -15,12 +15,17 @@ export class TxParser {
 
     static async parseGeyserTransactionWithMeta(geyserData: any, shouldFetchLookupTable = true): Promise<web3.ParsedTransactionWithMeta | undefined> {
         const confirmedTx = grpc.ConfirmedTransaction.fromJSON(geyserData.transaction.transaction);
+        LogManager.log('confirmedTx', confirmedTx);
         const geyserTxData = geyserData.transaction;
+        LogManager.log('geyserTxData', geyserTxData);
         const signature = base58.encode(geyserTxData.transaction.signature);
         const isVote: boolean = geyserTxData.transaction.isVote;
         const isVersioned = confirmedTx.transaction?.message?.versioned || false;
         const signatures = confirmedTx.transaction?.signatures.map((sig) => base58.encode(sig)) || [];
         const geyserMessage: any = geyserTxData.transaction.transaction.message;
+        const slot = +geyserTxData.slot;
+
+
 
         // LogManager.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
         // LogManager.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
@@ -175,7 +180,7 @@ export class TxParser {
         const parsedTransactionWithMeta: web3.ParsedTransactionWithMeta = {
             blockTime: Math.floor(Date.now() / 1000), // not the best way to set blockTime, but that's ok for me for now
             meta: meta,
-            slot: +geyserTxData.slot, 
+            slot: slot, 
             transaction: {
                 message: message,
                 signatures: signatures,

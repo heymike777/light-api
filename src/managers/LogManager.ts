@@ -4,17 +4,29 @@ export class LogManager {
 
     static log(...args: any[]){
         if (this.isLogsEnabled){
-            console.log(new Date(), ...args);
+            try {
+                console.log(new Date(), ...args);
+            }
+            catch (e: any){
+            }
         }
     }
 
     static forceLog(...args: any[]){
-        console.log(new Date(), ...args);
+        try {
+            console.log(new Date(), ...args);
+        }
+        catch (e: any){
+        }
     }
 
     static error(...args: any[]){
         if (this.isErrorsEnabled){
-            console.error(new Date(), ...args);
+            try {
+                console.error(new Date(), ...args);
+            }
+            catch (e: any){
+            }
         }
     }
 
