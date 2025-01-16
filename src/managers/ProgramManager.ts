@@ -223,7 +223,9 @@ export class ProgramManager {
             }
             else if (programId == kProgram.RAYDIUM){
                 if (['swapBaseIn', 'swapBaseOut'].indexOf(ixParsed.name) != -1){
-                    const walletAddress = accounts?.[17]?.toBase58();
+                    const walletAddress = 
+                        accounts?.[17]?.toBase58() || // serum program == openbook
+                        accounts?.[16]?.toBase58(); // serum program != openbook
                     if (walletAddress && tx?.meta){
                         const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
                         LogManager.log('!changes:', changes);
