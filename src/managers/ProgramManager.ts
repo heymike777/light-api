@@ -143,8 +143,12 @@ export class ProgramManager {
                 LogManager.log('!!!TOKEN_PROGRAM', 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if (ixType == 'transfer' || ixType == 'transferChecked'){
                     if (tx){
-                        const sourceAccount = ixParsed.info?.source || accounts?.[0]?.toBase58();
-                        const destinationAccount = ixParsed.info?.destination || accounts?.[2]?.toBase58();
+                        const sourceAccountIndex = 0;
+                        const destinationAccountIndex = ixType == 'transferChecked' ? 2 : 1;
+                        const mintAccountIndex = ixType == 'transferChecked' ? 1 : undefined;
+
+                        const sourceAccount = ixParsed.info?.source || accounts?.[sourceAccountIndex]?.toBase58();
+                        const destinationAccount = ixParsed.info?.destination || accounts?.[destinationAccountIndex]?.toBase58();
 
                         const allAccounts = [...tx.meta?.preTokenBalances || [], ...tx.meta?.postTokenBalances || []];
                         const walletSort: {[key: string]: {owner?: string, mint: string}} = {};
@@ -157,7 +161,7 @@ export class ProgramManager {
 
                         const sourceWalletAddress = walletSort[sourceAccount]?.owner || 'unknown';
                         const destinationWalletAddress = walletSort[destinationAccount]?.owner || 'unknown';
-                        const tokenMint = ixParsed.info?.mint || walletSort[destinationAccount]?.mint || accounts?.[1]?.toBase58() || 'unknown';
+                        const tokenMint = ixParsed.info?.mint || walletSort[sourceAccount]?.mint || walletSort[destinationAccount]?.mint || (mintAccountIndex && accounts?.[mintAccountIndex]?.toBase58()) || 'unknown';
                         const decimals = allAccounts.find((account) => account.mint == tokenMint && account.uiTokenAmount?.decimals)?.uiTokenAmount.decimals || 0;
 
                         let amount: string | undefined = undefined;
@@ -170,7 +174,7 @@ export class ProgramManager {
                             const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
                             amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
                         }
-                        else if (ixParsed.data?.amount != undefined && ixParsed.data?.amount != null && ixParsed.data?.decimals != undefined && ixParsed.data?.decimals != null){
+                        else if (ixParsed.data?.amount != undefined && ixParsed.data?.amount != null){
                             const bnAmount = new BN(ixParsed.data.amount);
                             const bnDecimalsAmount = new BN(10 ** decimals);
                             const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
@@ -184,7 +188,7 @@ export class ProgramManager {
                         }
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
-                        console.log('addresses:', addresses);
+                        LogManager.log('addresses:', addresses);
                         description = {
                             plain: `{address0} transferred ${amount} {address2} to {address1}`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transferred ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,

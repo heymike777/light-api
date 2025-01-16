@@ -1,10 +1,8 @@
 import * as grpc from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
 import base58 from "bs58";
-import { newConnection } from "../lib/solana";
 import * as web3 from '@solana/web3.js';
 import { SolanaManager } from "../SolanaManager";
 import { } from "@solana/buffer-layout";
-import { decodeTransferInstruction } from "@solana/spl-token";
 import { SystemInstruction } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import { Ix } from "../../../managers/ProgramManager";
@@ -14,22 +12,15 @@ import { LogManager } from "../../../managers/LogManager";
 export class TxParser {
 
     static async parseGeyserTransactionWithMeta(geyserData: any, shouldFetchLookupTable = true): Promise<web3.ParsedTransactionWithMeta | undefined> {
-        LogManager.log('typeof geyserData = ', typeof geyserData);
         const confirmedTx = grpc.ConfirmedTransaction.fromJSON(geyserData.transaction.transaction);
         LogManager.log('confirmedTx', confirmedTx);
         const geyserTxData = geyserData.transaction;
-        LogManager.log('geyserTxData', geyserTxData);
         const signature = base58.encode(geyserTxData.transaction.signature);
         const isVote: boolean = geyserTxData.transaction.isVote;
         const isVersioned = confirmedTx.transaction?.message?.versioned || false;
         const signatures = confirmedTx.transaction?.signatures.map((sig) => base58.encode(sig)) || [];
         const geyserMessage: any = geyserTxData.transaction.transaction.message;
         const slot = +geyserTxData.slot;
-
-
-
-        // LogManager.log("parseGeyserTransactionWithMeta", 'geyserTxData', signature, JSON.stringify(geyserTxData));
-        // LogManager.log("parseGeyserTransactionWithMeta", 'confirmedTx', signature, JSON.stringify(confirmedTx));
 
         const postTokenBalances: web3.TokenBalance[] = [];
         const preTokenBalances: web3.TokenBalance[] = [];

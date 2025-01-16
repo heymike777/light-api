@@ -43,6 +43,8 @@ import { UserTraderProfile } from "../entities/users/TraderProfile";
 import { SwapManager } from "../managers/SwapManager";
 import { Swap } from "../entities/payments/Swap";
 import * as web3 from '@solana/web3.js';
+import { YellowstoneManager } from "./solana/geyser/YellowstoneManager";
+import { TxParser } from "./solana/geyser/TxParser";
 
 export class MigrationManager {
 
@@ -84,7 +86,7 @@ export class MigrationManager {
         // await this.processTx('2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'); // cNFT on Tensor_CNFT
         // await this.processTx('5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'); // TENSOR
         // await this.processTx('8cEwWEwEhPFLLkb5VjCouPGcnFhQCCz99BvX2pZCeSnWJraY1oGNadMHdeAtNArfgBwUvhPkGgn7UVUFDQ3NFwG'); // Jupiter Z
-        // await this.processTx('4dDop5djqWps9AsFPr7m7oCRKH6MmcNK3bCacXdriC6TnYJ9BaWZcsRLScz12nmbuJUsGHZJjEFWzMfmRjtaFcVf');
+        // await this.processTx('3S4oBuSpvaYXwZYjbhsdaby5tHAcxPEJjAeErU4UQ6y3nf52vT4BkuUmXRUHUBbgvjGgnE16pDTfAZbwzeB8pA14');
 
         // const connection = newConnection();
         // for (let index = 0; index < 200; index++) {
@@ -106,7 +108,44 @@ export class MigrationManager {
         
         // await this.migrateUserEnginesToTraderProfiles();
 
+        // await this.testGeyserTx();
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
+    }
+
+    static async testGeyserTx() {
+        const jsonString = fs.readFileSync('test_tx.json', "utf8");
+        const signature = '5kSaebxQ9LA9rDLaDMThpEHLtf1s3gHmgB6sRUaaR2ZdewWzdLQLsNPaHDkFTAg2GpFqb3TF5rjZjeRMTsZ4j98Q';
+
+        await UserTransaction.deleteMany({ signature });
+
+        const geyserData = JSON.parse(jsonString);
+        
+        geyserData.transaction.transaction.signature = Buffer.from(geyserData.transaction.transaction.signature);
+        const signatures: Buffer[] = [];
+        for (const signature of geyserData.transaction.transaction.transaction.signatures){
+            signatures.push(Buffer.from(signature));
+        }
+        geyserData.transaction.transaction.transaction.signatures = signatures;
+
+        const accountKeys: Buffer[] = [];
+        for (const accountKey of geyserData.transaction.transaction.transaction.message.accountKeys){
+            accountKeys.push(Buffer.from(accountKey));
+        }
+        geyserData.transaction.transaction.transaction.message.accountKeys = accountKeys;
+
+        for (const instruction of geyserData.transaction.transaction.transaction.message.instructions){
+            if (instruction.data) instruction.data = Buffer.from(instruction.data);
+            if (instruction.accounts) instruction.accounts = instruction.accounts.data;
+        }
+
+        geyserData.transaction.transaction.transaction.message.recentBlockhash = Buffer.from(geyserData.transaction.transaction.transaction.message.recentBlockhash);
+
+        const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(geyserData);
+        console.log('!parsedTransactionWithMeta', parsedTransactionWithMeta);
+        if (parsedTransactionWithMeta){
+            WalletManager.processWalletTransaction(parsedTransactionWithMeta, 'SHYFT0');
+        }
     }
 
     static async ddos(connection: web3.Connection, index: number) {
