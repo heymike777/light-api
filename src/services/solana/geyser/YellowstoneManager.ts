@@ -170,6 +170,8 @@ export class YellowstoneManager {
         }
 
         LogManager.log(process.env.SERVER_NAME, 'listener', this.id, `receivedTx`, signature);
+        LogManager.log('!geyserTx', signature, "data:", JSON.stringify(data));
+
         // fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
         //     if (err) LogManager.error(err);
         // });
