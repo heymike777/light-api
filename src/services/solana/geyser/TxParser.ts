@@ -14,6 +14,7 @@ import { LogManager } from "../../../managers/LogManager";
 export class TxParser {
 
     static async parseGeyserTransactionWithMeta(geyserData: any, shouldFetchLookupTable = true): Promise<web3.ParsedTransactionWithMeta | undefined> {
+        LogManager.log('typeof geyserData = ', typeof geyserData);
         const confirmedTx = grpc.ConfirmedTransaction.fromJSON(geyserData.transaction.transaction);
         LogManager.log('confirmedTx', confirmedTx);
         const geyserTxData = geyserData.transaction;
