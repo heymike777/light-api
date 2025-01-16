@@ -1,5 +1,5 @@
 export class LogManager {
-    static isLogsEnabled = process.env.ENVIRONMENT != 'PRODUCTION';
+    static isLogsEnabled = process.env.ENVIRONMENT != 'DEVELOPMENT';
     static isErrorsEnabled = true;
 
     static log(...args: any[]){
