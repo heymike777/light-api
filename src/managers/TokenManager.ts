@@ -155,7 +155,7 @@ export class TokenManager {
         }
         LogManager.log('TokenManager', 'getToken1', 'address:', address, 'token:', token);
         if (token){
-            if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 5){
+            if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 60 * 5){
                 const info = await SolScanManager.fetchTokenInfo(address);
                 if (info){
                     let isInfoUpdated = false;
@@ -185,7 +185,7 @@ export class TokenManager {
                     }
                 }
             }
-            if (!token.price || !token.priceUpdatedAt || (Date.now() - token.priceUpdatedAt) > 1000 * 5){
+            if (!token.price || !token.priceUpdatedAt || (Date.now() - token.priceUpdatedAt) > 1000 * 60){
                 const prices = await JupiterManager.getPrices([address]);
                 if (prices && prices.length > 0){
                     token.price = prices[0].price;
