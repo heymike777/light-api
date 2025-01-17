@@ -89,6 +89,16 @@ export class SwapManager {
             isSubscriptionRequired: true,
             isExternal: true,
         },
+        {
+            id: 'nova',
+            title: 'Nova',
+            logo: 'https://light.dangervalley.com/static/nova.jpg',
+            url: 'https://t.me/TradeonNovaBot?start=r-heymike',
+            tokenUrl: 'https://t.me/TradeonNovaBot?start=r-heymike-{token}',
+            isSubscriptionRequired: true,
+            isExternal: true,
+        },
+
         // BullX / BullX NEO
     ];
 
