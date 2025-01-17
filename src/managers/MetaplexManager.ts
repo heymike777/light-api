@@ -1,7 +1,7 @@
 import { DigitalAsset, fetchAllDigitalAsset } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { getRpc } from '../services/solana/lib/solana';
-import { publicKey } from '@metaplex-foundation/umi';
+import { publicKey, Commitment } from '@metaplex-foundation/umi';
 import { dasApi, DasApiAsset } from '@metaplex-foundation/digital-asset-standard-api';
 import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
 import { ExplorerManager } from '../services/explorers/ExplorerManager';
@@ -10,14 +10,15 @@ import { LogManager } from './LogManager';
 
 export class MetaplexManager {
 
+    static commitment: Commitment = 'processed';
     static assetsCache: {[key: string]: {id: string, asset: DasApiAsset, createdAt: number}} = {};
 
     static async fetchAllDigitalAssets(mints: string[]): Promise<DigitalAsset[]> {
         try {
-            const umi = createUmi(getRpc()); 
+            const umi = createUmi(getRpc(), this.commitment); 
             const pubKeys = mints.map(mint => publicKey(mint));
             const assets = await fetchAllDigitalAsset(umi, pubKeys);
-            return assets;    
+            return assets;
         }
         catch (error) {
             LogManager.error('MetaplexManager', 'fetchAllDigitalAssets', error);
@@ -33,7 +34,7 @@ export class MetaplexManager {
         }
 
         try {
-            const umi = createUmi(process.env.HELIUS_SHARED_RPC!); 
+            const umi = createUmi(process.env.HELIUS_SHARED_RPC!, this.commitment); 
             umi.use(dasApi())
             const asset = await umi.rpc.getAsset(publicKey(assetId));
             if (asset){
@@ -95,7 +96,7 @@ export class MetaplexManager {
     
     static fetchAssetIdByTreeAnfLeafIndex(merkleTree: string, leafIndex: number): string | undefined {
         try {
-            const umi = createUmi(process.env.HELIUS_SHARED_RPC!); 
+            const umi = createUmi(process.env.HELIUS_SHARED_RPC!, this.commitment); 
             umi.use(dasApi())
             umi.use(mplBubblegum())
 

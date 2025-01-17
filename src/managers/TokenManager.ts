@@ -86,7 +86,7 @@ export class TokenManager {
         }
 
         const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
-        // LogManager.log('TokenManager', 'getToken', address, '=', digitalAssets);
+        LogManager.log('TokenManager', 'getToken', address, '=', digitalAssets);
         if (digitalAssets && digitalAssets.length > 0){
             const digitalAsset = digitalAssets[0];
 
@@ -153,8 +153,9 @@ export class TokenManager {
         if (!token){
             token = await this.fetchDigitalAsset(address);
         }
+        LogManager.log('TokenManager', 'getToken1', 'address:', address, 'token:', token);
         if (token){
-            if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 60 * 5){
+            if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 5){
                 const info = await SolScanManager.fetchTokenInfo(address);
                 if (info){
                     let isInfoUpdated = false;
@@ -184,7 +185,7 @@ export class TokenManager {
                     }
                 }
             }
-            if (!token.price){
+            if (!token.price || !token.priceUpdatedAt || (Date.now() - token.priceUpdatedAt) > 1000 * 5){
                 const prices = await JupiterManager.getPrices([address]);
                 if (prices && prices.length > 0){
                     token.price = prices[0].price;
@@ -201,6 +202,8 @@ export class TokenManager {
                 }
             }
         }
+        LogManager.log('TokenManager', 'getToken2', 'address:', address, 'token:', token);
+
         return tokenToTokenModel(token);
     }
 
