@@ -18,7 +18,7 @@ export enum VerificationService {
 
 export class AuthManager {
     static kVerificationService: VerificationService = process.env.VERIFICATION_SERVICE! as VerificationService;
-    static testEmails = ['test@heynova.xyz'];
+    static testEmails = ['test@heynova.xyz', 'apple@light.app', 'google@light.app'];
     static testCode = '111111';
 
     static async createAuth(email: string): Promise<string> {
