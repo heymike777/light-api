@@ -197,7 +197,8 @@ router.post(
             let description = transaction.description;
             if (!description && parsedTx){
                 const txDescription = ProgramManager.findTxDescription(parsedTx.parsedInstructions, chat.wallets);
-                description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, wallets, tokens) : undefined;    
+                const plainText = txDescription?.html ? Helpers.htmlToPlainText(txDescription?.html) : undefined;
+                description = plainText ? Helpers.replaceAddressesWithPretty(plainText, txDescription?.addresses, wallets, tokens) : undefined;    
             }
 
             tokens = tokens.filter((token) => !token.nft);

@@ -21,7 +21,20 @@ export type Ix = web3.ParsedInstruction | web3.PartiallyDecodedInstruction;
 
 export interface ParsedIxData {
     output: ParserOutput, 
-    programName?: string
+    programName?: string,
+}
+
+export interface ParsedSwap {
+    from: {
+        mint: string,
+        amount: number,
+        decimals: number,
+    };
+    to: {
+        mint: string,
+        amount: number,
+        decimals: number,
+    };
 }
 
 export interface ParsedTx {
@@ -37,6 +50,7 @@ export interface ParsedTx {
     blockTime: number;
     accounts: string[];
     parsedInstructions?: ParsedIx[];
+    swaps?: ParsedSwap[];
 }
 
 export interface ParsedIx {
@@ -47,10 +61,10 @@ export interface ParsedIx {
     description?: TxDescription,
     data?: ParserOutput,
     accountKeys: PublicKey[],
+    swap?: ParsedSwap;
 }
 
 export interface TxDescription {
-    plain: string;
     html: string;
     addresses?: string[];
 }
@@ -86,14 +100,24 @@ export class ProgramManager {
         return SFMIdlItem || undefined;    
     }
 
-    static async parseParsedIx(programId: string, ixParsed: any | ParserOutput, previousIxs?: Ix[], accounts?: web3.PublicKey[], tx?: web3.ParsedTransactionWithMeta, instructions?: Ix[]): Promise<{description?: TxDescription}> {
+    static async parseParsedIx(
+        programId: string, 
+        ixParsed: any | ParserOutput, 
+        previousIxs?: Ix[], 
+        accounts?: web3.PublicKey[], 
+        tx?: web3.ParsedTransactionWithMeta, 
+        instructions?: Ix[]
+    ): Promise<{
+        description?: TxDescription, 
+        swap?: ParsedSwap,
+    }> {
         if (!ixParsed){
             return {};
         }
         LogManager.log('!parseParsedIx', 'programId:', programId);
 
         const ixType = ixParsed.name || ixParsed.type;
-        
+        let swap: ParsedSwap | undefined;
         let description: TxDescription | undefined;
 
         try {
@@ -101,7 +125,6 @@ export class ProgramManager {
                 if (ixType == 'transfer' || ixType == 'transferWithSeed'){
                     const addresses = [ixParsed.info.source, ixParsed.info.destination];
                     description = {
-                        plain: `{address0} transferred ${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL to {address1}`,
                         html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transferred <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                         addresses,
                     };
@@ -115,7 +138,6 @@ export class ProgramManager {
 
                     const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
                     description = {
-                        plain: `{address0} staked ${stakeAmountString} with {address1}`,
                         html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked ${stakeAmountString} with <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                         addresses,
                     };
@@ -125,7 +147,6 @@ export class ProgramManager {
 
                     const addresses = [ixParsed.info.destination, ixParsed.info.withdrawAuthority, ixParsed.info.stakeAccount];
                     description = {
-                        plain: `{address0} unstaked ${stakeAmountString} from {address1}`,
                         html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> unstaked ${stakeAmountString} from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                         addresses,
                     };
@@ -133,7 +154,6 @@ export class ProgramManager {
                 else if (ixType == 'deactivate'){
                     const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.stakeAccount];
                     description = {
-                        plain: `{address0} deactivated stake account {address1}`,
                         html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> deactivated stake account <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                         addresses,
                     };
@@ -190,7 +210,6 @@ export class ProgramManager {
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
                         LogManager.log('addresses:', addresses);
                         description = {
-                            plain: `{address0} transferred ${amount} {address2} to {address1}`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> transferred ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> to <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>`,
                             addresses,
                         };
@@ -203,26 +222,65 @@ export class ProgramManager {
                 if (walletAddress && tokenMint){
                     const addresses = [walletAddress, tokenMint];
                     const meta = tx?.meta;
-                    const preAmount = meta?.preTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
-                    const postAmount = meta?.postTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
+                    const preTokenBalance = meta?.preTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress);
+                    const preAmount = preTokenBalance?.uiTokenAmount.uiAmount || 0
+                    const postTokenBalance = meta?.postTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress);
+                    const postAmount = postTokenBalance?.uiTokenAmount.uiAmount || 0;
                     let amount = postAmount - preAmount;
+                    let decimals = preTokenBalance?.uiTokenAmount.decimals || postTokenBalance?.uiTokenAmount.decimals || 0;
 
+                    let swapLamports = 0;
+                    const programFee = kPrograms[programId].fee;
+                    if (programFee){
+                        const feeAccountIndex = tx?.transaction.message.accountKeys.findIndex((accountKey: any) => accountKey.pubkey.equals(new PublicKey(programFee.account)));
+                        let feeAmount = feeAccountIndex!=undefined ? (meta?.postBalances?.[feeAccountIndex] || 0) - (meta?.preBalances?.[feeAccountIndex] || 0) : 0;
+                        swapLamports = feeAmount / programFee.amount;
+                    }
+
+                    const solAmountString = swapLamports > 0 ? ` for ${swapLamports / web3.LAMPORTS_PER_SOL} SOL` : '';
+                    
                     if (ixType == 'buy') {
                         description = {
-                            plain: `{address0} bought ${amount} {address1} on Pump Fun`,
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>${solAmountString} on Pump Fun`,
                             addresses: addresses,
                         };    
+
+                        swap = {
+                            from: {
+                                mint: kSolAddress,
+                                amount: swapLamports / web3.LAMPORTS_PER_SOL,
+                                decimals: 9,
+                            },
+                            to: {
+                                mint: tokenMint,
+                                amount: amount,
+                                decimals: decimals,
+                            },
+                        }
                     }
                     else if (ixType == 'sell') {
                         amount = -amount;
 
                         description = {
-                            plain: `{address0} sold ${amount} {address1} on Pump Fun`,
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Pump Fun`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>${solAmountString} on Pump Fun`,
                             addresses: addresses,
                         };    
+
+                        swap = {
+                            from: {
+                                mint: tokenMint,
+                                amount: amount,
+                                decimals: decimals,
+                            },
+                            to: {
+                                mint: kSolAddress,
+                                amount: swapLamports / web3.LAMPORTS_PER_SOL,
+                                decimals: 9,
+                            },
+                        }
                     }
+
+                    console.log('swap:', swap);
                 }
             }
             else if (programId == kProgram.RAYDIUM){
@@ -240,7 +298,6 @@ export class ProgramManager {
 
                             const addresses = [walletAddress, tokenMint];
                             description = {
-                                plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Raydium`,
                                 html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Raydium`,
                                 addresses: addresses,
                             };    
@@ -267,7 +324,6 @@ export class ProgramManager {
 
                             const addresses = [walletAddress, tokenMint];
                             description = {
-                                plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Jupiter`,
                                 html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Jupiter`,
                                 addresses: addresses,
                             };    
@@ -287,7 +343,6 @@ export class ProgramManager {
 
                             const addresses = [walletAddress, tokenMint];
                             description = {
-                                plain: `{address0} ${amount>0?'bought':'sold'} ${Math.abs(amount)} {address1} on Jupiter Z`,
                                 html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Jupiter Z`,
                                 addresses: addresses,
                             };    
@@ -306,7 +361,6 @@ export class ProgramManager {
                         const solAmount = +ixParsed.data?.config?.startingPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
@@ -321,7 +375,6 @@ export class ProgramManager {
                         const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
@@ -336,7 +389,6 @@ export class ProgramManager {
                         const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
@@ -351,7 +403,6 @@ export class ProgramManager {
                         const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
@@ -365,7 +416,6 @@ export class ProgramManager {
                         const solAmount = +ixParsed.data?.price / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} listed {address1} for ${solAmount} SOL on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> listed <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
@@ -378,7 +428,6 @@ export class ProgramManager {
                         const addresses = [buyerWalletAddress, tokenMint];
 
                         description = {
-                            plain: `{address0} delisted {address1} on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> delisted <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> on Tensor`,
                             addresses: addresses,
                         };    
@@ -397,7 +446,6 @@ export class ProgramManager {
                         const solAmount = +ixParsed.data?.maxAmount / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought {address1} for ${solAmount} SOL on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
@@ -410,7 +458,6 @@ export class ProgramManager {
                         const solAmount = +ixParsed.data?.amount / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} listed compressed NFT for ${solAmount} SOL on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> listed compressed NFT for <b>${solAmount} SOL</b> on Tensor`,
                             addresses: addresses,
                         };    
@@ -422,7 +469,6 @@ export class ProgramManager {
                         const addresses = [buyerWalletAddress];
 
                         description = {
-                            plain: `{address0} delisted compressed NFT on Tensor`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> delisted compressed NFT on Tensor`,
                             addresses: addresses,
                         };    
@@ -452,7 +498,6 @@ export class ProgramManager {
                         const solAmount = ixParsed.data?.args?.minPaymentAmount / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought {address2} from {address1} for ${solAmount} SOL on Magic Eden`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
                             addresses: addresses,
                         };    
@@ -470,7 +515,6 @@ export class ProgramManager {
                         const solAmount = +ixParsed.data?.buyerPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought {address1} for ${solAmount} SOL on Magic Eden`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
                             addresses: addresses,
                         };    
@@ -490,7 +534,6 @@ export class ProgramManager {
                         const solAmount = ixParsed.data?.args?.buyerPrice / web3.LAMPORTS_PER_SOL;
 
                         description = {
-                            plain: `{address0} bought NFT from {address1} for ${solAmount} SOL on Magic Eden`,
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought NFT from <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
                             addresses: addresses,
                         };    
@@ -506,6 +549,7 @@ export class ProgramManager {
 
         return {
             description,
+            swap,
         };
     }
 
@@ -652,7 +696,6 @@ export class ProgramManager {
                 let ixTitle = ixData?.output?.name;
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
                 ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
-
                 LogManager.log('!description2', info?.description);
 
                 parsedInstructions.push({
@@ -663,6 +706,7 @@ export class ProgramManager {
                     description: info?.description,
                     priority: knownInstruction?.priority || 1000,
                     accountKeys: instruction.accounts || [],
+                    swap: info.swap,
                 });
             }
 
@@ -728,6 +772,15 @@ export class ProgramManager {
             }
         }
 
+        let swaps: ParsedSwap[] | undefined = undefined;
+        for (const parsedIx of parsedInstructions) {
+            if (parsedIx.swap){
+                if (!swaps) { swaps = []; }
+                swaps.push(parsedIx.swap);
+            }
+        }
+
+
         if (txTitle.length == 0){
             txTitle = 'TRANSCATION';
         }
@@ -745,6 +798,7 @@ export class ProgramManager {
             blockTime: tx.blockTime || Math.floor(Date.now() / 1000),
             accounts: tx.transaction.message.accountKeys.map((key) => key.pubkey.toBase58()),
             parsedInstructions: parsedInstructions,
+            swaps,
         }
     }
 

@@ -194,4 +194,9 @@ export class Helpers {
 
         return { platform, appVersion }
     }
+
+    static htmlToPlainText(html: string): string {
+        return html.replace(/<[^>]*>/g, '');
+    }
+    
 }

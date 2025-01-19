@@ -177,9 +177,6 @@ export class TokenManager {
                         isInfoUpdated = true;
                     }
 
-                    token.mintAuthority = info.mintAuthority;
-                    token.freezeAuthority = info.freezeAuthority;
-
                     if (isInfoUpdated){
                         token.infoUpdatedAt = Date.now();
                     }

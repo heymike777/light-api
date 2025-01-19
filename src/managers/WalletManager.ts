@@ -595,7 +595,8 @@ export class WalletManager {
             message = message.replace('{description}', description);
         }
 
-        const description = txDescription?.plain ? Helpers.replaceAddressesWithPretty(txDescription.plain, txDescription?.addresses, chat.wallets, tokens) : undefined;
+        const plainText = txDescription?.html ? Helpers.htmlToPlainText(txDescription?.html) : undefined;
+        const description = plainText ? Helpers.replaceAddressesWithPretty(plainText, txDescription?.addresses, chat.wallets, tokens) : undefined;
 
         LogManager.log('!changedWallets', JSON.stringify(changedWallets));
 

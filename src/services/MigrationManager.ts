@@ -72,8 +72,9 @@ export class MigrationManager {
         // await TokenManager.fetchDigitalAsset(this.kBonk);
 
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
-        
-        // await this.processTx('2FWUBZ8eWNBehKB7s8ApnGMnXCNgi74HkBor4PjCvJFN12SRQfPFy9QoRJgCdqGYUWEppfueqTpRDU21FMettyuL'); // pumpfun
+
+        // await this.processTx('4RNU9HNaYdPwNCV3cuK1d5oh3zRctwqTphk3kp2m8tpPxWGR1VFaMt41L5EcGDUHbtXHDYVbUgJsQyECCHhBui13'); // pumpfun buy
+        // await this.processTx('xxBf1LjTesNATcbuebgcPqgRKBbr6CsZmudBQpwLyvkmpC43XsR8JGymG9H5c7QQtLqj8GawEcGVpUVMCuSMbZK'); // pumpfun sell
         // await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium
         // await this.processTx('4ATvDVMuSPkcBH6QwLtxkV5DG5HhepiCiE5dYF5BjPcnKimLEq4b5nRnANdQ3WGMZeg69WZNh1QY5h9NWioTGnrh'); // raydium
         // await this.processTx('54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'); // jupiter

@@ -33,6 +33,10 @@ export const kPrograms: { [key: string]: {
     knownInstructions: {[key: string]: KnownInstruction}[],
     skip?: boolean,
     customIdl?: { path: string, type: 'anchor' | 'shank' | 'kinobi' },
+    fee?: {
+        account: string,
+        amount: number,
+    }
 } } = {
     [kProgram.SOLANA]: {
         name: undefined,
@@ -132,6 +136,10 @@ export const kPrograms: { [key: string]: {
             path: 'src/idls/pumpfun.json',
             type: 'anchor',
         },
+        fee: {
+            account: 'CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM',
+            amount: 0.01,
+        }
     },
     [kProgram.SOL_INCINERATOR]: {
         name: 'SOL INCINERATOR',
