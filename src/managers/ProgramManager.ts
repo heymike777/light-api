@@ -25,6 +25,7 @@ export interface ParsedIxData {
 }
 
 export interface ParsedSwap {
+    signature?: string;
     from: {
         mint: string,
         amount: number,
@@ -34,6 +35,14 @@ export interface ParsedSwap {
         mint: string,
         amount: number,
         decimals: number,
+    };
+    market?: {
+        address: string;
+        pool1: string;
+        pool2: string;
+    };
+    bondingCurve?: {
+        address: string;
     };
 }
 
@@ -119,6 +128,7 @@ export class ProgramManager {
         const ixType = ixParsed.name || ixParsed.type;
         let swap: ParsedSwap | undefined;
         let description: TxDescription | undefined;
+        const signature = tx?.transaction.signatures?.[0];
 
         try {
             if (programId == kProgram.SOLANA){
@@ -236,7 +246,8 @@ export class ProgramManager {
                         let feeAmount = feeAccountIndex!=undefined ? (meta?.postBalances?.[feeAccountIndex] || 0) - (meta?.preBalances?.[feeAccountIndex] || 0) : 0;
                         swapLamports = feeAmount / programFee.amount;
                     }
-
+                    const bondingCurveAddress = accounts?.[3]?.toBase58();
+                    const bondingCurve = bondingCurveAddress ? { address: bondingCurveAddress } : undefined;
                     const solAmountString = swapLamports > 0 ? ` for ${swapLamports / web3.LAMPORTS_PER_SOL} SOL` : '';
                     
                     if (ixType == 'buy') {
@@ -256,6 +267,8 @@ export class ProgramManager {
                                 amount: amount,
                                 decimals: decimals,
                             },
+                            bondingCurve,
+                            signature,
                         }
                     }
                     else if (ixType == 'sell') {
@@ -277,10 +290,10 @@ export class ProgramManager {
                                 amount: swapLamports / web3.LAMPORTS_PER_SOL,
                                 decimals: 9,
                             },
+                            bondingCurve,
+                            signature,
                         }
                     }
-
-                    console.log('swap:', swap);
                 }
             }
             else if (programId == kProgram.RAYDIUM){
@@ -545,6 +558,8 @@ export class ProgramManager {
         catch (error){
             LogManager.error('!catched parseParsedIx', error);
         }
+
+        console.log('swap:', swap);
         
 
         return {
