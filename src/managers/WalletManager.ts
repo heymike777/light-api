@@ -327,7 +327,7 @@ export class WalletManager {
                             isPushSent = await FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
                         }
 
-                        MixpanelManager.track('Process transaction', userTx.userId, { isPushSent: isPushSent, isTelegramSent: isTelegramSent });
+                        // MixpanelManager.track('Process transaction', userTx.userId, { isPushSent: isPushSent, isTelegramSent: isTelegramSent });
                     }
                     catch (err) {
                         // LogManager.error('WalletManager', 'processTxForChats', 'Error:', err);
