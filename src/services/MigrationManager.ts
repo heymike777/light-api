@@ -75,8 +75,8 @@ export class MigrationManager {
 
         // await this.processTx('4RNU9HNaYdPwNCV3cuK1d5oh3zRctwqTphk3kp2m8tpPxWGR1VFaMt41L5EcGDUHbtXHDYVbUgJsQyECCHhBui13'); // pumpfun buy
         // await this.processTx('xxBf1LjTesNATcbuebgcPqgRKBbr6CsZmudBQpwLyvkmpC43XsR8JGymG9H5c7QQtLqj8GawEcGVpUVMCuSMbZK'); // pumpfun sell
-        // await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium
-        // await this.processTx('4ATvDVMuSPkcBH6QwLtxkV5DG5HhepiCiE5dYF5BjPcnKimLEq4b5nRnANdQ3WGMZeg69WZNh1QY5h9NWioTGnrh'); // raydium
+        // await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium amm sell
+
         // await this.processTx('54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'); // jupiter
         // await this.processTx('5snNUQUXKY7iJFnaBBv6LjWYuBAryQX3mTdtHorboe6mXrZpv694mXCQucho2W2PDGumsTAqykkqsqhs5FNLuAph'); // MAGIC EDEN AMM
         // await this.processTx('26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'); // NFT SALE on !!!MAGIC_EDEN_V2
@@ -88,6 +88,9 @@ export class MigrationManager {
         // await this.processTx('5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'); // TENSOR
         // await this.processTx('8cEwWEwEhPFLLkb5VjCouPGcnFhQCCz99BvX2pZCeSnWJraY1oGNadMHdeAtNArfgBwUvhPkGgn7UVUFDQ3NFwG'); // Jupiter Z
         // await this.processTx('3S4oBuSpvaYXwZYjbhsdaby5tHAcxPEJjAeErU4UQ6y3nf52vT4BkuUmXRUHUBbgvjGgnE16pDTfAZbwzeB8pA14');
+
+        // await this.processTx('3XSLvqS4HYhaSsTkmkakSTLCv4FmfjigGsUGzsRPRRvhDWA8ss3Tek5XTzSygjii8BKncWMX5iu2Bax56Uimreof'); // jupiter
+
 
         // const connection = newConnection();
         // for (let index = 0; index < 200; index++) {
@@ -143,7 +146,7 @@ export class MigrationManager {
         geyserData.transaction.transaction.transaction.message.recentBlockhash = Buffer.from(geyserData.transaction.transaction.transaction.message.recentBlockhash);
 
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(geyserData);
-        console.log('!parsedTransactionWithMeta', parsedTransactionWithMeta);
+        LogManager.log('!parsedTransactionWithMeta', parsedTransactionWithMeta);
         if (parsedTransactionWithMeta){
             WalletManager.processWalletTransaction(parsedTransactionWithMeta, 'SHYFT0');
         }
@@ -151,13 +154,13 @@ export class MigrationManager {
 
     static async ddos(connection: web3.Connection, index: number) {
         const balance = await connection.getBalance(new PublicKey('GPBu4QznMR9QrWVvdeAthimaGRU35zDQjom5PUNM7kek'));
-        console.log(new Date(), 'index', index, 'balance', balance);
+        LogManager.log(new Date(), 'index', index, 'balance', balance);
 
     }
 
     static async migrateUserEnginesToTraderProfiles() {
         const users = await User.find({ engine: { $exists: true } });
-        console.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'users', users.length);
+        LogManager.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'users', users.length);
 
         for (const user of users) {
             const engineId = user.engine;
@@ -180,7 +183,7 @@ export class MigrationManager {
             profile.createdAt = new Date();
             await profile.save();
 
-            console.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'userId', user.id, 'engineId', engine.id, engine.title, 'trader profile created');
+            LogManager.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'userId', user.id, 'engineId', engine.id, engine.title, 'trader profile created');
         }
     }
 

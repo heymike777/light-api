@@ -5,6 +5,7 @@ import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 import { AppPlatform } from "../../models/types";
 import { BN } from "bn.js";
+import { LogManager } from "../../managers/LogManager";
 
 
 export class Helpers {
