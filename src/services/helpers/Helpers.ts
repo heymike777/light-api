@@ -190,7 +190,7 @@ export class Helpers {
             appVersion = appVersion.substring(0, appVersion.indexOf('(')).trim();
         }
 
-        console.log('getAppHeaders:', platform, appVersion, 'req.headers:', req.headers);
+        LogManager.log('getAppHeaders:', platform, appVersion, 'req.headers:', req.headers);
 
         return { platform, appVersion }
     }

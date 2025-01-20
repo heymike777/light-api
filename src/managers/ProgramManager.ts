@@ -296,7 +296,7 @@ export class ProgramManager {
                     }
                 }
             }
-            else if (programId == kProgram.RAYDIUM){
+            else if (programId == kProgram.RAYDIUM_AMM){
                 if (['swapBaseIn', 'swapBaseOut'].indexOf(ixParsed.name) != -1){
                     const walletAddress = 
                         accounts?.[17]?.toBase58() || // serum program == openbook
@@ -319,18 +319,40 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.JUPITER){
-                if (['routeWithTokenLedger', 'sharedAccountsRoute', 'route', 'exactOutRoute', 'sharedAccountsRouteWithTokenLedger', 'sharedAccountsExactOutRoute'].indexOf(ixParsed.name) != -1){
+                LogManager.log('!!!JUPITER', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if ([
+                    'route', 
+                    'routeWithTokenLedger', 
+                    'sharedAccountsRoute', 
+                    'exactOutRoute', 
+                    'sharedAccountsRouteWithTokenLedger', 
+                    'sharedAccountsExactOutRoute',
+                    'route_with_token_ledger', 
+                    'shared_accounts_route', 
+                    'exact_out_route', 
+                    'shared_accounts_route_with_token_ledger', 
+                    'shared_accounts_exact_out_route'
+                ].indexOf(ixParsed.name) != -1){
                     const walletIndexMap: {[key: string]: number} = {
-                        'exactOutRoute': 1,
-                        'sharedAccountsExactOutRoute': 2,
                         'route': 1,
-                        'sharedAccountsRoute': 2,//?
+                        'exactOutRoute': 1,
                         'routeWithTokenLedger': 1,//?
+                        'sharedAccountsExactOutRoute': 2,
+                        'sharedAccountsRoute': 2,//?
                         'sharedAccountsRouteWithTokenLedger': 2,//?
+                        'exact_out_route': 1,
+                        'route_with_token_ledger': 1,//?
+                        'shared_accounts_exact_out_route': 2,
+                        'shared_accounts_route': 2,//?
+                        'shared_accounts_route_with_token_ledger': 2,//?
                     } 
                     const walletAddress = accounts?.[walletIndexMap[ixParsed.name]]?.toBase58();
+                    LogManager.log('!walletAddress:', walletAddress);
+                    LogManager.log('!tx.meta:', tx?.meta);
+
                     if (walletAddress && tx?.meta){
                         const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
+                        LogManager.log('!changes:', changes);
                         if (changes.length > 0){
                             const tokenMint = changes[0].mint;
                             const amount = changes[0].uiAmountChange;
@@ -559,7 +581,7 @@ export class ProgramManager {
             LogManager.error('!catched parseParsedIx', error);
         }
 
-        console.log('swap:', swap);
+        LogManager.log('swap:', swap);
         
 
         return {

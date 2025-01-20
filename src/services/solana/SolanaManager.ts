@@ -490,7 +490,7 @@ export class SolanaManager {
     }
 
     static isValidPublicKey(publicKey: string): boolean {
-        console.log(`isValidPublicKey: "${publicKey}"`);
+        LogManager.log(`isValidPublicKey: "${publicKey}"`);
         try {
             const pk = new web3.PublicKey(publicKey);
             return web3.PublicKey.isOnCurve(pk);
@@ -648,7 +648,7 @@ export class SolanaManager {
                 // freezeAuthority: heliusAsset.freezeAuthority,
             };
 
-            console.log('getAssetsByOwner', 'heliusAsset:', JSON.stringify(heliusAsset));
+            LogManager.log('getAssetsByOwner', 'heliusAsset:', JSON.stringify(heliusAsset));
 
             assets.push(asset);
         }
@@ -656,7 +656,7 @@ export class SolanaManager {
         // sort by priceInfo.totalPrice
         assets.sort((a, b) => (b.priceInfo?.totalPrice || 0) - (a.priceInfo?.totalPrice || 0));
 
-        console.log('!assets:', JSON.stringify(assets));
+        LogManager.log('!assets:', JSON.stringify(assets));
         return assets;
     }
 

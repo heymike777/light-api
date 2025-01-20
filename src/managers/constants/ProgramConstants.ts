@@ -5,8 +5,12 @@ export enum kProgram {
     COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111',
     STAKE_PROGRAM = 'Stake11111111111111111111111111111111111111',
     
-    RAYDIUM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
+    RAYDIUM_AMM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
     RAYDIUM_CLMM = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK',
+    // RAYDIUM_CPMM = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C',
+    // RAYDIUM_STABLE_SWAP_APP = '5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h',
+    // RAYDIUM_APP_ROUTING = 'routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS',
+
     // RAYDIUM_CPMM
     JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     JUPITER_Z = '61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH',
@@ -79,7 +83,7 @@ export const kPrograms: { [key: string]: {
         knownInstructions: [],
         skip: true,
     },
-    [kProgram.RAYDIUM]: {
+    [kProgram.RAYDIUM_AMM]: {
         name: 'RAYDIUM',
         knownInstructions: [
             { 'swapBaseIn': {title: 'SWAP', priority: 2} },

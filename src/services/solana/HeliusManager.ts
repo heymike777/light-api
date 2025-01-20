@@ -78,7 +78,7 @@ export class HeliusManager {
                 displayOptions: options,
             });
             const items = response.items;
-            console.log('grand_total:', response.grand_total);
+            LogManager.log('grand_total:', response.grand_total);
 
             if (items.length == limit && page < 3){
                 const nextItems = await this.getAssetsByOwner(walletAddress, options, page+1);

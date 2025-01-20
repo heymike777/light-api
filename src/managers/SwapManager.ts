@@ -146,7 +146,7 @@ export class SwapManager {
                 return;
             }
 
-            console.log('SwapManager', 'quote', quote);
+            LogManager.log('SwapManager', 'quote', quote);
 
             const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
 
@@ -162,7 +162,7 @@ export class SwapManager {
             const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
             const addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
 
-            console.log('SwapManager', 'swapData', swapData);
+            LogManager.log('SwapManager', 'swapData', swapData);
 
             // add 1% fee instruction to tx
             const swapSolAmountInLamports = type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
@@ -175,14 +175,14 @@ export class SwapManager {
             }
             await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
             
-            console.log('SwapManager', 'instructions.length =', instructions.length);
+            LogManager.log('SwapManager', 'instructions.length =', instructions.length);
 
             blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
             const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
-            console.log('SwapManager', 'tx', tx);
+            LogManager.log('SwapManager', 'tx', tx);
 
             signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
-            console.log('SwapManager', 'signature', signature);
+            LogManager.log('SwapManager', 'signature', signature);
         }
         catch (error) {
             console.error('SwapManager', type, error);
