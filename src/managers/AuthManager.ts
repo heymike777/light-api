@@ -155,7 +155,8 @@ export class AuthManager {
 
         MixpanelManager.updateProfile(user, undefined);
     
-        SystemNotificationsManager.sendSystemMessage(`New user: ${email}`);
+        const count = await User.countDocuments({ email: {$exists: true} });
+        SystemNotificationsManager.sendSystemMessage(`New user (${count}): ${email}`);
 
         return user;
     }
