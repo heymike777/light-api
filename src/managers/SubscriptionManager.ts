@@ -53,55 +53,60 @@ export class SubscriptionManager {
     }
 
     static async updateUserSubscription(userId: string) {
-        let subs = await RevenueCatManager.getCustomerSubscriptions(userId);
-        if (subs == undefined){
-            // try to fetch one more time
-            subs = await RevenueCatManager.getCustomerSubscriptions(userId);
-        }
-        LogManager.log('SubscriptionManager', 'updateUserSubscription', userId, subs);
-
-        if (!subs){
-            MixpanelManager.trackError(userId, { text: 'Cannot fetch RevenueCat subscriptions for user' });
-            LogManager.error('Cannot fetch RevenueCat subscriptions for user', userId);
-            return;
-        }
-
-        const existingSubs = await Subscription.find({ userId, platform: SubscriptionPlatform.REVENUECAT, status: SubscriptionStatus.ACTIVE });
-
-        const now = new Date();
-        if (subs.length > 0){
-            for (const sub of subs) {
-                await this.createSubscription(userId, sub.tier, SubscriptionPlatform.REVENUECAT, sub.expiresAt, now);
+        try {
+            let subs = await RevenueCatManager.getCustomerSubscriptions(userId);
+            if (subs == undefined){
+                // try to fetch one more time
+                subs = await RevenueCatManager.getCustomerSubscriptions(userId);
             }
-        }
+            LogManager.log('SubscriptionManager', 'updateUserSubscription', userId, subs);
 
-        await Subscription.deleteMany({ userId, platform: SubscriptionPlatform.REVENUECAT, createdAt: { $lt: now } });
+            if (!subs){
+                MixpanelManager.trackError(userId, { text: 'Cannot fetch RevenueCat subscriptions for user' });
+                LogManager.error('Cannot fetch RevenueCat subscriptions for user', userId);
+                return;
+            }
 
-        const user = await User.findById(userId);
-        if (user){
-            await UserManager.fillUserWithData(user);
+            const existingSubs = await Subscription.find({ userId, platform: SubscriptionPlatform.REVENUECAT, status: SubscriptionStatus.ACTIVE });
 
-            // check if user has a subscription and update the number of wallets
-            const tier = user.subscription?.tier;
-            const maxNumberOfWallets = this.getMaxNumberOfWallets(tier);
-            const wallets = await Wallet.find({ userId });
-            if (wallets.length > maxNumberOfWallets){
-                const walletsToPause = wallets.slice(maxNumberOfWallets);
-                for (const wallet of walletsToPause){
-                    await WalletManager.pauseWallet(wallet);
+            const now = new Date();
+            if (subs.length > 0){
+                for (const sub of subs) {
+                    await this.createSubscription(userId, sub.tier, SubscriptionPlatform.REVENUECAT, sub.expiresAt, now);
+                }
+            }
+
+            await Subscription.deleteMany({ userId, platform: SubscriptionPlatform.REVENUECAT, createdAt: { $lt: now } });
+
+            const user = await User.findById(userId);
+            if (user){
+                await UserManager.fillUserWithData(user);
+
+                // check if user has a subscription and update the number of wallets
+                const tier = user.subscription?.tier;
+                const maxNumberOfWallets = this.getMaxNumberOfWallets(tier);
+                const wallets = await Wallet.find({ userId });
+                if (wallets.length > maxNumberOfWallets){
+                    const walletsToPause = wallets.slice(maxNumberOfWallets);
+                    for (const wallet of walletsToPause){
+                        await WalletManager.pauseWallet(wallet);
+                    }
+                }
+                else {
+                    for (const wallet of wallets) {
+                        await WalletManager.activateWallet(wallet);
+                    }
                 }
             }
             else {
-                for (const wallet of wallets) {
-                    await WalletManager.activateWallet(wallet);
-                }
+                MixpanelManager.trackError(userId, { text: 'Cannot find user' });
             }
-        }
-        else {
-            MixpanelManager.trackError(userId, { text: 'Cannot find user' });
-        }
 
-        this.sendSystemNotification(user || undefined, subs, existingSubs);
+            this.sendSystemNotification(user || undefined, subs, existingSubs);
+        }
+        catch (error){
+            LogManager.error('SubscriptionManager.updateUserSubscription', 'userId:', userId, 'error:', error);
+        }
     }
 
     static async cleanExpiredGiftCardSubscriptions() {

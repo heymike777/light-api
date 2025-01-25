@@ -11,7 +11,6 @@ export enum kProgram {
     // RAYDIUM_STABLE_SWAP_APP = '5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h',
     // RAYDIUM_APP_ROUTING = 'routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS',
 
-    // RAYDIUM_CPMM
     JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     JUPITER_Z = '61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH',
     SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
