@@ -32,7 +32,6 @@ export class CronManager {
             // once a day at 2am UTC
 
             SubscriptionManager.fetchAllRevenueCatSubscriptions();
-            TokenManager.fetchNewPoolsForExistingTokens();
         });
     }
 

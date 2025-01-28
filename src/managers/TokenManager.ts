@@ -310,22 +310,6 @@ export class TokenManager {
         return tokenPairs;
     }
 
-    static async fetchNewPoolsForExistingTokens() {
-        const pairs = await TokenPair.find({});
-        const uniqueMints = new Set<string>();
-        for (const pair of pairs){
-            uniqueMints.add(pair.token1);
-            uniqueMints.add(pair.token2);
-        }
-
-        for (const mint of uniqueMints){
-            if (mint != kSolAddress){
-                await this.fetchTokenPairs(mint);
-                await Helpers.sleep(0.05);
-            }
-        }
-    }
-
     static async updateTokenPairLiquidity(pair: ITokenPair) {
         const connection = newConnection();
         const tokenBalance1 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount1));
