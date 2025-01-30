@@ -581,7 +581,7 @@ export class ProgramManager {
             LogManager.error('!catched parseParsedIx', error);
         }
 
-        LogManager.log('swap:', swap);
+        LogManager.forceLog('swap:', swap);
         
 
         return {
