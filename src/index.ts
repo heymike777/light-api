@@ -68,8 +68,9 @@ app.all('*', async () => {
 app.use(errorHandler);
 
 const start = async () => {
+    LogManager.forceLog('Start');
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
-    LogManager.forceLog('Connected to mongodb!');
+    LogManager.forceLog('Connected to mongo');
 
     const port = process.env.PORT;
     app.listen(port, () => {

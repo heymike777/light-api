@@ -45,6 +45,7 @@ import { Swap } from "../entities/payments/Swap";
 import * as web3 from '@solana/web3.js';
 import { YellowstoneManager } from "./solana/geyser/YellowstoneManager";
 import { TxParser } from "./solana/geyser/TxParser";
+import { exit } from "process";
 
 export class MigrationManager {
 
@@ -58,6 +59,11 @@ export class MigrationManager {
         LogManager.forceLog('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
         const chatId = 862473;
+
+        const connection = newConnection();
+        const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
+        console.log('balance', balance);
+        // exit(0);
 
         // await SolanaManager.getAssetsByOwner('9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL')
 
