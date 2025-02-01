@@ -22,6 +22,11 @@ export class CronManager {
             TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
         });
 
+        cron.schedule('*/10 * * * *', () => {
+            // every 10 minutes
+            UserManager.cleanOldUserTransactions();
+        });
+
         cron.schedule('0 * * * *', () => {
             // once an hour
             TokenManager.clearOldSwaps();

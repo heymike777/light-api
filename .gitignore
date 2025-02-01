@@ -10,3 +10,4 @@ keys/firebase-adminsdk.json
 transactions_account_keys.txt
 transactions.txt
 apple_webhooks.txt
+.env_ams.production
