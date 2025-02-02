@@ -35,19 +35,19 @@ export interface TokenMarket {
 export class SolScanManager {
     static baseUrl = 'https://pro-api.solscan.io/v2.0'
 
-    static async sendGetApiRequest(method: string,  params: any): Promise<any> {
-        try {
-            const response = await axios.get(`${this.baseUrl}/${method}`, {
-                params: params,
-                headers: {
-                    token: process.env.SOLSCAN_API_KEY,
-                }
-            });
-            return response.data;
-        }
-        catch (error) {
-            LogManager.error('SolScanManager', 'sendGetApiRequest', method, params, error);
-        }
+    static async sendGetApiRequest(method: string,  params: any): Promise<any> {        
+        // try {
+        //     const response = await axios.get(`${this.baseUrl}/${method}`, {
+        //         params: params,
+        //         headers: {
+        //             token: process.env.SOLSCAN_API_KEY,
+        //         }
+        //     });
+        //     return response.data;
+        // }
+        // catch (error) {
+        //     LogManager.error('SolScanManager', 'sendGetApiRequest', method, params, error);
+        // }
         return undefined;
     }
 
