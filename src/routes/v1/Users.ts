@@ -157,6 +157,9 @@ router.post(
     jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
     validateAuth(),  
     async (req: Request, res: Response) => {
+        const times: {time: number, message: string}[] = [];
+        times.push({time: Date.now(), message: "start"});
+
         const userId = req.accessToken?.userId;
         if (!userId){
             throw new NotAuthorizedError();
@@ -168,12 +171,15 @@ router.post(
             user.lastIpAddress = ipAddress;
             user.save();
         }
+        times.push({time: Date.now(), message: "got user"});
 
         let pageToken = Helpers.parsePageToken(req);
         let existingIds = pageToken?.ids || [];
         const kPageSize = pageToken?.pageSize || 10;
+        times.push({time: Date.now(), message: "parsed page token"});
 
         const transactions = await UserTransaction.find({userId: userId, _id: {$nin: existingIds}}).sort({createdAt: -1}).limit(kPageSize+1).exec();
+        times.push({time: Date.now(), message: "got transactions"});
         const hasMore = transactions.length > kPageSize;
         if (hasMore){
             transactions.pop();
@@ -185,6 +191,7 @@ router.post(
 
         const wallets = await WalletManager.fetchWalletsByUserId(userId);
         const chat: ChatWallets = { user: user, wallets: wallets };
+        times.push({time: Date.now(), message: "fetched wallets"});
 
         const parsedTransactions: TransactionApiResponse[] = [];
         for (const transaction of transactions) {
@@ -218,6 +225,9 @@ router.post(
                 wallets: changedWallets && changedWallets.length > 0 ? changedWallets : undefined,
                 tokens: tokens && tokens.length > 0 ? tokens : undefined,
             });
+
+            times.push({time: Date.now(), message: "tx processed"});
+
         }
 
         // LogManager.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
@@ -227,11 +237,15 @@ router.post(
             announcements = await AnnouncementsManager.getAnnouncements();
         }
 
+        times.push({time: Date.now(), message: "got announcements"});
+
+
         res.status(200).send({
             hasMore: hasMore,
             pageToken: newPageToken,
             transactions: parsedTransactions,
             announcements,
+            times: times,
         });
     }
 );
