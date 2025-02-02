@@ -60,9 +60,9 @@ export class MigrationManager {
         this.syncIndexes();
         const chatId = 862473;
 
-        const connection = newConnection();
-        const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
-        console.log('balance', balance);
+        // const connection = newConnection();
+        // const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
+        // console.log('balance', balance);
         // exit(0);
 
         // await SolanaManager.getAssetsByOwner('9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL')
