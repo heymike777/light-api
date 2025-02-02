@@ -157,8 +157,8 @@ router.post(
     jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
     validateAuth(),  
     async (req: Request, res: Response) => {
-        const times: {time: number, message: string}[] = [];
-        times.push({time: Date.now(), message: "start"});
+        const times: {time: number, message: string, took: number}[] = [];
+        times.push({time: Date.now(), message: "start", took: 0});
 
         const userId = req.accessToken?.userId;
         if (!userId){
@@ -171,15 +171,15 @@ router.post(
             user.lastIpAddress = ipAddress;
             user.save();
         }
-        times.push({time: Date.now(), message: "got user"});
+        times.push({time: Date.now(), message: "got user", took: Date.now()-times[times.length-1].time});
 
         let pageToken = Helpers.parsePageToken(req);
         let existingIds = pageToken?.ids || [];
         const kPageSize = pageToken?.pageSize || 10;
-        times.push({time: Date.now(), message: "parsed page token"});
+        times.push({time: Date.now(), message: "parsed page token", took: Date.now()-times[times.length-1].time});
 
         const transactions = await UserTransaction.find({userId: userId, _id: {$nin: existingIds}}).sort({createdAt: -1}).limit(kPageSize+1).exec();
-        times.push({time: Date.now(), message: "got transactions"});
+        times.push({time: Date.now(), message: "got transactions", took: Date.now()-times[times.length-1].time});
         const hasMore = transactions.length > kPageSize;
         if (hasMore){
             transactions.pop();
@@ -191,7 +191,7 @@ router.post(
 
         const wallets = await WalletManager.fetchWalletsByUserId(userId);
         const chat: ChatWallets = { user: user, wallets: wallets };
-        times.push({time: Date.now(), message: "fetched wallets"});
+        times.push({time: Date.now(), message: "fetched wallets", took: Date.now()-times[times.length-1].time});
 
         const parsedTransactions: TransactionApiResponse[] = [];
         for (const transaction of transactions) {
@@ -226,7 +226,7 @@ router.post(
                 tokens: tokens && tokens.length > 0 ? tokens : undefined,
             });
 
-            times.push({time: Date.now(), message: "tx processed"});
+            times.push({time: Date.now(), message: "tx processed", took: Date.now()-times[times.length-1].time});
 
         }
 
@@ -237,7 +237,11 @@ router.post(
             announcements = await AnnouncementsManager.getAnnouncements();
         }
 
-        times.push({time: Date.now(), message: "got announcements"});
+        times.push({time: Date.now(), message: "got announcements", took: Date.now()-times[times.length-1].time});
+
+        for (const time of times){
+            LogManager.log("GET TRANSACTIONS", "time", time.time, "message", time.message);
+        }
 
 
         res.status(200).send({
