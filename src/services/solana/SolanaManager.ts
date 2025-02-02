@@ -493,7 +493,7 @@ export class SolanaManager {
         LogManager.log(`isValidPublicKey: "${publicKey}"`);
         try {
             const pk = new web3.PublicKey(publicKey);
-            return web3.PublicKey.isOnCurve(pk);
+            return true; // web3.PublicKey.isOnCurve(pk);
         }
         catch (err){
             LogManager.error('isValidPublicKey', err);
