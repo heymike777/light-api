@@ -32,19 +32,28 @@ router.get(
     jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
     validateAuth(),  
     async (req: Request, res: Response) => {
+        const times: {time: number, message: string, took: number}[] = [];
+        times.push({time: Date.now(), message: "start", took: 0});
+
         const userId = req.accessToken?.userId;
         if (!userId){
             throw new NotAuthorizedError();
         }
+        times.push({time: Date.now(), message: "first", took: Date.now()-times[times.length-1].time});
+
 
         const user = await UserManager.getUserById(userId, true);
         if (!user){
             throw new NotAuthorizedError();
         }
 
+        times.push({time: Date.now(), message: "got user", took: Date.now()-times[times.length-1].time});
+
+
         LogManager.log("GET USER", "userId", userId, "user", user);
-    
-        res.status(200).send({ user, times: user.tmp });
+        times.push({time: Date.now(), message: "logged", took: Date.now()-times[times.length-1].time});
+
+        res.status(200).send({ user, times: times, timesGetUserById: user.tmp });
     }
 );
 
