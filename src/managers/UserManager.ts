@@ -13,6 +13,9 @@ export class UserManager {
     static cachedUsers: {user: IUser, createdAt: Date}[] = [];
 
     static async getUserById(id: string, forceCleanCache = false): Promise<IUser> {
+        const times: {time: number, message: string, took: number}[] = [];
+        times.push({time: Date.now(), message: "start", took: 0});
+
         if (!forceCleanCache){
             const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.id == id);
             if (cachedUser){
@@ -22,9 +25,14 @@ export class UserManager {
 
         const now = new Date();
         const user = await User.findById(id);
+        times.push({time: Date.now(), message: "got user by id", took: Date.now()-times[times.length-1].time});
         if (user){
             await UserManager.fillUserWithData(user);
+            times.push({time: Date.now(), message: "filled user", took: Date.now()-times[times.length-1].time});
             this.cachedUsers.push({ user: user, createdAt: now });
+            times.push({time: Date.now(), message: `pushed user to cache (count=${this.cachedUsers.length})`, took: Date.now()-times[times.length-1].time});
+
+            user.tmp = times;
             return user;
         }
         else {

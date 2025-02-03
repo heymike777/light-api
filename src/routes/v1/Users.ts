@@ -44,7 +44,7 @@ router.get(
 
         LogManager.log("GET USER", "userId", userId, "user", user);
     
-        res.status(200).send({ user });
+        res.status(200).send({ user, times: user.tmp });
     }
 );
 
