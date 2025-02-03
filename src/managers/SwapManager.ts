@@ -393,6 +393,7 @@ export class SwapManager {
         userTx.description = message;
         userTx.createdAt = new Date();
         userTx.tokens = token ? [token] : [];
+        userTx.signature = `manual_${swap.userId}_${Date.now()}`;
         await userTx.save();
 
         let isTelegramSent = false;
