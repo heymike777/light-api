@@ -35,6 +35,9 @@ export class WalletManager {
     static walletsMap: Map<string, IWallet[]> = new Map();
     static programIds: string[] = [];
 
+    static statsStartedAt: number | undefined = undefined;
+    static stats: Record<string, number> = {};
+
     static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string, ipAddress?: string, traderProfileId?: string): Promise<IWallet>{
         //check if walletAddress is a valid address
         if (SolanaManager.isValidPublicKey(walletAddress) == false){
@@ -300,6 +303,10 @@ export class WalletManager {
                 if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
                     try {
                         //TODO: don't save tx if that's a channel or group chat
+
+                        if (!this.statsStartedAt){ this.statsStartedAt = Date.now(); }
+                        this.stats[chat.wallets[0].userId] = (this.stats[chat.wallets[0].userId] || 0) + 1;
+
                         const userTx = new UserTransaction();
                         userTx.geyserId = geyserId;
                         userTx.userId = chat.wallets[0].userId;
