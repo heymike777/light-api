@@ -34,8 +34,8 @@ export const WalletSchema = new mongoose.Schema<IWallet>({
     createdAt: { type: Date, default: new Date() }
 });
 
-WalletSchema.index({ userId: 1 });
-WalletSchema.index({ userId: 1, wallletAddress: 1 });
+// WalletSchema.index({ userId: 1 });
+// WalletSchema.index({ userId: 1, wallletAddress: 1 });
 WalletSchema.index({ userId: 1, status: 1 });
 WalletSchema.index({ status: 1 });
 WalletSchema.index({ traderProfileId: 1 });
