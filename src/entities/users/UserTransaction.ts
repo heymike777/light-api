@@ -10,7 +10,7 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export interface IUserTransaction extends mongoose.Document {
     geyserId: string;
     userId: string;
-    signature?: string;
+    signature: string;
 
     title?: string;
     description?: string;

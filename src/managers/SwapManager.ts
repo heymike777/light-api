@@ -22,6 +22,7 @@ import { TokenManager } from "./TokenManager";
 import { lamports } from "@metaplex-foundation/umi";
 import { Helpers } from "../services/helpers/Helpers";
 import { BN } from "bn.js";
+import { RedisManager } from "./db/RedisManager";
 
 export class SwapManager {
 
@@ -394,6 +395,10 @@ export class SwapManager {
         userTx.createdAt = new Date();
         userTx.tokens = token ? [token] : [];
         userTx.signature = `manual_${swap.userId}_${Date.now()}`;
+
+        const addedToRedis = await RedisManager.saveUserTransaction(userTx);
+        LogManager.forceLog('addedToRedis:', addedToRedis);
+
         await userTx.save();
 
         let isTelegramSent = false;

@@ -29,6 +29,7 @@ import { IToken, ITokenModel, Token, TokenNft } from "../entities/tokens/Token";
 import { Chain } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
+import { RedisManager } from "./db/RedisManager";
 
 export class WalletManager {
 
@@ -315,6 +316,12 @@ export class WalletManager {
                         userTx.createdAt = new Date(parsedTx.blockTime * 1000);
                         userTx.tokens = info.transactionApiResponse.tokens?.filter((token) => token.address != kSolAddress);
                         userTx.signature = parsedTx.signature;
+
+                        if (userTx.userId == '66eefe2c8fed7f2c60d147ef'){
+                            const addedToRedis = await RedisManager.saveUserTransaction(userTx);
+                            LogManager.forceLog('addedToRedis:', addedToRedis);    
+                        }
+                    
                         await userTx.save();
 
                         let isTelegramSent = false;

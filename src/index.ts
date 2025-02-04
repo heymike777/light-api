@@ -28,6 +28,7 @@ import { giftCardsRouter } from './routes/v1/GiftCards';
 import { LogManager } from './managers/LogManager';
 import { traderProfilesRouter } from './routes/v1/TraderProfiles';
 import { tradeRouter } from './routes/v1/Trade';
+import { RedisManager } from './managers/db/RedisManager';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -71,6 +72,7 @@ const start = async () => {
     LogManager.forceLog('Start');
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
     LogManager.forceLog('Connected to mongo');
+    await connectToRedis();
 
     const port = process.env.PORT;
     app.listen(port, () => {
@@ -94,6 +96,13 @@ const onExpressStarted = async () => {
 
     await MigrationManager.migrate();
 }
+
+const connectToRedis = async () => {
+    LogManager.forceLog('Connecting to redis...');
+    const redisManager = new RedisManager();
+    await redisManager.connect();
+    LogManager.forceLog('Connected to redis');
+}  
 
 const setupBot = async () => {
     await BotManager.getInstance();
