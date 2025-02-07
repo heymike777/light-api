@@ -7,15 +7,21 @@ const router = express.Router();
 router.post(
     '/api/v1/test/logs',
     async (req: Request, res: Response) => {
+        const times: {time: number, message: string, took: number}[] = [];
+        times.push({time: Date.now(), message: "start", took: 0});
+
         const isLogsEnabled = req.body.isLogsEnabled;
         const isErrorsEnabled = req.body.isErrorsEnabled;
 
         LogManager.isLogsEnabled = isLogsEnabled;
         LogManager.isErrorsEnabled = isErrorsEnabled;
 
+        times.push({time: Date.now(), message: "done", took: Date.now()-times[times.length-1].time});
+
         res.status(200).send({ 
             isLogsEnabled: LogManager.isLogsEnabled,
             isErrorsEnabled: LogManager.isErrorsEnabled,
+            times: times,
         });
     }
 );
