@@ -244,7 +244,7 @@ export class YellowstoneManager {
     static shouldProcessSignature(signature: string){
         this.processedSignatures[signature] = ++this.processedSignatures[signature] || 1;
 
-        LogManager.log(`count`, this.processedSignatures[signature]);
+        // LogManager.log(`count`, this.processedSignatures[signature]);
         if (this.processedSignatures[signature] > 1){
             return false;
         }
