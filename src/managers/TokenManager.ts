@@ -16,34 +16,6 @@ import * as web3 from "@solana/web3.js";
 import { Helpers } from "../services/helpers/Helpers";
 import { LogManager } from "./LogManager";
 
-// export const kDefaultTokens: Token[] = [
-//     {
-//         address: 'So11111111111111111111111111111111111111112',
-//         name: 'Wrapped SOL',
-//         symbol: 'WSOL',
-//         decimals: 9,
-//         // logo: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-//         priceUpdatedAt: 0,
-//     },
-//     {
-//         address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
-//         name: 'Jupiter',
-//         symbol: 'JUP',
-//         decimals: 9,
-//         // logo: 'https://static.jup.ag/jup/icon.png',
-//         priceUpdatedAt: 0,
-//     },
-//     {
-//         address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-//         name: 'USD Coin',
-//         symbol: 'USDC',
-//         decimals: 6,
-//         // logo: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
-//         priceUpdatedAt: 0,
-//     },
-//     //TODO: add more tokens - USDT
-// ];
-
 export class TokenManager {
 
     static tokens: IToken[] = [];

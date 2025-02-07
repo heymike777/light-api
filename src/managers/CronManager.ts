@@ -5,6 +5,7 @@ import { YellowstoneManager } from '../services/solana/geyser/YellowstoneManager
 import { SubscriptionManager } from './SubscriptionManager';
 import { SwapManager } from './SwapManager';
 import { WalletManager } from './WalletManager';
+import { RedisManager } from './db/RedisManager';
 
 export class CronManager {
 
@@ -26,7 +27,7 @@ export class CronManager {
 
         cron.schedule('*/10 * * * *', () => {
             // every 10 minutes
-            // UserManager.cleanOldUserTransactions();
+            RedisManager.migrateAllUsersTransactionsToMongo();
         });
 
         cron.schedule('0 * * * *', () => {

@@ -82,28 +82,23 @@ export class UserManager {
         }
     }
 
-    static async cleanOldUserTransactions() {
-        //TODO: get not all users, but only those who have more than 100 transactions
-        // for now, while we have only 250 users that's ok
-        const users = await User.find({});
-        for (const user of users){
-            const count = await UserTransaction.countDocuments({ userId: user.id });
-            console.log('user', user.id, 'email', user.email, 'UserTransaction.count', count);
+    static async cleanOldUserTransactions(userId: string) {
+        const count = await UserTransaction.countDocuments({ userId: userId });
+        console.log('user', userId, 'UserTransaction.count', count);
 
-            const kLimit = 100;
-            if (count > kLimit){
-                const txs = await UserTransaction.find({ userId: user.id }).sort({ createdAt: -1 }).limit(kLimit);
+        const kLimit = 100;
+        if (count > kLimit){
+            const txs = await UserTransaction.find({ userId: userId }).sort({ createdAt: -1 }).limit(kLimit);
 
-                let index = 0;
-                while (index < 10){
-                    const deletedTxs = await UserTransaction.find({ userId: user.id, createdAt: { $lt: txs[kLimit - 1].createdAt } }).limit(1000);
-                    if (deletedTxs.length == 0){
-                        break;
-                    }
-                    const tmp = await UserTransaction.deleteMany({ _id: { $in: deletedTxs.map((tx) => tx.id) } });
-                    console.log('user', user.id, 'deleted', tmp.deletedCount, 'transactions');
-                    index++;
+            let index = 0;
+            while (index < 10){
+                const deletedTxs = await UserTransaction.find({ userId: userId, createdAt: { $lt: txs[kLimit - 1].createdAt } }).limit(1000);
+                if (deletedTxs.length == 0){
+                    break;
                 }
+                const tmp = await UserTransaction.deleteMany({ _id: { $in: deletedTxs.map((tx) => tx.id) } });
+                console.log('user', userId, 'deleted', tmp.deletedCount, 'transactions');
+                index++;
             }
         }
     }

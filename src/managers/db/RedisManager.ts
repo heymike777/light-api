@@ -1,6 +1,7 @@
 import { createClient, RedisClientType } from "redis";
 import { IUserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
 import { kAddUniqueTransactionLua } from "./RedisScripts";
+import { UserManager } from "../UserManager";
 
 export class RedisManager {
 
@@ -90,6 +91,58 @@ export class RedisManager {
         }
 
         return [];    
+    }
+
+    static async migrateAllUsersTransactionsToMongo() {
+        const redis = RedisManager.getInstance();
+        if (!redis) return [];
+        if (!redis.client) return [];
+        if (!redis.client.isReady) return [];
+
+        // fetch all the keys
+        const keys = await redis.client.keys('user:*:transactions');
+        if (keys) {
+            console.log('migrateAllUsersTransactionsToMongo', 'keys:', keys);
+            for (const key of keys) {
+                const userId = key.split(':')[1];
+                await RedisManager.migrateUserTransactionsToMongo(userId);
+            }
+        }
+    }
+
+    /**
+     * Get most recent transactions for a user
+     */
+    static async migrateUserTransactionsToMongo(userId: string) {
+        const redis = RedisManager.getInstance();
+        if (!redis) return [];
+        if (!redis.client) return [];
+        if (!redis.client.isReady) return [];
+
+        const key = `user:${userId}:transactions`;
+        console.log('migrateUserTransactionsToMongo', key);
+
+        // fetch the transactions from redis
+        const transactions = await redis.client.lRange(key, 0, -1);
+        if (transactions && transactions.length > 0) {
+            for (const txString of transactions) {
+                try{
+                    const tx = userTransactionFromJson(txString);
+                    if (tx) {
+                        await tx.save();
+
+                        console.log('migrateUserTransactionsToMongo', tx.signature, 'success');
+
+                        redis.client.lRem(key, 0, txString);
+                    }
+                }
+                catch(e){
+                    console.error('migrateUserTransactionsToMongo', e);
+                }
+            }
+
+            await UserManager.cleanOldUserTransactions(userId);
+        }
     }
 
 }
