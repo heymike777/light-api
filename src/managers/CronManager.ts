@@ -26,7 +26,7 @@ export class CronManager {
 
         cron.schedule('*/10 * * * *', () => {
             // every 10 minutes
-            UserManager.cleanOldUserTransactions();
+            // UserManager.cleanOldUserTransactions();
         });
 
         cron.schedule('0 * * * *', () => {
