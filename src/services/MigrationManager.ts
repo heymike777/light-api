@@ -46,20 +46,25 @@ import * as web3 from '@solana/web3.js';
 import { YellowstoneManager } from "./solana/geyser/YellowstoneManager";
 import { TxParser } from "./solana/geyser/TxParser";
 import { exit } from "process";
+import { RedisManager } from "../managers/db/RedisManager";
 
 export class MigrationManager {
 
     static kBonk = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
     static kPyth = 'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3';
+    static kMikeUserId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
     static async migrate() {
-        if (process.env.SERVER_NAME != 'heynova0'){
+        if (process.env.SERVER_NAME != 'heynova0' && process.env.SERVER_NAME != 'light0'){
             SystemNotificationsManager.sendSystemMessage('Server started');
         }
         LogManager.forceLog('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
         const chatId = 862473;
 
+        // const txs = await RedisManager.getUserTransactions(this.kMikeUserId);
+        // console.log('!txs', JSON.stringify(txs, null, 2));
+        
         // const connection = newConnection();
         // const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
         // console.log('balance', balance);

@@ -7,7 +7,7 @@ import { validateRequest } from "../../middlewares/ValidateRequest";
 import { FirebaseManager } from "../../managers/FirebaseManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { PageToken } from "../../models/PageToken";
-import { UserTransaction } from "../../entities/users/UserTransaction";
+import { IUserTransaction, UserTransaction } from "../../entities/users/UserTransaction";
 import { WalletManager } from "../../managers/WalletManager";
 import { ChatWallets, TransactionApiResponse } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
@@ -24,6 +24,7 @@ import { Subscription } from "../../entities/payments/Subscription";
 import { PushToken } from "../../entities/PushToken";
 import { UserTraderProfile } from "../../entities/users/TraderProfile";
 import { Wallet } from "../../entities/Wallet";
+import { RedisManager } from "../../managers/db/RedisManager";
 
 const router = express.Router();
 
@@ -187,13 +188,35 @@ router.post(
         const kPageSize = pageToken?.pageSize || 10;
         times.push({time: Date.now(), message: "parsed page token", took: Date.now()-times[times.length-1].time});
 
-        const transactions = await UserTransaction.find({userId: userId, _id: {$nin: existingIds}}).sort({createdAt: -1}).limit(kPageSize+1).exec();
-        times.push({time: Date.now(), message: "got transactions", took: Date.now()-times[times.length-1].time});
+        let transactions: IUserTransaction[] = [];
+        const transactionsIds: string[] = [];
+
+        const redisTxs = await RedisManager.getUserTransactions(userId);
+        for (const tx of redisTxs) {
+            if (!existingIds.includes(tx.id)){
+                transactions.push(tx);
+                transactionsIds.push(tx.id);
+                if (transactions.length >= kPageSize+1){
+                    break;
+                }
+            }
+        }
+        console.log('FROM REDIS', transactions.length, 'transactions');
+        times.push({time: Date.now(), message: `got transactions from redis (${transactions.length} txs)`, took: Date.now()-times[times.length-1].time});
+
+        if (transactions.length < kPageSize+1){
+            const ids = [...existingIds, ...transactionsIds];
+            const limit = kPageSize+1-transactions.length;
+            const tmpTxs = await UserTransaction.find({userId: userId, _id: {$nin: ids}}).sort({createdAt: -1}).limit(limit).exec();
+            transactions.push(...tmpTxs);
+            transactionsIds.push(...tmpTxs.map((tx) => tx.id.toString()));
+            times.push({time: Date.now(), message: "got transactions from mongo", took: Date.now()-times[times.length-1].time});
+        }
+
         const hasMore = transactions.length > kPageSize;
         if (hasMore){
             transactions.pop();
         }
-        const transactionsIds = transactions.map((transaction) => transaction.id.toString());
 
         existingIds.push(...transactionsIds);    
         const newPageToken: PageToken = new PageToken(existingIds, kPageSize);

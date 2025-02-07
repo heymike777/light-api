@@ -1,5 +1,5 @@
 import { createClient, RedisClientType } from "redis";
-import { IUserTransaction } from "../../entities/users/UserTransaction";
+import { IUserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
 import { kAddUniqueTransactionLua } from "./RedisScripts";
 
 export class RedisManager {
@@ -45,8 +45,9 @@ export class RedisManager {
     static async saveUserTransaction(tx: IUserTransaction): Promise<boolean> {
         try {
             const redis = RedisManager.getInstance()
-            if(!redis) return false;
-            if (!redis.client) return false;
+            if (!redis) throw new Error('Redis is not exist');
+            if (!redis.client) throw new Error('Redis client is not exist');
+            if (!redis.client.isReady) throw new Error('Redis client is not ready');
 
             const userId = tx.userId;
             const signature = tx.signature;
@@ -55,8 +56,8 @@ export class RedisManager {
             const transactionsKey = `user:${userId}:transactions`;
         
             const result = (await redis.client.eval(kAddUniqueTransactionLua, {
-            keys: [signaturesKey, transactionsKey],
-            arguments: [signature, JSON.stringify(tx)],
+                keys: [signaturesKey, transactionsKey],
+                arguments: [signature, `${tx.createdAt.getTime()/1000}`, JSON.stringify(tx)],
             })) as number;
 
             return result === 1;
@@ -67,19 +68,28 @@ export class RedisManager {
     }
 
     /**
-     * Get the (up to) 100 most recent transactions for a user
+     * Get most recent transactions for a user
      */
-    static async getTransactions(userId: string): Promise<any[] | undefined> {
-        const redis = RedisManager.getInstance()
-        if(!redis) return undefined;
-        if (!redis.client) return undefined;
+    static async getUserTransactions(userId: string): Promise<IUserTransaction[]> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return [];
+        if (!redis.client) return [];
+        if (!redis.client.isReady) return [];
 
         const key = `user:${userId}:transactions`;
-    
-        // If using LPUSH, index 0 is the newest transaction
-        // If using RPUSH, index -1 is the newest
-        // but usually just get the whole list (0 to -1 or 0 to 99 if you want to limit).
-        return await redis.client.lRange(key, 0, -1);
+
+        // fetch the transactions from redis
+        const transactions = await redis.client.lRange(key, 0, -1);
+        if (transactions) {
+            const userTransactions: IUserTransaction[] = [];
+            transactions.forEach((tx: string) => {
+                const userTx = userTransactionFromJson(tx);
+                if (userTx) userTransactions.push(userTx);
+            });
+            return userTransactions;
+        }
+
+        return [];    
     }
 
 }

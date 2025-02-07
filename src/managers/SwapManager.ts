@@ -23,10 +23,11 @@ import { lamports } from "@metaplex-foundation/umi";
 import { Helpers } from "../services/helpers/Helpers";
 import { BN } from "bn.js";
 import { RedisManager } from "./db/RedisManager";
+import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export class SwapManager {
 
-    static kDefaultEngineId = 'bonkbot';
+    static kDefaultEngineId = 'trojan';
     static kNaviteEngineId = 'light';
     static engines: Engine[] = [
         {
@@ -396,23 +397,32 @@ export class SwapManager {
         userTx.tokens = token ? [token] : [];
         userTx.signature = `manual_${swap.userId}_${Date.now()}`;
 
-        const addedToRedis = await RedisManager.saveUserTransaction(userTx);
-        LogManager.forceLog('addedToRedis:', addedToRedis);
-
-        await userTx.save();
-
-        let isTelegramSent = false;
-        if (user.telegram?.id){
-            BotManager.sendMessage({ 
-                chatId: user.telegram?.id, 
-                text: message, 
-            });
-            isTelegramSent = true;
+        let addedTx: boolean = false;
+        try {
+            addedTx = await RedisManager.saveUserTransaction(userTx);
+            LogManager.forceLog('addedToRedis:', addedTx);  
+        }
+        catch (err: any) {
+            addedTx = true;
+            await userTx.save();
+            LogManager.error('WalletManager', 'processTxForChats', 'Error saving to Redis:', err);
+            SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 Error saving to Redis: ' + err.message);
         }
 
-        let isPushSent = await FirebaseManager.sendPushToUser(swap.userId, `[SWAP ERROR]`, message, undefined, { open: 'transactions' });
-
-        MixpanelManager.trackError(swap.userId, { text: message });
+        if (addedTx){
+            let isTelegramSent = false;
+            if (user.telegram?.id){
+                BotManager.sendMessage({ 
+                    chatId: user.telegram?.id, 
+                    text: message, 
+                });
+                isTelegramSent = true;
+            }
+    
+            let isPushSent = await FirebaseManager.sendPushToUser(swap.userId, `[SWAP ERROR]`, message, undefined, { open: 'transactions' });
+    
+            MixpanelManager.trackError(swap.userId, { text: message });    
+        }
     }
 
     static async trackSwapInMixpanel(swap: ISwap) {

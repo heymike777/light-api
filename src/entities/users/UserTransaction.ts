@@ -21,6 +21,8 @@ export interface IUserTransaction extends mongoose.Document {
 
     updatedAt?: Date;
     createdAt: Date;
+
+    
 }
 
 export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
@@ -53,8 +55,38 @@ UserTransactionSchema.pre('save', function (next) {
 UserTransactionSchema.methods.toJSON = function () {
     return {
         id: this._id,
+        geyserId: this.geyserId,
         userId: this.userId,
+        signature: this.signature,
+        title: this.title,
+        description: this.description,
+        parsedTx: this.parsedTx,
+        tokens: this.tokens,
+        changedWallets: this.changedWallets,
+        createdAt: this.createdAt,
     };
+};
+
+export function userTransactionFromJson(json: string): IUserTransaction | undefined {
+    try{
+        const obj = JSON.parse(json);
+        const tx = new UserTransaction();
+        tx._id = obj.id;
+        tx.geyserId = obj.geyserId;
+        tx.userId = obj.userId;
+        tx.signature = obj.signature;
+        tx.title = obj.title;
+        tx.description = obj.description;
+        tx.parsedTx = obj.parsedTx;
+        tx.tokens = obj.tokens;
+        tx.changedWallets = obj.changedWallets;
+        tx.createdAt = obj.createdAt;
+        return tx;
+    }
+    catch(e){
+        console.error('userTransactionFromJson', e);
+    }
+    return undefined
 };
 
 export const UserTransaction = mongoose.model<IUserTransaction>('users-transactions', UserTransactionSchema);

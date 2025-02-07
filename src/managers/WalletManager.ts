@@ -30,6 +30,7 @@ import { Chain } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 import { RedisManager } from "./db/RedisManager";
+import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export class WalletManager {
 
@@ -304,7 +305,6 @@ export class WalletManager {
                 if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
                     try {
                         //TODO: don't save tx if that's a channel or group chat
-
                         if (!this.statsStartedAt){ this.statsStartedAt = Date.now(); }
                         this.stats[chat.wallets[0].userId] = (this.stats[chat.wallets[0].userId] || 0) + 1;
 
@@ -317,31 +317,38 @@ export class WalletManager {
                         userTx.tokens = info.transactionApiResponse.tokens?.filter((token) => token.address != kSolAddress);
                         userTx.signature = parsedTx.signature;
 
-                        if (userTx.userId == '66eefe2c8fed7f2c60d147ef'){
-                            const addedToRedis = await RedisManager.saveUserTransaction(userTx);
-                            LogManager.forceLog('addedToRedis:', addedToRedis);    
+                        let addedTx: boolean = false;
+                        try {
+                            addedTx = await RedisManager.saveUserTransaction(userTx);
+                            LogManager.forceLog('addedToRedis:', addedTx);        
                         }
-                    
-                        await userTx.save();
-
-                        let isTelegramSent = false;
-                        if (chat.user.telegram?.id){
-                            BotManager.sendMessage({ 
-                                chatId: chat.user.telegram?.id, 
-                                text: info.message, 
-                                imageUrl: asset?.image 
-                            });
-                            isTelegramSent = true;
+                        catch (err: any) {
+                            await userTx.save();
+                            addedTx = true;
+                            LogManager.error('WalletManager', 'processTxForChats', 'Error saving to Redis:', err);
+                            SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 Error saving to Redis: ' + err.message);
                         }
 
-                        let isPushSent = false;
-                        const userId = chat.wallets?.[0]?.userId;
-                        if (userId && !sentUserIds.includes(userId)){
-                            sentUserIds.push(userId);
-                            isPushSent = await FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
-                        }
+                        if (addedTx){
+                            let isTelegramSent = false;
+                            if (chat.user.telegram?.id){
+                                BotManager.sendMessage({ 
+                                    chatId: chat.user.telegram?.id, 
+                                    text: info.message, 
+                                    imageUrl: asset?.image 
+                                });
+                                isTelegramSent = true;
+                            }
 
-                        // MixpanelManager.track('Process transaction', userTx.userId, { isPushSent: isPushSent, isTelegramSent: isTelegramSent });
+                            let isPushSent = false;
+                            const userId = chat.wallets?.[0]?.userId;
+                            if (userId && !sentUserIds.includes(userId)){
+                                sentUserIds.push(userId);
+                                isPushSent = await FirebaseManager.sendPushToUser(userId, info.transactionApiResponse.title, info.transactionApiResponse.description, asset?.image, { open: 'transactions' });
+                            }
+
+                            // MixpanelManager.track('Process transaction', userTx.userId, { isPushSent: isPushSent, isTelegramSent: isTelegramSent });
+                        }
                     }
                     catch (err) {
                         // LogManager.error('WalletManager', 'processTxForChats', 'Error:', err);

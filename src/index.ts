@@ -11,7 +11,6 @@ import { errorHandler } from './middlewares/ErrorHandler';
 
 import { MigrationManager } from './services/MigrationManager';
 import { BotManager } from './managers/bot/BotManager';
-import { JitoWebsocketManager } from './services/solana/JitoWebsocketManager';
 import { YellowstoneManager } from './services/solana/geyser/YellowstoneManager';
 import { WalletManager } from './managers/WalletManager';
 import { TokenManager } from './managers/TokenManager';
