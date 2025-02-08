@@ -8,6 +8,7 @@
     "start": "node build/index.js",
     "build-prod": "npm install && rimraf ./build && tsc",
     "start-dev": "NODE_ENV=DEVELOPMENT ts-node-dev src/index.ts",
+    "start-dev-test": "NODE_ENV=DEVELOPMENT TEST=TRUE ts-node-dev src/index.ts",
     "start-prod": "NODE_ENV=PRODUCTION ts-node-dev src/index.ts"
   },
   "type": "commonjs",

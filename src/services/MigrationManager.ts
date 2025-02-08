@@ -64,11 +64,13 @@ export class MigrationManager {
 
         // const txs = await RedisManager.getUserTransactions(this.kMikeUserId);
         // console.log('!txs', JSON.stringify(txs, null, 2));
-        
-        // const connection = newConnection();
-        // const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
-        // console.log('balance', balance);
-        // exit(0);
+
+        if (process.env.TEST === 'TRUE'){
+            const connection = newConnection();
+            const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
+            console.log('balance', balance);
+            exit(0);
+        }
 
         // await SolanaManager.getAssetsByOwner('9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL')
 
