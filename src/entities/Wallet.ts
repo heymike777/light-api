@@ -7,6 +7,7 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export enum WalletStatus {
     ACTIVE = 'active',
     PAUSED = 'paused',
+    PAUSED_PERMANENTLY = 'paused_permanently',
     TRADER = 'trader',
 }
 
@@ -51,7 +52,7 @@ WalletSchema.methods.toJSON = function () {
     return {
         id: this.id,
         walletAddress: this.walletAddress,
-        title: this.status === WalletStatus.PAUSED ? ((this.title || '') + ' (paused)').trim() : this.title,
+        title: (this.status === WalletStatus.PAUSED || this.status === WalletStatus.PAUSED_PERMANENTLY) ? ((this.title || '') + ' (paused)').trim() : this.title,
         status: this.status,
     };
 };

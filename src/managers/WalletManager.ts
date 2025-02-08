@@ -135,7 +135,7 @@ export class WalletManager {
 
     static async removeWallets(chatId: number, userId: string, walletAddresses: string[], ipAddress?: string){
         const wallets = await Wallet.find({userId: userId, walletAddress: {$in: walletAddresses}});
-        await Wallet.deleteMany({userId: userId, walletAddress: {$in: walletAddresses}, status: {$in: [WalletStatus.ACTIVE, WalletStatus.PAUSED]}});
+        await Wallet.deleteMany({userId: userId, walletAddress: {$in: walletAddresses}, status: {$in: [WalletStatus.ACTIVE, WalletStatus.PAUSED, WalletStatus.PAUSED_PERMANENTLY]}});
 
         for (let walletAddress of walletAddresses){
             MixpanelManager.track('Remove wallet', userId, { walletAddress: walletAddress }, ipAddress);
