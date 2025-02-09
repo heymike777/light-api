@@ -62,15 +62,15 @@ export class MigrationManager {
         this.syncIndexes();
         const chatId = 862473;
 
-        // const txs = await RedisManager.getUserTransactions(this.kMikeUserId);
-        // console.log('!txs', JSON.stringify(txs, null, 2));
-
         if (process.env.TEST === 'TRUE'){
             const connection = newConnection();
             const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
             console.log('balance', balance);
             exit(0);
         }
+
+        // const tx = await UserTransaction.findOne({ userId: this.kMikeUserId }).sort({ createdAt: -1 }).skip(3);
+        // console.log('!mike', 'tx', tx);
 
         // await SolanaManager.getAssetsByOwner('9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL')
 

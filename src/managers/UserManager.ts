@@ -88,11 +88,15 @@ export class UserManager {
 
         const kLimit = 100;
         if (count > kLimit){
-            const txs = await UserTransaction.find({ userId: userId }).sort({ createdAt: -1 }).limit(kLimit);
+            const tx = await UserTransaction.findOne({ userId: userId }).sort({ createdAt: -1 }).skip(kLimit);
 
+            if (!tx){
+                return;
+            }
+            
             let index = 0;
             while (index < 10){
-                const deletedTxs = await UserTransaction.find({ userId: userId, createdAt: { $lt: txs[kLimit - 1].createdAt } }).limit(1000);
+                const deletedTxs = await UserTransaction.find({ userId: userId, createdAt: { $lt: tx.createdAt } }).limit(1000);
                 if (deletedTxs.length == 0){
                     break;
                 }
