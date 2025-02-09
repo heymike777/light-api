@@ -21,7 +21,7 @@ export class CronManager {
             UserManager.cleanOldCache();
             YellowstoneManager.cleanupProcessedSignatures();
 
-            TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
+            // TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
             this.printStats();
         });
 
