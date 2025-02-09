@@ -167,8 +167,10 @@ router.post(
     jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
     validateAuth(),  
     async (req: Request, res: Response) => {
+        const isLogs = req.query.logs == 'true';
         const times: {time: number, message: string, took: number}[] = [];
         times.push({time: Date.now(), message: "start", took: 0});
+        if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
 
         const userId = req.accessToken?.userId;
         if (!userId){
@@ -182,11 +184,13 @@ router.post(
             user.save();
         }
         times.push({time: Date.now(), message: "got user", took: Date.now()-times[times.length-1].time});
+        if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
 
         let pageToken = Helpers.parsePageToken(req);
         let existingIds = pageToken?.ids || [];
         const kPageSize = pageToken?.pageSize || 10;
         times.push({time: Date.now(), message: "parsed page token", took: Date.now()-times[times.length-1].time});
+        if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
 
         let transactions: IUserTransaction[] = [];
         const transactionsIds: string[] = [];
@@ -203,6 +207,7 @@ router.post(
         }
         console.log('FROM REDIS', transactions.length, 'transactions');
         times.push({time: Date.now(), message: `got transactions from redis (${transactions.length} txs)`, took: Date.now()-times[times.length-1].time});
+        if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
 
         if (transactions.length < kPageSize+1){
             const ids = [...existingIds, ...transactionsIds];
@@ -211,6 +216,7 @@ router.post(
             transactions.push(...tmpTxs);
             transactionsIds.push(...tmpTxs.map((tx) => tx.id.toString()));
             times.push({time: Date.now(), message: "got transactions from mongo", took: Date.now()-times[times.length-1].time});
+            if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
         }
 
         const hasMore = transactions.length > kPageSize;
@@ -224,6 +230,7 @@ router.post(
         const wallets = await WalletManager.fetchWalletsByUserId(userId);
         const chat: ChatWallets = { user: user, wallets: wallets };
         times.push({time: Date.now(), message: "fetched wallets", took: Date.now()-times[times.length-1].time});
+        if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
 
         const parsedTransactions: TransactionApiResponse[] = [];
         for (const transaction of transactions) {
@@ -259,7 +266,7 @@ router.post(
             });
 
             times.push({time: Date.now(), message: "tx processed", took: Date.now()-times[times.length-1].time});
-
+            if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
         }
 
         // LogManager.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
@@ -270,6 +277,7 @@ router.post(
         }
 
         times.push({time: Date.now(), message: "got announcements", took: Date.now()-times[times.length-1].time});
+        if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
 
         for (const time of times){
             LogManager.log("GET TRANSACTIONS", "time", time.time, "message", time.message);
