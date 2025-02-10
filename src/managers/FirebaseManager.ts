@@ -109,6 +109,8 @@ export class FirebaseManager {
             return;
         }
 
+        await PushToken.deleteMany({ token });
+
         const pushToken = new PushToken();
         pushToken.userId = userId;
         pushToken.deviceId = deviceId;
