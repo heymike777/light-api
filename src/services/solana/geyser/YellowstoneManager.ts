@@ -8,6 +8,8 @@ import { SystemNotificationsManager } from "../../../managers/SytemNotifications
 import { MixpanelManager } from "../../../managers/MixpanelManager";
 import { LogManager } from "../../../managers/LogManager";
 import { SwapManager } from "../../../managers/SwapManager";
+import { EnvManager } from "../../../managers/EnvManager";
+import { MicroserviceManager } from "../../../managers/MicroserviceManager";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -169,22 +171,7 @@ export class YellowstoneManager {
             return;
         }
 
-        LogManager.log(process.env.SERVER_NAME, 'listener', this.id, `receivedTx`, signature);
-        LogManager.log('!geyserTx', signature, "data:", JSON.stringify(data));
-
-        // fs.appendFile('transactions.txt', `${new Date()} ${signature}\n`, (err) => {
-        //     if (err) LogManager.error(err);
-        // });
-
-        const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(data);
-        if (parsedTransactionWithMeta){
-            WalletManager.processWalletTransaction(parsedTransactionWithMeta, this.id);
-        }
-
-        SwapManager.receivedConfirmationForSignature(signature);
-        // LogManager.log(process.env.SERVER_NAME, `receivedTx(${YellowstoneManager.txCount})`, signature);       
-        // const signature = base58.encode(transaction.signature);
-        // WalletManager.processWalletTransactionBySignature(signature);
+        MicroserviceManager.receivedTx(this.id, signature, JSON.stringify(data));
     }
 
     // ### static methods
@@ -228,13 +215,19 @@ export class YellowstoneManager {
     }
 
     static async resubscribeAll(){
-        if (!this.instances){
-            return;
-        }
+        if (EnvManager.isGeyserProcess){
+            if (!this.instances){
+                return;
+            }
 
-        for (const instance of this.instances){
-            await instance.subscribeToConfirmedTransactions(instance.stream);
-            await Helpers.sleep(1);
+            for (const instance of this.instances){
+                await instance.subscribeToConfirmedTransactions(instance.stream);
+                await Helpers.sleep(1);
+            }
+        }
+        else {
+            //TODO: send API call to geyser process to resubscribe
+            await MicroserviceManager.geyserResubscribe();
         }
     }
 

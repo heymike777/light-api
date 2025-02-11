@@ -6,10 +6,18 @@ import { SubscriptionManager } from './SubscriptionManager';
 import { SwapManager } from './SwapManager';
 import { WalletManager } from './WalletManager';
 import { RedisManager } from './db/RedisManager';
+import { EnvManager } from './EnvManager';
 
 export class CronManager {
 
-    static async setup() {
+    static async setupCron() {
+        if (EnvManager.isGeyserProcess){
+            cron.schedule('* * * * *', () => {
+                YellowstoneManager.cleanupProcessedSignatures();
+                // this.printStats();
+            });
+        }
+
         cron.schedule('*/10 * * * * *', () => {
             TokenManager.updateTokensPrices();
             this.checkAndRetrySwaps();
@@ -19,7 +27,6 @@ export class CronManager {
             // once a minute
             TokenManager.fetchTokensInfo();
             UserManager.cleanOldCache();
-            YellowstoneManager.cleanupProcessedSignatures();
 
             // TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
             this.printStats();

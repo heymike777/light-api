@@ -10,13 +10,11 @@ import { TraderProfilesManager } from "./TraderProfilesManager";
 
 export class UserManager {
 
+    static cacheEnabled = false;
     static cachedUsers: {user: IUser, createdAt: Date}[] = [];
 
     static async getUserById(id: string, forceCleanCache = false): Promise<IUser> {
-        const times: {time: number, message: string, took: number}[] = [];
-        times.push({time: Date.now(), message: "start", took: 0});
-
-        if (!forceCleanCache){
+        if (!forceCleanCache && this.cacheEnabled){
             const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.id == id);
             if (cachedUser){
                 return cachedUser.user;
@@ -25,14 +23,15 @@ export class UserManager {
 
         const now = new Date();
         const user = await User.findById(id);
-        times.push({time: Date.now(), message: "got user by id", took: Date.now()-times[times.length-1].time});
         if (user){
             await UserManager.fillUserWithData(user);
-            times.push({time: Date.now(), message: "filled user", took: Date.now()-times[times.length-1].time});
-            this.cachedUsers.push({ user: user, createdAt: now });
-            times.push({time: Date.now(), message: `pushed user to cache (count=${this.cachedUsers.length})`, took: Date.now()-times[times.length-1].time});
 
-            user.tmp = times;
+            if (this.cacheEnabled){
+                // remove user with the same id
+                await this.removeUserFromCache(id);
+                this.cachedUsers.push({ user: user, createdAt: now });
+            }
+
             return user;
         }
         else {
@@ -40,8 +39,12 @@ export class UserManager {
         }
     }
 
+    static async removeUserFromCache(id: string){
+        this.cachedUsers = this.cachedUsers.filter(cachedUser => cachedUser.user.id != id);
+    }
+
     static async getUserByTelegramUser(from: TelegramUser, forceCleanCache = false): Promise<IUser> {
-        if (!forceCleanCache){
+        if (!forceCleanCache && this.cacheEnabled){
             const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.telegram?.id === from.id);
             if (cachedUser){
                 return cachedUser.user;
@@ -62,7 +65,11 @@ export class UserManager {
                 });
             }
 
-            this.cachedUsers.push({ user: user, createdAt: now });
+            if (this.cacheEnabled){
+                // remove user with the same id
+                await this.removeUserFromCache(user.id);
+                this.cachedUsers.push({ user: user, createdAt: now });
+            }
             return user;
         }
         else {
@@ -77,7 +84,9 @@ export class UserManager {
             fullName = fullName.trim();
             SystemNotificationsManager.sendSystemMessage(`New user: @${from.username} (${fullName})`);
 
-            this.cachedUsers.push({ user: newUser, createdAt: now });
+            if (this.cacheEnabled){
+                this.cachedUsers.push({ user: newUser, createdAt: now });
+            }
             return newUser;
         }
     }
@@ -107,37 +116,11 @@ export class UserManager {
         }
     }
 
-    // static async getUserByEmail(email: string): Promise<IUser> {
-    //     const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.email === email);
-    //     if (cachedUser){
-    //         return cachedUser.user;
-    //     }
-
-    //     const now = new Date();
-    //     const user = await User.findOne({ 'email': email });
-    //     if (user){
-    //         await UserManager.fillUserWithData(user);
-    //         this.cachedUsers.push({ user: user, createdAt: now });
-    //         return user;
-    //     }
-    //     else {
-    //         const newUser = await User.create({
-    //             email: email,
-    //             createdAt: now,
-    //         });
-
-    //         MixpanelManager.updateProfile(newUser, undefined);
-            
-    //         SystemNotificationsManager.sendSystemMessage(`New user: ${email}`);
-
-    //         this.cachedUsers.push({ user: newUser, createdAt: now });
-    //         return newUser;
-    //     }
-    // }
-
     static async cleanOldCache(){
-        const now = new Date();
-        this.cachedUsers = this.cachedUsers.filter(cachedUser => now.getTime() - cachedUser.createdAt.getTime() < 1000 * 60 * 5);
+        if (this.cacheEnabled){
+            const now = new Date();
+            this.cachedUsers = this.cachedUsers.filter(cachedUser => now.getTime() - cachedUser.createdAt.getTime() < 1000 * 60 * 5);    
+        }
     }
 
     static async fillUserWithData(user: IUser): Promise<IUser> {

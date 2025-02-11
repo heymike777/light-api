@@ -54,7 +54,7 @@ router.get(
         LogManager.log("GET USER", "userId", userId, "user", user);
         times.push({time: Date.now(), message: "logged", took: Date.now()-times[times.length-1].time});
 
-        res.status(200).send({ user, times: times, timesGetUserById: user.tmp });
+        res.status(200).send({ user, times: times });
     }
 );
 

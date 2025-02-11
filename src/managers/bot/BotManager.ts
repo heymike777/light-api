@@ -12,6 +12,8 @@ import { InlineKeyboardMarkup } from "grammy/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
+import { EnvManager } from "../EnvManager";
+import { MicroserviceManager } from "../MicroserviceManager";
 
 export interface SendMessageData {
     chatId: number;
@@ -238,14 +240,14 @@ export class BotManager {
         return BotManager.instance;        
     }
 
-    static async sendSystemMessage(text: string, chatId: number = +process.env.TELEGRAM_SYSTEM_CHAT_ID!){
-        const botManager = await BotManager.getInstance();
-        await botManager.sendMessage({chatId, text});
-    }
-
     static async sendMessage(data: SendMessageData){
-        const botManager = await BotManager.getInstance();
-        await botManager.sendMessage(data);
+        if (EnvManager.isTelegramProcess){
+            const botManager = await BotManager.getInstance();
+            await botManager.sendMessage(data);    
+        }
+        else {
+            await MicroserviceManager.sendMessageToTelegram(JSON.stringify(data));
+        }
     }
 
     static buildInlineKeyboardForToken(chain: Chain, type: InlineKeyboardType, mint: string, tokenName: string): InlineKeyboardMarkup | undefined {

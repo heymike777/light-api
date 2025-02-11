@@ -18,7 +18,7 @@ import { LogManager } from "./LogManager";
 
 export class TokenManager {
 
-    static tokens: IToken[] = [];
+    static cachedTokens: IToken[] = [];
     static excludedTokens: string[] = [
         kSolAddress,
         kUsdcAddress,
@@ -26,19 +26,19 @@ export class TokenManager {
     ];
 
     static async init(){
-        TokenManager.tokens = await Token.find();
-        LogManager.log('TokenManager', 'init', 'tokens.length =', TokenManager.tokens.length);
+        TokenManager.cachedTokens = await Token.find();
+        LogManager.log('TokenManager', 'init', 'tokens.length =', TokenManager.cachedTokens.length);
     }
 
     static async updateTokensPrices() {
-        const tokens = TokenManager.tokens.sort((a, b) => (a.priceUpdatedAt || 0) - (b.priceUpdatedAt || 0));
+        const tokens = TokenManager.cachedTokens.sort((a, b) => (a.priceUpdatedAt || 0) - (b.priceUpdatedAt || 0));
         const tokensToUpdate = tokens.slice(0, 99);
         const mints = tokensToUpdate.map(token => token.address);
         mints.push(kSolAddress);
         const prices = await JupiterManager.getPrices(mints);
         const now = Date.now();
         for (const price of prices) {
-            const token = TokenManager.tokens.find(token => token.address === price.address);
+            const token = TokenManager.cachedTokens.find(token => token.address === price.address);
             if (token){
                 token.price = price.price;
                 token.priceUpdatedAt = now;
@@ -47,7 +47,7 @@ export class TokenManager {
     }
 
     static async fetchDigitalAsset(address: string): Promise<IToken> {
-        let token = TokenManager.tokens.find(token => token.address === address);
+        let token = TokenManager.cachedTokens.find(token => token.address === address);
 
         if (!token){
             token = new Token();
@@ -107,7 +107,7 @@ export class TokenManager {
                 }     
             }
             else {
-                TokenManager.tokens.push(token);
+                TokenManager.cachedTokens.push(token);
                 try{
                     await token.save();
                 }
@@ -121,39 +121,40 @@ export class TokenManager {
     }
 
     static async getToken(address: string): Promise<ITokenModel | undefined> {
-        let token = TokenManager.tokens.find(token => token.address === address);
+        let token = TokenManager.cachedTokens.find(token => token.address === address);
         if (!token){
             token = await this.fetchDigitalAsset(address);
         }
         LogManager.log('TokenManager', 'getToken1', 'address:', address, 'token:', token);
         if (token){
             if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 60 * 5){
-                const info = await SolScanManager.fetchTokenInfo(address);
-                if (info){
-                    let isInfoUpdated = false;
-                    if (info.supply != undefined){
-                        token.supply = info.supply;
-                        isInfoUpdated = true;
-                    }
-                    if (info.price != undefined){
-                        token.price = info.price;
-                        isInfoUpdated = true;
-                        token.priceUpdatedAt = Date.now();
-                    }
-                    if (info.volume != undefined && info.volume['24h'] != undefined){
-                        token.volume = info.volume;
-                        isInfoUpdated = true;
-                    }
-                    if (info.priceChange != undefined && info.priceChange['24h'] != undefined){
-                        token.priceChange = info.priceChange;
-                        isInfoUpdated = true;
-                    }
+                // const info = await SolScanManager.fetchTokenInfo(address);
+                // if (info){
+                //     let isInfoUpdated = false;
+                //     if (info.supply != undefined){
+                //         token.supply = info.supply;
+                //         isInfoUpdated = true;
+                //     }
+                //     if (info.price != undefined){
+                //         token.price = info.price;
+                //         isInfoUpdated = true;
+                //         token.priceUpdatedAt = Date.now();
+                //     }
+                //     if (info.volume != undefined && info.volume['24h'] != undefined){
+                //         token.volume = info.volume;
+                //         isInfoUpdated = true;
+                //     }
+                //     if (info.priceChange != undefined && info.priceChange['24h'] != undefined){
+                //         token.priceChange = info.priceChange;
+                //         isInfoUpdated = true;
+                //     }
 
-                    if (isInfoUpdated){
-                        token.infoUpdatedAt = Date.now();
-                    }
-                }
+                //     if (isInfoUpdated){
+                //         token.infoUpdatedAt = Date.now();
+                //     }
+                // }
             }
+
             if (!token.price || !token.priceUpdatedAt || (Date.now() - token.priceUpdatedAt) > 1000 * 60){
                 const prices = await JupiterManager.getPrices([address]);
                 if (prices && prices.length > 0){
@@ -207,13 +208,13 @@ export class TokenManager {
     }
 
     static async fetchTokensInfo(){
-        let tokens = TokenManager.tokens.filter(token => !token.symbol);
+        let tokens = TokenManager.cachedTokens.filter(token => !token.symbol);
         if (tokens.length > 0){
             tokens = tokens.splice(0, 10);
             const mints = tokens.map(token => token.address);
             const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(mints);
             for (const digitalAsset of digitalAssets){
-                const token = TokenManager.tokens.find(token => token.address === digitalAsset.publicKey.toString());
+                const token = TokenManager.cachedTokens.find(token => token.address === digitalAsset.publicKey.toString());
                 if (token){
                     token.name = digitalAsset.metadata.name;
                     token.symbol = digitalAsset.metadata.symbol;
@@ -232,7 +233,7 @@ export class TokenManager {
     }
 
     static getSolPrice(): number {
-        const token = TokenManager.tokens.find(token => token.address === kSolAddress);
+        const token = TokenManager.cachedTokens.find(token => token.address === kSolAddress);
         return token?.price || 0;
     }
 
@@ -325,7 +326,7 @@ export class TokenManager {
 
     static async fillTokenModelsWithData(tokens: ITokenModel[]): Promise<ITokenModel[]> {
         for (const token of tokens){
-            const freshToken = TokenManager.tokens.find(t => t.address === token.address);
+            const freshToken = TokenManager.cachedTokens.find(t => t.address === token.address);
             if (freshToken){
                 token.isVerified = freshToken.isVerified;
             }
