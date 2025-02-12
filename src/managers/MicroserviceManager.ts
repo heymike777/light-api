@@ -22,10 +22,8 @@ export class MicroserviceManager {
             LogManager.log('geyserResubscribe', data);
         }
         catch (e: any){
-            LogManager.error(e?.response?.data?.message);
+            LogManager.error('MicroserviceManager', 'geyserResubscribe', 'error', e?.response?.data?.message);
         }
-
-
     }
 
     static async receivedTx(geyserId: string, signature: string, txData: string){
@@ -44,10 +42,10 @@ export class MicroserviceManager {
                 }
             });
 
-            LogManager.log('geyserResubscribe', data);
+            LogManager.log('receivedTx', data);
         }
         catch (e: any){
-            LogManager.error(e?.response?.data?.message);
+            LogManager.error('MicroserviceManager', 'receivedTx', 'error', e?.response?.data?.message);
         }
     }
 
@@ -68,7 +66,7 @@ export class MicroserviceManager {
             LogManager.log('sendMessageToTelegram', data);
         }
         catch (e: any){
-            LogManager.error(e?.response?.data?.message);
+            LogManager.error('MicroserviceManager', 'sendMessageToTelegram', 'error', e?.response?.data?.message);
         }
     }
 
