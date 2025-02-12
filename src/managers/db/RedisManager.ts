@@ -4,10 +4,22 @@ import { kAddUniqueTransactionLua } from "./RedisScripts";
 import { UserManager } from "../UserManager";
 import { IToken } from "../../entities/tokens/Token";
 import { LogManager } from "../LogManager";
+import { IWallet } from "../../entities/Wallet";
+import { WalletManager } from "../WalletManager";
+import { nanoid } from "nanoid";
+
+export interface WalletEvent {
+    instanceId?: string;
+    type: 'add' | 'delete';
+    wallet: IWallet;
+}
 
 export class RedisManager {
 
     client?: RedisClientType;
+    subscriber?: RedisClientType;
+    publisher?: RedisClientType;
+    instanceId = nanoid();
 
     constructor(){
         RedisManager.instance = this;
@@ -20,6 +32,52 @@ export class RedisManager {
         this.client.on('error', (err: Error) => console.log('Redis Client Error', err));
 
         await this.client.connect();
+
+        this.subscriber = this.client.duplicate();
+        this.subscriber.on('error', (err: Error) => console.log('Redis Subscriber Error', err));
+        await this.subscriber.connect();
+
+        await this.subscriber.subscribe('wallets', this.onWalletChangedEvent);    
+
+        this.publisher = this.client.duplicate();
+        this.publisher.on('error', (err: Error) => console.log('Redis Publisher Error', err));
+        await this.publisher.connect();
+    }
+
+    // ### wallets
+
+    static async publishWalletEvent(event: WalletEvent){
+        try {
+            const redis = RedisManager.getInstance()
+            if (!redis) throw new Error('Redis is not exist');
+
+            if (redis.publisher){
+                event.instanceId = redis.instanceId;
+                await redis.publisher.publish('wallets', JSON.stringify(event));
+            }    
+        }
+        catch(err){
+            LogManager.error('RedisManager', 'publishWalletEvent', err);
+        }
+    }
+
+    async onWalletChangedEvent(message: string){
+        try{
+            const event: WalletEvent = JSON.parse(message);
+            if (event.instanceId === this.instanceId) return;
+
+            if (event.type === 'add'){
+                // add wallet to cache
+                WalletManager.addWalletToCache(event.wallet);
+            }
+            else if (event.type === 'delete'){
+                // remove wallet from cache
+                WalletManager.removeWalletFromCache(event.wallet);
+            }
+        }
+        catch(err){
+            LogManager.error('RedisManager', 'onWalletChangedEvent', err);
+        }
     }
 
     // ### static methods

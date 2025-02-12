@@ -35,7 +35,6 @@ import { SystemNotificationsManager } from "./SytemNotificationsManager";
 export class WalletManager {
 
     static walletsMap: Map<string, IWallet[]> = new Map();
-    static programIds: string[] = [];
 
     static statsStartedAt: number | undefined = undefined;
     static stats: Record<string, number> = {};
@@ -118,6 +117,12 @@ export class WalletManager {
             tmpWallets = [wallet];
         }
         this.walletsMap.set(wallet.walletAddress, tmpWallets);
+
+        RedisManager.publishWalletEvent({
+            type: 'add',
+            wallet,
+        });
+        
     }
 
     static removeWalletFromCache(wallet: IWallet){
@@ -131,6 +136,11 @@ export class WalletManager {
                 this.walletsMap.set(wallet.walletAddress, newWallets);
             }
         }
+
+        RedisManager.publishWalletEvent({
+            type: 'delete',
+            wallet,
+        });
     }
 
     static async removeWallets(chatId: number, userId: string, walletAddresses: string[], ipAddress?: string){
