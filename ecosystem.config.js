@@ -36,9 +36,8 @@ module.exports = {
             name   : "light-main",
             script : "build/index.js",
             node_args: "--max-old-space-size=4096",
-            min_uptime: "10s",
             exec_mode: "cluster",
-            instances: -3,
+            instances: 1,
             env: {
                 IS_MAIN_PROCESS: "true",
                 SERVER_NAME: "light-main",
