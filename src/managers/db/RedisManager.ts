@@ -6,7 +6,7 @@ import { IToken } from "../../entities/tokens/Token";
 import { LogManager } from "../LogManager";
 import { IWallet } from "../../entities/Wallet";
 import { WalletManager } from "../WalletManager";
-import { nanoid } from "nanoid";
+import { Helpers } from "../../services/helpers/Helpers";
 
 export interface WalletEvent {
     instanceId?: string;
@@ -19,7 +19,7 @@ export class RedisManager {
     client?: RedisClientType;
     subscriber?: RedisClientType;
     publisher?: RedisClientType;
-    instanceId = nanoid();
+    instanceId = Helpers.makeid(8);
 
     constructor(){
         RedisManager.instance = this;
