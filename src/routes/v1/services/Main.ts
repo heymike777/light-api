@@ -5,6 +5,7 @@ import { TxParser } from "../../../services/solana/geyser/TxParser";
 import { WalletManager } from "../../../managers/WalletManager";
 import { SwapManager } from "../../../managers/SwapManager";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
+import { YellowstoneManager } from "../../../services/solana/geyser/YellowstoneManager";
 
 const router = express.Router();
 
@@ -24,7 +25,8 @@ router.post(
         let success = false;
 
         try {
-            const geyserData = JSON.parse(data);
+            // const geyserData = JSON.parse(data);
+            const geyserData = YellowstoneManager.jsonToGeyserTx(data);
             
             const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(geyserData);
             if (parsedTransactionWithMeta){

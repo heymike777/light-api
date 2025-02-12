@@ -256,5 +256,31 @@ export class YellowstoneManager {
         }
     }
 
+    static jsonToGeyserTx(jsonString: string) {
+        const geyserData = JSON.parse(jsonString);
+        
+        geyserData.transaction.transaction.signature = Buffer.from(geyserData.transaction.transaction.signature);
+        const signatures: Buffer[] = [];
+        for (const signature of geyserData.transaction.transaction.transaction.signatures){
+            signatures.push(Buffer.from(signature));
+        }
+        geyserData.transaction.transaction.transaction.signatures = signatures;
+
+        const accountKeys: Buffer[] = [];
+        for (const accountKey of geyserData.transaction.transaction.transaction.message.accountKeys){
+            accountKeys.push(Buffer.from(accountKey));
+        }
+        geyserData.transaction.transaction.transaction.message.accountKeys = accountKeys;
+
+        for (const instruction of geyserData.transaction.transaction.transaction.message.instructions){
+            if (instruction.data) instruction.data = Buffer.from(instruction.data);
+            if (instruction.accounts) instruction.accounts = instruction.accounts.data;
+        }
+
+        geyserData.transaction.transaction.transaction.message.recentBlockhash = Buffer.from(geyserData.transaction.transaction.transaction.message.recentBlockhash);
+
+        return geyserData;
+    }
+
 
 }
