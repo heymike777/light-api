@@ -101,7 +101,6 @@ const onExpressStarted = async () => {
         setupBot();
     }
 
-    await TokenManager.init();
     await MixpanelManager.init();
     await WalletManager.fetchAllWalletAddresses();
 

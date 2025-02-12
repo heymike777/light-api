@@ -2,6 +2,7 @@ import { createClient, RedisClientType } from "redis";
 import { IUserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
 import { kAddUniqueTransactionLua } from "./RedisScripts";
 import { UserManager } from "../UserManager";
+import { IToken } from "../../entities/tokens/Token";
 
 export class RedisManager {
 
@@ -143,6 +144,60 @@ export class RedisManager {
 
             await UserManager.cleanOldUserTransactions(userId);
         }
+    }
+
+    static async saveToken(token: IToken): Promise<boolean> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return false;
+        if (!redis.client) return false;
+        if (!redis.client.isReady) return false;
+
+        if (!token.symbol){
+            console.error('saveToken', 'token.symbol is missing', token);
+            return false;
+        }
+
+        const key = `token:sol:${token.address}`;
+        const result = await redis.client.set(key, JSON.stringify(token));
+        return result ? true : false;
+    }
+
+    static async getToken(mint: string): Promise<IToken | undefined> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return undefined;
+        if (!redis.client) return undefined;
+        if (!redis.client.isReady) return undefined;
+
+        const key = `token:sol:${mint}`;
+        const token = await redis.client.get(key);
+        if (token) {
+            return JSON.parse(token);
+        }
+
+        return undefined;
+    }
+
+    static async getTokens(mints: string[]): Promise<IToken[]> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return [];
+        if (!redis.client) return [];
+        if (!redis.client.isReady) return [];
+
+        const uniqueMints = Array.from(new Set(mints));
+        const keys = mints.map(mint => `token:sol:${uniqueMints}`)
+        const tokens = await redis.client.mGet(keys);
+        if (tokens) {
+            const results: IToken[] = [];
+            tokens.forEach((token: string | null) => {
+                if (token) {
+                    const parsed = JSON.parse(token);
+                    results.push(parsed);
+                }
+            });
+            return results;
+        }
+
+        return [];
     }
 
 }

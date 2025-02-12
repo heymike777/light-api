@@ -2,7 +2,6 @@ import * as umi from "@metaplex-foundation/umi";
 import { IToken, ITokenModel, Token, tokenToTokenModel } from "../entities/tokens/Token";
 import { TokenSwap } from "../entities/tokens/TokenSwap";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
-import { HeliusManager } from "../services/solana/HeliusManager";
 import { Chain } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { MetaplexManager } from "./MetaplexManager";
@@ -13,49 +12,25 @@ import { newConnection } from "../services/solana/lib/solana";
 import { ITokenPair, TokenPair } from "../entities/tokens/TokenPair";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import * as web3 from "@solana/web3.js";
-import { Helpers } from "../services/helpers/Helpers";
 import { LogManager } from "./LogManager";
+import { RedisManager } from "./db/RedisManager";
 
 export class TokenManager {
 
-    static cachedTokens: IToken[] = [];
+    static solPrice: number = 0;
+
     static excludedTokens: string[] = [
         kSolAddress,
         kUsdcAddress,
         kUsdtAddress,
     ];
 
-    static async init(){
-        TokenManager.cachedTokens = await Token.find();
-        LogManager.log('TokenManager', 'init', 'tokens.length =', TokenManager.cachedTokens.length);
-    }
-
-    static async updateTokensPrices() {
-        const tokens = TokenManager.cachedTokens.sort((a, b) => (a.priceUpdatedAt || 0) - (b.priceUpdatedAt || 0));
-        const tokensToUpdate = tokens.slice(0, 99);
-        const mints = tokensToUpdate.map(token => token.address);
-        mints.push(kSolAddress);
-        const prices = await JupiterManager.getPrices(mints);
-        const now = Date.now();
-        for (const price of prices) {
-            const token = TokenManager.cachedTokens.find(token => token.address === price.address);
-            if (token){
-                token.price = price.price;
-                token.priceUpdatedAt = now;
-            }
-        }
-    }
-
     static async fetchDigitalAsset(address: string): Promise<IToken> {
-        let token = TokenManager.cachedTokens.find(token => token.address === address);
-
-        if (!token){
-            token = new Token();
-            token.chain = Chain.SOLANA;
-            token.address = address;
-            token.priceUpdatedAt = 0;
-            token.isVerified = false;
-        }
+        const token = new Token();
+        token.chain = Chain.SOLANA;
+        token.address = address;
+        token.priceUpdatedAt = 0;
+        token.isVerified = false;
 
         const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
         LogManager.log('TokenManager', 'getToken', address, '=', digitalAssets);
@@ -107,7 +82,13 @@ export class TokenManager {
                 }     
             }
             else {
-                TokenManager.cachedTokens.push(token);
+                try{
+                    await RedisManager.saveToken(token);
+                }
+                catch (error){
+                    LogManager.error('!catched', 'TokenManager', 'RedisManager', 'saveToken', error);
+                }                
+
                 try{
                     await token.save();
                 }
@@ -121,10 +102,11 @@ export class TokenManager {
     }
 
     static async getToken(address: string): Promise<ITokenModel | undefined> {
-        let token = TokenManager.cachedTokens.find(token => token.address === address);
+        let token = await RedisManager.getToken(address);
         if (!token){
             token = await this.fetchDigitalAsset(address);
         }
+
         LogManager.log('TokenManager', 'getToken1', 'address:', address, 'token:', token);
         if (token){
             if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 60 * 5){
@@ -207,22 +189,22 @@ export class TokenManager {
         return Math.round(liquidity.sol * this.getSolPrice() + liquidity.token * token.price);
     }
 
-    static async fetchTokensInfo(){
-        let tokens = TokenManager.cachedTokens.filter(token => !token.symbol);
-        if (tokens.length > 0){
-            tokens = tokens.splice(0, 10);
-            const mints = tokens.map(token => token.address);
-            const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(mints);
-            for (const digitalAsset of digitalAssets){
-                const token = TokenManager.cachedTokens.find(token => token.address === digitalAsset.publicKey.toString());
-                if (token){
-                    token.name = digitalAsset.metadata.name;
-                    token.symbol = digitalAsset.metadata.symbol;
-                    token.decimals = digitalAsset.mint.decimals;
-                }
-            }
-        }
-    }
+    // static async fetchTokensInfo(){
+    //     let tokens = TokenManager.cachedTokens.filter(token => !token.symbol);
+    //     if (tokens.length > 0){
+    //         tokens = tokens.splice(0, 10);
+    //         const mints = tokens.map(token => token.address);
+    //         const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(mints);
+    //         for (const digitalAsset of digitalAssets){
+    //             const token = TokenManager.cachedTokens.find(token => token.address === digitalAsset.publicKey.toString());
+    //             if (token){
+    //                 token.name = digitalAsset.metadata.name;
+    //                 token.symbol = digitalAsset.metadata.symbol;
+    //                 token.decimals = digitalAsset.mint.decimals;
+    //             }
+    //         }
+    //     }
+    // }
 
     static async clearOldSwaps(){
         // delete swaps older than 1 day
@@ -233,8 +215,7 @@ export class TokenManager {
     }
 
     static getSolPrice(): number {
-        const token = TokenManager.cachedTokens.find(token => token.address === kSolAddress);
-        return token?.price || 0;
+        return this.solPrice;
     }
 
     static calculateMarketCap(token: IToken): number | undefined {
@@ -325,13 +306,29 @@ export class TokenManager {
     }
 
     static async fillTokenModelsWithData(tokens: ITokenModel[]): Promise<ITokenModel[]> {
+        const mints = tokens.map(token => token.address);
+        const cachedTokens = await RedisManager.getTokens(mints);
+
         for (const token of tokens){
-            const freshToken = TokenManager.cachedTokens.find(t => t.address === token.address);
+            const freshToken = cachedTokens.find(cachedToken => cachedToken.address === token.address);
             if (freshToken){
                 token.isVerified = freshToken.isVerified;
             }
         }
         return tokens;
+    }
+
+    static async updateTokenPrice(mint: string) {
+        const token = await RedisManager.getToken(mint);
+
+        if (token){
+            const prices = await JupiterManager.getPrices([mint]);
+            if (prices && prices.length > 0){
+                token.price = prices[0].price;
+                token.priceUpdatedAt = Date.now();
+            } 
+            await RedisManager.saveToken(token);   
+        }
     }
 
 }
