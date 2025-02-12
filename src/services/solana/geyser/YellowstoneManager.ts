@@ -118,7 +118,7 @@ export class YellowstoneManager {
                 }
             });
         }).catch((reason) => {
-            LogManager.error(reason);
+            LogManager.error('YellowstoneManager catch reason:', reason);
             throw reason;
         });
     }
