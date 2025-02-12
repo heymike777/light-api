@@ -331,4 +331,12 @@ export class TokenManager {
         }
     }
 
+    static async fetchSolPriceFromRedis(){
+        const price = await RedisManager.getToken(kSolAddress);
+        if (price && price.price!=undefined){
+            TokenManager.solPrice = price.price;
+        }
+    }
+    
+
 }

@@ -100,6 +100,9 @@ const onExpressStarted = async () => {
     if (EnvManager.isTelegramProcess) {
         setupBot();
     }
+    if (EnvManager.isMainProcess) {
+        await TokenManager.fetchSolPriceFromRedis();
+    }
 
     await MixpanelManager.init();
     await WalletManager.fetchAllWalletAddresses();

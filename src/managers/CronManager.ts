@@ -55,15 +55,8 @@ export class CronManager {
 
         if (EnvManager.isMainProcess){
             cron.schedule('* * * * *', () => {
-                this.fetchSolPriceFromRedis();
+                TokenManager.fetchSolPriceFromRedis();
             });
-        }
-    }
-
-    static async fetchSolPriceFromRedis(){
-        const price = await RedisManager.getToken(kSolAddress);
-        if (price && price.price!=undefined){
-            TokenManager.solPrice = price.price;
         }
     }
 
