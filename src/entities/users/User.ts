@@ -34,8 +34,6 @@ export interface IUser extends mongoose.Document {
     traderProfiles?: IUserTraderProfile[];
     maxNumberOfWallets?: number;
     maxNumberOfTraderProfiles?: number;
-
-    tmp?: any;
 }
 
 export const UserSchema = new mongoose.Schema<IUser>({

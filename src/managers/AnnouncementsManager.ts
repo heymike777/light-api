@@ -11,6 +11,10 @@ export class AnnouncementsManager {
             //     image: 'https://light.dangervalley.com/news/join_community.png',
             //     url: 'https://t.me/LightAppLounge',
             // },
+            {
+                image: 'https://light.dangervalley.com/news/maintenance.png',
+                url: 'https://light.app/',
+            },
         ];
 
         return announcements

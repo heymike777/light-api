@@ -6,41 +6,58 @@ import { SubscriptionManager } from './SubscriptionManager';
 import { SwapManager } from './SwapManager';
 import { WalletManager } from './WalletManager';
 import { RedisManager } from './db/RedisManager';
+import { EnvManager } from './EnvManager';
+import { kSolAddress } from '../services/solana/Constants';
 
 export class CronManager {
 
-    static async setup() {
-        cron.schedule('*/10 * * * * *', () => {
-            TokenManager.updateTokensPrices();
-            this.checkAndRetrySwaps();
-        });
+    static async setupCron() {
+        if (EnvManager.isGeyserProcess){
+            cron.schedule('* * * * *', () => {
+                YellowstoneManager.cleanupProcessedSignatures();
+                // this.printStats();
+            });
+        }
 
-        cron.schedule('* * * * *', () => {
-            // once a minute
-            TokenManager.fetchTokensInfo();
-            UserManager.cleanOldCache();
-            YellowstoneManager.cleanupProcessedSignatures();
+        if (EnvManager.isCronProcess){
+            cron.schedule('*/10 * * * * *', () => {
+                this.checkAndRetrySwaps();
+            });
+    
+            cron.schedule('*/10 * * * *', () => {
+                // every 10 minutes
+                RedisManager.migrateAllUsersTransactionsToMongo();
+            });
 
-            // TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
-            this.printStats();
-        });
+            cron.schedule('* * * * *', () => {
+                TokenManager.updateTokenPrice(kSolAddress);
 
-        cron.schedule('*/10 * * * *', () => {
-            // every 10 minutes
-            RedisManager.migrateAllUsersTransactionsToMongo();
-        });
+                // once a minute
+                // TokenManager.fetchTokensInfo();
+                UserManager.cleanOldCache();
 
-        cron.schedule('0 * * * *', () => {
-            // once an hour
-            TokenManager.clearOldSwaps();
-            SubscriptionManager.cleanExpiredGiftCardSubscriptions();
-        });
+                // TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
+                // this.printStats();
+            });
 
-        cron.schedule('0 2 * * *', () => {
-            // once a day at 2am UTC
+            cron.schedule('0 * * * *', () => {
+                // once an hour
+                TokenManager.clearOldSwaps();
+                SubscriptionManager.cleanExpiredGiftCardSubscriptions();
+            });
 
-            SubscriptionManager.fetchAllRevenueCatSubscriptions();
-        });
+            cron.schedule('0 2 * * *', () => {
+                // once a day at 2am UTC
+                SubscriptionManager.fetchAllRevenueCatSubscriptions();
+            });
+    
+        }
+
+        if (EnvManager.isMainProcess){
+            cron.schedule('* * * * *', () => {
+                TokenManager.fetchSolPriceFromRedis();
+            });
+        }
     }
 
     static async checkAndRetrySwaps() {

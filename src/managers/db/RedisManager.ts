@@ -2,10 +2,24 @@ import { createClient, RedisClientType } from "redis";
 import { IUserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
 import { kAddUniqueTransactionLua } from "./RedisScripts";
 import { UserManager } from "../UserManager";
+import { IToken } from "../../entities/tokens/Token";
+import { LogManager } from "../LogManager";
+import { IWallet } from "../../entities/Wallet";
+import { WalletManager } from "../WalletManager";
+import { nanoid } from "nanoid";
+
+export interface WalletEvent {
+    instanceId?: string;
+    type: 'add' | 'delete';
+    wallet: IWallet;
+}
 
 export class RedisManager {
 
     client?: RedisClientType;
+    subscriber?: RedisClientType;
+    publisher?: RedisClientType;
+    instanceId = nanoid();
 
     constructor(){
         RedisManager.instance = this;
@@ -18,20 +32,52 @@ export class RedisManager {
         this.client.on('error', (err: Error) => console.log('Redis Client Error', err));
 
         await this.client.connect();
+
+        this.subscriber = this.client.duplicate();
+        this.subscriber.on('error', (err: Error) => console.log('Redis Subscriber Error', err));
+        await this.subscriber.connect();
+
+        await this.subscriber.subscribe('wallets', this.onWalletChangedEvent);    
+
+        this.publisher = this.client.duplicate();
+        this.publisher.on('error', (err: Error) => console.log('Redis Publisher Error', err));
+        await this.publisher.connect();
     }
 
-    async setValue(key: string, value: string): Promise<boolean>{
-        if (this.client){
-            console.log('RedisManager', 'setValue', key, value);
-            const res = await this.client.set(key, value);    
-            return res ? true : false;
+    // ### wallets
+
+    static async publishWalletEvent(event: WalletEvent){
+        try {
+            const redis = RedisManager.getInstance()
+            if (!redis) throw new Error('Redis is not exist');
+
+            if (redis.publisher){
+                event.instanceId = redis.instanceId;
+                await redis.publisher.publish('wallets', JSON.stringify(event));
+            }    
         }
-        return false;
+        catch(err){
+            LogManager.error('RedisManager', 'publishWalletEvent', err);
+        }
     }
 
-    async getValue(key: string): Promise<string | null>{
-        if (!this.client) return null;
-        return await this.client.get(key);
+    async onWalletChangedEvent(message: string){
+        try{
+            const event: WalletEvent = JSON.parse(message);
+            if (event.instanceId === this.instanceId) return;
+
+            if (event.type === 'add'){
+                // add wallet to cache
+                WalletManager.addWalletToCache(event.wallet);
+            }
+            else if (event.type === 'delete'){
+                // remove wallet from cache
+                WalletManager.removeWalletFromCache(event.wallet);
+            }
+        }
+        catch(err){
+            LogManager.error('RedisManager', 'onWalletChangedEvent', err);
+        }
     }
 
     // ### static methods
@@ -78,16 +124,20 @@ export class RedisManager {
         if (!redis.client.isReady) return [];
 
         const key = `user:${userId}:transactions`;
-
-        // fetch the transactions from redis
-        const transactions = await redis.client.lRange(key, 0, -1);
-        if (transactions) {
-            const userTransactions: IUserTransaction[] = [];
-            transactions.forEach((tx: string) => {
-                const userTx = userTransactionFromJson(tx);
-                if (userTx) userTransactions.push(userTx);
-            });
-            return userTransactions;
+        try {
+            // fetch the transactions from redis
+            const transactions = await redis.client.lRange(key, 0, -1);
+            if (transactions) {
+                const userTransactions: IUserTransaction[] = [];
+                transactions.forEach((tx: string) => {
+                    const userTx = userTransactionFromJson(tx);
+                    if (userTx) userTransactions.push(userTx);
+                });
+                return userTransactions;
+            }
+        }
+        catch(e){
+            LogManager.error('getToken', e);
         }
 
         return [];    
@@ -122,27 +172,103 @@ export class RedisManager {
         const key = `user:${userId}:transactions`;
         console.log('migrateUserTransactionsToMongo', key);
 
-        // fetch the transactions from redis
-        const transactions = await redis.client.lRange(key, 0, -1);
-        if (transactions && transactions.length > 0) {
-            for (const txString of transactions) {
-                try{
-                    const tx = userTransactionFromJson(txString);
-                    if (tx) {
-                        await tx.save();
+        try {
+            // fetch the transactions from redis
+            const transactions = await redis.client.lRange(key, 0, -1);
+            if (transactions && transactions.length > 0) {
+                for (const txString of transactions) {
+                    try{
+                        const tx = userTransactionFromJson(txString);
+                        if (tx) {
+                            await tx.save();
 
-                        console.log('migrateUserTransactionsToMongo', tx.signature, 'success');
+                            console.log('migrateUserTransactionsToMongo', tx.signature, 'success');
 
-                        redis.client.lRem(key, 0, txString);
+                            redis.client.lRem(key, 0, txString);
+                        }
+                    }
+                    catch(e){
+                        console.error('migrateUserTransactionsToMongo', e);
                     }
                 }
-                catch(e){
-                    console.error('migrateUserTransactionsToMongo', e);
-                }
-            }
 
-            await UserManager.cleanOldUserTransactions(userId);
+                await UserManager.cleanOldUserTransactions(userId);
+            }
         }
+        catch(e){
+            LogManager.error('getToken', e);
+        }
+    }
+
+    static async saveToken(token: IToken): Promise<boolean> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return false;
+        if (!redis.client) return false;
+        if (!redis.client.isReady) return false;
+
+        if (!token.symbol){
+            console.error('saveToken', 'token.symbol is missing', token);
+            return false;
+        }
+
+        try {
+            const key = `token:sol:${token.address}`;
+            const result = await redis.client.set(key, JSON.stringify(token));
+            return result ? true : false;
+        }
+        catch(e){
+            LogManager.error('getToken', e);
+        }
+
+        return false;
+    }
+
+    static async getToken(mint: string): Promise<IToken | undefined> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return undefined;
+        if (!redis.client) return undefined;
+        if (!redis.client.isReady) return undefined;
+
+        try {
+            const key = `token:sol:${mint}`;
+            const token = await redis.client.get(key);
+            if (token) {
+                return JSON.parse(token);
+            }
+        }
+        catch(e){
+            LogManager.error('getToken', e);
+        }
+
+        return undefined;
+    }
+
+    static async getTokens(mints: string[]): Promise<IToken[]> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return [];
+        if (!redis.client) return [];
+        if (!redis.client.isReady) return [];
+
+        try {
+            const uniqueMints = Array.from(new Set(mints));
+            const keys = mints.map(mint => `token:sol:${uniqueMints}`)
+            const tokens = await redis.client.mGet(keys);
+            if (tokens) {
+                const results: IToken[] = [];
+                tokens.forEach((token: string | null) => {
+                    if (token) {
+                        const parsed = JSON.parse(token);
+                        results.push(parsed);
+                    }
+                });
+                return results;
+            }
+        }
+        catch(e){
+            LogManager.error('getToken', e);
+        }
+
+        return [];
     }
 
 }

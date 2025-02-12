@@ -28,6 +28,10 @@ import { LogManager } from './managers/LogManager';
 import { traderProfilesRouter } from './routes/v1/TraderProfiles';
 import { tradeRouter } from './routes/v1/Trade';
 import { RedisManager } from './managers/db/RedisManager';
+import { EnvManager } from './managers/EnvManager';
+import { geyserServiceRouter } from './routes/v1/services/Geyser';
+import { mainServiceRouter } from './routes/v1/services/Main';
+import { telegramServiceRouter } from './routes/v1/services/Telegram';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -49,7 +53,7 @@ declare global {
   }
 }
 
-if (process.env.API_ENABLED == 'true'){
+if (process.env.API_ENABLED == 'true' && EnvManager.isMainProcess) {
     app.use(authRouter);
     app.use(walletsRouter);
     app.use(usersRouter);
@@ -59,6 +63,16 @@ if (process.env.API_ENABLED == 'true'){
     app.use(giftCardsRouter);
     app.use(traderProfilesRouter);
     app.use(tradeRouter);
+}
+
+if (EnvManager.isMainProcess) {
+    app.use(mainServiceRouter);
+}
+if (EnvManager.isGeyserProcess) {
+    app.use(geyserServiceRouter);
+}
+if (EnvManager.isTelegramProcess) {
+    app.use(telegramServiceRouter);
 }
 
 app.all('*', async () => {
@@ -81,16 +95,25 @@ const start = async () => {
 }
 
 const onExpressStarted = async () => {
-    CronManager.setup();
-    setupBot();
+    CronManager.setupCron();
 
-    await TokenManager.init();
+    if (EnvManager.isTelegramProcess) {
+        setupBot();
+    }
+    if (EnvManager.isMainProcess) {
+        await TokenManager.fetchSolPriceFromRedis();
+    }
+
     await MixpanelManager.init();
     await WalletManager.fetchAllWalletAddresses();
-    await TokenManager.updateTokensPrices();
+
+    if (EnvManager.isGeyserProcess){
+        YellowstoneManager.createInstances();
+    }
+
+    // await TokenManager.updateTokensPrices();
     // JitoWebsocketManager.getInstance();
     // await JitoManager.initSearcherClient();
-    YellowstoneManager.createInstances();
     // TokenPriceStream.createInstances();
 
     await MigrationManager.migrate();
