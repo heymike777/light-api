@@ -8,6 +8,7 @@ export class MicroserviceManager {
 
     static async geyserResubscribe(){
         // send POST API to /geyser/resubscribe with axios
+        console.log('MicroserviceManager geyserResubscribe');
         
         try {
             const { data } = await axios({
@@ -19,7 +20,7 @@ export class MicroserviceManager {
                 },
             });
 
-            LogManager.log('geyserResubscribe', data);
+            console.log('MicroserviceManager', 'geyserResubscribe', data);
         }
         catch (e: any){
             LogManager.error('MicroserviceManager', 'geyserResubscribe', 'error', e?.response?.data?.message);

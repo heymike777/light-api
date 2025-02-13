@@ -226,6 +226,7 @@ export class YellowstoneManager {
     }
 
     static async resubscribeAll(){
+        console.log('YellowstoneManager resubscribeAll', 'isGeyserProcess:', EnvManager.isGeyserProcess);
         if (EnvManager.isGeyserProcess){
             if (!this.instances){
                 return;
@@ -237,7 +238,6 @@ export class YellowstoneManager {
             }
         }
         else {
-            //TODO: send API call to geyser process to resubscribe
             await MicroserviceManager.geyserResubscribe();
         }
     }
