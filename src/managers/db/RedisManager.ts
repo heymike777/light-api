@@ -63,6 +63,7 @@ export class RedisManager {
 
     async onWalletChangedEvent(message: string){
         try{
+            console.log('onWalletChangedEvent', 'message:', message);
             const event: WalletEvent = JSON.parse(message);
             const redis = RedisManager.getInstance();
             if (event.instanceId === redis?.instanceId) return;
