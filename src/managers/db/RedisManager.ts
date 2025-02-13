@@ -64,7 +64,8 @@ export class RedisManager {
     async onWalletChangedEvent(message: string){
         try{
             const event: WalletEvent = JSON.parse(message);
-            if (event.instanceId === this.instanceId) return;
+            const redis = RedisManager.getInstance();
+            if (event.instanceId === redis?.instanceId) return;
 
             if (event.type === 'add'){
                 // add wallet to cache
