@@ -70,11 +70,11 @@ export class RedisManager {
 
             if (event.type === 'add'){
                 // add wallet to cache
-                WalletManager.addWalletToCache(event.wallet);
+                WalletManager.addWalletToCache(event.wallet, false);
             }
             else if (event.type === 'delete'){
                 // remove wallet from cache
-                WalletManager.removeWalletFromCache(event.wallet);
+                WalletManager.removeWalletFromCache(event.wallet, false);
             }
         }
         catch(err){

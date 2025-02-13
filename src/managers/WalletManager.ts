@@ -102,7 +102,7 @@ export class WalletManager {
         }
     }
 
-    static addWalletToCache(wallet: IWallet){
+    static addWalletToCache(wallet: IWallet, shouldBroadcast: boolean = true){
         let tmpWallets = this.walletsMap.get(wallet.walletAddress);
         if (tmpWallets){
             const existingWallet = tmpWallets.find((tmpWallet) => tmpWallet.id == wallet.id);
@@ -118,14 +118,16 @@ export class WalletManager {
         }
         this.walletsMap.set(wallet.walletAddress, tmpWallets);
 
-        RedisManager.publishWalletEvent({
-            type: 'add',
-            wallet,
-        });
+        if (shouldBroadcast){
+            RedisManager.publishWalletEvent({
+                type: 'add',
+                wallet,
+            });
+        }
         
     }
 
-    static removeWalletFromCache(wallet: IWallet){
+    static removeWalletFromCache(wallet: IWallet, shouldBroadcast: boolean = true){
         const tmpWallets = this.walletsMap.get(wallet.walletAddress);
         if (tmpWallets){
             const newWallets = tmpWallets.filter((tmpWallet) => tmpWallet.id != wallet.id);
@@ -137,10 +139,12 @@ export class WalletManager {
             }
         }
 
-        RedisManager.publishWalletEvent({
-            type: 'delete',
-            wallet,
-        });
+        if (shouldBroadcast){
+            RedisManager.publishWalletEvent({
+                type: 'delete',
+                wallet,
+            });    
+        }
     }
 
     static async removeWallets(chatId: number, userId: string, walletAddresses: string[], ipAddress?: string){
