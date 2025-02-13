@@ -1,4 +1,4 @@
-import * as grpc from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
+import * as grpc from "@triton-one/yellowstone-grpc/dist/types/grpc/solana-storage";
 import base58 from "bs58";
 import * as web3 from '@solana/web3.js';
 import { SolanaManager } from "../SolanaManager";

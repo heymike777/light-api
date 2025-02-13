@@ -22,7 +22,6 @@ import { UserTransaction } from "../entities/users/UserTransaction";
 import fs from "fs";
 import { SystemNotificationsManager } from "../managers/SytemNotificationsManager";
 import jwt from "express-jwt";
-import { SubscribeRequest } from "@triton-one/yellowstone-grpc";
 import { SubscriptionManager } from "../managers/SubscriptionManager";
 import { Subscription, SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Subscription";
 import { RevenueCatManager } from "../managers/RevenueCatManager";

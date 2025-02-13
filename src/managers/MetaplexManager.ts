@@ -54,7 +54,7 @@ export class MetaplexManager {
             // LogManager.log('tmp', asset);
             if (asset){
                 if (asset.interface as string == 'FungibleToken'){
-                    LogManager.error('MetaplexManager', 'fetchAssetAndParseToTokenNft', 'asset is not NFT', asset);
+                    // LogManager.error('MetaplexManager', 'fetchAssetAndParseToTokenNft', 'asset is not NFT', asset);
                     return undefined;
                 }
 

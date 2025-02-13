@@ -1,4 +1,4 @@
-import { CompiledInstruction } from "@triton-one/yellowstone-grpc/dist/grpc/solana-storage";
+import { CompiledInstruction } from "@triton-one/yellowstone-grpc/dist/types/grpc/solana-storage";
 import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
 import { BotManager } from "./bot/BotManager";
 import { ParsedTx, ProgramManager, TxDescription } from "./ProgramManager";
