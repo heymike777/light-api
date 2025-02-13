@@ -400,7 +400,7 @@ export class SwapManager {
         let addedTx: boolean = false;
         try {
             addedTx = await RedisManager.saveUserTransaction(userTx);
-            LogManager.forceLog('addedToRedis:', addedTx);  
+            // LogManager.forceLog('addedToRedis:', addedTx);  
         }
         catch (err: any) {
             addedTx = true;
