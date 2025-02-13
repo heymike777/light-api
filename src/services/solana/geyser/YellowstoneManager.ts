@@ -1,4 +1,4 @@
-import Client, { SubscribeRequest, CommitmentLevel } from "@triton-one/yellowstone-grpc";
+import Client, { SubscribeRequest, CommitmentLevel, txEncode } from "@triton-one/yellowstone-grpc";
 import base58 from 'bs58';
 import { Helpers } from '../../helpers/Helpers';
 import { WalletManager } from '../../../managers/WalletManager';
@@ -10,6 +10,7 @@ import { LogManager } from "../../../managers/LogManager";
 import { SwapManager } from "../../../managers/SwapManager";
 import { EnvManager } from "../../../managers/EnvManager";
 import { MicroserviceManager } from "../../../managers/MicroserviceManager";
+import { WasmUiTransactionEncoding } from "@triton-one/yellowstone-grpc/dist/types/encoding/yellowstone_grpc_solana_encoding_wasm";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -164,6 +165,13 @@ export class YellowstoneManager {
         if (transaction.meta.err){ return; }
 
         const signature = base58.encode(transaction.signature);
+
+        const tmp = txEncode.encode(data.transaction.transaction, txEncode.encoding.JsonParsed, 255, true);
+        console.log(signature, 'TMP JSON PARSED:', JSON.stringify(tmp));
+        const tmp2 = txEncode.encode(data.transaction.transaction, txEncode.encoding.Json, 255, true);
+        console.log(signature, 'TMP JSON:', JSON.stringify(tmp2));
+        const tmp3 = txEncode.encode(data.transaction.transaction, txEncode.encoding.Base64, 255, true);
+        console.log(signature, 'TMP Base64:', JSON.stringify(tmp3));
 
         // check if this transaction is already processed by this server
         const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
