@@ -161,25 +161,28 @@ export class YellowstoneManager {
     }
 
     async receivedTx(data: any, filter: string){
-        const transaction = data.transaction.transaction;
-        if (transaction.meta.err){ return; }
+        try {
+            const transaction = data.transaction.transaction;
+            if (transaction.meta.err){ return; }
 
-        const signature = base58.encode(transaction.signature);
+            const signature = base58.encode(transaction.signature);
 
-        const tmp = txEncode.encode(data.transaction.transaction, txEncode.encoding.JsonParsed, 255, true);
-        console.log(signature, 'TMP JSON PARSED:', JSON.stringify(tmp));
-        const tmp2 = txEncode.encode(data.transaction.transaction, txEncode.encoding.Json, 255, true);
-        console.log(signature, 'TMP JSON:', JSON.stringify(tmp2));
-        const tmp3 = txEncode.encode(data.transaction.transaction, txEncode.encoding.Base64, 255, true);
-        console.log(signature, 'TMP Base64:', JSON.stringify(tmp3));
+            const jsonParsed = txEncode.encode(data.transaction.transaction, txEncode.encoding.JsonParsed, 255, true);
+            const jsonParsedAny: any = jsonParsed;
+            jsonParsedAny.slot = +jsonParsed.slot.toString();
+            jsonParsedAny.blockTime = jsonParsed.blockTime;
 
-        // check if this transaction is already processed by this server
-        const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
-        if (!shouldProcess){
-            return;
+            // check if this transaction is already processed by this server
+            const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
+            if (!shouldProcess){
+                return;
+            }
+
+            MicroserviceManager.receivedTx(this.id, signature, JSON.stringify(jsonParsedAny));
         }
-
-        MicroserviceManager.receivedTx(this.id, signature, JSON.stringify(data));
+        catch (e: any){
+            LogManager.error(process.env.SERVER_NAME, 'YellowstoneManager receivedTx', 'error', e?.response?.data?.message);
+        }
     }
 
     // ### static methods

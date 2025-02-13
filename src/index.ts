@@ -114,7 +114,6 @@ const onExpressStarted = async () => {
     // await TokenManager.updateTokensPrices();
     // JitoWebsocketManager.getInstance();
     // await JitoManager.initSearcherClient();
-    // TokenPriceStream.createInstances();
 
     await MigrationManager.migrate();
 }

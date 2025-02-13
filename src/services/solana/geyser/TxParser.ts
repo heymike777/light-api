@@ -7,236 +7,165 @@ import * as spl from "@solana/spl-token";
 import { Ix } from "../../../managers/ProgramManager";
 import { LogManager } from "../../../managers/LogManager";
 
-//TODO: open-source TxParser
+export interface JsonParsedInstruction {
+    program?: string;
+    programId: string;
+    accounts?: string[];
+    data?: string;
+    parsed?: any;
+    stackHeight?: any;
+}
+
+export interface JsonParsed {
+    transaction: {
+        signatures: string[];
+        message: {
+            accountKeys: {
+                pubkey: string;
+                writable: boolean;
+                signer: boolean;
+                source?: 'transaction' | 'lookupTable';
+            }[];
+            recentBlockhash: string;
+            instructions: JsonParsedInstruction[];
+            addressTableLookups: {
+                accountKey: string;
+                writableIndexes: number[];
+                readonlyIndexes: number[];
+            }[];
+        };
+    };
+    meta: {
+        err: any;
+        status: {
+            Ok: any;
+        };
+        fee: number;
+        preBalances: number[];
+        postBalances: number[];
+        innerInstructions: {
+            index: number;
+            instructions: JsonParsedInstruction[];
+        }[];
+        logMessages: string[];
+        preTokenBalances: {
+            accountIndex: number;
+            mint: string;
+            uiTokenAmount: {
+                uiAmount: number;
+                decimals: number;
+                amount: string;
+                uiAmountString: string;
+            };
+            owner: string;
+            programId: string;
+        }[];
+        postTokenBalances: {
+            accountIndex: number;
+            mint: string;
+            uiTokenAmount: {
+                uiAmount: number;
+                decimals: number;
+                amount: string;
+                uiAmountString: string;
+            };
+            owner: string;
+            programId: string;
+        }[];
+        computeUnitsConsumed: number;
+    };
+    version?: 'legacy' | 0;
+    slot: number;
+    blockTime: number;
+}
+
 export class TxParser {
 
-    static async parseGeyserTransactionWithMeta(geyserData: any, shouldFetchLookupTable = true): Promise<web3.ParsedTransactionWithMeta | undefined> {
-        return undefined;
-        /*
-        const confirmedTx = grpc.ConfirmedTransaction.fromJSON(geyserData.transaction.transaction);
-        LogManager.log('confirmedTx', confirmedTx);
-        const geyserTxData = geyserData.transaction;
-        const signature = base58.encode(geyserTxData.transaction.signature);
-        const isVote: boolean = geyserTxData.transaction.isVote;
-        const isVersioned = confirmedTx.transaction?.message?.versioned || false;
-        const signatures = confirmedTx.transaction?.signatures.map((sig) => base58.encode(sig)) || [];
-        const geyserMessage: any = geyserTxData.transaction.transaction.message;
-        const slot = +geyserTxData.slot;
+    static async parseGeyserTransactionWithMeta(jsonParsed: JsonParsed): Promise<web3.ParsedTransactionWithMeta | undefined> {
+        // const isVote: boolean = geyserTxData.transaction.isVote;
+        // const slot = +geyserTxData.slot;
 
-        const postTokenBalances: web3.TokenBalance[] = [];
-        const preTokenBalances: web3.TokenBalance[] = [];
-        if (confirmedTx.meta?.preTokenBalances){
-            for (const balance of confirmedTx.meta?.preTokenBalances) {
-                if (balance.uiTokenAmount){
-                    preTokenBalances.push({
-                        accountIndex: balance.accountIndex,
-                        mint: balance.mint,
-                        owner: balance.owner,
-                        uiTokenAmount: {
-                            amount: balance.uiTokenAmount.amount,
-                            decimals: balance.uiTokenAmount.decimals,
-                            uiAmount: balance.uiTokenAmount.uiAmount,
-                            uiAmountString: balance.uiTokenAmount.uiAmountString
-                        },
-                    });   
-                }             
-            }
-        }
-        if (confirmedTx.meta?.postTokenBalances){
-            for (const balance of confirmedTx.meta?.postTokenBalances) {
-                if (balance.uiTokenAmount){
-                    postTokenBalances.push({
-                        accountIndex: balance.accountIndex,
-                        mint: balance.mint,
-                        owner: balance.owner,
-                        uiTokenAmount: {
-                            amount: balance.uiTokenAmount.amount,
-                            decimals: balance.uiTokenAmount.decimals,
-                            uiAmount: balance.uiTokenAmount.uiAmount,
-                            uiAmountString: balance.uiTokenAmount.uiAmountString
-                        },
-                    });   
-                }             
-            }
-        }
-
-
-        const accountKeys: web3.ParsedMessageAccount[] = []; 
-        if (confirmedTx.transaction?.message?.accountKeys){
-            let accountIndex = 0;
-            for (const key of confirmedTx.transaction?.message?.accountKeys){
-                accountKeys.push({
-                    pubkey: new web3.PublicKey(base58.encode(key)),
-                    signer: this.isAccountSigner(geyserMessage, accountIndex),
-                    writable: this.isAccountWritable(geyserMessage, accountIndex),
-                    source: 'transaction'
-                });
-                accountIndex++;
-            }
-        }
-        const lookupTableAccounts: web3.AddressLookupTableAccount[] = [];
-        const addressTableLookups: web3.ParsedAddressTableLookup[] = [];
-        const loadedAddresses: web3.LoadedAddresses = {
-            writable: [],
-            readonly: [],
-        };
-        if (confirmedTx.transaction?.message?.addressTableLookups){
-            for (const item of confirmedTx.transaction?.message?.addressTableLookups) {
-                const address = base58.encode(item.accountKey);
-                const accountKey = new web3.PublicKey(address);
-                const writableIndexes = Array.from(item.writableIndexes);
-                const readonlyIndexes = Array.from(item.readonlyIndexes);
-
-                addressTableLookups.push({
-                    accountKey: accountKey,
-                    writableIndexes: writableIndexes,
-                    readonlyIndexes: readonlyIndexes,
-                });
-
-                if (shouldFetchLookupTable){
-                    const lookupTableAccount = await SolanaManager.fetchLookupTableAccount(accountKey.toBase58());
-
-                    if (lookupTableAccount){
-                        lookupTableAccounts.push(lookupTableAccount);
-
-                        for (const index of readonlyIndexes) {
-                            if (lookupTableAccount.state.addresses.length >= index){
-                                const key = lookupTableAccount.state.addresses[index];
-                                loadedAddresses.readonly.push(key);
-                            }
-                        }
-                        for (const index of writableIndexes) {
-                            if (lookupTableAccount.state.addresses.length >= index){
-                                const key = lookupTableAccount.state.addresses[index];
-                                loadedAddresses.writable.push(key);
-                            }
-                        }
-                    }
-
+        const meta: web3.ParsedTransactionMeta | null = !jsonParsed.meta ? null : {
+            fee: jsonParsed.meta?.fee ? +jsonParsed.meta.fee : 0,
+            innerInstructions: jsonParsed.meta.innerInstructions.map((ii) => {
+                return {
+                    index: ii.index,
+                    instructions: ii.instructions.map((ix) => {
+                        return this.jsonParsedInstructionToParsedInstruction(ix);
+                    })
                 }
-            }
-
-            if (loadedAddresses.writable.length > 0){
-                for (const pubkey of loadedAddresses.writable) {
-                    accountKeys.push({
-                        pubkey: pubkey,
-                        signer: false,
-                        writable: true,
-                        source: 'lookupTable'
-                    });
-                }
-            }
-            if (loadedAddresses.readonly.length > 0){
-                for (const pubkey of loadedAddresses.readonly) {
-                    accountKeys.push({
-                        pubkey: pubkey,
-                        signer: false,
-                        writable: false,
-                        source: 'lookupTable'
-                    });
-                }
-            }
-        }
-
-        const instructions = this.parseYellowstoneGrpcCompiledInstructions(confirmedTx.transaction?.message?.instructions, accountKeys, signature);
-        const innerInstructions: web3.ParsedInnerInstruction[] = [];
-        if (confirmedTx.meta?.innerInstructions){
-            for (const innerInstruction of confirmedTx.meta.innerInstructions){
-                const parsedInnerInstructions = this.parseYellowstoneGrpcCompiledInstructions(innerInstruction.instructions, accountKeys, signature);
-                innerInstructions.push({
-                    index: innerInstruction.index,
-                    instructions: parsedInnerInstructions,
-                });
-            }
-        }
-
-        const meta: web3.ParsedTransactionMeta | null = !confirmedTx.meta ? null : {
-            fee: confirmedTx.meta?.fee ? +confirmedTx.meta.fee : 0,
-            innerInstructions: innerInstructions,
-            preBalances: confirmedTx.meta.preBalances.map((balance) => +balance),
-            postBalances: confirmedTx.meta.postBalances.map((balance) => +balance),
-            logMessages: confirmedTx.meta.logMessages,
-            preTokenBalances: preTokenBalances,
-            postTokenBalances:postTokenBalances,
-            err: null, //TODO: get err from confirmedTx.meta?.err
-            loadedAddresses: loadedAddresses,
-            computeUnitsConsumed: confirmedTx.meta.computeUnitsConsumed ? +confirmedTx.meta.computeUnitsConsumed : 0,
+            }),
+            preBalances: jsonParsed.meta.preBalances,
+            postBalances: jsonParsed.meta.postBalances,
+            logMessages: jsonParsed.meta.logMessages,
+            preTokenBalances: jsonParsed.meta.preTokenBalances,
+            postTokenBalances: jsonParsed.meta.postTokenBalances,
+            err: jsonParsed.meta.err,
+            loadedAddresses: {
+                writable: jsonParsed.transaction.message.accountKeys.filter((ak) => ak.source === 'lookupTable' && ak.writable).map((ak) => new web3.PublicKey(ak.pubkey)),
+                readonly: jsonParsed.transaction.message.accountKeys.filter((ak) => ak.source === 'lookupTable' && !ak.writable).map((ak) => new web3.PublicKey(ak.pubkey)),
+            },
+            computeUnitsConsumed: jsonParsed.meta.computeUnitsConsumed || 0,
         };
 
         const message: web3.ParsedMessage = {
-            accountKeys: accountKeys,
-            instructions: instructions,
-            recentBlockhash: confirmedTx.transaction?.message?.recentBlockhash ? base58.encode(confirmedTx.transaction.message.recentBlockhash) : '',
-            addressTableLookups: addressTableLookups,
+            accountKeys: jsonParsed.transaction.message.accountKeys.map((ak) => {
+                return {
+                    pubkey: new web3.PublicKey(ak.pubkey),
+                    signer: ak.signer,
+                    writable: ak.writable,
+                    source: ak.source,
+                }
+            }),
+            instructions: jsonParsed.transaction.message.instructions.map((ix) => {
+                return this.jsonParsedInstructionToParsedInstruction(ix);      
+            }),
+            recentBlockhash: jsonParsed.transaction.message.recentBlockhash,
+            addressTableLookups: jsonParsed.transaction.message.addressTableLookups.map((lookup) => {
+                return {
+                    accountKey: new web3.PublicKey(lookup.accountKey),
+                    writableIndexes: lookup.writableIndexes,
+                    readonlyIndexes: lookup.readonlyIndexes,
+                }
+            }),
         }
 
         const parsedTransactionWithMeta: web3.ParsedTransactionWithMeta = {
-            blockTime: Math.floor(Date.now() / 1000), // not the best way to set blockTime, but that's ok for me for now
+            blockTime: jsonParsed.blockTime ||  Math.floor(Date.now() / 1000), // not the best way to set blockTime, but that's ok for me for now
             meta: meta,
-            slot: slot, 
+            slot: jsonParsed.slot || 0,
             transaction: {
                 message: message,
-                signatures: signatures,
+                signatures: jsonParsed.transaction.signatures,
             },
-            version: isVersioned ? 0 : 'legacy',
+            version: jsonParsed.version,
         };
 
         return parsedTransactionWithMeta;
-        */
     }
 
-    // static parseYellowstoneGrpcCompiledInstructions(compiledInstructions: grpc.CompiledInstruction[] | undefined, accountKeys: web3.ParsedMessageAccount[], signature?: string): Ix[] {
-    //     if (!compiledInstructions) { return []; }
+    static jsonParsedInstructionToParsedInstruction(ix: JsonParsedInstruction): web3.ParsedInstruction | web3.PartiallyDecodedInstruction {
+        const programId = new web3.PublicKey(ix.programId);
+        const accounts = ix.accounts?.map((account) => new web3.PublicKey(account)) || [];
+        // const stackHeight = ix.stackHeight || undefined;
 
-    //     const instructions: Ix[] = [];
-
-    //     for (const instruction of compiledInstructions){
-    //         const ixProgramId = (accountKeys.length > instruction.programIdIndex) ? accountKeys[instruction.programIdIndex].pubkey : undefined;
-    //         const ixAccounts: web3.ParsedMessageAccount[] = [];
-    //         for (const accountIndex of instruction.accounts) {
-    //             const accountKey = (accountKeys.length > accountIndex) ? accountKeys[accountIndex] : undefined;
-    //             if (accountKey){
-    //                 ixAccounts.push(accountKey);
-    //             }
-    //             else {
-    //                 LogManager.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
-    //             }
-    //         }
-
-    //         const data = Buffer.from(instruction.data);
-
-    //         if (ixProgramId){
-    //             const transactionInstruction = new web3.TransactionInstruction({
-    //                 keys: ixAccounts.map((account) => {
-    //                     return {
-    //                         pubkey: account.pubkey,
-    //                         isWritable: account.writable,
-    //                         isSigner: account.signer,
-    //                     }
-    //                 }),
-    //                 programId: ixProgramId,
-    //                 data,
-    //             });
-
-    //             let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction, signature);
-                
-    //             if (!ix) {
-    //                 ix = {
-    //                     programId: ixProgramId,
-    //                     accounts: ixAccounts.map((account) => account.pubkey),
-    //                     data: base58.encode(data),
-    //                 }
-    //             }
-
-    //             instructions.push(ix);        
-    //         }
-    //         else {
-    //             LogManager.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
-    //         }
-    //     }
-
-    //     return instructions;
-    // }
+        if (ix.parsed) {
+            const parsedInstruction:  web3.ParsedInstruction = {
+                program: ix.program || '',
+                programId: programId,
+                parsed: ix.parsed,
+            };
+            return parsedInstruction;
+        }
+        else {
+            const parsedInstruction:  web3.PartiallyDecodedInstruction = {
+                programId: programId,
+                accounts: accounts,
+                data: ix.data || '',
+            }
+            return parsedInstruction;
+        }
+    }
 
     static isAccountSigner(geyserMessage: any, accountIndex: number) {
         return accountIndex < geyserMessage.header.numRequiredSignatures;
