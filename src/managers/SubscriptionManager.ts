@@ -77,35 +77,41 @@ export class SubscriptionManager {
             }
 
             await Subscription.deleteMany({ userId, platform: SubscriptionPlatform.REVENUECAT, createdAt: { $lt: now } });
+            
+            const user = await this.updateUserSubscriptionStatus(userId);
 
-            const user = await User.findById(userId);
-            if (user){
-                await UserManager.fillUserWithData(user);
-
-                // check if user has a subscription and update the number of wallets
-                const tier = user.subscription?.tier;
-                const maxNumberOfWallets = this.getMaxNumberOfWallets(tier);
-                const wallets = await Wallet.find({ userId });
-                if (wallets.length > maxNumberOfWallets){
-                    const walletsToPause = wallets.slice(maxNumberOfWallets);
-                    for (const wallet of walletsToPause){
-                        await WalletManager.pauseWallet(wallet);
-                    }
-                }
-                else {
-                    for (const wallet of wallets) {
-                        await WalletManager.activateWallet(wallet);
-                    }
-                }
-            }
-            else {
-                MixpanelManager.trackError(userId, { text: 'Cannot find user' });
-            }
-
-            this.sendSystemNotification(user || undefined, subs, existingSubs);
+            this.sendSystemNotification(user, subs, existingSubs);
         }
         catch (error){
             LogManager.error('SubscriptionManager.updateUserSubscription', 'userId:', userId, 'error:', error);
+        }
+    }
+
+    static async updateUserSubscriptionStatus(userId: string): Promise<IUser | undefined> {
+        const user = await User.findById(userId);
+        if (user){
+            await UserManager.fillUserWithData(user);
+
+            // check if user has a subscription and update the number of wallets
+            const tier = user.subscription?.tier;
+            const maxNumberOfWallets = this.getMaxNumberOfWallets(tier);
+            const wallets = await Wallet.find({ userId });
+            if (wallets.length > maxNumberOfWallets){
+                const walletsToPause = wallets.slice(maxNumberOfWallets);
+                for (const wallet of walletsToPause){
+                    await WalletManager.pauseWallet(wallet);
+                }
+            }
+            else {
+                for (const wallet of wallets) {
+                    await WalletManager.activateWallet(wallet);
+                }
+            }
+
+            return user;
+        }
+        else {
+            MixpanelManager.trackError(userId, { text: 'Cannot find user' });
         }
     }
 

@@ -14,6 +14,7 @@ import { GiftCardClaim } from "../../entities/giftCards/GiftCardClaim";
 import { MixpanelManager } from "../../managers/MixpanelManager";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
 import { UserRefClaim } from "../../entities/users/UserRefClaim";
+import { GiftCardsManager } from "../../managers/GiftCardsManager";
 
 const router = express.Router();
 
@@ -148,6 +149,9 @@ router.post(
         await user.save();
 
         MixpanelManager.track('GiftCardClaim', userId, { code, tier, days }, ipAddress);
+
+        await SubscriptionManager.updateUserSubscriptionStatus(userId);
+        GiftCardsManager.sendSystemNotification(user, code);
 
 		const response = {
             success: true,
