@@ -1,4 +1,3 @@
-import * as grpc from "@triton-one/yellowstone-grpc/dist/types/grpc/solana-storage";
 import base58 from "bs58";
 import * as web3 from '@solana/web3.js';
 import { SolanaManager } from "../SolanaManager";
@@ -12,6 +11,8 @@ import { LogManager } from "../../../managers/LogManager";
 export class TxParser {
 
     static async parseGeyserTransactionWithMeta(geyserData: any, shouldFetchLookupTable = true): Promise<web3.ParsedTransactionWithMeta | undefined> {
+        return undefined;
+        /*
         const confirmedTx = grpc.ConfirmedTransaction.fromJSON(geyserData.transaction.transaction);
         LogManager.log('confirmedTx', confirmedTx);
         const geyserTxData = geyserData.transaction;
@@ -181,60 +182,61 @@ export class TxParser {
         };
 
         return parsedTransactionWithMeta;
+        */
     }
 
-    static parseYellowstoneGrpcCompiledInstructions(compiledInstructions: grpc.CompiledInstruction[] | undefined, accountKeys: web3.ParsedMessageAccount[], signature?: string): Ix[] {
-        if (!compiledInstructions) { return []; }
+    // static parseYellowstoneGrpcCompiledInstructions(compiledInstructions: grpc.CompiledInstruction[] | undefined, accountKeys: web3.ParsedMessageAccount[], signature?: string): Ix[] {
+    //     if (!compiledInstructions) { return []; }
 
-        const instructions: Ix[] = [];
+    //     const instructions: Ix[] = [];
 
-        for (const instruction of compiledInstructions){
-            const ixProgramId = (accountKeys.length > instruction.programIdIndex) ? accountKeys[instruction.programIdIndex].pubkey : undefined;
-            const ixAccounts: web3.ParsedMessageAccount[] = [];
-            for (const accountIndex of instruction.accounts) {
-                const accountKey = (accountKeys.length > accountIndex) ? accountKeys[accountIndex] : undefined;
-                if (accountKey){
-                    ixAccounts.push(accountKey);
-                }
-                else {
-                    LogManager.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
-                }
-            }
+    //     for (const instruction of compiledInstructions){
+    //         const ixProgramId = (accountKeys.length > instruction.programIdIndex) ? accountKeys[instruction.programIdIndex].pubkey : undefined;
+    //         const ixAccounts: web3.ParsedMessageAccount[] = [];
+    //         for (const accountIndex of instruction.accounts) {
+    //             const accountKey = (accountKeys.length > accountIndex) ? accountKeys[accountIndex] : undefined;
+    //             if (accountKey){
+    //                 ixAccounts.push(accountKey);
+    //             }
+    //             else {
+    //                 LogManager.error('!error pubkey', 'signature:', signature, 'accountIndex:', accountIndex, 'accountKeys:', JSON.stringify(accountKeys));
+    //             }
+    //         }
 
-            const data = Buffer.from(instruction.data);
+    //         const data = Buffer.from(instruction.data);
 
-            if (ixProgramId){
-                const transactionInstruction = new web3.TransactionInstruction({
-                    keys: ixAccounts.map((account) => {
-                        return {
-                            pubkey: account.pubkey,
-                            isWritable: account.writable,
-                            isSigner: account.signer,
-                        }
-                    }),
-                    programId: ixProgramId,
-                    data,
-                });
+    //         if (ixProgramId){
+    //             const transactionInstruction = new web3.TransactionInstruction({
+    //                 keys: ixAccounts.map((account) => {
+    //                     return {
+    //                         pubkey: account.pubkey,
+    //                         isWritable: account.writable,
+    //                         isSigner: account.signer,
+    //                     }
+    //                 }),
+    //                 programId: ixProgramId,
+    //                 data,
+    //             });
 
-                let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction, signature);
+    //             let ix: web3.PartiallyDecodedInstruction | web3.ParsedInstruction | undefined = this.decodeSystemInstruction(transactionInstruction, signature);
                 
-                if (!ix) {
-                    ix = {
-                        programId: ixProgramId,
-                        accounts: ixAccounts.map((account) => account.pubkey),
-                        data: base58.encode(data),
-                    }
-                }
+    //             if (!ix) {
+    //                 ix = {
+    //                     programId: ixProgramId,
+    //                     accounts: ixAccounts.map((account) => account.pubkey),
+    //                     data: base58.encode(data),
+    //                 }
+    //             }
 
-                instructions.push(ix);        
-            }
-            else {
-                LogManager.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
-            }
-        }
+    //             instructions.push(ix);        
+    //         }
+    //         else {
+    //             LogManager.error('!error programId', 'signature:', signature, 'programIdIndex:', instruction.programIdIndex, 'accountKeys:', JSON.stringify(accountKeys));
+    //         }
+    //     }
 
-        return instructions;
-    }
+    //     return instructions;
+    // }
 
     static isAccountSigner(geyserMessage: any, accountIndex: number) {
         return accountIndex < geyserMessage.header.numRequiredSignatures;
