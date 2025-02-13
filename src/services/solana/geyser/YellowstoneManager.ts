@@ -171,7 +171,6 @@ export class YellowstoneManager {
             const jsonParsedAny: any = jsonParsed;
             // jsonParsedAny.slot = +jsonParsed.slot.toString();
             // jsonParsedAny.blockTime = jsonParsed.blockTime;
-            console.log('jsonParsed.blockTime:', jsonParsed.blockTime);
 
             // check if this transaction is already processed by this server
             const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);

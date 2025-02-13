@@ -27,9 +27,9 @@ router.post(
         try {
             console.log('received-tx', 'signature:', signature, 'data:', data);
 
-            const geyserData = YellowstoneManager.jsonToGeyserTx(data);
+            const jsonParsed = JSON.parse(data);
             
-            const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(geyserData);
+            const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(jsonParsed);
             if (parsedTransactionWithMeta){
                 WalletManager.processWalletTransaction(parsedTransactionWithMeta, geyserId);
             }
