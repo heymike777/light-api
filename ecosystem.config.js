@@ -15,7 +15,7 @@ module.exports = {
             name   : "light-cron",
             script : "build/index.js",
             node_args: "--max-old-space-size=4096",
-            min_uptime: "10s",
+            min_uptime: "5s",
             env: {
                 IS_CRON_PROCESS: "true",
                 SERVER_NAME: "light-cron",
@@ -26,6 +26,7 @@ module.exports = {
             name   : "light-telegram",
             script : "build/index.js",
             node_args: "--max-old-space-size=4096",
+            min_uptime: "5s",
             env: {
                 IS_TELEGRAM_PROCESS: "true",
                 SERVER_NAME: "light-telegram",
@@ -36,12 +37,13 @@ module.exports = {
             name   : "light-main",
             script : "build/index.js",
             node_args: "--max-old-space-size=4096",
+            min_uptime: "5s",
             exec_mode: "cluster",
             instances: 2,
             env: {
                 IS_MAIN_PROCESS: "true",
                 SERVER_NAME: "light-main",
-                PORT: 3333,
+                PORT: 3335,
             },
         },
     ]

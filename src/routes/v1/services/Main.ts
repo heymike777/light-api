@@ -25,7 +25,6 @@ router.post(
         let success = false;
 
         try {
-            // const geyserData = JSON.parse(data);
             const geyserData = YellowstoneManager.jsonToGeyserTx(data);
             
             const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(geyserData);
