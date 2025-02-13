@@ -121,7 +121,7 @@ export class TxParser {
                 return this.jsonParsedInstructionToParsedInstruction(ix);      
             }),
             recentBlockhash: jsonParsed.transaction.message.recentBlockhash,
-            addressTableLookups: jsonParsed.transaction.message.addressTableLookups.map((lookup) => {
+            addressTableLookups: jsonParsed.transaction.message.addressTableLookups?.map((lookup) => {
                 return {
                     accountKey: new web3.PublicKey(lookup.accountKey),
                     writableIndexes: lookup.writableIndexes,
