@@ -1,6 +1,7 @@
 export interface Announcement {
     image: string;
     url: string; 
+    open: 'webview' | 'browser';
 }
 
 export class AnnouncementsManager {
@@ -11,7 +12,8 @@ export class AnnouncementsManager {
         const announcements: Announcement[] = [
             // {
             //     image: 'https://light.dangervalley.com/news/join_community.png',
-            //     url: 'https://t.me/LightAppLounge',
+                // url: 'https://t.me/LightAppLounge',
+                // open: 'browser',
             // },
         ];
 
@@ -19,6 +21,7 @@ export class AnnouncementsManager {
             announcements.push({
                 image: 'https://light.dangervalley.com/news/maintenance.png',
                 url: 'https://light.app/',
+                open: 'webview',
             });
         }
 
