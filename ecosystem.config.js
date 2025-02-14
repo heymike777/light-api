@@ -39,11 +39,11 @@ module.exports = {
             node_args: "--max-old-space-size=4096",
             min_uptime: "5s",
             exec_mode: "cluster",
-            instances: 2,
+            instances: 10,
             env: {
                 IS_MAIN_PROCESS: "true",
                 SERVER_NAME: "light-main",
-                PORT: 3335,
+                PORT: 3333,
             },
         },
     ]

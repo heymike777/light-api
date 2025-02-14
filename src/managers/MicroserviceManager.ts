@@ -30,7 +30,7 @@ export class MicroserviceManager {
     static async receivedTx(geyserId: string, signature: string, txData: string){
         try {
             const { data } = await axios({
-                url: `http://127.0.0.1:3335/api/v1/service/main/received-tx`,
+                url: `http://127.0.0.1:3333/api/v1/service/main/received-tx`,
                 method: 'post',
                 headers: {
                     'Content-Type': 'application/json',
