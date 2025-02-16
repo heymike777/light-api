@@ -168,7 +168,7 @@ export const initSolscanLabels = async () => {
     console.log('initSolscanLabels');
 
     try {
-        const jsonString = fs.readFileSync('files/solscan-labels.json', 'utf8');
+        const jsonString = fs.readFileSync('src/files/solscan-labels.json', 'utf8');
         const labels: {
             program: {[key: string]: string},
             address: {[key: string]: string},
