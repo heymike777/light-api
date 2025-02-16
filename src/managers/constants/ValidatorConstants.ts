@@ -1,3 +1,6 @@
+import fs from 'fs';
+import { LogManager } from '../LogManager';
+
 export const kValidators: {[key: string]: {name: string}} = {
     'he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk': {name: `Helius`},
     'CvSb7wdQAFpHuSpTYTJnX5SYH4hCfQ9VuGnqrKaKwycB': {name: `Galaxy`},
@@ -158,4 +161,32 @@ export const kKnownAddresses: {[key: string]: {name: string}} = {
     'DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL': {name: `Jitotip 7`},
     '3AVi9Tg9Uo68tJfuvoKvqKNWKkC5wPdSSdeBnizKZ6jT': {name: `Jitotip 8`},
     '43DbAvKxhXh1oSxkJSqGosNw3HpBnmsWiak6tB5wpecN': {name: `Backpack Exchange`},
+}
+
+export const kSolscanAddresses: {[key: string]: {name: string}} = {};
+export const initSolscanLabels = async () => {
+    console.log('initSolscanLabels');
+
+    try {
+        const jsonString = fs.readFileSync('files/solscan-labels.json', 'utf8');
+        const labels: {
+            program: {[key: string]: string},
+            address: {[key: string]: string},
+            hacker: {[key: string]: string},
+            trust_token: {[key: string]: string},
+        } = JSON.parse(jsonString);
+
+        const lists = [labels.program, labels.address, labels.hacker];
+        for (const list of lists) {
+            for (const address in list) {
+                if (Object.prototype.hasOwnProperty.call(list, address)) {
+                    const title = list[address];
+                    kSolscanAddresses[address] = {name: title};
+                }
+            }                
+        }
+    }
+    catch (error) {
+        LogManager.error('initSolscanLabels', error);
+    }
 }

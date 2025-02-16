@@ -32,6 +32,7 @@ import { EnvManager } from './managers/EnvManager';
 import { geyserServiceRouter } from './routes/v1/services/Geyser';
 import { mainServiceRouter } from './routes/v1/services/Main';
 import { telegramServiceRouter } from './routes/v1/services/Telegram';
+import { initSolscanLabels } from './managers/constants/ValidatorConstants';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -102,6 +103,7 @@ const onExpressStarted = async () => {
     }
     if (EnvManager.isMainProcess) {
         await TokenManager.fetchSolPriceFromRedis();
+        initSolscanLabels();
     }
 
     await MixpanelManager.init();

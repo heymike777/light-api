@@ -1,6 +1,6 @@
 import { IToken, ITokenModel } from "../../entities/tokens/Token";
 import { IWallet } from "../../entities/Wallet";
-import { kKnownAddresses, kValidators } from "../../managers/constants/ValidatorConstants";
+import { kKnownAddresses, kSolscanAddresses, kValidators } from "../../managers/constants/ValidatorConstants";
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 import { AppPlatform } from "../../models/types";
@@ -131,6 +131,9 @@ export class Helpers {
                 let title = undefined;
                 if (wallet?.title){
                     title = wallet?.title;
+                }
+                else if (kSolscanAddresses[address]){
+                    title = kSolscanAddresses[address].name;
                 }
                 else if (kValidators[address]){
                     title = kValidators[address].name;
