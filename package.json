@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
+    "build-prod-on-server": "npm install && rimraf ./build && tsc",
     "build-prod": "npm install && rimraf ./build && npm run download-solscan-labels && tsc",
     "start-dev": "NODE_ENV=DEVELOPMENT IS_MAIN_PROCESS=true ts-node-dev src/index.ts",
     "start-dev-test": "NODE_ENV=DEVELOPMENT IS_MAIN_PROCESS=true TEST=TRUE ts-node-dev src/index.ts",
