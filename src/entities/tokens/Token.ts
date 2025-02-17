@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 import { Chain, TimeBasedValue } from '../../services/solana/types';
 import { BN } from 'bn.js';
 import { TokenManager } from '../../managers/TokenManager';
-import { kSolAddress } from '../../services/solana/Constants';
+import { kSolAddress, kUsdcAddress, kUsdtAddress } from '../../services/solana/Constants';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -113,7 +113,7 @@ TokenSchema.methods.toJSON = function () {
         mintAuthority: this.mintAuthority,
         freezeAuthority: this.freezeAuthority,
         description: this.description,
-        isTradable: this.address !== kSolAddress,
+        isTradable: this.address !== kSolAddress && this.address !== kUsdcAddress && this.address !== kUsdtAddress,
 
         price: this.price,
         volume: this.volume,

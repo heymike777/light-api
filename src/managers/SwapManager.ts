@@ -100,7 +100,15 @@ export class SwapManager {
             isSubscriptionRequired: true,
             isExternal: true,
         },
-
+        {
+            id: 'gmgn',
+            title: 'GMGN',
+            logo: 'https://light.dangervalley.com/static/gmgn.png',
+            url: 'https://t.me/GMGN_sol_bot?start=i_gSWRgmGL',
+            tokenUrl: 'https://t.me/GMGN_sol_bot?start=i_gSWRgmGL_c_{token}',
+            isSubscriptionRequired: true,
+            isExternal: true,
+        },
         // BullX / BullX NEO
     ];
 
