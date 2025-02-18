@@ -33,6 +33,7 @@ import { geyserServiceRouter } from './routes/v1/services/Geyser';
 import { mainServiceRouter } from './routes/v1/services/Main';
 import { telegramServiceRouter } from './routes/v1/services/Telegram';
 import { initSolscanLabels } from './managers/constants/ValidatorConstants';
+import { searchRouter } from './routes/v1/Search';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -64,6 +65,7 @@ if (process.env.API_ENABLED == 'true' && EnvManager.isMainProcess) {
     app.use(giftCardsRouter);
     app.use(traderProfilesRouter);
     app.use(tradeRouter);
+    app.use(searchRouter);
 }
 
 if (EnvManager.isMainProcess) {
