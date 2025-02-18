@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose';
 import { Chain, TimeBasedValue } from '../../services/solana/types';
 import { BN } from 'bn.js';
-import { TokenManager } from '../../managers/TokenManager';
+import { TokenManager, TokenTag } from '../../managers/TokenManager';
 import { kSolAddress, kUsdcAddress, kUsdtAddress } from '../../services/solana/Constants';
 
 export let Schema = mongoose.Schema;
@@ -36,6 +36,8 @@ export interface ITokenModel {
     description?: string;
 
     supply?: string;
+    tags?: { [key: string]: boolean };
+    tagsList?: TokenTag[];
 
     // properties
     price?: number;
@@ -67,6 +69,8 @@ export function tokenToTokenModel(token: IToken): ITokenModel {
         priceChange: token.priceChange,
         volume: token.volume,
         liquidity: token.liquidity,
+        tags: token.tags,
+        tagsList: TokenManager.tokenTagsToArray(token.tags),
     };
 }
 
@@ -88,6 +92,7 @@ export const TokenSchema = new mongoose.Schema<IToken>({
     description: { type: String },
 
     supply: { type: mongoose.Schema.Types.Mixed },
+    tags: { type: mongoose.Schema.Types.Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -122,6 +127,8 @@ TokenSchema.methods.toJSON = function () {
 
         nft: this.nft,
 
+        tags: this.tags,
+        tagsList: TokenManager.tokenTagsToArray(this.tags),
     };
 };
 

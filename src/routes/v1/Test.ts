@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { FirebaseManager } from "../../managers/FirebaseManager";
 import { LogManager } from "../../managers/LogManager";
+import { TokenManager } from "../../managers/TokenManager";
 
 const router = express.Router();
 
@@ -37,6 +38,16 @@ router.post(
         const tmp = await FirebaseManager.sendPushToUser(userId, title, message, undefined, data);
 
         res.status(200).send({ success: true });
+    }
+);
+
+router.get(
+    '/api/v1/test/token/:mint',
+    async (req: Request, res: Response) => {
+        const mint = req.params.mint;
+
+        const token = await TokenManager.getToken(mint);
+        res.status(200).send({ token });
     }
 );
 

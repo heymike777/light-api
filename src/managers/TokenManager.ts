@@ -15,9 +15,23 @@ import * as web3 from "@solana/web3.js";
 import { LogManager } from "./LogManager";
 import { RedisManager } from "./db/RedisManager";
 
+export interface TokenTag {
+    id: string;
+    title: string;
+    color: string;
+}
+
 export class TokenManager {
 
     static solPrice: number = 0;
+    static tokenTags: TokenTag[] = [
+        { id: 'verified', title: 'Verified', color: '#28A745' },
+        { id: 'stable', title: 'Stable', color: '#2775CA' },
+        { id: 'new', title: 'New', color: '#138808' },
+        { id: 'trending', title: 'Trending', color: '#7C0902' },
+        { id: 'pumpfun', title: 'pump.fun', color: '#86EFAC' },
+        { id: 'virtuals', title: 'Virtuals', color: '#57A0A4' },
+    ];
 
     static excludedTokens: string[] = [
         kSolAddress,
@@ -335,6 +349,37 @@ export class TokenManager {
         const price = await RedisManager.getToken(kSolAddress);
         if (price && price.price!=undefined){
             TokenManager.solPrice = price.price;
+        }
+    }
+
+    static tokenTagsToArray(tagsMap?: { [key: string]: boolean }): TokenTag[] {
+        if (!tagsMap){
+            return [];
+        }
+        return this.tokenTags.filter(tag => tagsMap[tag.id]);
+    }
+
+    static async setTokenTags(mint: string, tagsIds: string[], deleteOtherTags = false) {
+        // set in mongo
+        const token = await Token.findOne({ address: mint });
+        if (token){
+            const tags = deleteOtherTags ? {} : token.tags || {};
+            for (const tagId of tagsIds){
+                tags[tagId] = true;
+            }
+            token.tags = tags;
+            await token.save();
+        }
+
+        // set in redis
+        const tokenFromRedis = await RedisManager.getToken(mint);
+        if (tokenFromRedis){
+            const tags = deleteOtherTags ? {} : tokenFromRedis.tags || {};
+            for (const tagId of tagsIds){
+                tags[tagId] = true;
+            }
+            tokenFromRedis.tags = tags;
+            await RedisManager.saveToken(tokenFromRedis);
         }
     }
     

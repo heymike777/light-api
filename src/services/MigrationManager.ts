@@ -11,7 +11,7 @@ import { BN } from "bn.js";
 import { SolanaManager } from "./solana/SolanaManager";
 import { newConnection } from "./solana/lib/solana";
 import { TokenBalance } from "@solana/web3.js";
-import { kSolAddress } from "./solana/Constants";
+import { kSolAddress, kUsdcAddress, kUsdtAddress } from "./solana/Constants";
 import { WalletManager } from "../managers/WalletManager";
 import { JupiterManager } from "../managers/JupiterManager";
 import { TokenManager } from "../managers/TokenManager";
@@ -68,6 +68,14 @@ export class MigrationManager {
             exit(0);
         }
 
+        // await TokenManager.setTokenTags(this.kBonk, ['verified']);
+        // await TokenManager.setTokenTags('MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u', ['verified']);
+        // await TokenManager.setTokenTags(kUsdcAddress, ['stable']);
+        // await TokenManager.setTokenTags(kUsdtAddress, ['stable']);
+
+        // let token = await RedisManager.getToken(kBonk);
+
+
         // const tx = await UserTransaction.findOne({ userId: this.kMikeUserId }).sort({ createdAt: -1 }).skip(3);
         // console.log('!mike', 'tx', tx);
 
@@ -84,6 +92,8 @@ export class MigrationManager {
         // await TokenManager.fetchDigitalAsset(this.kBonk);
 
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
+
+        // await this.processTx('34iFHNe89qhWKGU5cCpx57Jfu995QyTM1y9v3QW9oUKisisdqLeDRLb6dEbbdCaKKJ7P71t3ojPXaDvFabRCLePv'); // jupiter
 
         // await this.processTx('4RNU9HNaYdPwNCV3cuK1d5oh3zRctwqTphk3kp2m8tpPxWGR1VFaMt41L5EcGDUHbtXHDYVbUgJsQyECCHhBui13'); // pumpfun buy
         // await this.processTx('xxBf1LjTesNATcbuebgcPqgRKBbr6CsZmudBQpwLyvkmpC43XsR8JGymG9H5c7QQtLqj8GawEcGVpUVMCuSMbZK'); // pumpfun sell
