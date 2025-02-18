@@ -21,7 +21,7 @@
     "@bonfida/spl-name-service": "^3.0.3",
     "@coral-xyz/anchor": "^0.29.0",
     "@grammyjs/auto-retry": "^2.0.2",
-    "@jup-ag/api": "^6.0.32",
+    "@jup-ag/api": "^6.0.39",
     "@metaplex-foundation/digital-asset-standard-api": "^1.0.4",
     "@metaplex-foundation/mpl-bubblegum": "^4.2.1",
     "@metaplex-foundation/mpl-token-metadata": "^3.2.1",

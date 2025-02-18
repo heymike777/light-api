@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Instruction, QuoteGetSwapModeEnum, QuoteResponse, ResponseError, createJupiterApiClient } from '@jup-ag/api';
+import { ConfigurationParameters, Instruction, QuoteGetSwapModeEnum, QuoteResponse, ResponseError, createJupiterApiClient } from '@jup-ag/api';
 import * as web3 from '@solana/web3.js';
 import { LogManager } from "./LogManager";
 
@@ -19,8 +19,8 @@ export interface JupSwapInstructionsInclude {
 
 export class JupiterManager {
 
-    static config = {
-        basePath: process.env.JUPITER_URL!,
+    static config: ConfigurationParameters = {
+        apiKey: process.env.JUPITER_API_KEY || undefined,
     };
     static quoteApi = createJupiterApiClient(this.config);
 
