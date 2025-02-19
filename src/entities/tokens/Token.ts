@@ -99,6 +99,7 @@ export const TokenSchema = new mongoose.Schema<IToken>({
 });
 
 TokenSchema.index({ chain: 1, address: 1 }, { unique: true });
+TokenSchema.index({ symbol: 1 }, { unique: true });
 
 TokenSchema.pre('save', function (next) {
     this.updatedAt = new Date();

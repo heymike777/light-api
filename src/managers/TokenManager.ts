@@ -173,6 +173,33 @@ export class TokenManager {
         return tokenToTokenModel(token);
     }
 
+    static async getTokensByPair(pairAddress: string): Promise<ITokenModel[]> {
+        const tokens: ITokenModel[] = [];
+
+        const pair = await TokenPair.findOne({ pairAddress });
+        if (pair){
+            if (pair.token1 != kSolAddress && pair.token1 != kUsdcAddress && pair.token1 != kUsdtAddress){
+                const token = await this.getToken(pair.token1);
+                if (token){
+                    tokens.push(token);
+                }
+            }
+
+            if (pair.token2 != kSolAddress && pair.token2 != kUsdcAddress && pair.token2 != kUsdtAddress){
+                const token = await this.getToken(pair.token2);
+                if (token){
+                    tokens.push(token);
+                }
+            }
+        }
+
+        if (tokens.length === 0){
+            //TODO: fetch pair onchain
+        }
+
+        return tokens;
+    }
+
     static async getUsdLiquidityForToken(token: IToken): Promise<number> {
         if (!token.price || token.price==0){
             return 0;

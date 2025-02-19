@@ -12,7 +12,9 @@ import { SolanaManager } from "../../services/solana/SolanaManager";
 import { newConnection } from "../../services/solana/lib/solana";
 import { kSolAddress } from "../../services/solana/Constants";
 import { BN } from "bn.js";
-import { IToken } from "../../entities/tokens/Token";
+import { IToken, ITokenModel, Token, tokenToTokenModel } from "../../entities/tokens/Token";
+import { RedisManager } from "../../managers/db/RedisManager";
+import { TokenManager } from "../../managers/TokenManager";
 
 const router = express.Router();
 
@@ -70,21 +72,30 @@ router.post(
             }
         }
 
-        const tokens: IToken[] = [];
+        const tokens: ITokenModel[] = [];
 
         if (mint){
-            //TODO: find by mint
+            const token = await TokenManager.getToken(mint);
+            if (token){
+                tokens.push(token);
+            }
         }
         
         if (pairId){
-            //TODO: find by pairId
+            const pairTokens = await TokenManager.getTokensByPair(pairId);
+            if (pairTokens && pairTokens.length > 0){
+                tokens.push(...pairTokens);
+            }
         }
         
         if (tokens.length === 0){
-            //TODO: find by token symbol == query
+            const tmpTokens = await Token.find({ symbol: query });
+            if (tmpTokens && tmpTokens.length > 0){
+                tokens.push(...(tmpTokens.map(token => tokenToTokenModel(token))));
+            }
         }
 
-        res.status(200).send({ query, mint, pairId, tokens });
+        res.status(200).send({ query, tokens });
     }
 );
 
