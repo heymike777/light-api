@@ -89,7 +89,7 @@ router.post(
         }
         
         if (tokens.length === 0){
-            const tmpTokens = await Token.find({ symbol: query });
+            const tmpTokens = await Token.find({ symbol: { $regex : new RegExp(query, "i") } });
             if (tmpTokens && tmpTokens.length > 0){
                 tokens.push(...(tmpTokens.map(token => tokenToTokenModel(token))));
             }
