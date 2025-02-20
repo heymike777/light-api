@@ -79,8 +79,6 @@ export class MigrationManager {
         // const tx = await UserTransaction.findOne({ userId: this.kMikeUserId }).sort({ createdAt: -1 }).skip(3);
         // console.log('!mike', 'tx', tx);
 
-        // await SolanaManager.getAssetsByOwner('9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL')
-
         // const swap = await Swap.findOne({ });
         // if (swap){
         //     LogManager.log('MigrationManager', 'migrate', 'swap', swap);

@@ -34,7 +34,7 @@ export type SendThrough = {
 }
 
 export interface Asset {
-    mint: string;
+    address: string;
     amount: number;
     uiAmount: number;
     decimals: number;
@@ -634,7 +634,7 @@ export class SolanaManager {
             const totalPrice = heliusAsset.token_info?.price_info?.total_price || 0;
 
             const asset: Asset = {
-                mint: heliusAsset.id,
+                address: heliusAsset.id,
                 amount: amount,
                 uiAmount: uiAmount,
                 decimals: decimals,

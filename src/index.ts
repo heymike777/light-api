@@ -34,6 +34,7 @@ import { mainServiceRouter } from './routes/v1/services/Main';
 import { telegramServiceRouter } from './routes/v1/services/Telegram';
 import { initSolscanLabels } from './managers/constants/ValidatorConstants';
 import { searchRouter } from './routes/v1/Search';
+import { portfolioRouter } from './routes/v1/Portfolio';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -66,6 +67,7 @@ if (process.env.API_ENABLED == 'true' && EnvManager.isMainProcess) {
     app.use(traderProfilesRouter);
     app.use(tradeRouter);
     app.use(searchRouter);
+    app.use(portfolioRouter);
 }
 
 if (EnvManager.isMainProcess) {

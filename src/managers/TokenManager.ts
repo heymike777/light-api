@@ -173,6 +173,11 @@ export class TokenManager {
         return tokenToTokenModel(token);
     }
 
+    static async getTokens(mints: string[]): Promise<ITokenModel[]> {
+        const tokens = await RedisManager.getTokens(mints);
+        return tokens.map(token => tokenToTokenModel(token));
+    }
+
     static async getTokensByPair(pairAddress: string): Promise<ITokenModel[]> {
         const tokens: ITokenModel[] = [];
 

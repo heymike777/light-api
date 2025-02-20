@@ -246,6 +246,8 @@ export class RedisManager {
     }
 
     static async getTokens(mints: string[]): Promise<IToken[]> {
+        console.log('RedisManager', 'getTokens', mints);
+
         const redis = RedisManager.getInstance();
         if (!redis) return [];
         if (!redis.client) return [];
@@ -253,7 +255,9 @@ export class RedisManager {
 
         try {
             const uniqueMints = Array.from(new Set(mints));
-            const keys = mints.map(mint => `token:sol:${uniqueMints}`)
+            const keys = mints.map(mint => `token:sol:${mint}`)
+            console.log('RedisManager', 'keys', keys);
+
             const tokens = await redis.client.mGet(keys);
             if (tokens) {
                 const results: IToken[] = [];
