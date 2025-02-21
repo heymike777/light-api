@@ -13,6 +13,7 @@ import { Keypair } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
 import { Interface } from "helius-sdk";
+import { kSolAddress } from "./Constants";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -605,7 +606,7 @@ export class SolanaManager {
     };
 
     static async getAssetsByOwner(walletAddress: string): Promise<Asset[]> {
-        const heliusAssets = await HeliusManager.getAssetsByOwner(walletAddress, {
+        const heliusData = await HeliusManager.getAssetsByOwner(walletAddress, {
             showNativeBalance: true,
             showFungible: true,
             showSystemMetadata: true,
@@ -616,8 +617,28 @@ export class SolanaManager {
             showUnverifiedCollections: false,
             showRawData: false,
         });
+        const heliusAssets = heliusData.items;
+        const nativeBalance = heliusData.nativeBalance;
 
         const assets: Asset[] = [];
+
+        if (nativeBalance){
+            const asset: Asset = {
+                address: kSolAddress,
+                amount: nativeBalance.lamports,
+                uiAmount: nativeBalance.lamports / web3.LAMPORTS_PER_SOL,
+                decimals: 9,
+                symbol: 'SOL',
+                name: 'Solana',
+                logo: 'https://light.dangervalley.com/static/sol.png',
+                priceInfo: { 
+                    pricePerToken: nativeBalance.price_per_sol, 
+                    totalPrice: nativeBalance.total_price,
+                },
+            };
+            assets.push(asset);
+        }
+
         for (const heliusAsset of heliusAssets) {
             if (heliusAsset.interface != Interface.FUNGIBLE_TOKEN && heliusAsset.interface != Interface.FUNGIBLE_ASSET) { continue; }
             if (!heliusAsset.token_info || !heliusAsset.token_info?.symbol) { continue; }
@@ -651,6 +672,12 @@ export class SolanaManager {
             LogManager.log('getAssetsByOwner', 'heliusAsset:', JSON.stringify(heliusAsset));
 
             assets.push(asset);
+        }
+
+        for (const asset of assets) {
+            if (asset.priceInfo){
+                asset.priceInfo.totalPrice = Math.round(100 * asset.priceInfo.totalPrice) / 100;
+            }
         }
 
         // sort by priceInfo.totalPrice

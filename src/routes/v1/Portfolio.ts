@@ -52,6 +52,15 @@ router.get(
 
         let traderProfile = traderProfileId ? traderProfiles.find(tp => tp.id == traderProfileId) : traderProfiles.find(tp => tp.default) || traderProfiles[0];
 
+        const values: {
+            walletAddress?: string,
+            totalPrice: number,
+            pnl?: number,
+        } = {
+            walletAddress: traderProfile?.wallet?.publicKey, 
+            totalPrice: 0, 
+        };
+
         const assets: PortfolioAsset[] = [];
         if (traderProfile){
             let walletAddress = traderProfile.wallet?.publicKey;
@@ -65,6 +74,7 @@ router.get(
 
             const mints = tmpAssets.map(a => a.address);
             const tokens = await TokenManager.getTokens(mints);
+            let totalPrice = 0;
 
             for (const tmpAsset of tmpAssets) {
                 const token = tokens.find(t => t.address == tmpAsset.address);
@@ -74,17 +84,21 @@ router.get(
                 pAsset.isVerified = token?.isVerified || false;
                 pAsset.tags = token?.tags || undefined;
                 pAsset.tagsList = token?.tagsList || [];
-                pAsset.pnl = 0;
+                pAsset.pnl = Helpers.getRandomInt(1,2) == 1 ? 1234 : -4321;
                 assets.push(pAsset);
+
+                totalPrice += pAsset.priceInfo?.totalPrice || 0;
             }
 
-            //TODO: add SOL balance
-            //TODO: calc total USD value of all tokens in this wallet
+            values.totalPrice = Math.round(totalPrice * 100) / 100;
+
             //TODO: calc PnL for this wallet (existing and OLD, which I've already sold)
+            values.pnl = 1000; 
+
             //TODO: calc PnL for each token in this wallet
         }
 
-        res.status(200).send({ traderProfiles, traderProfile, assets });
+        res.status(200).send({ traderProfiles, traderProfile, values, assets });
     }
 );
 

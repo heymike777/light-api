@@ -46,7 +46,7 @@
     "firebase-admin": "^13.0.2",
     "fs": "0.0.1-security",
     "grammy": "^1.30.0",
-    "helius-sdk": "^1.4.0",
+    "helius-sdk": "^1.4.2",
     "jsonwebtoken": "^8.5.1",
     "mixpanel": "^0.18.0",
     "mongoose": "^8.9.3",

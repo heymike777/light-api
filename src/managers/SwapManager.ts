@@ -248,6 +248,8 @@ export class SwapManager {
 
         const now = new Date();
 
+        //TODO: set into SWAP how many SOL & Tokens I spent / reveived. I need it for P&L calculations
+
         swap.status.type = StatusType.COMPLETED;
         if (swap.status.tx && swap.status.tx.signature == signature) {
             swap.status.tx.confirmedAt = new Date();

@@ -66,9 +66,13 @@ export class HeliusManager {
         LogManager.log(process.env.SERVER_NAME, 'revokeCollectionAuthority res', res);
     }
 
-    static async getAssetsByOwner(walletAddress: string, options: DAS.DisplayOptions, page = 1): Promise<DAS.GetAssetResponse[]> {
+    static async getAssetsByOwner(walletAddress: string, options: DAS.DisplayOptions, page = 1): Promise<{items: DAS.GetAssetResponse[], nativeBalance?: DAS.NativeBalanceInfo}> {
         try{
             this.initHelius();
+
+            if (page > 1){
+                options.showNativeBalance = false;
+            }
 
             const limit = 1000;
             const response = await this.helius.rpc.getAssetsByOwner({
@@ -78,18 +82,22 @@ export class HeliusManager {
                 displayOptions: options,
             });
             const items = response.items;
+            // console.log('HELIUS RESPONSE:', JSON.stringify(response));
+            console.log('HELIUS RESPONSE items.length:', items.length);
+            console.log('HELIUS RESPONSE nativeBalance:', response.nativeBalance);
+
             LogManager.log('grand_total:', response.grand_total);
 
             if (items.length == limit && page < 3){
-                const nextItems = await this.getAssetsByOwner(walletAddress, options, page+1);
-                return items.concat(nextItems);
+                const next = await this.getAssetsByOwner(walletAddress, options, page+1);
+                items.push(...next.items);
             }
 
-            return items;
+            return { items, nativeBalance: response.nativeBalance };
         }
         catch (e){
             LogManager.error('getAssetsByOwner', e);
-            return [];
+            return { items: [] };
         }
     }
 
