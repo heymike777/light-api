@@ -28,6 +28,7 @@ import { YellowstoneManager } from "../../services/solana/geyser/YellowstoneMana
 import { Wallet } from "../../entities/Wallet";
 import fs from "fs";
 import { PortfolioAsset } from "../../models/types";
+import { kSolAddress } from "../../services/solana/Constants";
 
 const router = express.Router();
 
@@ -69,7 +70,7 @@ router.get(
                 throw new BadRequestError('Wallet not found');
             }
 
-            walletAddress = '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL';
+            walletAddress = '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL';//TODO: remove test wallet
             const tmpAssets = await SolanaManager.getAssetsByOwner(walletAddress);
 
             const mints = tmpAssets.map(a => a.address);
@@ -98,7 +99,23 @@ router.get(
             //TODO: calc PnL for each token in this wallet
         }
 
-        res.status(200).send({ traderProfiles, traderProfile, values, assets });
+        let warning: {
+            message: string,
+            backgroundColor: string,
+            textColor: string,
+        } | undefined = undefined;
+
+        const solAsset = assets.find(a => a.address == kSolAddress && a.symbol == 'SOL');
+
+        if (!solAsset || solAsset.uiAmount < 0.01){
+            warning = {
+                message: 'Send some SOL to your trading wallet to ape into memes and cover gas fee.',
+                backgroundColor: '#DC3545',
+                textColor: '#FFFFFF',
+            }
+        }
+
+        res.status(200).send({ warning, traderProfiles, traderProfile, values, assets });
     }
 );
 
