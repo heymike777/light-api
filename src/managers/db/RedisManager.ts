@@ -145,6 +145,24 @@ export class RedisManager {
         return [];    
     }
 
+    static async cleanUserTransactions(userId: string) {
+        try {
+            const redis = RedisManager.getInstance()
+            if (!redis) throw new Error('Redis is not exist');
+            if (!redis.client) throw new Error('Redis client is not exist');
+            if (!redis.client.isReady) throw new Error('Redis client is not ready');
+
+            const signaturesKey = `user:${userId}:signatures`;
+            const transactionsKey = `user:${userId}:transactions`;
+        
+            // remove signaturesKey and transactionsKey from redis
+            await redis.client.del(signaturesKey);
+            await redis.client.del(transactionsKey);
+        } catch (err) {
+            console.error('Error cleaning user transactions:', err);
+        }
+    }
+
     static async migrateAllUsersTransactionsToMongo() {
         const redis = RedisManager.getInstance();
         if (!redis) return [];

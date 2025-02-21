@@ -23,6 +23,8 @@ export enum kProgram {
     BONK_REWARDS = 'STAKEkKzbdeKkqzKpLkNQD3SUuLgshDKCD7U8duxAbB',
     PUMPFUN = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P',
 
+    JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
+
     //METEORA DDLM
 }
 
@@ -231,6 +233,15 @@ export const kPrograms: { [key: string]: {
         ],
         skip: false,
     }, 
+    [kProgram.JUP_DAO]: {
+        name: 'JUP DAO',
+        knownInstructions: [
+            { 'withdraw': {title: 'WITHDRAW', priority: 1} },
+            { 'increaseLockedAmount': {title: 'STAKE', priority: 1} },
+            { 'toggleMaxLock': {title: 'UNSTAKE', priority: 2} },
+        ],
+        skip: false,
+    },
 }
 
 export const kSkipProgramIds = Object.keys(kPrograms).filter((key) => kPrograms[key].skip).map((key) => key);

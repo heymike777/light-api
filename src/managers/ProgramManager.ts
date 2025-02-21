@@ -12,7 +12,7 @@ import { MetaplexManager } from "./MetaplexManager";
 import { WalletManager } from "./WalletManager";
 import { getTokenMetadata } from "@solana/spl-token";
 import fs from "fs";
-import { kSolAddress } from "../services/solana/Constants";
+import { kJupAddress, kSolAddress } from "../services/solana/Constants";
 import { IWallet } from "../entities/Wallet";
 import BN from "bn.js";
 import { LogManager } from "./LogManager";
@@ -574,6 +574,54 @@ export class ProgramManager {
                         };    
                     }
 
+                }
+            }
+            else if (programId == kProgram.JUP_DAO){
+                console.log('!!!JUP_DAO', 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (['increaseLockedAmount', 'withdraw', 'toggleMaxLock'].indexOf(ixParsed.name) != -1){
+                    if (ixType == 'increaseLockedAmount'){
+                        const walletAddress = accounts?.[3]?.toBase58();
+                        if (walletAddress){
+                            const addresses = [walletAddress];
+                            const jupAmount = (ixParsed.data?.amount || 0) / (10 ** 6);
+    
+                            description = {
+                                html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> staked <b>${jupAmount} JUP</b> on JUP DAO`,
+                                addresses: addresses,
+                            };
+                        }
+                    }
+                    else if (ixType == 'toggleMaxLock'){
+                        const walletAddress = accounts?.[2]?.toBase58();
+                        if (walletAddress){
+                            const addresses = [walletAddress];
+                            const isMaxLock = ixParsed.data?.isMaxLock || true;
+
+                            if (!isMaxLock){
+                                description = {
+                                    html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> unstaked <b>JUP</b> on JUP DAO`,
+                                    addresses: addresses,
+                                };
+                            }
+                        }
+                    }
+                    else if (ixType == 'withdraw'){
+                        const walletAddress = accounts?.[2]?.toBase58();
+                        if (walletAddress){
+                            const addresses = [walletAddress];
+
+                            const jupPreBalance = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == kJupAddress && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
+                            const jupPostBalance = tx?.meta?.postTokenBalances?.find((balance) => balance.mint == kJupAddress && balance.owner == walletAddress)?.uiTokenAmount.uiAmount || 0;
+                            const jupAmount = jupPostBalance - jupPreBalance;
+    
+                            description = {
+                                html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> withdraw <b>${jupAmount} JUP</b> from JUP DAO`,
+                                addresses: addresses,
+                            };
+                        }
+                    }
+
+  
                 }
             }
         }

@@ -112,6 +112,11 @@ export class MigrationManager {
         // await this.processTx('3XSLvqS4HYhaSsTkmkakSTLCv4FmfjigGsUGzsRPRRvhDWA8ss3Tek5XTzSygjii8BKncWMX5iu2Bax56Uimreof'); // jupiter
 
 
+        // await this.processTx('42qrQrpjsoicAWmwEYGByAxTUAmoY1ZTx7Gaq15CsN7wVJUekfuEBAebmhTmU5mqEAggRHWCvBXRJyrJP7BsyW6p'); // Stake JUP
+        // await this.processTx('RPV6WyK78CHiAakSVYH3xZeqAyojHUpJRcoKKg9sJuEd1VmgG3git1SiCUkviQSSZ1UsrxW1iiW4aGT4bdKRKTu'); // Withdraw JUP from staking
+        // await this.processTx('wmwkYgyp3285tRzci9rcYpxYSAUrhSVVBUYHGAxDXDqf1CcTkvnLjfaPqNR8guG4LpCaUT8tCuaw9hWyQHbkXdH'); // Unstake JUP
+        // await this.processTx('3cPFBSS3p7VpDAn5nnXJ8UQx9wSCa8YaQTja17Mqp1KNi8oBnBCdPD253wNuo2AC7nY1hW2RXrzJparXGqqV8tGW')
+
         // const connection = newConnection();
         // for (let index = 0; index < 200; index++) {
         //     this.ddos(connection, index);
@@ -239,6 +244,7 @@ export class MigrationManager {
     static async processTx(signature: string) {
         const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
+        await RedisManager.cleanUserTransactions(userId);
         await UserTransaction.deleteOne({ signature, userId });
 
         const wallets = await Wallet.find({ userId: userId, status: {$in: [WalletStatus.ACTIVE, WalletStatus.TRADER]} });
