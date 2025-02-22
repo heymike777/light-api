@@ -85,7 +85,9 @@ router.get(
                 pAsset.isVerified = token?.isVerified || false;
                 pAsset.tags = token?.tags || undefined;
                 pAsset.tagsList = token?.tagsList || [];
-                pAsset.pnl = Helpers.getRandomInt(1,2) == 1 ? 1234 : -4321;
+
+                const rand = Helpers.getRandomInt(1, 3);
+                pAsset.pnl = rand == 1 ? 1234 : (rand == 2 ? -1234 : undefined);
                 assets.push(pAsset);
 
                 totalPrice += pAsset.priceInfo?.totalPrice || 0;

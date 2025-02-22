@@ -4,8 +4,8 @@ import { kKnownAddresses, kSolscanAddresses, kValidators } from "../../managers/
 import { PageToken } from "../../models/PageToken";
 import { Request } from "express";
 import { AppPlatform } from "../../models/types";
-import { BN } from "bn.js";
 import { LogManager } from "../../managers/LogManager";
+import BN from "bn.js";
 
 
 export class Helpers {
@@ -212,6 +212,25 @@ export class Helpers {
           result += characters.charAt(Math.floor(Math.random() * charactersLength));
           counter += 1;
         }
+        return result;
+    }
+
+    static bnToUiAmount(amount: BN, decimals: number): string {
+        const bnDecimalsAmount = new BN(10 ** decimals);
+        const { div, mod } = amount.divmod(bnDecimalsAmount);
+        let result = div.toString();
+
+        if (!mod.eqn(0)){
+            result += '.';
+            const modStr = mod.toString();
+            const modStrLen = modStr.length;
+            const zeros = decimals - modStrLen;
+            for (let i = 0; i < zeros; i++) {
+                result += '0';
+            }
+            result += modStr;
+        }
+
         return result;
     }
     

@@ -16,6 +16,7 @@ import { kJupAddress, kSolAddress } from "../services/solana/Constants";
 import { IWallet } from "../entities/Wallet";
 import BN from "bn.js";
 import { LogManager } from "./LogManager";
+import { ISwap } from "../entities/payments/Swap";
 
 export type Ix = web3.ParsedInstruction | web3.PartiallyDecodedInstruction;
 
@@ -24,23 +25,23 @@ export interface ParsedIxData {
     programName?: string,
 }
 
+export interface ParsedSwapAmount {
+    mint: string,
+    amount: string,
+    decimals: number,
+}
+
+export interface ParsedSwapMarket {
+    address: string;
+    pool1: string;
+    pool2: string;
+}
+
 export interface ParsedSwap {
     signature?: string;
-    from: {
-        mint: string,
-        amount: number,
-        decimals: number,
-    };
-    to: {
-        mint: string,
-        amount: number,
-        decimals: number,
-    };
-    market?: {
-        address: string;
-        pool1: string;
-        pool2: string;
-    };
+    from: ParsedSwapAmount;
+    to: ParsedSwapAmount;
+    market?: ParsedSwapMarket;
     bondingCurve?: {
         address: string;
     };
@@ -200,21 +201,15 @@ export class ProgramManager {
                         }
                         else if (ixParsed.info?.amount != undefined && ixParsed.info?.amount != null){
                             const bnAmount = new BN(ixParsed.info.amount);
-                            const bnDecimalsAmount = new BN(10 ** decimals);
-                            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
-                            amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
+                            amount = Helpers.bnToUiAmount(bnAmount, decimals);
                         }
                         else if (ixParsed.data?.amount != undefined && ixParsed.data?.amount != null){
                             const bnAmount = new BN(ixParsed.data.amount);
-                            const bnDecimalsAmount = new BN(10 ** decimals);
-                            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
-                            amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
+                            amount = Helpers.bnToUiAmount(bnAmount, decimals);
                         }
                         else if (ixParsed.data?.data?.amount != undefined && ixParsed.data?.data?.amount != null){
                             const bnAmount = new BN(ixParsed.data.data.amount);
-                            const bnDecimalsAmount = new BN(10 ** decimals);
-                            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
-                            amount = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
+                            amount = Helpers.bnToUiAmount(bnAmount, decimals);
                         }
 
                         const addresses: string[] = [sourceWalletAddress, destinationWalletAddress, tokenMint];
@@ -233,10 +228,9 @@ export class ProgramManager {
                     const addresses = [walletAddress, tokenMint];
                     const meta = tx?.meta;
                     const preTokenBalance = meta?.preTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress);
-                    const preAmount = preTokenBalance?.uiTokenAmount.uiAmount || 0
                     const postTokenBalance = meta?.postTokenBalances?.find((balance) => balance.mint == tokenMint && balance.owner == walletAddress);
-                    const postAmount = postTokenBalance?.uiTokenAmount.uiAmount || 0;
-                    let amount = postAmount - preAmount;
+                    let amount: BN = new BN(postTokenBalance?.uiTokenAmount.amount || '0').sub(new BN(preTokenBalance?.uiTokenAmount.uiAmount || '0'));
+                    let uiAmount = (postTokenBalance?.uiTokenAmount.uiAmount || 0) - (preTokenBalance?.uiTokenAmount.uiAmount || 0);
                     let decimals = preTokenBalance?.uiTokenAmount.decimals || postTokenBalance?.uiTokenAmount.decimals || 0;
 
                     let swapLamports = 0;
@@ -252,19 +246,19 @@ export class ProgramManager {
                     
                     if (ixType == 'buy') {
                         description = {
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>${solAmountString} on Pump Fun`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bought ${uiAmount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>${solAmountString} on Pump Fun`,
                             addresses: addresses,
                         };    
 
                         swap = {
                             from: {
                                 mint: kSolAddress,
-                                amount: swapLamports / web3.LAMPORTS_PER_SOL,
+                                amount: '' + swapLamports,
                                 decimals: 9,
                             },
                             to: {
                                 mint: tokenMint,
-                                amount: amount,
+                                amount: amount.toString(),
                                 decimals: decimals,
                             },
                             bondingCurve,
@@ -272,8 +266,6 @@ export class ProgramManager {
                         }
                     }
                     else if (ixType == 'sell') {
-                        amount = -amount;
-
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>${solAmountString} on Pump Fun`,
                             addresses: addresses,
@@ -282,12 +274,12 @@ export class ProgramManager {
                         swap = {
                             from: {
                                 mint: tokenMint,
-                                amount: amount,
+                                amount: amount.muln(-1).toString(),
                                 decimals: decimals,
                             },
                             to: {
                                 mint: kSolAddress,
-                                amount: swapLamports / web3.LAMPORTS_PER_SOL,
+                                amount: '' + swapLamports,
                                 decimals: 9,
                             },
                             bondingCurve,
@@ -624,6 +616,27 @@ export class ProgramManager {
   
                 }
             }
+            else if (programId == kProgram.METEORA_DLMM){
+                const walletAddress = accounts?.[10]?.toBase58();
+                const market: ParsedSwapMarket = {
+                    address: accounts?.[0]?.toBase58() || '',
+                    pool1: accounts?.[2]?.toBase58() || '',
+                    pool2: accounts?.[3]?.toBase58() || '',
+                }
+                const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market) : undefined;
+
+                if (walletAddress && swap){
+                    const addresses = [walletAddress, swap.from.mint, swap.to.mint];
+                    const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
+                    const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
+                    
+                    description = {
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped ${fromAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${toAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on Meteora`,
+                        addresses: addresses,
+                    };
+                    
+                }
+            }
         }
         catch (error){
             LogManager.error('!catched parseParsedIx', error);
@@ -636,6 +649,190 @@ export class ProgramManager {
             swap,
         };
     }
+
+    static getParsedSwapFromTxByMarket(tx: web3.ParsedTransactionWithMeta, market: ParsedSwapMarket): ParsedSwap | undefined {
+        let swap: ParsedSwap | undefined = undefined;
+
+        const publicKey = new PublicKey(market.address);
+        const accountIndex = tx.transaction.message.accountKeys.findIndex((accountKey: web3.ParsedMessageAccount) => accountKey.pubkey.equals(publicKey));
+
+        let tokenBalanceChanges: {
+            address: string;
+            amount: BN;
+            decimals: number;
+        }[] = [];
+
+        for (const tokenBalance of tx.meta?.postTokenBalances || []) {
+            if (tokenBalance.owner == market.address){
+                const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
+
+                if (existing){
+                    existing.amount = existing.amount.add(new BN(tokenBalance.uiTokenAmount.amount));
+                }
+                else {
+                    tokenBalanceChanges.push({
+                        address: tokenBalance.mint,
+                        amount: new BN(tokenBalance.uiTokenAmount.amount),
+                        decimals: tokenBalance.uiTokenAmount.decimals,
+                    });
+                }
+            }
+        }
+
+        for (const tokenBalance of tx.meta?.preTokenBalances || []) {
+            if (tokenBalance.owner == market.address){
+                const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
+
+                if (existing){
+                    existing.amount = existing.amount.sub(new BN(tokenBalance.uiTokenAmount.amount));
+                }
+                else {
+                    tokenBalanceChanges.push({
+                        address: tokenBalance.mint,
+                        amount: new BN(tokenBalance.uiTokenAmount.amount).muln(-1),
+                        decimals: tokenBalance.uiTokenAmount.decimals,
+                    });
+                }
+            }
+        }
+
+        // filter zero balance changes
+        tokenBalanceChanges = tokenBalanceChanges.filter((change) => !change.amount.eqn(0));
+
+        for (const tmp of tokenBalanceChanges) {
+            console.log('!balanceChange:', tmp.address, tmp.amount.toNumber() / (10 ** tmp.decimals));
+        }
+
+        const positive = tokenBalanceChanges.filter((change) => change.amount.gt(new BN(0)));
+        const negative = tokenBalanceChanges.filter((change) => change.amount.lt(new BN(0)));
+
+        if (positive.length != 1 || negative.length != 1){
+            LogManager.error('!unexpected positive or negative length:', positive.length, negative.length, 'signature:', tx.transaction.signatures[0]);
+            return undefined;
+        }
+
+        swap = {
+            signature: tx?.transaction.signatures?.[0],
+            to: {
+                mint: negative[0].address,
+                amount: negative[0].amount.muln(-1).toString(),
+                decimals: negative[0].decimals,
+            },
+            from: {
+                mint: positive[0].address,
+                amount: positive[0].amount.toString(),
+                decimals: positive[0].decimals,
+            }
+        }
+
+        return swap;
+    }
+
+    // static getParsedSwapFromTx(tx: web3.ParsedTransactionWithMeta, walletAddress: string): ParsedSwap | undefined {
+    //     let swap: ParsedSwap | undefined = undefined;
+
+    //     const publicKey = new PublicKey(walletAddress);
+    //     const accountIndex = tx.transaction.message.accountKeys.findIndex((accountKey: web3.ParsedMessageAccount) => accountKey.pubkey.equals(publicKey));
+    //     const nativeBalanceChange = (tx.meta?.postBalances[accountIndex] || 0) - (tx.meta?.preBalances[accountIndex] || 0);
+
+    //     let tokenBalanceChanges: {
+    //         address: string;
+    //         amount: BN;
+    //         decimals: number;
+    //     }[] = [];
+
+    //     for (const tokenBalance of tx.meta?.postTokenBalances || []) {
+    //         if (tokenBalance.owner == walletAddress){
+    //             const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
+
+    //             if (existing){
+    //                 existing.amount = existing.amount.add(new BN(tokenBalance.uiTokenAmount.amount));
+    //             }
+    //             else {
+    //                 tokenBalanceChanges.push({
+    //                     address: tokenBalance.mint,
+    //                     amount: new BN(tokenBalance.uiTokenAmount.amount),
+    //                     decimals: tokenBalance.uiTokenAmount.decimals,
+    //                 });
+    //             }
+    //         }
+    //     }
+
+    //     for (const tokenBalance of tx.meta?.preTokenBalances || []) {
+    //         if (tokenBalance.owner == walletAddress){
+    //             const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
+
+    //             if (existing){
+    //                 existing.amount = existing.amount.sub(new BN(tokenBalance.uiTokenAmount.amount));
+    //             }
+    //             else {
+    //                 tokenBalanceChanges.push({
+    //                     address: tokenBalance.mint,
+    //                     amount: new BN(tokenBalance.uiTokenAmount.amount).muln(-1),
+    //                     decimals: tokenBalance.uiTokenAmount.decimals,
+    //                 });
+    //             }
+    //         }
+    //     }
+
+    //     const wsolBalanceChange = tokenBalanceChanges.find((change) => change.address == kSolAddress);
+    //     if (wsolBalanceChange){
+    //         // It means that swap was made through WSOL. 
+    //         // And amounts will be correct (not including gas fee, priority fee, etc). 
+    //         // So this is perfect.
+    //     }
+    //     else {
+    //         // Add wsol balance change = native SOL balance change. 
+    //         // It will include gas fee, priority fee, etc. 
+    //         // So not the most accurate values. But we can ignore it for now.
+
+    //         const countPositive = tokenBalanceChanges.filter((change) => change.amount.gt(new BN(0))).length;
+    //         const countNegative = tokenBalanceChanges.filter((change) => change.amount.lt(new BN(0))).length;
+
+    //         if (countPositive == 1 && countNegative == 1 && nativeBalanceChange <= 0 && nativeBalanceChange >= -1000000){
+    //             // native balance change is just gas fee. don't add it
+    //         }
+    //         else {
+    //             tokenBalanceChanges.push({
+    //                 address: kSolAddress,
+    //                 amount: new BN(nativeBalanceChange),
+    //                 decimals: 9,
+    //             });
+    //         }
+    //     }
+
+    //     // filter zero balance changes
+    //     tokenBalanceChanges = tokenBalanceChanges.filter((change) => !change.amount.eqn(0));
+
+    //     for (const tmp of tokenBalanceChanges) {
+    //         console.log('!balanceChange:', tmp.address, tmp.amount.toNumber() / (10 ** tmp.decimals));
+    //     }
+
+    //     const positive = tokenBalanceChanges.filter((change) => change.amount.gt(new BN(0)));
+    //     const negative = tokenBalanceChanges.filter((change) => change.amount.lt(new BN(0)));
+
+    //     if (positive.length != 1 || negative.length != 1){
+    //         LogManager.error('!unexpected positive or negative length:', positive.length, negative.length, 'signature:', tx.transaction.signatures[0]);
+    //         return undefined;
+    //     }
+
+    //     swap = {
+    //         signature: tx?.transaction.signatures?.[0],
+    //         from: {
+    //             mint: negative[0].address,
+    //             amount: negative[0].amount.muln(-1).toString(),
+    //             decimals: negative[0].decimals,
+    //         },
+    //         to: {
+    //             mint: positive[0].address,
+    //             amount: positive[0].amount.toString(),
+    //             decimals: positive[0].decimals,
+    //         }
+    //     }
+
+    //     return swap;
+    // }
+
 
     static async findIx(instructions: Ix[] | undefined, programId: string, name: string): Promise<{ix: Ix, ixData: ParsedIxData} | undefined> {
         if (!instructions){

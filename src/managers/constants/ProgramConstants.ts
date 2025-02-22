@@ -23,6 +23,9 @@ export enum kProgram {
     BONK_REWARDS = 'STAKEkKzbdeKkqzKpLkNQD3SUuLgshDKCD7U8duxAbB',
     PUMPFUN = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P',
 
+    METEORA_DLMM = 'LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo',
+    METEORA_AMM = 'Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB',
+
     JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
 
     //METEORA DDLM
@@ -241,6 +244,28 @@ export const kPrograms: { [key: string]: {
             { 'toggleMaxLock': {title: 'UNSTAKE', priority: 2} },
         ],
         skip: false,
+    },
+    [kProgram.METEORA_DLMM]: {
+        name: 'METEORA',
+        knownInstructions: [
+            { 'swap': {title: 'SWAP', priority: 2} },
+        ],
+        skip: false,
+        // fee: {
+        //     account: 'CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM',
+        //     amount: 0.01,
+        // }
+    },
+    [kProgram.METEORA_AMM]: {
+        name: 'METEORA',
+        knownInstructions: [
+            { 'swap': {title: 'SWAP', priority: 2} },
+        ],
+        skip: false,
+        // fee: {
+        //     account: 'CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM',
+        //     amount: 0.01,
+        // }
     },
 }
 
