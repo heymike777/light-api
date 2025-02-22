@@ -249,6 +249,18 @@ export const kPrograms: { [key: string]: {
         name: 'METEORA',
         knownInstructions: [
             { 'swap': {title: 'SWAP', priority: 2} },
+            { 'swapExactOut': {title: 'SWAP', priority: 2} },
+            { 'swapWithPriceImpact': {title: 'SWAP', priority: 2} },
+
+            { 'removeLiquidityByRange': {title: 'REMOVE LIQUIDITY', priority: 3} },
+            { 'removeLiquidity': {title: 'REMOVE LIQUIDITY', priority: 3} },
+
+            { 'addLiquidity': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'addLiquidityByWeight': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'addLiquidityByStrategy': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'addLiquidityByStrategyOneSide': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'addLiquidityOneSidePrecise': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'addLiquidityOneSide': {title: 'ADD LIQUIDITY', priority: 3} },
         ],
         skip: false,
         // fee: {

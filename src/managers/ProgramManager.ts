@@ -569,8 +569,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.JUP_DAO){
-                console.log('!!!JUP_DAO', 'ixParsed:', ixParsed, 'accounts:', accounts);
-                if (['increaseLockedAmount', 'withdraw', 'toggleMaxLock'].indexOf(ixParsed.name) != -1){
+                if (['increaseLockedAmount', 'withdraw', 'toggleMaxLock'].indexOf(ixType) != -1){
                     if (ixType == 'increaseLockedAmount'){
                         const walletAddress = accounts?.[3]?.toBase58();
                         if (walletAddress){
@@ -617,25 +616,55 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.METEORA_DLMM){
-                const walletAddress = accounts?.[10]?.toBase58();
-                const market: ParsedSwapMarket = {
-                    address: accounts?.[0]?.toBase58() || '',
-                    pool1: accounts?.[2]?.toBase58() || '',
-                    pool2: accounts?.[3]?.toBase58() || '',
-                }
-                const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market) : undefined;
+                if (['swap', 'swapExactOut', 'swapWithPriceImpact'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[10]?.toBase58();
+                    const market: ParsedSwapMarket = {
+                        address: accounts?.[0]?.toBase58() || '',
+                        pool1: accounts?.[2]?.toBase58() || '',
+                        pool2: accounts?.[3]?.toBase58() || '',
+                    }
+                    const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market) : undefined;
 
-                if (walletAddress && swap){
-                    const addresses = [walletAddress, swap.from.mint, swap.to.mint];
-                    const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
-                    const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
-                    
-                    description = {
-                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped ${fromAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${toAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on Meteora`,
-                        addresses: addresses,
-                    };
-                    
+                    if (walletAddress && swap){
+                        const addresses = [walletAddress, swap.from.mint, swap.to.mint];
+                        const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
+                        const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
+                        
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped ${fromAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${toAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on Meteora`,
+                            addresses: addresses,
+                        };                        
+                    }
                 }
+                else if (['removeLiquidity', 'removeLiquidityByRange'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[11]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Meteora`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['addLiquidity', 'addLiquidityByWeight', 'addLiquidityByStrategy'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[11]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
+                            addresses: addresses,
+                        }; 
+                    }                }
+                else if (['addLiquidityByStrategyOneSide', 'addLiquidityOneSide', 'addLiquidityOneSidePrecise'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[8]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
+                            addresses: addresses,
+                        }; 
+                    }                }
+
             }
         }
         catch (error){
