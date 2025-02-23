@@ -34,13 +34,15 @@ export interface ParsedSwapAmount {
 export interface ParsedSwapMarket {
     address: string;
     pool1: string;
+    pool1VaultAuthority?: string;
     pool2: string;
+    pool2VaultAuthority?: string;
 }
 
 export interface ParsedSwap {
     signature?: string;
-    from: ParsedSwapAmount;
-    to: ParsedSwapAmount;
+    from?: ParsedSwapAmount;
+    to?: ParsedSwapAmount;
     market?: ParsedSwapMarket;
     bondingCurve?: {
         address: string;
@@ -294,8 +296,7 @@ export class ProgramManager {
                         accounts?.[17]?.toBase58() || // serum program == openbook
                         accounts?.[16]?.toBase58(); // serum program != openbook
                     if (walletAddress && tx?.meta){
-                        const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
-                        LogManager.log('!changes:', changes);
+                        const changes = this.findChangedTokenBalances(walletAddress, tx, false);
 
                         if (changes.length > 0){
                             const tokenMint = changes[0].mint;
@@ -339,12 +340,9 @@ export class ProgramManager {
                         'shared_accounts_route_with_token_ledger': 2,//?
                     } 
                     const walletAddress = accounts?.[walletIndexMap[ixParsed.name]]?.toBase58();
-                    LogManager.log('!walletAddress:', walletAddress);
-                    LogManager.log('!tx.meta:', tx?.meta);
 
                     if (walletAddress && tx?.meta){
-                        const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
-                        LogManager.log('!changes:', changes);
+                        const changes = this.findChangedTokenBalances(walletAddress, tx, false);
                         if (changes.length > 0){
                             const tokenMint = changes[0].mint;
                             const amount = changes[0].uiAmountChange;
@@ -363,7 +361,7 @@ export class ProgramManager {
                     
                     const walletAddress = accounts?.[0]?.toBase58();
                     if (walletAddress && tx?.meta){
-                        const changes = this.findChangedTokenBalances(walletAddress, tx.meta, false);
+                        const changes = this.findChangedTokenBalances(walletAddress, tx, false);
                         if (changes.length > 0){
                             const tokenMint = changes[0].mint;
                             const amount = changes[0].uiAmountChange;
@@ -623,9 +621,9 @@ export class ProgramManager {
                         pool1: accounts?.[2]?.toBase58() || '',
                         pool2: accounts?.[3]?.toBase58() || '',
                     }
-                    const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market) : undefined;
+                    const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
 
-                    if (walletAddress && swap){
+                    if (walletAddress && swap && swap.from && swap.to){
                         const addresses = [walletAddress, swap.from.mint, swap.to.mint];
                         const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
                         const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
@@ -663,8 +661,61 @@ export class ProgramManager {
                             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
                             addresses: addresses,
                         }; 
-                    }                }
+                    }                
+                }
+            }
+            else if (programId == kProgram.METEORA_POOLS){
+                if (['swap'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[12]?.toBase58();
+                    const market: ParsedSwapMarket = {
+                        address: accounts?.[0]?.toBase58() || '',
+                        pool1: accounts?.[5]?.toBase58() || '',
+                        pool1VaultAuthority: accounts?.[3]?.toBase58() || '',
+                        pool2: accounts?.[6]?.toBase58() || '',
+                        pool2VaultAuthority: accounts?.[4]?.toBase58() || '',
+                    }
+                    const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
 
+                    if (walletAddress && swap && swap.from && swap.to){
+                        const addresses = [walletAddress, swap.from.mint, swap.to.mint];
+                        const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
+                        const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
+                        
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped ${fromAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${toAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on Meteora`,
+                            addresses: addresses,
+                        };                        
+                    }
+                }
+                // else if (['removeLiquidity', 'removeLiquidityByRange'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[11]?.toBase58();
+                //     if (walletAddress){
+                //         const addresses = [walletAddress];
+                //         description = {
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Meteora`,
+                //             addresses: addresses,
+                //         }; 
+                //     }
+                // }
+                // else if (['addLiquidity', 'addLiquidityByWeight', 'addLiquidityByStrategy'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[11]?.toBase58();
+                //     if (walletAddress){
+                //         const addresses = [walletAddress];
+                //         description = {
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
+                //             addresses: addresses,
+                //         }; 
+                //     }                }
+                // else if (['addLiquidityByStrategyOneSide', 'addLiquidityOneSide', 'addLiquidityOneSidePrecise'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[8]?.toBase58();
+                //     if (walletAddress){
+                //         const addresses = [walletAddress];
+                //         description = {
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
+                //             addresses: addresses,
+                //         }; 
+                //     }                
+                // }
             }
         }
         catch (error){
@@ -679,12 +730,11 @@ export class ProgramManager {
         };
     }
 
-    static getParsedSwapFromTxByMarket(tx: web3.ParsedTransactionWithMeta, market: ParsedSwapMarket): ParsedSwap | undefined {
+    // shouldRevert == true, when I get swap from ix directly, by market address and pool1 & pool2
+    // shouldRevert == false, when I get swap from tx, by wallet address
+    static getParsedSwapFromTxByMarket(tx: web3.ParsedTransactionWithMeta, market: ParsedSwapMarket, shouldRevert = true): ParsedSwap | undefined {
         let swap: ParsedSwap | undefined = undefined;
-
-        const publicKey = new PublicKey(market.address);
-        const accountIndex = tx.transaction.message.accountKeys.findIndex((accountKey: web3.ParsedMessageAccount) => accountKey.pubkey.equals(publicKey));
-
+        
         let tokenBalanceChanges: {
             address: string;
             amount: BN;
@@ -692,7 +742,11 @@ export class ProgramManager {
         }[] = [];
 
         for (const tokenBalance of tx.meta?.postTokenBalances || []) {
-            if (tokenBalance.owner == market.address){
+            if (
+                tokenBalance.owner == market.address || 
+                (market.pool1VaultAuthority && tokenBalance.owner == market.pool1VaultAuthority) || 
+                (market.pool2VaultAuthority && tokenBalance.owner == market.pool2VaultAuthority)
+            ){
                 const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
 
                 if (existing){
@@ -709,7 +763,11 @@ export class ProgramManager {
         }
 
         for (const tokenBalance of tx.meta?.preTokenBalances || []) {
-            if (tokenBalance.owner == market.address){
+            if (
+                tokenBalance.owner == market.address || 
+                (market.pool1VaultAuthority && tokenBalance.owner == market.pool1VaultAuthority) || 
+                (market.pool2VaultAuthority && tokenBalance.owner == market.pool2VaultAuthority)
+            ){
                 const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
 
                 if (existing){
@@ -728,30 +786,33 @@ export class ProgramManager {
         // filter zero balance changes
         tokenBalanceChanges = tokenBalanceChanges.filter((change) => !change.amount.eqn(0));
 
-        for (const tmp of tokenBalanceChanges) {
-            console.log('!balanceChange:', tmp.address, tmp.amount.toNumber() / (10 ** tmp.decimals));
-        }
+        // for (const tmp of tokenBalanceChanges) {
+        //     console.log('!balanceChange:', tmp.address, tmp.amount.toNumber() / (10 ** tmp.decimals), 'market:', market);
+        // }
 
         const positive = tokenBalanceChanges.filter((change) => change.amount.gt(new BN(0)));
         const negative = tokenBalanceChanges.filter((change) => change.amount.lt(new BN(0)));
 
-        if (positive.length != 1 || negative.length != 1){
-            LogManager.error('!unexpected positive or negative length:', positive.length, negative.length, 'signature:', tx.transaction.signatures[0]);
-            return undefined;
-        }
+        // if (positive.length != 1 || negative.length != 1){
+        //     LogManager.error('!unexpected positive or negative length:', positive.length, negative.length, 'signature:', tx.transaction.signatures[0]);
+        //     return undefined;
+        // }
+
+        const from = negative && negative.length>0 ? {
+            mint: negative[0].address,
+            amount: negative[0].amount.muln(-1).toString(),
+            decimals: negative[0].decimals,
+        } : undefined;
+        const to = positive && positive.length>0 ? {
+            mint: positive[0].address,
+            amount: positive[0].amount.toString(),
+            decimals: positive[0].decimals,
+        } : undefined;
 
         swap = {
             signature: tx?.transaction.signatures?.[0],
-            to: {
-                mint: negative[0].address,
-                amount: negative[0].amount.muln(-1).toString(),
-                decimals: negative[0].decimals,
-            },
-            from: {
-                mint: positive[0].address,
-                amount: positive[0].amount.toString(),
-                decimals: positive[0].decimals,
-            }
+            from: shouldRevert ? to : from,
+            to: shouldRevert ? from : to,
         }
 
         return swap;
@@ -1164,48 +1225,29 @@ export class ProgramManager {
         return {parser, idlItem};
     }
 
-    static findChangedTokenBalances(walletAddress: string, meta: web3.ParsedTransactionMeta, includeWsol = true): {mint: string, uiAmountChange: number, amountChange: BN}[] {
-        const preBalances = meta.preTokenBalances || [];
-        const postBalances = meta.postTokenBalances || [];
-
-        const preBalancesMap: {[key: string]: web3.TokenBalance | undefined} = {};
-        for (const balance of preBalances) {
-            if (balance.owner == walletAddress){
-                preBalancesMap[balance.mint] = balance;
-            }
-        }
-
-        let changedBalances: {mint: string, uiAmountChange: number, amountChange: BN}[] = [];
-        for (const postBalance of postBalances) {
-            if (postBalance.owner == walletAddress){
-                const preBalance = preBalancesMap[postBalance.mint];
-                if (!preBalance || preBalance.uiTokenAmount.uiAmount != postBalance.uiTokenAmount.uiAmount){
-                    const uiAmountChange = (postBalance.uiTokenAmount.uiAmount || 0) - (preBalance?.uiTokenAmount.uiAmount || 0);
-                    if (uiAmountChange != 0){
-                        const amountChange: BN = new BN(postBalance?.uiTokenAmount.amount || 0).sub(new BN(preBalance?.uiTokenAmount.amount || 0));
-
-                        changedBalances.push({ mint: postBalance.mint, uiAmountChange: uiAmountChange, amountChange: amountChange });
-                    }
-
-                    
-
-                    preBalancesMap[postBalance.mint] = undefined;
-                }
-                else if (preBalance && preBalance.uiTokenAmount.uiAmount == postBalance.uiTokenAmount.uiAmount){
-                    preBalancesMap[postBalance.mint] = undefined;
+    static findChangedTokenBalances(walletAddress: string, tx: web3.ParsedTransactionWithMeta, includeWsol = true): {mint: string, uiAmountChange: number, amountChange: BN}[] {
+        const changedBalances: {mint: string, uiAmountChange: number, amountChange: BN}[] = [];
+        const swap = this.getParsedSwapFromTxByMarket(tx, {address: walletAddress, pool1: '', pool2: ''}, false);
+        if (swap){
+            if (swap.from){
+                if (swap.from.mint != kSolAddress || includeWsol){
+                    changedBalances.push({
+                        mint: swap.from.mint,
+                        uiAmountChange: - +Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals),
+                        amountChange: new BN(swap.from.amount).muln(-1),
+                    });
                 }
             }
-        }
 
-        for (const mint in preBalancesMap) {
-            const balance = preBalancesMap[mint];
-            if (balance && balance.uiTokenAmount.uiAmount && balance.uiTokenAmount.uiAmount != 0){
-                changedBalances.push({ mint: balance.mint, uiAmountChange: balance.uiTokenAmount.uiAmount, amountChange: new BN(balance.uiTokenAmount.amount) });
+            if (swap.to){
+                if (swap.to.mint != kSolAddress || includeWsol){
+                    changedBalances.push({
+                        mint: swap.to.mint,
+                        uiAmountChange: +Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals),
+                        amountChange: new BN(swap.to.amount),
+                    });
+                }
             }
-        }
-
-        if (!includeWsol){
-            changedBalances = changedBalances.filter((balance) => balance.mint != kSolAddress);
         }
 
         return changedBalances;
@@ -1216,13 +1258,12 @@ export class ProgramManager {
             return undefined;
         }
 
-        const changes = this.findChangedTokenBalances(walletAddress, tx.meta, true);
+        const changes = this.findChangedTokenBalances(walletAddress, tx, true);
         const wsolChange = changes.find((change) => change.mint == kSolAddress);
         if (wsolChange){
             return wsolChange.amountChange;
         }
 
-        // tx.transaction.message.accountKeys[0].
         const index = tx.transaction.message.accountKeys.findIndex((key) => key.pubkey.toBase58() == walletAddress);
 
         if (index != undefined && tx.meta.preBalances && tx.meta.postBalances && tx.meta.preBalances.length > index && tx.meta.postBalances.length > index){

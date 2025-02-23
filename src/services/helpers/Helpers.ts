@@ -6,6 +6,7 @@ import { Request } from "express";
 import { AppPlatform } from "../../models/types";
 import { LogManager } from "../../managers/LogManager";
 import BN from "bn.js";
+import { kSolAddress } from "../solana/Constants";
 
 
 export class Helpers {
@@ -143,6 +144,9 @@ export class Helpers {
                 }
                 else if (txToken){
                     title = txToken.nft ? txToken.nft.title : (txToken.symbol || txToken.name);
+                }
+                else if (address == kSolAddress){
+                    title = 'WSOL';
                 }
 
                 if (!title || title==''){

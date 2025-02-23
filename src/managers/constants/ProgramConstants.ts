@@ -24,7 +24,7 @@ export enum kProgram {
     PUMPFUN = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P',
 
     METEORA_DLMM = 'LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo',
-    METEORA_AMM = 'Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB',
+    METEORA_POOLS = 'Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB',
 
     JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
 
@@ -114,13 +114,19 @@ export const kPrograms: { [key: string]: {
         name: 'JUPITER',
         knownInstructions: [
             { 'routeWithTokenLedger': {title: 'SWAP', priority: 1} },
+            { 'route_with_token_ledger': {title: 'SWAP', priority: 1} },
             { 'sharedAccountsRoute': {title: 'SWAP', priority: 1} },
+            { 'shared_accounts_route': {title: 'SWAP', priority: 1} },
             { 'route': {title: 'SWAP', priority: 1} },
             { 'exactOutRoute': {title: 'SWAP', priority: 1} },
+            { 'exact_out_route': {title: 'SWAP', priority: 1} },
             { 'sharedAccountsRouteWithTokenLedger': {title: 'SWAP', priority: 1} },
+            { 'shared_accounts_route_with_token_ledger': {title: 'SWAP', priority: 1} },
             { 'sharedAccountsExactOutRoute': {title: 'SWAP', priority: 1} },
+            { 'shared_accounts_exact_out_route': {title: 'SWAP', priority: 1} },
             { 'claim': {title: 'CLAIM', priority: 5} },
             { 'claimToken': {title: 'CLAIM', priority: 5} },
+            { 'claim_token': {title: 'CLAIM', priority: 5} },
         ],
         skip: false,
     },
@@ -268,7 +274,7 @@ export const kPrograms: { [key: string]: {
         //     amount: 0.01,
         // }
     },
-    [kProgram.METEORA_AMM]: {
+    [kProgram.METEORA_POOLS]: {
         name: 'METEORA',
         knownInstructions: [
             { 'swap': {title: 'SWAP', priority: 2} },
