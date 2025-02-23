@@ -7,7 +7,7 @@ export enum kProgram {
     
     RAYDIUM_AMM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
     RAYDIUM_CLMM = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK',
-    // RAYDIUM_CPMM = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C',
+    RAYDIUM_CPMM = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C',
     // RAYDIUM_STABLE_SWAP_APP = '5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h',
     // RAYDIUM_APP_ROUTING = 'routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS',
 
@@ -22,9 +22,9 @@ export enum kProgram {
     BUBBLEGUM = 'BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY',
     BONK_REWARDS = 'STAKEkKzbdeKkqzKpLkNQD3SUuLgshDKCD7U8duxAbB',
     PUMPFUN = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P',
-
     METEORA_DLMM = 'LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo',
     METEORA_POOLS = 'Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB',
+    OKX = '6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma',
 
     JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
 
@@ -107,6 +107,16 @@ export const kPrograms: { [key: string]: {
             { 'decreaseLiquidityV2': {title: 'REMOVE LIQUIDOTY', priority: 3} },
             { 'increaseLiquidity': {title: 'ADD LIQUIDOTY', priority: 3} },
             { 'increaseLiquidityV2': {title: 'ADD LIQUIDOTY', priority: 3} },
+        ],
+        skip: false,
+    },
+    [kProgram.RAYDIUM_CPMM]: {
+        name: 'RAYDIUM',
+        knownInstructions: [
+            { 'swapBaseInput': {title: 'SWAP', priority: 2} },
+            { 'swapBaseOutput': {title: 'SWAP', priority: 2} },
+            { 'deposit': {title: 'ADD LIQUIDOTY', priority: 3} },
+            { 'withdraw': {title: 'REMOVE LIQUIDOTY', priority: 3} },
         ],
         skip: false,
     },
@@ -269,10 +279,6 @@ export const kPrograms: { [key: string]: {
             { 'addLiquidityOneSide': {title: 'ADD LIQUIDITY', priority: 3} },
         ],
         skip: false,
-        // fee: {
-        //     account: 'CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM',
-        //     amount: 0.01,
-        // }
     },
     [kProgram.METEORA_POOLS]: {
         name: 'METEORA POOLS',
@@ -285,10 +291,15 @@ export const kPrograms: { [key: string]: {
             { 'bootstrapLiquidity': {title: 'BOOTSTRAP LIQUIDITY', priority: 4} },
         ],
         skip: false,
-        // fee: {
-        //     account: 'CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM',
-        //     amount: 0.01,
-        // }
+    },
+    [kProgram.OKX]: {
+        name: 'OKX',
+        knownInstructions: [
+            // unknown instruction // 3fqErnmTwdQaVaGTwoKAQGrF128NKbAPGQWkUmkgQNpTkBg7o2GtHPcpndRrMJAanxvue8BvLftSS7nTcuedq1Rz
+            { 'commission_spl_swap2': {title: 'SWAP', priority: 1} }, // MiFmesuZdBqWExGoJcoovp6dVkN6V1BVjG1bAWYYRugv7DgyMwGeEtjQGzdzGxGWsaM8zQPtRgeo5n9tgv1f1D6
+            { 'swap2': {title: 'SWAP', priority: 1} }, // 4Nv2v2TVajU6ExfmGU2EoEWN9yZz47cyScYfYB2CWtjRhNdJhHwXa19itQ4KW6bk135sULPyBdZeHKTdvvtMcAnw
+        ],
+        skip: false,
     },
 }
 

@@ -311,6 +311,42 @@ export class ProgramManager {
                     }    
                 }
             }
+            else if (programId == kProgram.RAYDIUM_CPMM){
+                if (['swapBaseInput', 'swapBaseOutput'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress && tx){
+                        const market: ParsedSwapMarket = {
+                            address: accounts?.[3]?.toBase58() || '',
+                            pool1: accounts?.[6]?.toBase58() || '',
+                            pool1VaultAuthority: accounts?.[1]?.toBase58() || '',
+                            pool2: accounts?.[7]?.toBase58() || '',
+                            pool2VaultAuthority: accounts?.[1]?.toBase58() || '',
+                        }
+                        swap = this.getParsedSwapFromTxByMarket(tx, market, true);
+                        description = this.getSwapDescription(swap, walletAddress, 'Raydium CPMM');    
+                    }    
+                }
+                else if (['deposit'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Raydium CPMM`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['withdraw'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Raydium CPMM`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+            }
             else if (programId == kProgram.JUPITER){
                 LogManager.log('!!!JUPITER', 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if ([
@@ -621,18 +657,9 @@ export class ProgramManager {
                         pool1: accounts?.[2]?.toBase58() || '',
                         pool2: accounts?.[3]?.toBase58() || '',
                     }
-                    const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
+                    swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
 
-                    if (walletAddress && swap && swap.from && swap.to){
-                        const addresses = [walletAddress, swap.from.mint, swap.to.mint];
-                        const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
-                        const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
-                        
-                        description = {
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped ${fromAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${toAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on Meteora`,
-                            addresses: addresses,
-                        };                        
-                    }
+                    description = this.getSwapDescription(swap, walletAddress, 'Meteora DLMM');    
                 }
                 else if (['removeLiquidity', 'removeLiquidityByRange'].indexOf(ixType) != -1){
                     const walletAddress = accounts?.[11]?.toBase58();
@@ -674,18 +701,8 @@ export class ProgramManager {
                         pool2: accounts?.[6]?.toBase58() || '',
                         pool2VaultAuthority: accounts?.[4]?.toBase58() || '',
                     }
-                    const swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
-
-                    if (walletAddress && swap && swap.from && swap.to){
-                        const addresses = [walletAddress, swap.from.mint, swap.to.mint];
-                        const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
-                        const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
-                        
-                        description = {
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped ${fromAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${toAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on Meteora`,
-                            addresses: addresses,
-                        };                        
-                    }
+                    swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
+                    description = this.getSwapDescription(swap, walletAddress, 'Meteora');    
                 }
                 else if (['removeLiquiditySingleSide', 'removeBalanceLiquidity'].indexOf(ixType) != -1){
                     let index = ixType == 'removeLiquiditySingleSide' ? 12 : 13;
@@ -1317,6 +1334,20 @@ export class ProgramManager {
             } 
         }
         return txDescription;
+    }
+
+    static getSwapDescription(swap: ParsedSwap | undefined, walletAddress: string | undefined, programName: string): TxDescription | undefined {
+        if (walletAddress && swap && swap.from && swap.to){
+            const addresses = [walletAddress, swap.from.mint, swap.to.mint];
+            const fromAmountString = Helpers.bnToUiAmount(new BN(swap.from.amount), swap.from.decimals);
+            const toAmountString = Helpers.bnToUiAmount(new BN(swap.to.amount), swap.to.decimals);
+            
+            const description: TxDescription = {
+                html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped ${fromAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${toAmountString} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on ${programName}`,
+                addresses: addresses,
+            };  
+            return description;                      
+        }
     }
 
 }
