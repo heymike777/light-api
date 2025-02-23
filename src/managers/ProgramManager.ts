@@ -687,35 +687,38 @@ export class ProgramManager {
                         };                        
                     }
                 }
-                // else if (['removeLiquidity', 'removeLiquidityByRange'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[11]?.toBase58();
-                //     if (walletAddress){
-                //         const addresses = [walletAddress];
-                //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Meteora`,
-                //             addresses: addresses,
-                //         }; 
-                //     }
-                // }
-                // else if (['addLiquidity', 'addLiquidityByWeight', 'addLiquidityByStrategy'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[11]?.toBase58();
-                //     if (walletAddress){
-                //         const addresses = [walletAddress];
-                //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
-                //             addresses: addresses,
-                //         }; 
-                //     }                }
-                // else if (['addLiquidityByStrategyOneSide', 'addLiquidityOneSide', 'addLiquidityOneSidePrecise'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[8]?.toBase58();
-                //     if (walletAddress){
-                //         const addresses = [walletAddress];
-                //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
-                //             addresses: addresses,
-                //         }; 
-                //     }                
-                // }
+                else if (['removeLiquiditySingleSide', 'removeBalanceLiquidity'].indexOf(ixType) != -1){
+                    let index = ixType == 'removeLiquiditySingleSide' ? 12 : 13;
+
+                    const walletAddress = accounts?.[index]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Meteora`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['addImbalanceLiquidity', 'addBalanceLiquidity'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[13]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
+                            addresses: addresses,
+                        }; 
+                    }                
+                }
+                else if (['bootstrapLiquidity'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[13]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> bootstrapped liquidity on Meteora`,
+                            addresses: addresses,
+                        }; 
+                    }                
+                }
             }
         }
         catch (error){

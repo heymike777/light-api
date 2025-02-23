@@ -252,7 +252,7 @@ export const kPrograms: { [key: string]: {
         skip: false,
     },
     [kProgram.METEORA_DLMM]: {
-        name: 'METEORA',
+        name: 'METEORA DLMM',
         knownInstructions: [
             { 'swap': {title: 'SWAP', priority: 2} },
             { 'swapExactOut': {title: 'SWAP', priority: 2} },
@@ -275,9 +275,14 @@ export const kPrograms: { [key: string]: {
         // }
     },
     [kProgram.METEORA_POOLS]: {
-        name: 'METEORA',
+        name: 'METEORA POOLS',
         knownInstructions: [
             { 'swap': {title: 'SWAP', priority: 2} },
+            { 'removeLiquiditySingleSide': {title: 'REMOVE LIQUIDITY', priority: 3} },
+            { 'removeBalanceLiquidity': {title: 'REMOVE LIQUIDITY', priority: 3} },
+            { 'addImbalanceLiquidity': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'addBalanceLiquidity': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'bootstrapLiquidity': {title: 'BOOTSTRAP LIQUIDITY', priority: 4} },
         ],
         skip: false,
         // fee: {

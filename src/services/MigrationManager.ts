@@ -122,6 +122,11 @@ export class MigrationManager {
         // await this.processTx('62zkFyUB6DAhpnZtsKaUVNpdTyNRi1GBUjwgDvYz6tUiZt5GfUnJFrimeBnttHMfBaHK3iTxkC8EZcRUCajB9NhW');
         // await this.processTx('2JbwRCQ8cBF5tYkPRXP8G5wDeX2FKqRgVhLH6AZNYVHGjFaMKmbDykJiqRo2FAQdoGDAfUQHV38cXNbNK2rq28cL'); // Meteora DLMM remove LP
 
+        // Meteora Pool
+        // await this.processTx('9zMP5NXui55L4V5vJsaTSfBk918JgZkHuPRVynoAZk7uMKqTUnwxwqqehgZqvjEtdyuMN2KnXVDgoXRrHQYuVKH'); // swap    
+        // await this.processTx('k3RYXDktdiDmqCzN4Bc3TNGQ9qVhSENsyuhNNUkKouM4WS96wFvyYAhspZt1LDQjbFuWwxa9DqVBbjetb6VB7D3')
+
+
         // const connection = newConnection();
         // for (let index = 0; index < 200; index++) {
         //     this.ddos(connection, index);
