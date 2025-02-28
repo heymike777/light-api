@@ -18,7 +18,7 @@ import BN from "bn.js";
 import { LogManager } from "./LogManager";
 import { ISwap } from "../entities/payments/Swap";
 
-export type Ix = web3.ParsedInstruction | web3.PartiallyDecodedInstruction;
+export type Ix = (web3.ParsedInstruction | web3.PartiallyDecodedInstruction) & {ixParsed?: any | ParserOutput};
 
 export interface ParsedIxData {
     output: ParserOutput, 
@@ -645,8 +645,23 @@ export class ProgramManager {
                             };
                         }
                     }
+                }
+            }
+            else if (programId == kProgram.JUP_GOVERNANCE){
+                if (['setVote'].indexOf(ixType) != -1){
+                    const newVoteIx = previousIxs?.find((ix) => ix.programId.toBase58() == kProgram.JUP_GOVERNANCE && (ix.ixParsed?.name=='newVote' || ix.ixParsed?.type=='newVote'));
+                    const walletAddress = newVoteIx?.ixParsed?.data?.voter || "unknown";
+                    console.log('newVoteIx:', newVoteIx);
+                    console.log('newVoteIx walletAddress:', walletAddress);
+                    const addresses = [walletAddress];
 
-  
+                    const votingPower = (ixParsed?.data?.weight || 0) / (10 ** 6);
+                    const votingPowerString = (votingPower && votingPower>0) ? ` with ${votingPower} voting power` : '';
+
+                    description = {
+                        html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> voted${votingPowerString} on JUP GOVERNANCE`,
+                        addresses: addresses,
+                    };
                 }
             }
             else if (programId == kProgram.METEORA_DLMM){
@@ -1159,7 +1174,7 @@ export class ProgramManager {
 
             if ('parsed' in instruction){
                 LogManager.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'parsed', '=', instruction.parsed);
-
+                instruction.ixParsed = instruction.parsed;
                 const info = await this.parseParsedIx(ixProgramId, instruction.parsed, previousIxs, undefined, tx);
                 
                 let programName: string | undefined = kPrograms[ixProgramId]?.name;
@@ -1180,6 +1195,7 @@ export class ProgramManager {
             }
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
+                instruction.ixParsed = ixData?.output;
                 LogManager.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData, 'instruction.data:', instruction.data);
 
                 const info = await this.parseParsedIx(ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx, instructions);

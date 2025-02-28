@@ -29,6 +29,7 @@ export enum kProgram {
     ORCA = 'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc',
 
     JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
+    JUP_GOVERNANCE = 'GovaE4iu227srtG2s3tZzB4RmWBzw8sTwrCLZz7kN7rY',
 
     //METEORA DDLM
 }
@@ -260,6 +261,13 @@ export const kPrograms: { [key: string]: {
             { 'withdraw': {title: 'WITHDRAW', priority: 1} },
             { 'increaseLockedAmount': {title: 'STAKE', priority: 1} },
             { 'toggleMaxLock': {title: 'UNSTAKE', priority: 2} },
+        ],
+        skip: false,
+    },
+    [kProgram.JUP_GOVERNANCE]: {
+        name: 'JUP GOVERNANCE',
+        knownInstructions: [
+            { 'setVote': {title: 'VOTE', priority: 1} },
         ],
         skip: false,
     },
