@@ -22,9 +22,11 @@ export enum kProgram {
     BUBBLEGUM = 'BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY',
     BONK_REWARDS = 'STAKEkKzbdeKkqzKpLkNQD3SUuLgshDKCD7U8duxAbB',
     PUMPFUN = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P',
+    PUMPFUN_AMM = 'pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA',
     METEORA_DLMM = 'LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo',
     METEORA_POOLS = 'Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB',
     OKX = '6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma',
+    ORCA = 'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc',
 
     JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
 
@@ -298,6 +300,29 @@ export const kPrograms: { [key: string]: {
             // unknown instruction // 3fqErnmTwdQaVaGTwoKAQGrF128NKbAPGQWkUmkgQNpTkBg7o2GtHPcpndRrMJAanxvue8BvLftSS7nTcuedq1Rz
             { 'commission_spl_swap2': {title: 'SWAP', priority: 1} }, // MiFmesuZdBqWExGoJcoovp6dVkN6V1BVjG1bAWYYRugv7DgyMwGeEtjQGzdzGxGWsaM8zQPtRgeo5n9tgv1f1D6
             { 'swap2': {title: 'SWAP', priority: 1} }, // 4Nv2v2TVajU6ExfmGU2EoEWN9yZz47cyScYfYB2CWtjRhNdJhHwXa19itQ4KW6bk135sULPyBdZeHKTdvvtMcAnw
+        ],
+        skip: false,
+    },
+    [kProgram.ORCA]: {
+        name: 'ORCA',
+        knownInstructions: [
+            { 'swap': {title: 'SWAP', priority: 2} },
+            { 'swapV2': {title: 'SWAP', priority: 2} },
+            { 'twoHopSwap': {title: 'SWAP', priority: 2} },
+            { 'twoHopSwapV2': {title: 'SWAP', priority: 2} },
+
+            { 'decreaseLiquidity': {title: 'REMOVE LIQUIDITY', priority: 3} },
+            { 'decreaseLiquidityV2': {title: 'REMOVE LIQUIDITY', priority: 3} },
+
+            { 'increaseLiquidity': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'increaseLiquidityV2': {title: 'ADD LIQUIDITY', priority: 3} },
+        ],
+        skip: false,
+    },
+    [kProgram.PUMPFUN_AMM]: {
+        name: 'PUMPFUN AMM',
+        knownInstructions: [
+            { 'any': {title: 'any', priority: 2} },
         ],
         skip: false,
     },

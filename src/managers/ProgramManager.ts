@@ -1,7 +1,7 @@
 import { Program } from "../entities/Program";
+import { checkIfInstructionParser, ParserOutput, ParserType, SolanaFMParser } from "@solanafm/explorer-kit";
 import { getProgramIdl, IdlItem } from "@solanafm/explorer-kit-idls";
 import { Chain } from "../services/solana/types";
-import { checkIfInstructionParser, ParserOutput, ParserType, SolanaFMParser } from "@solanafm/explorer-kit";
 import * as web3 from "@solana/web3.js";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { Helpers } from "../services/helpers/Helpers";
@@ -737,6 +737,106 @@ export class ProgramManager {
                     }                
                 }
             }
+            else if (programId == kProgram.ORCA){
+                if (['swap'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[1]?.toBase58();
+                    const market: ParsedSwapMarket = {
+                        address: accounts?.[2]?.toBase58() || '',
+                        pool1: accounts?.[4]?.toBase58() || '',
+                        pool2: accounts?.[6]?.toBase58() || '',
+                    }
+                    swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
+
+                    description = this.getSwapDescription(swap, walletAddress, 'Orca');    
+                }
+                else if (['swapV2'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[3]?.toBase58();
+                    const market: ParsedSwapMarket = {
+                        address: accounts?.[4]?.toBase58() || '',
+                        pool1: accounts?.[8]?.toBase58() || '',
+                        pool2: accounts?.[10]?.toBase58() || '',
+                    }
+                    swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
+
+                    description = this.getSwapDescription(swap, walletAddress, 'Orca');    
+                }
+                else if (['twoHopSwap', 'twoHopSwapV2'].indexOf(ixType) != -1){
+                    const index = ixType == 'twoHopSwap' ? 1 : 14;
+                    const walletAddress = accounts?.[index]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> swapped multiple tokens on Orca`,
+                            addresses: addresses,
+                        };  
+                    }        
+                }
+                else if (['decreaseLiquidity', 'decreaseLiquidityV2'].indexOf(ixType) != -1){
+                    const index = ixType == 'decreaseLiquidity' ? 2 : 4;
+                    const walletAddress = accounts?.[index]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Orca`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['increaseLiquidity', 'increaseLiquidityV2'].indexOf(ixType) != -1){
+                    const index = ixType == 'increaseLiquidity' ? 2 : 4;
+                    const walletAddress = accounts?.[index]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Orca`,
+                            addresses: addresses,
+                        }; 
+                    }                
+                }
+            }
+            else if (programId == kProgram.PUMPFUN_AMM){
+                LogManager.log('!!!PUMPFUNAPP', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
+                // if (['swap', 'swapExactOut', 'swapWithPriceImpact'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[10]?.toBase58();
+                //     const market: ParsedSwapMarket = {
+                //         address: accounts?.[0]?.toBase58() || '',
+                //         pool1: accounts?.[2]?.toBase58() || '',
+                //         pool2: accounts?.[3]?.toBase58() || '',
+                //     }
+                //     swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
+
+                //     description = this.getSwapDescription(swap, walletAddress, 'Meteora DLMM');    
+                // }
+                // else if (['removeLiquidity', 'removeLiquidityByRange'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[11]?.toBase58();
+                //     if (walletAddress){
+                //         const addresses = [walletAddress];
+                //         description = {
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Meteora`,
+                //             addresses: addresses,
+                //         }; 
+                //     }
+                // }
+                // else if (['addLiquidity', 'addLiquidityByWeight', 'addLiquidityByStrategy'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[11]?.toBase58();
+                //     if (walletAddress){
+                //         const addresses = [walletAddress];
+                //         description = {
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
+                //             addresses: addresses,
+                //         }; 
+                //     }                }
+                // else if (['addLiquidityByStrategyOneSide', 'addLiquidityOneSide', 'addLiquidityOneSidePrecise'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[8]?.toBase58();
+                //     if (walletAddress){
+                //         const addresses = [walletAddress];
+                //         description = {
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
+                //             addresses: addresses,
+                //         }; 
+                //     }                
+                // }
+            }
         }
         catch (error){
             LogManager.error('!catched parseParsedIx', error);
@@ -1080,7 +1180,7 @@ export class ProgramManager {
             }
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
-                LogManager.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData);
+                LogManager.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData, 'instruction.data:', instruction.data);
 
                 const info = await this.parseParsedIx(ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx, instructions);
 
