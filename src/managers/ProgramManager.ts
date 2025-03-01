@@ -104,6 +104,13 @@ export class ProgramManager {
             return existingIdl;
         }
 
+        const programsWithoutPublishedIdl = [
+            'ZERor4xhbUycZ6gb9ntrhqscUcZmAbQDjEAtCf4hbZY',
+        ];
+        if (programsWithoutPublishedIdl.indexOf(programId) != -1){
+            return undefined;
+        }
+
         const SFMIdlItem = await getProgramIdl(programId);
         const idl = SFMIdlItem || undefined; 
         if (idl){
@@ -349,6 +356,10 @@ export class ProgramManager {
             }
             else if (programId == kProgram.JUPITER){
                 LogManager.log('!!!JUPITER', 'ixParsed:', ixParsed, 'accounts:', accounts);
+
+                // const ixTypesFromLogs = tx ? this.findProgramLogs(tx, programId) : [];
+                //TODO: how to understand which walletAddress initiated the swap???
+                
                 if ([
                     'route', 
                     'routeWithTokenLedger', 
@@ -651,8 +662,6 @@ export class ProgramManager {
                 if (['setVote'].indexOf(ixType) != -1){
                     const newVoteIx = previousIxs?.find((ix) => ix.programId.toBase58() == kProgram.JUP_GOVERNANCE && (ix.ixParsed?.name=='newVote' || ix.ixParsed?.type=='newVote'));
                     const walletAddress = newVoteIx?.ixParsed?.data?.voter || "unknown";
-                    console.log('newVoteIx:', newVoteIx);
-                    console.log('newVoteIx walletAddress:', walletAddress);
                     const addresses = [walletAddress];
 
                     const votingPower = (ixParsed?.data?.weight || 0) / (10 ** 6);
@@ -1086,39 +1095,46 @@ export class ProgramManager {
     }
 
     static async parseIx(programId: string, ixData: string): Promise<ParsedIxData | undefined>{
-        let parser: SolanaFMParser | undefined;
-        let idl: IdlItem | undefined;
+        try {
+            let parser: SolanaFMParser | undefined;
+            let idl: IdlItem | undefined;
 
-        let customIdl = kPrograms[programId]?.customIdl;
-        if (customIdl){
-            const customParser = this.setupCustomParser(programId, customIdl.path, customIdl.type);
-            parser = customParser.parser;
-            idl = customParser.idlItem;
-        }
-        else {
-            idl = await this.getIDL(programId);
-            if (idl){
-                parser = new SolanaFMParser(idl, programId);
+            let customIdl = kPrograms[programId]?.customIdl;
+            if (customIdl){
+                const customParser = this.setupCustomParser(programId, customIdl.path, customIdl.type);
+                parser = customParser.parser;
+                idl = customParser.idlItem;
+            }
+            else {
+                idl = await this.getIDL(programId);
+                if (idl){
+                    parser = new SolanaFMParser(idl, programId);
+                }
             }
 
-        }
-
-        if (!parser || !idl){
-            return undefined;
-        }
-
-        const instructionParser = parser.createParser(ParserType.INSTRUCTION);
-        if (instructionParser && checkIfInstructionParser(instructionParser)) {
-            const output = instructionParser.parseInstructions(ixData);
-
-            let programName: string | undefined = kPrograms[programId]?.name;
-            if (!programName){
-                programName = (idl.idl as any).name || undefined;
-                programName = programName?.replaceAll('_', ' ');
-                programName = programName?.toUpperCase();
+            if (!parser || !idl){
+                return undefined;
             }
 
-            return  { output, programName };
+            console.log('!IDLTYPE' ,'programId:', programId, 'idl.idlType:', idl.idlType);
+
+            const instructionParser = parser.createParser(ParserType.INSTRUCTION);
+            if (instructionParser && checkIfInstructionParser(instructionParser)) {
+                console.log('parseIx', 'programId:', programId, 'ixData:', ixData);
+                const output = instructionParser.parseInstructions(ixData);
+
+                let programName: string | undefined = kPrograms[programId]?.name;
+                if (!programName){
+                    programName = (idl.idl as any).name || undefined;
+                    programName = programName?.replaceAll('_', ' ');
+                    programName = programName?.toUpperCase();
+                }
+
+                return  { output, programName };
+            }
+        }
+        catch (error){
+            LogManager.error('!catched parseIx', error);
         }
 
         return undefined;
@@ -1163,6 +1179,12 @@ export class ProgramManager {
                 instructions.push(...innerIx.instructions)
             }
         }
+
+        // if (tx.meta?.logMessages){
+        //     for (const log of tx.meta?.logMessages) {
+        //         console.log('log:', log);
+        //     }    
+        // }
         
         let ixIndex = 0;
         let previousIxs: Ix[] = [];
@@ -1464,6 +1486,29 @@ export class ProgramManager {
             };  
             return description;                      
         }
+    }
+
+    static findProgramLogs(tx: web3.ParsedTransactionWithMeta, programId: string): string[] {
+        if (programId != kProgram.JUPITER){
+            // we support only JUPITER logs for now
+            return [];
+        }
+
+        const logs: string[] = [];
+        if (tx.meta?.logMessages){
+            for (let index = 0; index < tx.meta?.logMessages.length; index++) {
+                const log = tx.meta?.logMessages[index];
+                if (log.startsWith(`Program ${programId}`)){
+                    // get next log and remove "log: Instruction: " from it. that's only for JUPITER V6
+                    const nextLog = tx.meta?.logMessages[index + 1];
+                    if (nextLog && nextLog.startsWith('log: Instruction: ')){
+                        logs.push(nextLog.replace('log: Instruction: ', ''));
+                    }
+                }                
+            }
+        }
+
+        return logs;
     }
 
 }
