@@ -414,6 +414,13 @@ export class TokenManager {
             await RedisManager.saveToken(tokenFromRedis);
         }
     }
-    
 
+    static isTokenTradable(mint?: string): boolean {
+        if (!mint){
+            return false;
+        }
+        
+        return mint !== kSolAddress && mint !== kUsdcAddress && mint !== kUsdtAddress;
+    }
+    
 }

@@ -4,29 +4,12 @@ import { validateAuth } from "../../middlewares/ValidateAuth";
 import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { body } from "express-validator";
 import { validateRequest } from "../../middlewares/ValidateRequest";
-import { FirebaseManager } from "../../managers/FirebaseManager";
 import { Helpers } from "../../services/helpers/Helpers";
-import { PageToken } from "../../models/PageToken";
-import { UserTransaction } from "../../entities/users/UserTransaction";
-import { WalletManager } from "../../managers/WalletManager";
-import { ExplorerManager } from "../../services/explorers/ExplorerManager";
-import { UserManager } from "../../managers/UserManager";
-import { ProgramManager } from "../../managers/ProgramManager";
 import { SwapManager } from "../../managers/SwapManager";
 import { BadRequestError } from "../../errors/BadRequestError";
-import { User } from "../../entities/users/User";
-import { Announcement, AnnouncementsManager } from "../../managers/AnnouncementsManager";
-import { token } from "@coral-xyz/anchor/dist/cjs/utils";
-import { TokenManager, TokenTag } from "../../managers/TokenManager";
-import { LogManager } from "../../managers/LogManager";
-import { IUserTraderProfile, UserTraderProfile } from "../../entities/users/TraderProfile";
-import { WalletModel } from "../../services/solana/types";
-import { Asset, SolanaManager } from "../../services/solana/SolanaManager";
-import { PremiumError } from "../../errors/PremiumError";
+import { TokenManager } from "../../managers/TokenManager";
+import { SolanaManager } from "../../services/solana/SolanaManager";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
-import { YellowstoneManager } from "../../services/solana/geyser/YellowstoneManager";
-import { Wallet } from "../../entities/Wallet";
-import fs from "fs";
 import { PortfolioAsset } from "../../models/types";
 import { kSolAddress } from "../../services/solana/Constants";
 
@@ -83,6 +66,7 @@ router.get(
 
                 const pAsset: PortfolioAsset = tmpAsset;
                 pAsset.isVerified = token?.isVerified || false;
+                pAsset.isTradable = TokenManager.isTokenTradable(token?.address);
                 pAsset.tags = token?.tags || undefined;
                 pAsset.tagsList = token?.tagsList || [];
 

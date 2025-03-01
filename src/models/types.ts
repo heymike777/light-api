@@ -49,4 +49,5 @@ export type PortfolioAsset = Asset & {
     pnl?: number;
     tags?: { [key: string]: boolean };
     tagsList?: TokenTag[];
+    isTradable?: boolean;
 }

@@ -119,7 +119,7 @@ TokenSchema.methods.toJSON = function () {
         mintAuthority: this.mintAuthority,
         freezeAuthority: this.freezeAuthority,
         description: this.description,
-        isTradable: this.address !== kSolAddress && this.address !== kUsdcAddress && this.address !== kUsdtAddress,
+        isTradable: TokenManager.isTokenTradable(this.address),
 
         price: this.price,
         volume: this.volume,
