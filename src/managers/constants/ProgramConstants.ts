@@ -13,6 +13,10 @@ export enum kProgram {
 
     JUPITER = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
     JUPITER_Z = '61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH',
+    JUPITER_LIMIT_ORDERS = 'j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X',
+    JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
+    JUP_GOVERNANCE = 'GovaE4iu227srtG2s3tZzB4RmWBzw8sTwrCLZz7kN7rY',
+
     SOL_INCINERATOR = 'F6fmDVCQfvnEq2KR8hhfZSEczfM9JK9fWbCsYJNbTGn7',
     TENSOR = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN',
     TENSOR_CNFT = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp',
@@ -28,8 +32,6 @@ export enum kProgram {
     OKX = '6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma',
     ORCA = 'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc',
 
-    JUP_DAO = 'voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj',
-    JUP_GOVERNANCE = 'GovaE4iu227srtG2s3tZzB4RmWBzw8sTwrCLZz7kN7rY',
 
     //METEORA DDLM
 }
@@ -335,6 +337,16 @@ export const kPrograms: { [key: string]: {
         name: 'PUMPFUN AMM',
         knownInstructions: [
             { 'any': {title: 'any', priority: 2} },
+        ],
+        skip: false,
+    },
+    [kProgram.JUPITER_LIMIT_ORDERS]: {
+        name: 'JUPITER',
+        knownInstructions: [
+            { 'initializeOrder': {title: 'LIMIT ORDER', priority: 2} },
+            { 'cancelOrder': {title: 'CANCELED LIMIT ORDER', priority: 2} },
+            // { 'preFlashFillOrder': {title: 'FILL LIMIT ORDER', priority: 2} },
+            // { 'flashFillOrder': {title: 'FILL LIMIT ORDER', priority: 2} },
         ],
         skip: false,
     },

@@ -816,6 +816,39 @@ export class ProgramManager {
                     }                
                 }
             }
+            else if (programId == kProgram.JUPITER_LIMIT_ORDERS){
+                if (['initializeOrder'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[1]?.toBase58();
+                    const mint1 = accounts?.[7]?.toBase58() || '';
+                    const mint2 = accounts?.[8]?.toBase58() || '';
+
+                    const bnAmount1 = new BN(ixParsed.data.params.makingAmount);
+                    const decimals1 = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == mint1)?.uiTokenAmount.decimals || tx?.meta?.postTokenBalances?.find((balance) => balance.mint == mint1)?.uiTokenAmount.decimals;
+                    const uiAmount1 = Helpers.bnToUiAmount(bnAmount1, decimals1 || 0);
+
+                    const bnAmount2 = new BN(ixParsed.data.params.takingAmount);
+                    const decimals2 = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == mint2)?.uiTokenAmount.decimals || tx?.meta?.postTokenBalances?.find((balance) => balance.mint == mint2)?.uiTokenAmount.decimals;
+                    const uiAmount2 = Helpers.bnToUiAmount(bnAmount2, decimals2 || 0);
+
+                    if (walletAddress){
+                        const addresses = [walletAddress, mint1, mint2];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> placed a limit order to swap ${uiAmount1} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> to ${uiAmount2} <a href="${ExplorerManager.getUrlToAddress(addresses[2])}">{address2}</a> on Jupiter`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['cancelOrder'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[1]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> canceled a limit order on Jupiter`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+            }
             else if (programId == kProgram.PUMPFUN_AMM){
                 LogManager.log('!!!PUMPFUNAPP', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
                 // if (['swap', 'swapExactOut', 'swapWithPriceImpact'].indexOf(ixType) != -1){
