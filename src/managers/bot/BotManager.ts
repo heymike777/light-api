@@ -1,4 +1,4 @@
-import { Bot, GrammyError, HttpError, InlineKeyboard } from "grammy";
+import { Bot, Context, GrammyError, HttpError, InlineKeyboard } from "grammy";
 import { IMessage, Message } from "../../entities/Message";
 import { BotAddWalletHelper } from "./helpers/BotAddWalletHelper";
 import { BotHelper } from "./helpers/BotHelper";
@@ -65,7 +65,7 @@ export class BotManager {
 
         this.bot.api.config.use(autoRetry());
     
-        this.bot.on('message', (ctx) => {
+        this.bot.on('message', (ctx: Context) => {
             this.onMessage(ctx.update.message as TgMessage, ctx);
         });
 
@@ -144,7 +144,7 @@ export class BotManager {
         LogManager.log('Bot started!');    
     }
 
-    async onCommand(command: string, ctx: any, user: IUser){
+    async onCommand(command: string, ctx: Context, user: IUser){
         const helper = await this.findHelperByCommand(command);
         if (helper){
             helper.commandReceived(ctx, user);
@@ -154,7 +154,7 @@ export class BotManager {
         } 
     }
 
-    async onMessage(message: TgMessage, ctx: any){
+    async onMessage(message: TgMessage, ctx: Context){
         LogManager.log('onMessage', message);
 
         const user = await UserManager.getUserByTelegramUser(message.from);

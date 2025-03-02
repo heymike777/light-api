@@ -1,3 +1,4 @@
+import { Context } from "grammy";
 import { PremiumError } from "../../../errors/PremiumError";
 import { BonfidaManager } from "../../../services/solana/BonfidaManager";
 import { newConnection } from "../../../services/solana/lib/solana";
@@ -25,7 +26,7 @@ export class BotAddWalletHelper extends BotHelper {
         super('add_wallet', replyMessage);
     }
 
-    async messageReceived(message: TgMessage, ctx: any){
+    async messageReceived(message: TgMessage, ctx: Context){
         LogManager.log('BotAddWalletHelper', 'messageReceived', message.text);
 
         super.messageReceived(message, ctx);

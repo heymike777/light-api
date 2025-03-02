@@ -1,3 +1,4 @@
+import { Context } from "grammy";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { UserManager } from "../../UserManager";
@@ -17,7 +18,7 @@ export class BotRemoveWalletHelper extends BotHelper {
         super('remove_wallet', replyMessage);
     }
 
-    async messageReceived(message: TgMessage, ctx: any){
+    async messageReceived(message: TgMessage, ctx: Context){
         LogManager.log('BotRemoveWalletHelper', 'messageReceived', message.text);
 
         super.messageReceived(message, ctx);

@@ -1,3 +1,4 @@
+import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { Chain } from "../../../services/solana/types";
 import { LogManager } from "../../LogManager";
@@ -19,14 +20,14 @@ export class BotCallbackQueryHelper {
         this.kStartCommandReplyMessage = startCommandReplyMessage;
     }
 
-    async messageReceived(message: TgMessage, ctx: any) {
+    async messageReceived(message: TgMessage, ctx: Context) {
     };
 
-    async commandReceived(ctx: any, user: IUser) {
+    async commandReceived(ctx: Context, user: IUser) {
         ctx.reply(this.kStartCommandReplyMessage.text);
     }
 
-    getChatId(ctx: any): number {
+    getChatId(ctx: Context): number {
         const message = ctx.update.message as TgMessage;
         return message.chat.id;
     }

@@ -1,29 +1,31 @@
+import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotManager";
 
 export interface Message {
     text: string;
+    markup?: any;
 }
 
 export class BotHelper {
     kCommand: string;
-    private kStartCommandReplyMessage: Message;
+    private kReplyMessage: Message;
 
     constructor(command: string, startCommandReplyMessage: Message) {
         LogManager.log('BotHelper', 'constructor');
         this.kCommand = command;
-        this.kStartCommandReplyMessage = startCommandReplyMessage;
+        this.kReplyMessage = startCommandReplyMessage;
     }
 
-    async messageReceived(message: TgMessage, ctx: any) {
+    async messageReceived(message: TgMessage, ctx: Context) {
     };
 
-    async commandReceived(ctx: any, user: IUser) {
-        ctx.reply(this.kStartCommandReplyMessage.text);
+    async commandReceived(ctx: Context, user: IUser) {
+        ctx.reply(this.kReplyMessage.text, {reply_markup: this.kReplyMessage.markup});
     }
 
-    getChatId(ctx: any): number {
+    getChatId(ctx: Context): number {
         const message = ctx.update.message as TgMessage;
         return message.chat.id;
     }

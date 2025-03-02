@@ -1,3 +1,4 @@
+import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
@@ -18,7 +19,7 @@ export class BotMyWalletsHelper extends BotHelper {
         super('my_wallets', replyMessage);
     }
 
-    async commandReceived(ctx: any, user: IUser) {
+    async commandReceived(ctx: Context, user: IUser) {
         let response = '';
 
         const chatId = this.getChatId(ctx);
@@ -39,7 +40,7 @@ export class BotMyWalletsHelper extends BotHelper {
         ctx.reply(response);
     }
 
-    async messageReceived(message: TgMessage, ctx: any){
+    async messageReceived(message: TgMessage, ctx: Context){
         LogManager.log('BotMyWalletsHelper', 'messageReceived', message.text);
 
         super.messageReceived(message, ctx);
