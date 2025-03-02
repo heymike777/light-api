@@ -43,7 +43,7 @@ export const kPrograms: { [key: string]: {
     name?: string,
     knownInstructions: {[key: string]: KnownInstruction}[],
     skip?: boolean,
-    customIdl?: { path: string, type: 'anchor' | 'shank' | 'kinobi' },
+    customIdl?: { path: string, type: 'anchor' | 'anchorV1' | 'shank' | 'kinobi' },
     fee?: {
         account: string,
         amount: number,
@@ -142,6 +142,10 @@ export const kPrograms: { [key: string]: {
             { 'claim_token': {title: 'CLAIM', priority: 5} },
         ],
         skip: false,
+        customIdl: {
+            path: 'src/idls/jupiter_v6.json',
+            type: 'anchorV1',
+        },
     },
     [kProgram.JUPITER_Z]: {
         name: 'JUPITER Z',

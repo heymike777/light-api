@@ -357,9 +357,6 @@ export class ProgramManager {
             else if (programId == kProgram.JUPITER){
                 LogManager.log('!!!JUPITER', 'ixParsed:', ixParsed, 'accounts:', accounts);
 
-                // const ixTypesFromLogs = tx ? this.findProgramLogs(tx, programId) : [];
-                //TODO: how to understand which walletAddress initiated the swap???
-                
                 if ([
                     'route', 
                     'routeWithTokenLedger', 
@@ -387,6 +384,7 @@ export class ProgramManager {
                         'shared_accounts_route_with_token_ledger': 2,//?
                     } 
                     const walletAddress = accounts?.[walletIndexMap[ixParsed.name]]?.toBase58();
+                    LogManager.log('JUP_V6', 'walletAddress:', walletAddress);
 
                     if (walletAddress && tx?.meta){
                         const changes = this.findChangedTokenBalances(walletAddress, tx, false);
@@ -1116,12 +1114,12 @@ export class ProgramManager {
                 return undefined;
             }
 
-            console.log('!IDLTYPE' ,'programId:', programId, 'idl.idlType:', idl.idlType);
-
             const instructionParser = parser.createParser(ParserType.INSTRUCTION);
             if (instructionParser && checkIfInstructionParser(instructionParser)) {
-                console.log('parseIx', 'programId:', programId, 'ixData:', ixData);
+                LogManager.log('parseIx', 'programId:', programId, 'ixData:', ixData);
                 const output = instructionParser.parseInstructions(ixData);
+                LogManager.log('parseIx', 'programId:', programId, 'ixData:', ixData, 'output:', output);
+
 
                 let programName: string | undefined = kPrograms[programId]?.name;
                 if (!programName){
@@ -1369,7 +1367,7 @@ export class ProgramManager {
         return undefined;
     }
 
-    static setupCustomParser(programId: string, idlPath: string, idlType: "anchor" | "shank" | "kinobi"): { parser: SolanaFMParser, idlItem: IdlItem } {
+    static setupCustomParser(programId: string, idlPath: string, idlType: "anchor" | "anchorV1" | "shank" | "kinobi"): { parser: SolanaFMParser, idlItem: IdlItem } {
         const jsonString = fs.readFileSync(idlPath, "utf8");
         const idlFile = JSON.parse(jsonString);
         
@@ -1488,27 +1486,27 @@ export class ProgramManager {
         }
     }
 
-    static findProgramLogs(tx: web3.ParsedTransactionWithMeta, programId: string): string[] {
-        if (programId != kProgram.JUPITER){
-            // we support only JUPITER logs for now
-            return [];
-        }
+    // static findProgramLogs(tx: web3.ParsedTransactionWithMeta, programId: string): string[] {
+    //     if (programId != kProgram.JUPITER){
+    //         // we support only JUPITER logs for now
+    //         return [];
+    //     }
 
-        const logs: string[] = [];
-        if (tx.meta?.logMessages){
-            for (let index = 0; index < tx.meta?.logMessages.length; index++) {
-                const log = tx.meta?.logMessages[index];
-                if (log.startsWith(`Program ${programId}`)){
-                    // get next log and remove "log: Instruction: " from it. that's only for JUPITER V6
-                    const nextLog = tx.meta?.logMessages[index + 1];
-                    if (nextLog && nextLog.startsWith('log: Instruction: ')){
-                        logs.push(nextLog.replace('log: Instruction: ', ''));
-                    }
-                }                
-            }
-        }
+    //     const logs: string[] = [];
+    //     if (tx.meta?.logMessages){
+    //         for (let index = 0; index < tx.meta?.logMessages.length; index++) {
+    //             const log = tx.meta?.logMessages[index];
+    //             if (log.startsWith(`Program ${programId}`)){
+    //                 // get next log and remove "log: Instruction: " from it. that's only for JUPITER V6
+    //                 const nextLog = tx.meta?.logMessages[index + 1];
+    //                 if (nextLog && nextLog.startsWith('log: Instruction: ')){
+    //                     logs.push(nextLog.replace('log: Instruction: ', ''));
+    //                 }
+    //             }                
+    //         }
+    //     }
 
-        return logs;
-    }
+    //     return logs;
+    // }
 
 }

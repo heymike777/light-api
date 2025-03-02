@@ -46,6 +46,9 @@ import { YellowstoneManager } from "./solana/geyser/YellowstoneManager";
 import { TxParser } from "./solana/geyser/TxParser";
 import { exit } from "process";
 import { RedisManager } from "../managers/db/RedisManager";
+import mongoose from 'mongoose';
+
+// 174962
 
 export class MigrationManager {
 
@@ -124,8 +127,24 @@ export class MigrationManager {
 
         // Meteora Pool
         // await this.processTx('9zMP5NXui55L4V5vJsaTSfBk918JgZkHuPRVynoAZk7uMKqTUnwxwqqehgZqvjEtdyuMN2KnXVDgoXRrHQYuVKH'); // swap    
-        // await this.processTx('k3RYXDktdiDmqCzN4Bc3TNGQ9qVhSENsyuhNNUkKouM4WS96wFvyYAhspZt1LDQjbFuWwxa9DqVBbjetb6VB7D3')
+        // await this.processTx('3Fyw9GPLXjmQrbpRLCKEs6qab3jF961ciCzdNhR1fadf6w3ruJTeXiSCEACNfnhyJmGQkoeA2ULQt8SMiZzaKcYM');
 
+        // RAYDIUM CPMM
+        // await this.processTx('5xhE3xMkvpTTb4Btro4xdo3k1yDCdaYrktKr7Cd85NYBFVHhSpDGNEVr58HdymBE9ncZ1sCJoFApHu5qNuLh9duN');
+        // await this.processTx('5iczX6D2Vt3vBjee5YKkduQkDKUiFvSoT3j7THpscq4Z3jA52JBHbTyb9QxtRFR1WVCFfoevfPERpKQoUajbMF8v');
+
+        // ORCA
+        // await this.processTx('5d63LQj5GJqBktRqXFyMiWF94jAWAEMGkREEXv1vcVX3VqbrEGUnm8kSZdUQHXLYkEEKTZFMspBwrFQEe23KgsbM');
+        // await this.processTx('2nQpZR4uktL3hpNdVbb99TDUAJ22oR5PdKmqPvrgXCMAnLjKESn261Zh3Fis19BqQpkBqNsNWtC1vq8TT5whPyLi'); // twoHopSwap
+
+        // JUP GOVERNANCE
+        // await this.processTx('uqLicPM7YydwbaJVzUxsMjgrGT6UZ66HD8bQKf4Ni4BRYu1bLWkk99mznReRcche6TsnnoX3bK1oP5pv7eq7A8W'); // vote
+        // await this.processTx('2Pdx6zxchz5S1RnCG5kVTy4GXAdupVCsN6DegnXirx4sV736kuH4kjEfL8jYJGBSZuwYrsE4FL9RSg1gguD8dVTh'); // vote
+
+        //TODO: PUMPFUN
+        // await this.processTx('2PZmsmcekxhTh1xCatopVuS1W32j8178zZRJZBpNGnUXBabnxo2TbkbhixA7xTgpnhz4DzYXQkPhqcpbPLtyYxUs'); // swap
+        // await this.processTx('5XjvUxArVST3p6wpF6JnwboAgbJohVq3AKXrCisotNreZVMrxm7aARgtuS4U7F1XWWCpc5BVn732hQSoNb7izeoo'); // add lp
+        // await this.processTx('3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp
 
         // const connection = newConnection();
         // for (let index = 0; index < 200; index++) {
@@ -149,8 +168,21 @@ export class MigrationManager {
 
         // await this.testGeyserTx();
 
+        // await this.mongoExport();
+        // await this.mongoImport();
+
+
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
+
+    // static async testDebridge() {
+    //     const rpcConnection = newConnection();
+    //     const txParser = new SolanaParser([
+    //         { idl: JupiterIdl as unknown as Idl, programId: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo" }
+    //     ]);
+
+    // }
 
     static async testGeyserTx() {
         const jsonString = fs.readFileSync('test_tx.json', "utf8");
@@ -301,6 +333,56 @@ export class MigrationManager {
             LogManager.log(index++, 'programId:', p.id, 'count:', p.count);
         }
         LogManager.log('findTransactionsWithoutDescription done');
+    }
+
+    static async mongoExport(){
+        // get list of collections in mongodb
+        // export each collection to json file
+
+        if (!mongoose.connection.db){
+            console.error('mongoExport: No db connection');
+            return;
+        }
+
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        const names = collections.map((collection: any) => collection.name);
+        console.log('collections', names);
+
+        const connectionUrl = process.env.MONGODB_CONNECTION_URL!;
+        const lines: string[] = [];
+        for (const collectionName of names) {
+            const command = `mongoexport --uri="${connectionUrl}" --collection=${collectionName} --out=${collectionName}.json`;
+            lines.push(command);
+        }
+
+        fs.writeFileSync('files/mongoexport.sh', lines.join('\n'));
+        
+
+    }
+
+    static async mongoImport(){
+        // get list of collections in mongodb
+        // export each collection to json file
+
+        if (!mongoose.connection.db){
+            console.error('mongoImport: No db connection');
+            return;
+        }
+
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        const names = collections.map((collection: any) => collection.name);
+        console.log('collections', names);
+
+        const connectionUrl = process.env.MONGODB_CONNECTION_URL!;
+        const lines: string[] = [];
+        for (const collectionName of names) {
+            const command = `mongoimport --uri="${connectionUrl}" --collection=${collectionName} --file=${collectionName}.json`;
+            lines.push(command);
+        }
+
+        fs.writeFileSync('files/mongoimport.sh', lines.join('\n'));
+        
+
     }
 
 }
