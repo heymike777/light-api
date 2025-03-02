@@ -7,12 +7,12 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface IMessage extends mongoose.Document {
     chatId: number;
-    firstName: string;
-    lastName: string;
-    username: string;
-    isPremium: boolean;
-    isBot: boolean;
-    languageCode: string;
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    isPremium?: boolean;
+    isBot?: boolean;
+    languageCode?: string;
 
     //isChannel
     //isGroup

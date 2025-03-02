@@ -2,7 +2,7 @@ import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { UserRefClaim } from "../../../entities/users/UserRefClaim";
 import { LogManager } from "../../LogManager";
-import { TgMessage } from "../BotManager";
+import { BotManager, InlineButton, TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 
 export class BotStartHelper extends BotHelper {
@@ -10,8 +10,22 @@ export class BotStartHelper extends BotHelper {
     constructor() {
         LogManager.log('BotStartHelper', 'constructor');
 
+        const buttons: InlineButton[] = [
+            {id: 'add_wallet', text: '➕ Add wallet'},
+            {id: 'my_wallets', text: '👀 My wallets'},
+            {id: 'row', text: ''},
+            {id: 'trader_profiles', text: '💰 Trader profiles'},
+            {id: 'row', text: ''},
+            {id: 'connect_email', text: '✉️ Connect email'},
+            {id: 'referral_program', text: '🎁 Referrals'},
+            {id: 'row', text: ''},
+            {id: 'upgrade', text: '🚀 Upgrade'},
+            {id: 'settings', text: '⚙️ Settings'},
+        ];
+
         const replyMessage: Message = {
-            text: '🚀 Light - real-time Solana wallet tracker:\n' + 
+            photo: 'AgACAgIAAxkBAAIEaGfEQd9YILMuVAcrqrUKqGfLKBIpAAJm7jEbRyQgSjl9o62y86V9AQADAgADeQADNgQ',
+            text: '🚀 Light - real-time Solana wallet tracker.\n' + 
             '\n' +
             'This bot will help you to track your Solana wallets in real-time.\n' +
             '\n' +
@@ -25,7 +39,9 @@ export class BotStartHelper extends BotHelper {
             'AppStore: https://apps.apple.com/app/id6739495155\n' +
             'Google Play: https://play.google.com/store/apps/details?id=app.light.bot\n' +
             '\n' +
-            'If you want to use the same account in mobile app and Telegram bot, connect email address here, and you\'ll be able to login in mobile app with the same email.\n'
+            'If you want to use the same account in mobile app and Telegram bot, connect email address here, and you\'ll be able to login in mobile app with the same email.\n',
+            buttons: buttons,
+            markup: BotManager.buildInlineKeyboard(buttons),
         };
 
         super('start', replyMessage);

@@ -26,26 +26,71 @@ export enum InlineKeyboardType {
     TOKEN_TX = 'token_tx',
 }
 
+export const kAdminUsernames = [
+    'heymike777'
+]
+
 export interface TgMessage {
     message_id: number;
     from: {
         id: number;
         is_bot: boolean;
-        first_name: string;
-        last_name: string;
-        username: string;
-        language_code: string;
-        is_premium: boolean;
+        first_name?: string;
+        last_name?: string;
+        username?: string;
+        language_code?: string;
+        is_premium?: boolean;
     };
     chat: {
         id: number;
-        first_name: string;
-        username: string;
+        first_name?: string;
+        username?: string;
         type: string;
     };
+    voice?: {
+        duration: number;
+        mime_type: string;
+        file_id: string;
+        file_unique_id: string;
+        file_size: number;
+    };
+    document?: {
+        file_id: string;
+        file_unique_id: string;
+        thumb: {
+            file_id: string;
+            file_unique_id: string;
+            file_size: number;
+            width: number;
+            height: number;
+        };
+        thumbnail: {
+            file_id: string;
+            file_unique_id: string;
+            file_size: number;
+            width: number;
+            height: number;
+        };
+        file_name: string;
+        mime_type: string;
+        file_size: number;
+    };
+    photo?: {
+        file_id: string;
+        file_unique_id: string;
+        file_size: number;
+        width: number;
+        height: number;
+    }[];
     date: number;
     text: string;
     entities: any[];
+}
+
+export interface InlineButton {
+    id: string;
+    text: string;
+    link?: string;
 }
 
 export class BotManager {
@@ -92,52 +137,77 @@ export class BotManager {
         // });
 
         this.bot.on("callback_query:data", async (ctx) => {
-            const data = ctx.callbackQuery.data.split('_');
-            if (data.length < 2){
-                LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
+            const buttonId = ctx.callbackQuery.data;
+            console.log('Button clicked', buttonId);
+            const user = await UserManager.getUserByTelegramUser(ctx.callbackQuery.from);
+
+            if (buttonId == 'add_wallet'){
+                console.log('Add wallet button clicked by', ctx.callbackQuery.from.username);
+                const helper = await this.findHelperByCommand(buttonId);
+                if (helper && ctx.chat){
+                    this.saveMessageToDB({
+                        message_id: 0,
+                        chat: ctx.chat,
+                        from: ctx.callbackQuery.from,
+                        text: '/add_wallet',
+                        date: Date.now(),
+                        entities: [],
+                    });
+
+                    helper.commandReceived(ctx, user);
+                }
+        
                 await ctx.answerCallbackQuery(); // remove loading animation
-                return;
             }
-
-            const chain = data[0];
-            const command = data[1];
-            if (chain == Chain.SOLANA){
-                if (command == 'trade'){
-                    if (data.length < 2){
-                        LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
-                        await ctx.answerCallbackQuery(); // remove loading animation
-                        return;
-                    }
-
-                    const mint = data[2];
-                    LogManager.log('trade', mint, 'by', ctx.callbackQuery.from.username);
-
-                    //TODO: send message with this token info and buttons to buy/sell
-
+            else {
+                // buy / sell tokens
+                const data = ctx.callbackQuery.data.split('_');
+                if (data.length < 2){
+                    LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
                     await ctx.answerCallbackQuery(); // remove loading animation
                     return;
                 }
-                else if (command == 'buy'){
-                    if (data.length < 3){
-                        LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
+
+                const chain = data[0];
+                const command = data[1];
+                if (chain == Chain.SOLANA){
+                    if (command == 'trade'){
+                        if (data.length < 2){
+                            LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
+                            await ctx.answerCallbackQuery(); // remove loading animation
+                            return;
+                        }
+
+                        const mint = data[2];
+                        LogManager.log('trade', mint, 'by', ctx.callbackQuery.from.username);
+
+                        //TODO: send message with this token info and buttons to buy/sell
+
                         await ctx.answerCallbackQuery(); // remove loading animation
                         return;
                     }
+                    else if (command == 'buy'){
+                        if (data.length < 3){
+                            LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
+                            await ctx.answerCallbackQuery(); // remove loading animation
+                            return;
+                        }
 
-                    const mint = data[2];
-                    const amount = data[3];
-                    LogManager.log('buy', mint, 'for', amount, 'SOL', 'by', ctx.callbackQuery.from.username);
+                        const mint = data[2];
+                        const amount = data[3];
+                        LogManager.log('buy', mint, 'for', amount, 'SOL', 'by', ctx.callbackQuery.from.username);
 
-                    //TODO: buy token
+                        //TODO: buy token
 
-                    await ctx.answerCallbackQuery(); // remove loading animation
-                    return;
+                        await ctx.answerCallbackQuery(); // remove loading animation
+                        return;
+                    }
                 }
+
+                LogManager.log("Unknown button event with payload", ctx.callbackQuery.data);
+                await ctx.answerCallbackQuery(); // remove loading animation
             }
 
-
-            LogManager.log("Unknown button event with payload", ctx.callbackQuery.data);
-            await ctx.answerCallbackQuery(); // remove loading animation
         });
     
         this.bot.start();
@@ -156,6 +226,26 @@ export class BotManager {
 
     async onMessage(message: TgMessage, ctx: Context){
         LogManager.log('onMessage', message);
+
+        if (message.from.username && kAdminUsernames.includes(message.from.username)){
+            if (message.voice){
+                ctx.reply('File ID (audio): ' + message.voice.file_id);
+            }
+            if (message.document){
+                ctx.reply('File ID (document): ' + message.document.file_id);
+            }
+            if (message.photo){
+                // find the biggest photo
+                let biggestPhoto = message.photo[0];
+                for (const photo of message.photo){
+                    if (photo.width > biggestPhoto.width){
+                        biggestPhoto = photo;
+                    }
+                }
+                ctx.reply('File ID (photo): ' + biggestPhoto.file_id);
+            }
+        }
+
 
         const user = await UserManager.getUserByTelegramUser(message.from);
         const lastMessage = await Message.findOne({chatId: message.chat.id}).sort({createdAt: -1});
@@ -202,7 +292,7 @@ export class BotManager {
         newMessage.firstName = message.from.first_name;
         newMessage.lastName = message.from.last_name;
         newMessage.username = message.from.username;
-        newMessage.isPremium = message.from.is_premium;
+        newMessage.isPremium = message.from.is_premium || false;
         newMessage.isBot = message.from.is_bot;
         newMessage.languageCode = message.from.language_code;
         newMessage.data = message;
@@ -248,6 +338,22 @@ export class BotManager {
         else {
             await MicroserviceManager.sendMessageToTelegram(JSON.stringify(data));
         }
+    }
+
+    static buildInlineKeyboard(buttons: InlineButton[]): InlineKeyboardMarkup | undefined {
+        const inlineKeyboard = new InlineKeyboard();
+        buttons.forEach(button => {
+            if (button.id == 'row'){
+                inlineKeyboard.row();
+            }
+            else if (button.link){
+                inlineKeyboard.url(button.text, button.link);
+            }
+            else {
+                inlineKeyboard.text(button.text, button.id);
+            }
+        });
+        return inlineKeyboard;
     }
 
     static buildInlineKeyboardForToken(chain: Chain, type: InlineKeyboardType, mint: string, tokenName: string): InlineKeyboardMarkup | undefined {

@@ -1,11 +1,13 @@
 import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { LogManager } from "../../LogManager";
-import { TgMessage } from "../BotManager";
+import { InlineButton, TgMessage } from "../BotManager";
 
 export interface Message {
     text: string;
     markup?: any;
+    photo?: string,
+    buttons?: InlineButton[],
 }
 
 export class BotHelper {
@@ -22,7 +24,12 @@ export class BotHelper {
     };
 
     async commandReceived(ctx: Context, user: IUser) {
-        ctx.reply(this.kReplyMessage.text, {reply_markup: this.kReplyMessage.markup});
+        if (this.kReplyMessage.photo) {
+            ctx.replyWithPhoto(this.kReplyMessage.photo, { caption: this.kReplyMessage.text, reply_markup: this.kReplyMessage.markup });
+        }
+        else {
+            ctx.reply(this.kReplyMessage.text, { reply_markup: this.kReplyMessage.markup });
+        }
     }
 
     getChatId(ctx: Context): number {

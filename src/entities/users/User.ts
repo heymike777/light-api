@@ -10,11 +10,11 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export interface TelegramUser {
     id: number;
     is_bot: boolean;
-    first_name: string;
-    last_name: string;
-    username: string;
-    language_code: string;
-    is_premium: boolean;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    language_code?: string;
+    is_premium?: boolean;
 }
 
 export interface IUser extends mongoose.Document {
