@@ -22,8 +22,6 @@ export class BotMyWalletsHelper extends BotHelper {
     async commandReceived(ctx: Context, user: IUser) {
         let response = '';
 
-        const chatId = this.getChatId(ctx);
-        // const wallets = await WalletManager.fetchWalletsByChatId(chatId);
         const wallets = await WalletManager.fetchWalletsByUserId(user.id);
         if (wallets.length == 0){
             response = 'No wallets found.';
@@ -40,10 +38,10 @@ export class BotMyWalletsHelper extends BotHelper {
         ctx.reply(response);
     }
 
-    async messageReceived(message: TgMessage, ctx: Context){
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
         LogManager.log('BotMyWalletsHelper', 'messageReceived', message.text);
 
-        super.messageReceived(message, ctx);
+        super.messageReceived(message, ctx, user);
 
         const lines = message.text.split('\n');
         const walletAddresses: string[] = [];
@@ -61,10 +59,11 @@ export class BotMyWalletsHelper extends BotHelper {
             walletAddresses.push(line);                
         }
 
-        const user = await UserManager.getUserByTelegramUser(message.from);
+        // const user = await UserManager.getUserByTelegramUser(message.from);
         await WalletManager.removeWallets(message.chat.id, user.id, walletAddresses);
 
         ctx.reply('Done ✅');
+        return true;
     }
 
 }

@@ -20,7 +20,7 @@ export class BotCallbackQueryHelper {
         this.kStartCommandReplyMessage = startCommandReplyMessage;
     }
 
-    async messageReceived(message: TgMessage, ctx: Context) {
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser) {
     };
 
     async commandReceived(ctx: Context, user: IUser) {

@@ -14,6 +14,7 @@ import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
 import { EnvManager } from "../EnvManager";
 import { MicroserviceManager } from "../MicroserviceManager";
+import { BotConnectEmailHelper } from "./helpers/BotConnectEmailHelper";
 
 export interface SendMessageData {
     chatId: number;
@@ -100,6 +101,7 @@ export class BotManager {
         new BotAddWalletHelper(),
         new BotRemoveWalletHelper(),
         new BotMyWalletsHelper(),
+        new BotConnectEmailHelper(),
     ];
 
     constructor() {
@@ -141,22 +143,20 @@ export class BotManager {
             console.log('Button clicked', buttonId);
             const user = await UserManager.getUserByTelegramUser(ctx.callbackQuery.from);
 
-            if (buttonId == 'add_wallet'){
-                console.log('Add wallet button clicked by', ctx.callbackQuery.from.username);
-                const helper = await this.findHelperByCommand(buttonId);
-                if (helper && ctx.chat){
-                    this.saveMessageToDB({
-                        message_id: 0,
-                        chat: ctx.chat,
-                        from: ctx.callbackQuery.from,
-                        text: '/add_wallet',
-                        date: Date.now(),
-                        entities: [],
-                    });
+            // await UserManager.updateTelegramState(user.id, undefined); // reset user's state
 
-                    helper.commandReceived(ctx, user);
-                }
-        
+            const helper = await this.findHelperByCommand(buttonId);
+            if (helper && ctx.chat){
+                // this.saveMessageToDB({
+                //     message_id: 0,
+                //     chat: ctx.chat,
+                //     from: ctx.callbackQuery.from,
+                //     text: `/${buttonId}`,
+                //     date: Date.now(),
+                //     entities: [],
+                // });
+
+                helper.commandReceived(ctx, user);
                 await ctx.answerCallbackQuery(); // remove loading animation
             }
             else {
@@ -246,9 +246,7 @@ export class BotManager {
             }
         }
 
-
-        const user = await UserManager.getUserByTelegramUser(message.from);
-        const lastMessage = await Message.findOne({chatId: message.chat.id}).sort({createdAt: -1});
+        const user = await UserManager.getUserByTelegramUser(message.from, true);
 
         await this.saveMessageToDB(message);
         
@@ -258,6 +256,17 @@ export class BotManager {
             return;
         }
 
+        if (user.telegramState && user.telegramState.helper){
+            const helper = await this.findHelperByCommand(user.telegramState.helper);
+            if (helper){
+                const success = await helper.messageReceived(message, ctx, user);
+                if (success){
+                    return;
+                }
+            }
+        }
+
+        const lastMessage = await Message.findOne({chatId: message.chat.id}).sort({createdAt: -1});//TODO: don't rely on last message. better save user's state in User
         if (!lastMessage){
             // do nothing?
             return;
@@ -269,11 +278,14 @@ export class BotManager {
         if (lastMessageCommand){
             const helper = await this.findHelperByCommand(lastMessageCommand);
             if (helper){
-                helper.messageReceived(message, ctx);
-                return;
+                const success = await helper.messageReceived(message, ctx, user);
+                if (success){
+                    return;
+                }
             }
         }
 
+        await UserManager.updateTelegramState(user.id, undefined); // reset user's state, if no found helper
         //...
 
     }

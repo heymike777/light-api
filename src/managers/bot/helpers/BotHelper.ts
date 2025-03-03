@@ -20,20 +20,28 @@ export class BotHelper {
         this.kReplyMessage = startCommandReplyMessage;
     }
 
-    async messageReceived(message: TgMessage, ctx: Context) {
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
+        return false;
     };
 
     async commandReceived(ctx: Context, user: IUser) {
         if (this.kReplyMessage.photo) {
-            ctx.replyWithPhoto(this.kReplyMessage.photo, { caption: this.kReplyMessage.text, reply_markup: this.kReplyMessage.markup });
+            ctx.replyWithPhoto(this.kReplyMessage.photo, { 
+                caption: this.kReplyMessage.text, 
+                reply_markup: this.kReplyMessage.markup,
+                parse_mode: 'HTML',
+            });
         }
         else {
-            ctx.reply(this.kReplyMessage.text, { reply_markup: this.kReplyMessage.markup });
+            ctx.reply(this.kReplyMessage.text, { 
+                reply_markup: this.kReplyMessage.markup, 
+                parse_mode: 'HTML',
+            });
         }
     }
 
-    getChatId(ctx: Context): number {
-        const message = ctx.update.message as TgMessage;
-        return message.chat.id;
-    }
+    // getChatId(ctx: Context): number {
+    //     const message = ctx.update.message as TgMessage;
+    //     return message.chat.id;
+    // }
 }

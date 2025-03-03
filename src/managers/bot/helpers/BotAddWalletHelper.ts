@@ -8,6 +8,7 @@ import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
+import { IUser, TelegramWaitingType } from "../../../entities/users/User";
 
 export class BotAddWalletHelper extends BotHelper {
 
@@ -26,10 +27,15 @@ export class BotAddWalletHelper extends BotHelper {
         super('add_wallet', replyMessage);
     }
 
-    async messageReceived(message: TgMessage, ctx: Context){
+    async commandReceived(ctx: Context, user: IUser) {
+        await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.ADD_WALLET, helper: this.kCommand });
+        await super.commandReceived(ctx, user);
+    }
+
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
         LogManager.log('BotAddWalletHelper', 'messageReceived', message.text);
 
-        super.messageReceived(message, ctx);
+        super.messageReceived(message, ctx, user);
 
         const lines = message.text.split('\n');
         const wallets: {address: string, title?: string}[] = [];
@@ -67,7 +73,7 @@ export class BotAddWalletHelper extends BotHelper {
 
         let walletsCounter = 0;
         let hasLimitError = false;
-        const user = await UserManager.getUserByTelegramUser(message.from);
+        // const user = await UserManager.getUserByTelegramUser(message.from);
         for (const wallet of wallets) {
             try {
                 await WalletManager.addWallet(message.chat.id, user, wallet.address, wallet.title);
@@ -93,6 +99,10 @@ export class BotAddWalletHelper extends BotHelper {
         else {
             ctx.reply(`${walletsCounter} wallets saved! We will start tracking them immediately.`);
         }
+
+        await UserManager.updateTelegramState(user.id, undefined);
+
+        return true;
     }
 
 }

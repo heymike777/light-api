@@ -1,8 +1,6 @@
-import { ISubscription, Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
-import { UserTraderProfile } from "../entities/users/TraderProfile";
-import { IUser, TelegramUser, User } from "../entities/users/User";
+import { Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
+import { IUser, TelegramState, TelegramUser, User } from "../entities/users/User";
 import { UserTransaction } from "../entities/users/UserTransaction";
-import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
@@ -157,6 +155,25 @@ export class UserManager {
     static async fillUserWithTraderProfiles(user: IUser): Promise<IUser> {
         user.traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id);
         return user;
+    }
+
+    static async updateTelegramState(userId: string, state?: TelegramState){
+        if (!state){
+            await User.updateOne({ _id: userId }, {
+                $unset: {
+                    telegramState: 1,
+                }
+            });
+        }
+        else {
+            await User.updateOne({ _id: userId }, {
+                $set: {
+                    telegramState: state,
+                }
+            });
+        }
+
+        console.log('updateTelegramState', userId, state);
     }
 
 }

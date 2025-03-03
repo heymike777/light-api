@@ -35,9 +35,7 @@ export class BotStartHelper extends BotHelper {
             '/my_wallets - list of your wallets\n' +
             '/help - help\n' +
             '\n' +
-            'I have a mobile app, so if you want to use it, please download it from the App Store or Google Play.\n' +
-            'AppStore: https://apps.apple.com/app/id6739495155\n' +
-            'Google Play: https://play.google.com/store/apps/details?id=app.light.bot\n' +
+            'I have a mobile app, so if you want to use it, please download it from the <a href="https://apps.apple.com/app/id6739495155">AppStore</a> or <a href="https://play.google.com/store/apps/details?id=app.light.bot">Google Play</a>.\n' +
             '\n' +
             'If you want to use the same account in mobile app and Telegram bot, connect email address here, and you\'ll be able to login in mobile app with the same email.\n',
             buttons: buttons,
@@ -77,12 +75,11 @@ export class BotStartHelper extends BotHelper {
         super.commandReceived(ctx, user);
     }
 
-    async messageReceived(message: TgMessage, ctx: Context){
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
         LogManager.log('BotStartHelper', 'messageReceived', message.text, 'ctx.match:', ctx.match);
 
-        super.messageReceived(message, ctx);
-
-
+        super.messageReceived(message, ctx, user);
+        return false;
     }
 
 

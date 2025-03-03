@@ -1,10 +1,11 @@
 import { Context } from "grammy";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
-import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
+import { IUser, TelegramWaitingType } from "../../../entities/users/User";
+import { UserManager } from "../../UserManager";
 
 export class BotRemoveWalletHelper extends BotHelper {
 
@@ -18,10 +19,15 @@ export class BotRemoveWalletHelper extends BotHelper {
         super('remove_wallet', replyMessage);
     }
 
-    async messageReceived(message: TgMessage, ctx: Context){
+    async commandReceived(ctx: Context, user: IUser) {
+        await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.REMOVE_WALLET, helper: this.kCommand });
+        await super.commandReceived(ctx, user);
+    }
+
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
         LogManager.log('BotRemoveWalletHelper', 'messageReceived', message.text);
 
-        super.messageReceived(message, ctx);
+        super.messageReceived(message, ctx, user);
 
         const lines = message.text.split('\n');
         const walletAddresses: string[] = [];
@@ -39,10 +45,11 @@ export class BotRemoveWalletHelper extends BotHelper {
             walletAddresses.push(line);                
         }
 
-        const user = await UserManager.getUserByTelegramUser(message.from);
         await WalletManager.removeWallets(message.chat.id, user.id, walletAddresses);
+        await UserManager.updateTelegramState(user.id, undefined);
 
         ctx.reply('Done ✅');
+        return true;
     }
 
 }

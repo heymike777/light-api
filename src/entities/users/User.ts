@@ -17,6 +17,19 @@ export interface TelegramUser {
     is_premium?: boolean;
 }
 
+export enum TelegramWaitingType {
+    EMAIL = 'email',
+    EMAIL_VERIFICATION_CODE = 'email_verification_code',
+    ADD_WALLET = 'add_wallet',
+    REMOVE_WALLET = 'remove_wallet',
+}
+
+export interface TelegramState {
+    waitingFor?: TelegramWaitingType;
+    data?: any;
+    helper?: string;
+}
+
 export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
@@ -25,6 +38,7 @@ export interface IUser extends mongoose.Document {
     isAdmin?: boolean;
     usedGiftCardsCount?: number;
     engine?: string;
+    telegramState?: TelegramState;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -52,6 +66,11 @@ export const UserSchema = new mongoose.Schema<IUser>({
     isAdmin: { type: Boolean },
     usedGiftCardsCount: { type: Number },
     engine: { type: String },
+    telegramState: {
+        waitingFor: { type: String },
+        data: { type: Mixed },
+        helper: { type: String },
+    },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
