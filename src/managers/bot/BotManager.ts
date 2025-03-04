@@ -134,28 +134,26 @@ export class BotManager {
         //     LogManager.log('Bot joined chat', ctx.chat.id);
         // });
 
-        // this.bot.on("message:left_chat_member:me", async (ctx) => {
-        //     LogManager.log('Bot left chat', ctx.chat.id);
-        // });
+        this.bot.on("my_chat_member", async (ctx) => {
+            console.log('my_chat_member', ctx.chat, ctx.myChatMember);
+
+            if (ctx.myChatMember.new_chat_member.status == 'kicked'){
+                console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) blocked bot ${ctx.myChatMember.new_chat_member.user.username}`);
+            }
+            else if (ctx.myChatMember.new_chat_member.status == 'member'){
+                console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) unblocked bot ${ctx.myChatMember.new_chat_member.user.username}`);
+            }
+        });
 
         this.bot.on("callback_query:data", async (ctx) => {
             const buttonId = ctx.callbackQuery.data;
             console.log('Button clicked', buttonId);
             const user = await UserManager.getUserByTelegramUser(ctx.callbackQuery.from);
 
-            // await UserManager.updateTelegramState(user.id, undefined); // reset user's state
+            await UserManager.updateTelegramState(user.id, undefined); // reset user's state
 
             const helper = await this.findHelperByCommand(buttonId);
             if (helper && ctx.chat){
-                // this.saveMessageToDB({
-                //     message_id: 0,
-                //     chat: ctx.chat,
-                //     from: ctx.callbackQuery.from,
-                //     text: `/${buttonId}`,
-                //     date: Date.now(),
-                //     entities: [],
-                // });
-
                 helper.commandReceived(ctx, user);
                 await ctx.answerCallbackQuery(); // remove loading animation
             }

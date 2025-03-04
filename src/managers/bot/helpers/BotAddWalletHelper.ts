@@ -95,12 +95,13 @@ export class BotAddWalletHelper extends BotHelper {
         }
         else if (walletsCounter == 1){
             ctx.reply('Wallet saved! We will start tracking it immediately.');
+            await UserManager.updateTelegramState(user.id, undefined);
         }
         else {
             ctx.reply(`${walletsCounter} wallets saved! We will start tracking them immediately.`);
+            await UserManager.updateTelegramState(user.id, undefined);
         }
 
-        await UserManager.updateTelegramState(user.id, undefined);
 
         return true;
     }
