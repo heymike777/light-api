@@ -15,6 +15,7 @@ import { LogManager } from "../LogManager";
 import { EnvManager } from "../EnvManager";
 import { MicroserviceManager } from "../MicroserviceManager";
 import { BotConnectEmailHelper } from "./helpers/BotConnectEmailHelper";
+import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
 
 export interface SendMessageData {
     chatId: number;
@@ -102,6 +103,7 @@ export class BotManager {
         new BotRemoveWalletHelper(),
         new BotMyWalletsHelper(),
         new BotConnectEmailHelper(),
+        new BotRevokeAccountHelper(),
     ];
 
     constructor() {
@@ -158,8 +160,7 @@ export class BotManager {
         });
 
         this.bot.on("callback_query:data", async (ctx) => {
-            const buttonId = ctx.callbackQuery.data;
-            console.log('Button clicked', buttonId);
+            let buttonId = ctx.callbackQuery.data.split('|')[0];
             const user = await UserManager.getUserByTelegramUser(ctx.callbackQuery.from);
 
             await UserManager.updateTelegramState(user.id, undefined); // reset user's state

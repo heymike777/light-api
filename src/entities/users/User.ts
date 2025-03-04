@@ -22,6 +22,7 @@ export enum TelegramWaitingType {
     EMAIL_VERIFICATION_CODE = 'email_verification_code',
     ADD_WALLET = 'add_wallet',
     REMOVE_WALLET = 'remove_wallet',
+
 }
 
 export interface TelegramState {

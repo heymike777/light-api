@@ -17,13 +17,8 @@ import { SwapManager } from "../../managers/SwapManager";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { User } from "../../entities/users/User";
 import { Announcement, AnnouncementsManager } from "../../managers/AnnouncementsManager";
-import { token } from "@coral-xyz/anchor/dist/cjs/utils";
 import { TokenManager } from "../../managers/TokenManager";
 import { LogManager } from "../../managers/LogManager";
-import { Subscription } from "../../entities/payments/Subscription";
-import { PushToken } from "../../entities/PushToken";
-import { UserTraderProfile } from "../../entities/users/TraderProfile";
-import { Wallet } from "../../entities/Wallet";
 import { RedisManager } from "../../managers/db/RedisManager";
 
 const router = express.Router();
@@ -106,12 +101,7 @@ router.delete(
             throw new NotAuthorizedError();
         }
 
-        await User.deleteOne({ _id: userId });
-        await Subscription.deleteMany({ userId: userId });
-        await PushToken.deleteMany({ userId: userId });
-        await Wallet.deleteMany({ userId: userId });
-        await UserTraderProfile.updateMany({ userId: userId }, { $set: { active: false } });
-        await UserTransaction.deleteMany({ userId: userId });
+        await UserManager.deleteUser(userId);
 
         res.status(200).send({success: true});
     }

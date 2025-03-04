@@ -1,4 +1,6 @@
 import { Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
+import { PushToken } from "../entities/PushToken";
+import { UserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser, TelegramState, TelegramUser, User } from "../entities/users/User";
 import { UserTransaction } from "../entities/users/UserTransaction";
 import { Wallet } from "../entities/Wallet";
@@ -232,7 +234,33 @@ export class UserManager {
             }
         });
 
+        await PushToken.updateMany({ userId: fromUserId }, {
+            $set: {
+                userId: toUserId,
+            }
+        });
 
+        await Subscription.updateMany({ userId: fromUserId }, {
+            $set: {
+                userId: toUserId,
+            }
+        });
     }
+
+    static async deleteUser(userId: string){
+        await User.deleteOne({ _id: userId });
+        await Subscription.deleteMany({ userId: userId });
+        await PushToken.deleteMany({ userId: userId });
+        await Wallet.deleteMany({ userId: userId });
+        await UserTraderProfile.updateMany({ userId: userId }, { $set: { active: false } });
+        await UserTransaction.deleteMany({ userId: userId });
+    }
+
+    static async revokeUser(userId: string){
+        await Wallet.deleteMany({ userId: userId });
+        await UserTraderProfile.updateMany({ userId: userId }, { $set: { active: false } });
+        await UserTransaction.deleteMany({ userId: userId });
+    }
+
 
 }
