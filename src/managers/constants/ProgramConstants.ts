@@ -355,10 +355,14 @@ export const kPrograms: { [key: string]: {
     [kProgram.GO_FUND_MEME]: {
         name: 'GO FUND MEME',
         knownInstructions: [
-            { 'any': {title: 'any', priority: 3} },
+            // { 'any': {title: 'any', priority: 3} },
+            { 'swap': {title: 'SWAP', priority: 3} },
         ],
         skip: false,
-        skipIdl: false,
+        customIdl: {
+            path: 'src/idls/gofundmeme.json',
+            type: 'anchor',
+        },
     },
 }
 
