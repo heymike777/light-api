@@ -1,5 +1,5 @@
 import { Context } from "grammy";
-import { IUser } from "../../../entities/users/User";
+import { IUser, User, UserBotStatus } from "../../../entities/users/User";
 import { UserRefClaim } from "../../../entities/users/UserRefClaim";
 import { LogManager } from "../../LogManager";
 import { BotManager, InlineButton, TgMessage } from "../BotManager";
@@ -24,7 +24,7 @@ export class BotStartHelper extends BotHelper {
         ];
 
         const replyMessage: Message = {
-            photo: 'AgACAgIAAxkBAAIEaGfEQd9YILMuVAcrqrUKqGfLKBIpAAJm7jEbRyQgSjl9o62y86V9AQADAgADeQADNgQ',
+            photo: 'https://light.dangervalley.com/static/telegram/start.png',
             text: '🚀 Light - real-time Solana wallet tracker.\n' + 
             '\n' +
             'This bot will help you to track your Solana wallets in real-time.\n' +
@@ -60,7 +60,29 @@ export class BotStartHelper extends BotHelper {
 
         if (!user.referralCode){
             user.referralCode = referralCode;
-            await user.save();
+
+            await User.updateOne({ _id: user._id }, {
+                $set: {
+                    referralCode: user.referralCode,
+                }
+            });
+
+        }
+
+        const botUsername = ctx.me?.username;
+        if (botUsername && (!user.bots || !user.bots[botUsername] || user.bots[botUsername] == UserBotStatus.BLOCKED)){
+            user.bots = user.bots || {};
+            user.bots[botUsername] = UserBotStatus.ACTIVE;
+            if (!user.defaultBot){
+                user.defaultBot = botUsername;
+            }
+
+            await User.updateOne({ _id: user._id }, {
+                $set: {
+                    bots: user.bots,
+                    defaultBot: user.defaultBot,
+                }
+            });
         }
 
         if (referralCode != 'default'){

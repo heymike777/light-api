@@ -30,15 +30,24 @@ export interface TelegramState {
     helper?: string;
 }
 
+export enum UserBotStatus {
+    ACTIVE = 'active',
+    BLOCKED = 'blocked',
+}
+
 export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
+    telegramOld?: TelegramUser;
     referralCode?: string;
     lastIpAddress?: string;
     isAdmin?: boolean;
     usedGiftCardsCount?: number;
     engine?: string;
     telegramState?: TelegramState;
+
+    defaultBot?: string;
+    bots?: {[key: string]: 'default' | 'active' | 'blocked'};
 
     updatedAt?: Date;
     createdAt: Date;
@@ -61,6 +70,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
         language_code: { type: String },
         is_premium: { type: Boolean }
     },
+    telegramOld: { type: Mixed },
     referralCode: { type: String },
     lastIpAddress: { type: String },
     isAdmin: { type: Boolean },
@@ -71,6 +81,9 @@ export const UserSchema = new mongoose.Schema<IUser>({
         data: { type: Mixed },
         helper: { type: String },
     },
+
+    defaultBot: { type: String },
+    bots: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }

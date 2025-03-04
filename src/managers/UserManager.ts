@@ -1,6 +1,8 @@
 import { Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
 import { IUser, TelegramState, TelegramUser, User } from "../entities/users/User";
 import { UserTransaction } from "../entities/users/UserTransaction";
+import { Wallet } from "../entities/Wallet";
+import { BadRequestError } from "../errors/BadRequestError";
 import { MixpanelManager } from "./MixpanelManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
@@ -174,6 +176,63 @@ export class UserManager {
         }
 
         console.log('updateTelegramState', userId, state);
+    }
+
+    static async mergeUsers(fromUserId: string, toUserId: string){
+        const fromUser = await User.findById(fromUserId);
+        const toUser = await User.findById(toUserId);
+        console.log('mergeUsers', 'fromUserId:', fromUserId, 'toUserId:', toUserId, 'fromUser:', fromUser, 'toUser:', toUser);
+        if (!fromUser || !toUser){
+            throw new BadRequestError('User not found');
+        }
+
+        //TODO: maybe I can just do Wallet.updateMany and set userId to toUserId?
+        const fromUserWalletsCount = await Wallet.countDocuments({ userId: fromUserId });
+        if (fromUserWalletsCount > 0){
+            throw new BadRequestError('User has wallets');
+        }
+
+        //TODO: maybe I can just do UserTransaction.updateMany and set userId to toUserId?
+        const fromUserTransactionsCount = await UserTransaction.countDocuments({ userId: fromUserId });
+        if (fromUserTransactionsCount > 0){
+            throw new BadRequestError('User has transactions');
+        }
+
+        //TODO: check trader profiles. If user has trader profiles - just move them to toUser
+
+        console.log('mergeUsers', 'fromUser.telegram:', fromUser.telegram, 'toUser.telegram:', toUser.telegram);
+        if (fromUser.telegram?.id && toUser.telegram?.id){
+            throw new BadRequestError('Both users have telegram connected');
+        }
+
+        toUser.telegram = toUser.telegram?.id ? toUser.telegram : fromUser.telegram;
+        toUser.referralCode = (!toUser.referralCode || toUser.referralCode=='default') ? fromUser.referralCode : toUser.referralCode;
+        toUser.email = toUser.email || fromUser.email;
+        toUser.bots = toUser.bots || fromUser.bots;
+        toUser.defaultBot = toUser.defaultBot || fromUser.defaultBot;
+
+        await User.updateOne({ _id: fromUserId }, {
+            $set: {
+                telegramOld: fromUser.telegram,
+                email: fromUser.email ? `DELETED: ${fromUser.email}` : undefined,
+                referralCode: fromUser.referralCode ? `DELETED: ${fromUser.referralCode}` : undefined,
+            },
+            $unset: {
+                telegram: 1,
+            }
+        });
+
+        await User.updateOne({ _id: toUserId }, {
+            $set: {
+                telegram: toUser.telegram,
+                referralCode: toUser.referralCode,
+                email: toUser.email,
+                bots: toUser.bots,
+                defaultBot: toUser.defaultBot,
+            }
+        });
+
+
     }
 
 }

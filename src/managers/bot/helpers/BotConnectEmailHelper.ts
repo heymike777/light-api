@@ -2,8 +2,13 @@ import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
-import { IUser, TelegramWaitingType } from "../../../entities/users/User";
+import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
+import { AuthManager } from "../../AuthManager";
+import { Helpers } from "../../../services/helpers/Helpers";
+import { IAuth } from "../../../entities/Auth";
+import { Wallet } from "../../../entities/Wallet";
+import { UserTransaction } from "../../../entities/users/UserTransaction";
 
 export class BotConnectEmailHelper extends BotHelper {
 
@@ -31,19 +36,66 @@ export class BotConnectEmailHelper extends BotHelper {
         if (user.telegramState?.waitingFor == TelegramWaitingType.EMAIL){
             const email = message.text.trim();
 
-            //TODO: validate email
-            //TODO: send verification code to email
+            const isValid = Helpers.isValidEmail(email);
+            if (!isValid){
+                ctx.reply('Invalid email address. Please, try again.');
+                return true;
+            }
+
+            let authId: string;
+            try {
+                authId = await AuthManager.createAuth(email);
+            }
+            catch (e: any){
+                ctx.reply(e.message);
+                return true;
+            }
 
             ctx.reply(`Please, send 6-digits verification code that we sent to your email (${email})`);
-            await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.EMAIL_VERIFICATION_CODE, helper: this.kCommand });
+            await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.EMAIL_VERIFICATION_CODE, helper: this.kCommand, data: { authId } });
             return true;
         }
         else if (user.telegramState?.waitingFor == TelegramWaitingType.EMAIL_VERIFICATION_CODE){
             const code = message.text.trim();
 
-            //TODO: validate verification code
+            // validate verification code
+            const authId = user.telegramState?.data.authId;
+            if (!authId){
+                ctx.reply('Can\'t find authentication stream. Please, connect email again.');
+                return true;
+            }
 
-            ctx.reply(`Received verification code: ${code}`);
+            let auth: IAuth | undefined;
+            try {
+                auth = await AuthManager.validate(authId, code);
+            }
+            catch (e: any){
+                ctx.reply(e.message);
+                return true;
+            }
+
+            const existingUser = await AuthManager.findUser(auth.email);
+            if (!existingUser){    
+                // if this email is new - just add email to user
+                await User.updateOne({ _id: user.id }, { email: auth.email });
+                console.log('Mike1', 'User updated with email', auth.email);
+            }
+            else {
+                // check if this (telegram) user has ZERO wallet and ZERO transactions - just merge two users
+                try {
+                    await UserManager.mergeUsers(user.id, existingUser.id);
+                    console.log('Mike2', 'Users merged', user.id, existingUser.id);
+                }
+                catch (e: any){
+                    console.log('Mike3', 'Error merging users', e.message);
+                    ctx.reply(`Another user already has this email connected. Please, connect another email or do /revoke_account of this user (it will remove all your transactions history, trading profiles, etc). After cleaning, you'll be able to connect this email.`);
+                    return true;
+                }
+            }
+
+            await UserManager.updateTelegramState(user.id, undefined);
+
+            ctx.reply(`Email connected ✅`);
             return true;
         }
 

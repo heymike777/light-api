@@ -161,4 +161,12 @@ export class AuthManager {
         return user;
     }
 
+    static async findUser(email: string): Promise<IUser | undefined> {
+        const existingUser = await User.findOne({ email });
+        if (existingUser){
+            await UserManager.fillUserWithData(existingUser);
+            return existingUser;
+        }
+    }
+
 }

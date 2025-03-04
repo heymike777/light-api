@@ -6,7 +6,7 @@ import { BotStartHelper } from "./helpers/BotStartHelper";
 import { BotRemoveWalletHelper } from "./helpers/BotRemoveWalletHelper";
 import { BotMyWalletsHelper } from "./helpers/BotMyWalletsHelper";
 import { UserManager } from "../UserManager";
-import { IUser } from "../../entities/users/User";
+import { IUser, User, UserBotStatus } from "../../entities/users/User";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { InlineKeyboardMarkup } from "grammy/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
@@ -134,13 +134,26 @@ export class BotManager {
         //     LogManager.log('Bot joined chat', ctx.chat.id);
         // });
 
-        this.bot.on("my_chat_member", async (ctx) => {
-            if (ctx.myChatMember.new_chat_member.status == 'kicked'){
-                console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) blocked bot ${ctx.myChatMember.new_chat_member.user.username}`);
-                //TODO: handle user blocked bot
-            }
-            else if (ctx.myChatMember.new_chat_member.status == 'member'){
-                console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) unblocked bot ${ctx.myChatMember.new_chat_member.user.username}`);
+        this.bot.on("my_chat_member", async (ctx) => {            
+            const botUsername = ctx.myChatMember?.new_chat_member?.user?.username;        
+            if (ctx.myChatMember.new_chat_member.status == 'kicked'){        
+                console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) blocked bot ${botUsername}`);
+                
+                // handle user blocked bot
+                if (botUsername){
+                    const user = await UserManager.getUserByTelegramUser(ctx.myChatMember.from);
+                    if (user){
+                        if (!user.bots){
+                            user.bots = {};
+                        }
+                        user.bots[botUsername] = UserBotStatus.BLOCKED;
+                        await User.updateOne({ _id: user._id }, {
+                            $set: {
+                                bots: user.bots,
+                            }
+                        });
+                    }
+                }
             }
         });
 
