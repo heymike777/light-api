@@ -32,6 +32,7 @@ export enum kProgram {
     OKX = '6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma',
     ORCA = 'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc',
 
+    GO_FUND_MEME = 'GFMioXjhuDWMEBtuaoaDPJFPEnL2yDHCWKoVPhj1MeA7',
 
     //METEORA DDLM
 }
@@ -45,6 +46,7 @@ export const kPrograms: { [key: string]: {
     name?: string,
     knownInstructions: {[key: string]: KnownInstruction}[],
     skip?: boolean,
+    skipIdl?: boolean,
     customIdl?: { path: string, type: 'anchor' | 'anchorV1' | 'shank' | 'kinobi' },
     fee?: {
         account: string,
@@ -336,7 +338,7 @@ export const kPrograms: { [key: string]: {
     [kProgram.PUMPFUN_AMM]: {
         name: 'PUMPFUN AMM',
         knownInstructions: [
-            { 'any': {title: 'any', priority: 2} },
+            // { 'any': {title: 'any', priority: 2} },
         ],
         skip: false,
     },
@@ -349,6 +351,14 @@ export const kPrograms: { [key: string]: {
             // { 'flashFillOrder': {title: 'FILL LIMIT ORDER', priority: 2} },
         ],
         skip: false,
+    },
+    [kProgram.GO_FUND_MEME]: {
+        name: 'GO FUND MEME',
+        knownInstructions: [
+            { 'any': {title: 'any', priority: 3} },
+        ],
+        skip: false,
+        skipIdl: false,
     },
 }
 

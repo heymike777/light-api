@@ -129,15 +129,17 @@ export class ProgramManager {
     ): Promise<{
         description?: TxDescription, 
         swap?: ParsedSwap,
+        ixTitle?: string,
     }> {
-        if (!ixParsed){
+        const programHasAnyKnownInstruction = kPrograms[programId]?.knownInstructions.find((knownInstruction) => knownInstruction['any']) != undefined;
+        if (!ixParsed && !programHasAnyKnownInstruction){
             return {};
         }
-        LogManager.log('!parseParsedIx', 'programId:', programId);
 
-        const ixType = ixParsed.name || ixParsed.type;
+        const ixType = ixParsed?.name || ixParsed?.type;
         let swap: ParsedSwap | undefined;
         let description: TxDescription | undefined;
+        let ixTitle: string | undefined = undefined;
         const signature = tx?.transaction.signatures?.[0];
 
         try {
@@ -849,6 +851,50 @@ export class ProgramManager {
                     }
                 }
             }
+            else if (programId == kProgram.GO_FUND_MEME){
+                if (tx){
+                    try {
+                        const logs = this.findTxLogs(tx, 'SWAP_SUMMARY');
+                        console.log('GO_FUND_MEME logs:', logs);    
+                        if (logs.length > 0){
+                            const swapSummaryStr = logs[0].replace('Program log: SWAP_SUMMARY-', '');
+                            const swapSummary = JSON.parse(swapSummaryStr);
+                            console.log('GO_FUND_MEME swapSummary:', swapSummary);
+
+                            // swapSummary: {
+                            //     direction: 'buy',
+                            //     sol_amount_change: -0.01,
+                            //     token_amount_change: 6781595.1781,
+                            //     price: 1.4745793190801608e-9,
+                            //     total_sol_raised: 38.644135716,
+                            //     target_sol: 70,
+                            //     pool_address: 'E4haRA2e4zx8uSxC8cFSKFZANkpZk93S8uoixLv5fWxK',
+                            //     user_wallet_address: '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL',
+                            //     mint_address: 'xeSu4xi6Eno4ZpyDRdFC23va9eXteK2QUCVXqTUWGFM'
+                            //   }
+
+                            ixTitle = 'SWAP';
+
+                            const walletAddress = swapSummary.user_wallet_address;
+                            const mint = swapSummary.mint_address;
+                            const solAmount = Math.abs(swapSummary.sol_amount_change);
+                            const tokenAmount = Math.abs(swapSummary.token_amount_change);
+                            const price = swapSummary.price;
+
+                            //TODO: swap = ... 
+
+                            const addresses = [walletAddress, mint];
+                            description = {
+                                html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> ${swapSummary.direction == 'buy' ? 'bought' : 'sold'} ${tokenAmount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a> for ${solAmount} SOL on GoFundMeme`,
+                                addresses: addresses,
+                            };
+
+                        }
+                    }
+                    catch (error){}
+                }
+
+            }
             else if (programId == kProgram.PUMPFUN_AMM){
                 LogManager.log('!!!PUMPFUNAPP', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
                 // if (['swap', 'swapExactOut', 'swapWithPriceImpact'].indexOf(ixType) != -1){
@@ -902,6 +948,7 @@ export class ProgramManager {
         return {
             description,
             swap,
+            ixTitle,
         };
     }
 
@@ -1127,6 +1174,10 @@ export class ProgramManager {
 
     static async parseIx(programId: string, ixData: string): Promise<ParsedIxData | undefined>{
         try {
+            if (kPrograms[programId]?.skipIdl){
+                return undefined;
+            }
+
             let parser: SolanaFMParser | undefined;
             let idl: IdlItem | undefined;
 
@@ -1233,7 +1284,7 @@ export class ProgramManager {
                 let programName: string | undefined = kPrograms[ixProgramId]?.name;
                 let ixTitle: string | undefined = instruction.parsed.type;
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
-                ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
+                ixTitle = info.ixTitle || knownInstruction?.title || ixTitle;
 
                 LogManager.log('!description1', info?.description);
 
@@ -1249,13 +1300,13 @@ export class ProgramManager {
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
                 instruction.ixParsed = ixData?.output;
-                LogManager.log('instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData, 'instruction.data:', instruction.data);
+                console.log('!!!!instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData, 'instruction.data:', instruction.data);
 
                 const info = await this.parseParsedIx(ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx, instructions);
 
                 let ixTitle = ixData?.output?.name;
                 const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
-                ixTitle = knownInstruction ? knownInstruction.title : ixTitle;
+                ixTitle = info.ixTitle || knownInstruction?.title || ixTitle;
                 LogManager.log('!description2', info?.description);
 
                 parsedInstructions.push({
@@ -1291,12 +1342,14 @@ export class ProgramManager {
                     txTitle += parsedInstruction.title;
                 }
 
-                if (parsedInstruction.title && parsedInstruction.program){
-                    txTitle += ' on ';
-                }
+                const programName = parsedInstruction.program || this.findProgramName(parsedInstruction.programId);
 
-                if (parsedInstruction.program){
-                    txTitle += parsedInstruction.program;
+                if (programName){
+                    if (parsedInstruction.title){
+                        txTitle += ' on ';
+                    }
+
+                    txTitle += programName;
                 }
 
                 // txDescription = parsedInstruction.description;
@@ -1363,15 +1416,14 @@ export class ProgramManager {
     }
 
     static findKnownInstruction(programId: string, title?: string): KnownInstruction | undefined {
-        if (!title){
-            return undefined;
-        }
-
         const program = kPrograms[programId];
         if (program){
             for (const knownInstruction of program.knownInstructions){
-                if (knownInstruction[title]){
+                if (title && knownInstruction[title]){
                     return knownInstruction[title];
+                }
+                else if (knownInstruction['any']){
+                    return knownInstruction['any'];
                 }
             }
         }
@@ -1519,27 +1571,22 @@ export class ProgramManager {
         }
     }
 
-    // static findProgramLogs(tx: web3.ParsedTransactionWithMeta, programId: string): string[] {
-    //     if (programId != kProgram.JUPITER){
-    //         // we support only JUPITER logs for now
-    //         return [];
-    //     }
+    static findTxLogs(tx: web3.ParsedTransactionWithMeta, containsQuery: string): string[] {
+        const logs: string[] = [];
+        if (tx.meta?.logMessages){
+            for (let index = 0; index < tx.meta?.logMessages.length; index++) {
+                const log = tx.meta?.logMessages[index];
+                if (log.includes(containsQuery)){
+                    logs.push(log);
+                }                
+            }
+        }
 
-    //     const logs: string[] = [];
-    //     if (tx.meta?.logMessages){
-    //         for (let index = 0; index < tx.meta?.logMessages.length; index++) {
-    //             const log = tx.meta?.logMessages[index];
-    //             if (log.startsWith(`Program ${programId}`)){
-    //                 // get next log and remove "log: Instruction: " from it. that's only for JUPITER V6
-    //                 const nextLog = tx.meta?.logMessages[index + 1];
-    //                 if (nextLog && nextLog.startsWith('log: Instruction: ')){
-    //                     logs.push(nextLog.replace('log: Instruction: ', ''));
-    //                 }
-    //             }                
-    //         }
-    //     }
+        return logs;
+    }
 
-    //     return logs;
-    // }
+    static findProgramName(programId: string): string | undefined {
+        return kPrograms[programId]?.name;
+    }
 
 }
