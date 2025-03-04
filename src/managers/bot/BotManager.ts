@@ -135,10 +135,9 @@ export class BotManager {
         // });
 
         this.bot.on("my_chat_member", async (ctx) => {
-            console.log('my_chat_member', ctx.chat, ctx.myChatMember);
-
             if (ctx.myChatMember.new_chat_member.status == 'kicked'){
                 console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) blocked bot ${ctx.myChatMember.new_chat_member.user.username}`);
+                //TODO: handle user blocked bot
             }
             else if (ctx.myChatMember.new_chat_member.status == 'member'){
                 console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) unblocked bot ${ctx.myChatMember.new_chat_member.user.username}`);
