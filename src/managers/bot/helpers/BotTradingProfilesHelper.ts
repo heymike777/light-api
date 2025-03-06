@@ -121,8 +121,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 }
             }
 
-            this.setReplyMessage(replyMessage);
-            await super.commandReceived(ctx, user);
+            await super.commandReceived(ctx, user, replyMessage);
 
 
             if (traderProfiles.length > 1){

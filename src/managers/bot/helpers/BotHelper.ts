@@ -26,32 +26,30 @@ export class BotHelper {
         return false;
     };
 
-    async commandReceived(ctx: Context, user: IUser) {
-        if (this.kReplyMessage.photo) {
-            await ctx.replyWithPhoto(this.kReplyMessage.photo, { 
-                caption: this.kReplyMessage.text, 
-                reply_markup: this.kReplyMessage.markup,
+    async commandReceived(ctx: Context, user: IUser, replyMsg?: Message) {
+        const replyMessage = replyMsg || this.kReplyMessage;
+        if (replyMessage.photo) {
+            await ctx.replyWithPhoto(replyMessage.photo, { 
+                caption: replyMessage.text, 
+                reply_markup: replyMessage.markup,
                 parse_mode: 'HTML',
             });
         }
         else {
-            await BotManager.reply(ctx, this.kReplyMessage.text, { 
-                reply_markup: this.kReplyMessage.markup, 
+            await BotManager.reply(ctx, replyMessage.text, { 
+                reply_markup: replyMessage.markup, 
                 parse_mode: 'HTML',
             });
         }
     }
 
     getReplyMessage(): Message {
-        return this.kReplyMessage;
+        return {
+            text: this.kReplyMessage.text,
+            markup: this.kReplyMessage.markup,
+            photo: this.kReplyMessage.photo,
+            buttons: this.kReplyMessage.buttons ? [...this.kReplyMessage.buttons] : undefined,
+        };
     }
 
-    setReplyMessage(message: Message) {
-        this.kReplyMessage = message;
-    }
-
-    // getChatId(ctx: Context): number {
-    //     const message = ctx.update.message as TgMessage;
-    //     return message.chat.id;
-    // }
 }
