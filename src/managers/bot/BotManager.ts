@@ -8,7 +8,7 @@ import { BotMyWalletsHelper } from "./helpers/BotMyWalletsHelper";
 import { UserManager } from "../UserManager";
 import { IUser, User, UserBotStatus } from "../../entities/users/User";
 import { autoRetry } from "@grammyjs/auto-retry";
-import { InlineKeyboardMarkup } from "grammy/types";
+import * as GrammyTypes from "grammy/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
@@ -16,12 +16,14 @@ import { EnvManager } from "../EnvManager";
 import { MicroserviceManager } from "../MicroserviceManager";
 import { BotConnectEmailHelper } from "./helpers/BotConnectEmailHelper";
 import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
+import { BotTraderProfilesHelper } from "./helpers/BotTradingProfilesHelper";
+import { Other } from "grammy/out/core/api";
 
 export interface SendMessageData {
     chatId: number;
     text?: string;
     imageUrl?: string;
-    inlineKeyboard?: InlineKeyboardMarkup;
+    inlineKeyboard?: GrammyTypes.InlineKeyboardMarkup;
 }
 
 export enum InlineKeyboardType {
@@ -104,6 +106,7 @@ export class BotManager {
         new BotMyWalletsHelper(),
         new BotConnectEmailHelper(),
         new BotRevokeAccountHelper(),
+        new BotTraderProfilesHelper(),
     ];
 
     constructor() {
@@ -124,7 +127,6 @@ export class BotManager {
             const e = err.error;
             if (e instanceof GrammyError) {
                 LogManager.error("!catched by bot. GrammyError. Error in request:", e.description);
-
             } else if (e instanceof HttpError) {
                 LogManager.error("!catched by bot. HttpError. Could not contact Telegram:", e);
             } else {
@@ -240,10 +242,10 @@ export class BotManager {
 
         if (message.from.username && kAdminUsernames.includes(message.from.username)){
             if (message.voice){
-                ctx.reply('File ID (audio): ' + message.voice.file_id);
+                await BotManager.reply(ctx, 'File ID (audio): ' + message.voice.file_id);
             }
             if (message.document){
-                ctx.reply('File ID (document): ' + message.document.file_id);
+                await BotManager.reply(ctx, 'File ID (document): ' + message.document.file_id);
             }
             if (message.photo){
                 // find the biggest photo
@@ -253,7 +255,7 @@ export class BotManager {
                         biggestPhoto = photo;
                     }
                 }
-                ctx.reply('File ID (photo): ' + biggestPhoto.file_id);
+                await BotManager.reply(ctx, 'File ID (photo): ' + biggestPhoto.file_id);
             }
         }
 
@@ -306,7 +308,7 @@ export class BotManager {
             return this.helpers.find(helper => helper.kCommand == 'start');
         }
 
-        return this.helpers.find(helper => helper.kCommand == command);
+        return this.helpers.find(helper => helper.kCommand == command || (helper.kAdditionalCommands && helper.kAdditionalCommands.includes(command)));
     }
 
     async saveMessageToDB(message: TgMessage): Promise<IMessage> {
@@ -327,20 +329,20 @@ export class BotManager {
 
     async sendMessage(data: SendMessageData){
         if (data.imageUrl){
-            this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
+            await this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
                 caption: data.text,
                 parse_mode: 'HTML', 
                 reply_markup: data.inlineKeyboard,
             });    
         }
         else {
-            this.bot.api.sendMessage(data.chatId, data.text || '', {
+            await this.bot.api.sendMessage(data.chatId, data.text || '', {
                 parse_mode: 'HTML', 
                 link_preview_options: {
                     is_disabled: true
                 },
                 reply_markup: data.inlineKeyboard,
-            });    
+            });   
         }
     }
 
@@ -363,7 +365,7 @@ export class BotManager {
         }
     }
 
-    static buildInlineKeyboard(buttons: InlineButton[]): InlineKeyboardMarkup | undefined {
+    static buildInlineKeyboard(buttons: InlineButton[]): GrammyTypes.InlineKeyboardMarkup | undefined {
         const inlineKeyboard = new InlineKeyboard();
         buttons.forEach(button => {
             if (button.id == 'row'){
@@ -379,7 +381,7 @@ export class BotManager {
         return inlineKeyboard;
     }
 
-    static buildInlineKeyboardForToken(chain: Chain, type: InlineKeyboardType, mint: string, tokenName: string): InlineKeyboardMarkup | undefined {
+    static buildInlineKeyboardForToken(chain: Chain, type: InlineKeyboardType, mint: string, tokenName: string): GrammyTypes.InlineKeyboardMarkup | undefined {
         if (chain == Chain.SOLANA){
             if (type == InlineKeyboardType.TOKEN_TX){
                 const inlineKeyboard = new InlineKeyboard()
@@ -394,5 +396,28 @@ export class BotManager {
 
         return undefined;
     }
+
+    static async updateMessageReplyMarkup(ctx?: Context, markup?: GrammyTypes.InlineKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+        try {
+            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
+            if (chatId && messageId){
+                const botManager = await BotManager.getInstance();
+                await botManager.bot.api.editMessageReplyMarkup(chatId, messageId, { reply_markup: markup });
+            }
+        }
+        catch (e: any){}
+    }
+
+    // other?: Other<R, "sendMessage", "chat_id" | "text">
+    static async reply(ctx: Context, text: string, other?: any): Promise<GrammyTypes.Message.TextMessage | undefined> {
+        try {
+            return await ctx.reply(text, other);
+        }
+        catch (e: any){
+            LogManager.error('BotManager Error while replying', e);
+        }
+    }
+     
 
 }

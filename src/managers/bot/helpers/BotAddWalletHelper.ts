@@ -6,7 +6,7 @@ import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
-import { TgMessage } from "../BotManager";
+import { BotManager, TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType } from "../../../entities/users/User";
 
@@ -64,7 +64,7 @@ export class BotAddWalletHelper extends BotHelper {
             }
 
             if (SolanaManager.isValidPublicKey(walletAddress) == false){
-                ctx.reply('Invalid wallet address: ' + walletAddress);
+                await BotManager.reply(ctx, 'Invalid wallet address: ' + walletAddress);
                 continue;
             }
 
@@ -83,22 +83,22 @@ export class BotAddWalletHelper extends BotHelper {
                 LogManager.log('BotAddWalletHelper', 'messageReceived', 'error', err);
                 if (!hasLimitError && err instanceof PremiumError){
                     hasLimitError = true;
-                    ctx.reply(err.message);
+                    await BotManager.reply(ctx, err.message);
                 }
             }
         }
 
         if (walletsCounter == 0){
             if (!hasLimitError){
-                ctx.reply('No wallets found!');
+                await BotManager.reply(ctx, 'No wallets found!');
             }
         }
         else if (walletsCounter == 1){
-            ctx.reply('Wallet saved! We will start tracking it immediately.');
+            await BotManager.reply(ctx, 'Wallet saved! We will start tracking it immediately.');
             await UserManager.updateTelegramState(user.id, undefined);
         }
         else {
-            ctx.reply(`${walletsCounter} wallets saved! We will start tracking them immediately.`);
+            await BotManager.reply(ctx, `${walletsCounter} wallets saved! We will start tracking them immediately.`);
             await UserManager.updateTelegramState(user.id, undefined);
         }
 

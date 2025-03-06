@@ -34,17 +34,17 @@ export class BotRevokeAccountHelper extends BotHelper {
 
             try {
                 if (ctx.update?.callback_query?.message?.chat?.id && ctx.update?.callback_query?.message?.message_id){
-                    ctx.api.deleteMessage(ctx.update?.callback_query?.message?.chat?.id, ctx.update?.callback_query?.message?.message_id);
+                    await ctx.api.deleteMessage(ctx.update?.callback_query?.message?.chat?.id, ctx.update?.callback_query?.message?.message_id);
                 }    
             }
             catch (e: any){}
 
-            ctx.reply('Your account has been revoked ✅\n\nAll your data has been removed. If you want to use the bot again, you need to start over.');
+            await BotManager.reply(ctx, 'Your account has been revoked ✅\n\nAll your data has been removed. If you want to use the bot again, you need to start over.');
         }
         else if (buttonId == 'revoke_account|no'){
             try {
                 if (ctx.update?.callback_query?.message?.chat?.id && ctx.update?.callback_query?.message?.message_id){
-                    ctx.api.deleteMessage(ctx.update?.callback_query?.message?.chat?.id, ctx.update?.callback_query?.message?.message_id);
+                    await ctx.api.deleteMessage(ctx.update?.callback_query?.message?.chat?.id, ctx.update?.callback_query?.message?.message_id);
                 }    
             }
             catch (e: any){}

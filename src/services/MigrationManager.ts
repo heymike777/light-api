@@ -1,7 +1,7 @@
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Program } from "../entities/Program";
 import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
-import { BotManager, InlineKeyboardType } from "../managers/bot/BotManager";
+import { BotManager, InlineButton, InlineKeyboardType } from "../managers/bot/BotManager";
 import { ProgramManager } from "../managers/ProgramManager";
 import { ExplorerManager } from "./explorers/ExplorerManager";
 import { HeliusManager } from "./solana/HeliusManager";
@@ -47,6 +47,7 @@ import { TxParser } from "./solana/geyser/TxParser";
 import { exit } from "process";
 import { RedisManager } from "../managers/db/RedisManager";
 import mongoose from 'mongoose';
+import { InlineKeyboardButton } from "grammy/types";
 
 // 174962
 
@@ -181,6 +182,11 @@ export class MigrationManager {
         // await this.mongoExport();
         // await this.mongoImport();
 
+        // process.on("unhandledRejection", (reason) => {
+        //     console.error('!mike', "Unhandled rejection detected:", reason);
+        //     // This can kill Node depending on your configuration,
+        //     // so you must fix whatever code triggers the unhandled rejection.
+        // });
 
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');

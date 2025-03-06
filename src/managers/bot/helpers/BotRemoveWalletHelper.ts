@@ -2,7 +2,7 @@ import { Context } from "grammy";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { WalletManager } from "../../WalletManager";
-import { TgMessage } from "../BotManager";
+import { BotManager, TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
@@ -38,7 +38,7 @@ export class BotRemoveWalletHelper extends BotHelper {
             }
 
             if (SolanaManager.isValidPublicKey(line) == false){
-                ctx.reply('Invalid wallet address: ' + line);
+                await BotManager.reply(ctx, 'Invalid wallet address: ' + line);
                 continue;
             }
 
@@ -48,7 +48,7 @@ export class BotRemoveWalletHelper extends BotHelper {
         await WalletManager.removeWallets(message.chat.id, user.id, walletAddresses);
         await UserManager.updateTelegramState(user.id, undefined);
 
-        ctx.reply('Done ✅');
+        await BotManager.reply(ctx, 'Done ✅');
         return true;
     }
 

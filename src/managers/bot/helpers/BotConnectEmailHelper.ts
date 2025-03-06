@@ -1,6 +1,6 @@
 import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
-import { TgMessage } from "../BotManager";
+import { BotManager, TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
@@ -38,7 +38,7 @@ export class BotConnectEmailHelper extends BotHelper {
 
             const isValid = Helpers.isValidEmail(email);
             if (!isValid){
-                ctx.reply('Invalid email address. Please, try again.');
+                await BotManager.reply(ctx, 'Invalid email address. Please, try again.');
                 return true;
             }
 
@@ -47,11 +47,11 @@ export class BotConnectEmailHelper extends BotHelper {
                 authId = await AuthManager.createAuth(email);
             }
             catch (e: any){
-                ctx.reply(e.message);
+                await BotManager.reply(ctx, e.message);
                 return true;
             }
 
-            ctx.reply(`Please, send 6-digits verification code that we sent to your email (${email})`);
+            await BotManager.reply(ctx, `Please, send 6-digits verification code that we sent to your email (${email})`);
             await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.EMAIL_VERIFICATION_CODE, helper: this.kCommand, data: { authId } });
             return true;
         }
@@ -61,7 +61,7 @@ export class BotConnectEmailHelper extends BotHelper {
             // validate verification code
             const authId = user.telegramState?.data.authId;
             if (!authId){
-                ctx.reply('Can\'t find authentication stream. Please, connect email again.');
+                await BotManager.reply(ctx, 'Can\'t find authentication stream. Please, connect email again.');
                 return true;
             }
 
@@ -70,7 +70,7 @@ export class BotConnectEmailHelper extends BotHelper {
                 auth = await AuthManager.validate(authId, code);
             }
             catch (e: any){
-                ctx.reply(e.message);
+                await BotManager.reply(ctx, e.message);
                 return true;
             }
 
@@ -88,14 +88,14 @@ export class BotConnectEmailHelper extends BotHelper {
                 }
                 catch (e: any){
                     console.log('Mike3', 'Error merging users', e.message);
-                    ctx.reply(`Another user already has this email connected. Please, connect another email or do /revoke_account of this user (it will remove all your transactions history, trading profiles, etc). After cleaning, you'll be able to connect this email.`);
+                    await BotManager.reply(ctx, `Another user already has this email connected. Please, connect another email or do /revoke_account of this user (it will remove all your transactions history, trading profiles, etc). After cleaning, you'll be able to connect this email.`);
                     return true;
                 }
             }
 
             await UserManager.updateTelegramState(user.id, undefined);
 
-            ctx.reply(`Email connected ✅`);
+            await BotManager.reply(ctx, `Email connected ✅`);
             return true;
         }
 

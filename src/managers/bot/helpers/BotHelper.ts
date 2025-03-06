@@ -1,7 +1,7 @@
 import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { LogManager } from "../../LogManager";
-import { InlineButton, TgMessage } from "../BotManager";
+import { BotManager, InlineButton, TgMessage } from "../BotManager";
 
 export interface Message {
     text: string;
@@ -12,12 +12,14 @@ export interface Message {
 
 export class BotHelper {
     kCommand: string;
+    kAdditionalCommands?: string[];
     private kReplyMessage: Message;
 
-    constructor(command: string, startCommandReplyMessage: Message) {
+    constructor(command: string, replyMessage: Message, additionalCommands?: string[]) {
         LogManager.log('BotHelper', 'constructor');
         this.kCommand = command;
-        this.kReplyMessage = startCommandReplyMessage;
+        this.kReplyMessage = replyMessage;
+        this.kAdditionalCommands = additionalCommands;
     }
 
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
@@ -26,18 +28,26 @@ export class BotHelper {
 
     async commandReceived(ctx: Context, user: IUser) {
         if (this.kReplyMessage.photo) {
-            ctx.replyWithPhoto(this.kReplyMessage.photo, { 
+            await ctx.replyWithPhoto(this.kReplyMessage.photo, { 
                 caption: this.kReplyMessage.text, 
                 reply_markup: this.kReplyMessage.markup,
                 parse_mode: 'HTML',
             });
         }
         else {
-            ctx.reply(this.kReplyMessage.text, { 
+            await BotManager.reply(ctx, this.kReplyMessage.text, { 
                 reply_markup: this.kReplyMessage.markup, 
                 parse_mode: 'HTML',
             });
         }
+    }
+
+    getReplyMessage(): Message {
+        return this.kReplyMessage;
+    }
+
+    setReplyMessage(message: Message) {
+        this.kReplyMessage = message;
     }
 
     // getChatId(ctx: Context): number {

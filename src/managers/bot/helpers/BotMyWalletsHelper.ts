@@ -4,7 +4,7 @@ import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
-import { TgMessage } from "../BotManager";
+import { BotManager, TgMessage } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 
 export class BotMyWalletsHelper extends BotHelper {
@@ -35,7 +35,7 @@ export class BotMyWalletsHelper extends BotHelper {
             }
         }
 
-        ctx.reply(response);
+        await BotManager.reply(ctx, response);
     }
 
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
@@ -52,7 +52,7 @@ export class BotMyWalletsHelper extends BotHelper {
             }
 
             if (SolanaManager.isValidPublicKey(line) == false){
-                ctx.reply('Invalid wallet address: ' + line);
+                await BotManager.reply(ctx, 'Invalid wallet address: ' + line);
                 continue;
             }
 
@@ -62,7 +62,7 @@ export class BotMyWalletsHelper extends BotHelper {
         // const user = await UserManager.getUserByTelegramUser(message.from);
         await WalletManager.removeWallets(message.chat.id, user.id, walletAddresses);
 
-        ctx.reply('Done ✅');
+        await BotManager.reply(ctx, 'Done ✅');
         return true;
     }
 

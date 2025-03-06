@@ -80,7 +80,7 @@ router.post(
         let slippage: number | undefined;
         let wallet: WalletModel | undefined;
 
-        if (engineId == 'light'){
+        if (engineId == SwapManager.kNaviteEngineId){
             if (!req.body.defaultAmount){
                 throw new BadRequestError("defaultAmount is not valid");
             }
@@ -248,7 +248,7 @@ router.get(
             throw new BadRequestError("Trader profile not found");
         }
 
-        if (traderProfile.engineId != 'light'){
+        if (traderProfile.engineId != SwapManager.kNaviteEngineId){
             throw new BadRequestError("Only light engine is supported for export");
         }
 
