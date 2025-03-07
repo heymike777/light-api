@@ -133,6 +133,20 @@ export class BotTraderProfilesHelper extends BotHelper {
                 await BotManager.deleteMessage(ctx);
             }
         }
+        else if (buttonId && buttonId.startsWith('trader_profiles|export')){
+            const parts = buttonId.split('|');
+            const profileId = parts[2];
+
+            const traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
+            if (traderProfile){
+                await BotManager.reply(ctx, `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}\n\nPublic key:\n<code>${traderProfile?.wallet?.publicKey}</code> (Tap to copy)\n\nPrivate key:\n<code>${traderProfile?.wallet?.privateKey}</code> (Tap to copy)\n\nYou can import the private key to any Solana wallet. Don't share it with anyone.`, {
+                    parse_mode: 'HTML',
+                    reply_markup: BotManager.buildInlineKeyboard([
+                        { id: `delete_message`, text: 'Hide' },
+                    ]),
+                });    
+            }
+        }
         else if (buttonId && buttonId.startsWith('trader_profiles|portfolio')){
             const profileId = buttonId.split('|')[2];
             await BotManager.reply(ctx, 'TODO: portfolio of profile ' + profileId);

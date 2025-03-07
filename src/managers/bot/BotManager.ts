@@ -18,6 +18,7 @@ import { BotConnectEmailHelper } from "./helpers/BotConnectEmailHelper";
 import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
 import { BotTraderProfilesHelper } from "./helpers/BotTradingProfilesHelper";
 import { Other } from "grammy/out/core/api";
+import { BotDeleteMessageHelper } from "./helpers/BotDeleteMessageHelper";
 
 export interface SendMessageData {
     chatId: number;
@@ -107,6 +108,7 @@ export class BotManager {
         new BotConnectEmailHelper(),
         new BotRevokeAccountHelper(),
         new BotTraderProfilesHelper(),
+        new BotDeleteMessageHelper(),
     ];
 
     constructor() {
