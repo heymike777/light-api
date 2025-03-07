@@ -99,6 +99,11 @@ router.get(
             }
         }
 
+        for (const asset of assets) {
+            asset.amount = asset.uiAmount;
+            asset.uiAmount = 0;
+        }
+
         res.status(200).send({ warning, traderProfiles, traderProfile, values, assets });
     }
 );
