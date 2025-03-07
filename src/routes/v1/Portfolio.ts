@@ -31,7 +31,7 @@ router.get(
 
         const traderProfileId = req.query.traderProfileId ? '' + req.query.traderProfileId : undefined;
 
-        let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(userId, SwapManager.kNaviteEngineId);
+        let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(userId, SwapManager.kNativeEngineId);
         let traderProfile = traderProfileId ? traderProfiles.find(tp => tp.id == traderProfileId) : traderProfiles.find(tp => tp.default) || traderProfiles[0];
 
         const values: {

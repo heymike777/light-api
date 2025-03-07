@@ -38,7 +38,7 @@ router.post(
             throw new BadRequestError('Trader profile not found');
         }
 
-        if (traderProfile.engineId !== SwapManager.kNaviteEngineId){
+        if (traderProfile.engineId !== SwapManager.kNativeEngineId){
             throw new BadRequestError('Only Light engine is supported');
         }
 
@@ -103,7 +103,7 @@ router.post(
             throw new BadRequestError('Trader profile not found');
         }
 
-        if (traderProfile.engineId !== SwapManager.kNaviteEngineId){
+        if (traderProfile.engineId !== SwapManager.kNativeEngineId){
             throw new BadRequestError('Only Light engine is supported');
         }
 

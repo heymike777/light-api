@@ -19,7 +19,7 @@ export class BotStartHelper extends BotHelper {
             {id: 'connect_email', text: '✉️ Connect email'},
             {id: 'referral_program', text: '🎁 Referrals'},
             {id: 'row', text: ''},
-            {id: 'upgrade', text: '🚀 Upgrade'},
+            {id: 'upgrade', text: '👑 Upgrade'},
             {id: 'settings', text: '⚙️ Settings'},
         ];
 

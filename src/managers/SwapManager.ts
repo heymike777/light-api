@@ -28,10 +28,10 @@ import { SystemNotificationsManager } from "./SytemNotificationsManager";
 export class SwapManager {
 
     static kDefaultEngineId = 'trojan';
-    static kNaviteEngineId = 'light';
+    static kNativeEngineId = 'light';
     static engines: Engine[] = [
         {
-            id: this.kNaviteEngineId,
+            id: this.kNativeEngineId,
             title: 'Light',
             logo: 'https://light.dangervalley.com/static/light.png',
             isSubscriptionRequired: false,

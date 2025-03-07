@@ -409,10 +409,37 @@ export class BotManager {
         catch (e: any){}
     }
 
+    static async deleteMessage(ctx?: Context, sourceMessageId?: number, sourceChatId?: number){
+        try {
+            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
+
+            if (chatId && messageId){
+                const botManager = await BotManager.getInstance();
+                await botManager.bot.api.deleteMessage(chatId, messageId);
+            }    
+        }
+        catch (e: any){}
+    }
+
     // other?: Other<R, "sendMessage", "chat_id" | "text">
     static async reply(ctx: Context, text: string, other?: any): Promise<GrammyTypes.Message.TextMessage | undefined> {
         try {
             return await ctx.reply(text, other);
+        }
+        catch (e: any){
+            LogManager.error('BotManager Error while replying', e);
+        }
+    }
+
+    static async replyWithPremiumError(ctx: Context, text: string): Promise<GrammyTypes.Message.TextMessage | undefined> {
+        try {
+            const buttons: InlineButton[] = [
+                { id: 'upgrade', text: '👑 Upgrade' },
+            ];
+            const markup = BotManager.buildInlineKeyboard(buttons);
+
+            return await ctx.reply(text, { reply_markup: markup });
         }
         catch (e: any){
             LogManager.error('BotManager Error while replying', e);

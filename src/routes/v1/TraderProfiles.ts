@@ -69,31 +69,10 @@ router.post(
             throw new NotAuthorizedError();
         }
 
-        const maxNumberOfTraderProfiles = user.maxNumberOfTraderProfiles || 1;
-        if (user.traderProfiles && user.traderProfiles.length >= maxNumberOfTraderProfiles){
-            throw new PremiumError("Max number of trader profiles reached. Upgrade your account to create more trader profiles.");
-        }
-
         const engineId = '' + req.body.engineId;
         const title = '' + req.body.title;
         let defaultAmount: number | undefined;
         let slippage: number | undefined;
-        let wallet: WalletModel | undefined;
-
-        if (engineId == SwapManager.kNaviteEngineId){
-            if (!req.body.defaultAmount){
-                throw new BadRequestError("defaultAmount is not valid");
-            }
-            if (!req.body.slippage){
-                throw new BadRequestError("slippage is not valid");
-            }
-
-            defaultAmount = +req.body.defaultAmount;
-            slippage = +req.body.slippage;
-            wallet = SolanaManager.createWallet();
-
-            fs.appendFileSync('wallets.txt', `UserId: ${user.id}, PublicKey: ${wallet.publicKey}, PrivateKey: ${wallet.privateKey}\n`);
-        }
 
         const engine = SwapManager.engines.find((e) => e.id === engineId);
         if (!engine){
@@ -104,21 +83,19 @@ router.post(
             throw new PremiumError("Subscription is required to create this trader profile");
         }
 
-        const traderProfile = new UserTraderProfile();
-        traderProfile.userId = userId;
-        traderProfile.engineId = engineId;
-        traderProfile.title = title;
-        traderProfile.defaultAmount = defaultAmount;
-        traderProfile.slippage = slippage;
-        traderProfile.createdAt = new Date();
-        traderProfile.active = true;
-        traderProfile.default = (!user.traderProfiles || user.traderProfiles.length == 0); // default=true for the first profile
-        traderProfile.wallet = wallet;
-        await traderProfile.save();
+        if (engineId == SwapManager.kNativeEngineId){
+            if (!req.body.defaultAmount){
+                throw new BadRequestError("defaultAmount is not valid");
+            }
+            if (!req.body.slippage){
+                throw new BadRequestError("slippage is not valid");
+            }
 
-        if (traderProfile.wallet){
-            await WalletManager.addWallet(-1, user, traderProfile.wallet.publicKey, traderProfile.title, ipAddress, traderProfile.id);
+            defaultAmount = +req.body.defaultAmount;
+            slippage = +req.body.slippage;
         }
+
+        const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, defaultAmount, slippage, ipAddress);
 
         res.status(200).send({ traderProfile });
     }
@@ -196,33 +173,8 @@ router.delete(
         const ipAddress = Helpers.getIpAddress(req);
 
         const traderProfileId = req.params.traderProfileId;
-        const traderProfile = await TraderProfilesManager.findById(traderProfileId);
-        if (!traderProfile){
-            throw new BadRequestError("Trader profile not found");
-        }
-
-        if (traderProfile.userId != userId){
-            throw new BadRequestError("Trader profile not found");
-        }
-
-        traderProfile.active = false;
-        await traderProfile.save();
-
-        if (traderProfile.wallet){
-            const traderProfileWallet = await Wallet.findOne({ traderProfileId: traderProfileId });
-            if (traderProfileWallet){
-                await WalletManager.removeWallet(traderProfileWallet, ipAddress);    
-            }
-        }
-
-        if (traderProfile.default){
-            // if the deleted profile was default, make the first profile default
-            const traderProfiles = await TraderProfilesManager.getUserTraderProfiles(userId);
-            if (traderProfiles.length > 0){
-                traderProfiles[0].default = true;
-                await traderProfiles[0].save();
-            }
-        }
+        
+        await TraderProfilesManager.deactivateTraderProfile(traderProfileId, userId, ipAddress);
 
         res.status(200).send({ success: true });
     }
@@ -248,7 +200,7 @@ router.get(
             throw new BadRequestError("Trader profile not found");
         }
 
-        if (traderProfile.engineId != SwapManager.kNaviteEngineId){
+        if (traderProfile.engineId != SwapManager.kNativeEngineId){
             throw new BadRequestError("Only light engine is supported for export");
         }
 

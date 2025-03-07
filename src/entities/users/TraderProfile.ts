@@ -41,6 +41,8 @@ UserTraderProfileSchema.index({ userId: 1, active: 1 });
 UserTraderProfileSchema.index({ engineId: 1, active: 1 });
 UserTraderProfileSchema.index({ userId: 1, _id: 1 });
 UserTraderProfileSchema.index({ userId: 1, _id: 1, default: 1 });
+UserTraderProfileSchema.index({ userId: 1 });
+UserTraderProfileSchema.index({ userId: 1, engineId: 1, active: 1 });
 
 UserTraderProfileSchema.pre('save', function (next) {
     this.updatedAt = new Date();

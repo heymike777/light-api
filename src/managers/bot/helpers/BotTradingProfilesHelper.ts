@@ -7,6 +7,8 @@ import { UserManager } from "../../UserManager";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
 import { SwapManager } from "../../SwapManager";
 import { IUserTraderProfile, UserTraderProfile } from "../../../entities/users/TraderProfile";
+import { CustomError } from "../../../errors/CustomError";
+import { parse } from "path";
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -31,15 +33,15 @@ export class BotTraderProfilesHelper extends BotHelper {
 
         const buttonId = ctx.update?.callback_query?.data;
 
-        console.log('buttonId', buttonId);
-        console.log('ctx:', ctx);
-
         if (ctx?.update?.message?.text == '/choose_profile' || buttonId == 'choose_profile'){
-            let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNaviteEngineId);
+            let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
 
             const buttons: InlineButton[] = [];
             for (const traderProfile of traderProfiles){
-                buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}|select`, text: `${traderProfile.default?'🟢 ':''}${traderProfile.title}` });
+                if (buttons.length > 0){
+                    buttons.push({ id: 'row', text: '' });
+                }
+                buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
             }
 
             const markup = BotManager.buildInlineKeyboard(buttons);
@@ -50,12 +52,87 @@ export class BotTraderProfilesHelper extends BotHelper {
             });
         }
         else if (buttonId && buttonId == 'trader_profiles|create'){
-            await BotManager.reply(ctx, 'TODO: create profile');
+            const countAll = await UserTraderProfile.countDocuments({ userId: user.id });
+            const engineId = SwapManager.kNativeEngineId;
+            const title = `Wallet ${countAll+1}`;
+            const defaultAmount = 0.25;
+            const slippage = 10;
+
+            try {
+                const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, defaultAmount, slippage, undefined);
+
+                const { message, buttons } = await this.buildTraderProfileMessage(traderProfile);
+                const markup = BotManager.buildInlineKeyboard(buttons);
+                await BotManager.reply(ctx, message, {
+                    reply_markup: markup,
+                    parse_mode: 'HTML',
+                });
+            }
+            catch (e: any){
+                console.log('e:', e);
+                if (e.statusCode == 444){
+                    // premium error
+                    await BotManager.replyWithPremiumError(ctx, e.message);
+                }
+                else {
+                    await BotManager.reply(ctx, e.message);
+                }
+            }
         }
-        // else if (buttonId && buttonId.startsWith('trader_profiles|edit')){
-        //     const profileId = buttonId.split('|')[2];
-        //     await BotManager.reply(ctx, 'TODO: edit profile ' + profileId);
-        // }
+        else if (buttonId && buttonId.startsWith('trader_profiles|show')){
+            const parts = buttonId.split('|');
+            const profileId = parts[2];
+
+            let traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
+            if (!traderProfile){
+                await BotManager.reply(ctx, '🔴 Trader profile not found');
+                return;
+            }
+
+            const { message, buttons } = await this.buildTraderProfileMessage(traderProfile);
+            const markup = BotManager.buildInlineKeyboard(buttons);
+            await BotManager.reply(ctx, message, {
+                reply_markup: markup,
+                parse_mode: 'HTML',
+            });
+        }
+        else if (buttonId && buttonId.startsWith('trader_profiles|edit_name')){
+            const profileId = buttonId.split('|')[2];
+            await BotManager.reply(ctx, 'TODO: edit profile\' name ' + profileId);
+        }
+        else if (buttonId && buttonId.startsWith('trader_profiles|delete')){
+            const parts = buttonId.split('|');
+            const profileId = parts[2];
+            let confirm: boolean | undefined = undefined; 
+            if (parts.length > 3){
+                if (parts[3] == 'yes'){
+                    confirm = true;
+                }
+                else if (parts[3] == 'no'){
+                    confirm = false;
+                }
+            }
+
+            if (confirm == undefined){
+                const traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
+                // ask for confirmation
+                await BotManager.reply(ctx, `Are you sure you want to delete <b>${traderProfile?.title}</b> trading profile? It will remove all access to this wallet. This action cannot be undone. Are you sure you want to proceed?`, {
+                    parse_mode: 'HTML',
+                    reply_markup: BotManager.buildInlineKeyboard([
+                        { id: `trader_profiles|delete|${profileId}|yes`, text: 'Yes' },
+                        { id: `trader_profiles|delete|${profileId}|no`, text: 'No' },
+                    ]),
+                });
+            }
+            else if (confirm == true){
+                await TraderProfilesManager.deactivateTraderProfile(profileId, user.id);
+                await BotManager.deleteMessage(ctx);
+            }
+            else {
+                // delete this message
+                await BotManager.deleteMessage(ctx);
+            }
+        }
         else if (buttonId && buttonId.startsWith('trader_profiles|portfolio')){
             const profileId = buttonId.split('|')[2];
             await BotManager.reply(ctx, 'TODO: portfolio of profile ' + profileId);
@@ -75,19 +152,20 @@ export class BotTraderProfilesHelper extends BotHelper {
             }
 
             if (select){
-                let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNaviteEngineId);
+                let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
                 const buttons: InlineButton[] = [];
                 for (const traderProfile of traderProfiles){
-                    buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}|select`, text: `${traderProfile.default?'🟢 ':''}${traderProfile.title}` });
+                    if (buttons.length > 0){
+                        buttons.push({ id: 'row', text: '' });
+                    }
+                    buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
                 }
                 const markup = BotManager.buildInlineKeyboard(buttons);
                 await BotManager.updateMessageReplyMarkup(ctx, markup);
             }
-
-            // await BotManager.reply(ctx, 'TODO: make default profile ' + profileId + ' select: '+ select);
         }
         else {
-            let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNaviteEngineId);
+            let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
             const replyMessage = this.getReplyMessage();
             
             if (traderProfiles.length == 0){
@@ -102,46 +180,34 @@ export class BotTraderProfilesHelper extends BotHelper {
 
                 if (traderProfiles.length > 1){
                     replyMessage.text += `\n\nYour current default trader profile is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_profile.`;
+
+                    replyMessage.buttons.push({ id: 'choose_profile', text: '⭐️ Choose profile' });
                 }
 
-                // if (replyMessage.buttons.length > 1){
-                    replyMessage.buttons.push({ id: 'choose_profile', text: '⭐️ Choose profile' });
-                // }
-
-
-                if (traderProfiles.length == 1){
-                    const { message, buttons } = await this.buildTraderProfileMessage(traderProfiles[0], traderProfiles.length);
+                for (let index = 0; index < traderProfiles.length; index++) {
+                    const traderProfile = traderProfiles[index];
+                    
+                    const { message, buttons } = await this.buildTraderProfileMessage(traderProfile);   
                     replyMessage.text += `\n\n---\n\n${message}`;
 
-                    if (replyMessage.buttons.length > 0){
-                        replyMessage.buttons.push({ id: 'row', text: '' });
-                    }
-                    replyMessage.buttons.push(...buttons);
-                    replyMessage.markup = BotManager.buildInlineKeyboard(replyMessage.buttons);
+                    replyMessage.buttons.push({ id: 'row', text: '' });
+                    replyMessage.buttons.push({
+                        id: `trader_profiles|show|${traderProfile.id}`,
+                        text: `✏️ ${traderProfile.title}`,
+                    });
                 }
+
+
+
+                replyMessage.markup = BotManager.buildInlineKeyboard(replyMessage.buttons);
             }
 
             await super.commandReceived(ctx, user, replyMessage);
-
-
-            if (traderProfiles.length > 1){
-                for (const traderProfile of traderProfiles){
-                    const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, traderProfiles.length);
-
-                    const markup = BotManager.buildInlineKeyboard(buttons);
-
-                    await BotManager.reply(ctx, message, {
-                        reply_markup: markup, 
-                        parse_mode: 'HTML',
-                    });                
-                }
-            }
-
         }
     }
 
-    async buildTraderProfileMessage(traderProfile: IUserTraderProfile, traderProfilesCount: number): Promise<{ message: string, buttons: InlineButton[] }> {
-        let message = `<b>${traderProfile.title}</b>` + (traderProfile.default ? ' (default)' : '');
+    async buildTraderProfileMessage(traderProfile: IUserTraderProfile): Promise<{ message: string, buttons: InlineButton[] }> {
+        let message = `<b>${traderProfile.title}</b>` + (traderProfile.default ? ' ⭐️' : '');
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
         message += `\nBalance: <b>0 SOL</b>`;
 
@@ -149,11 +215,11 @@ export class BotTraderProfilesHelper extends BotHelper {
         // buttons.push({ id: `trader_profiles|edit|${traderProfile.id}`, text: '✏️ Edit' });
         buttons.push({ id: `trader_profiles|portfolio|${traderProfile.id}`, text: '🎨 Portfolio' });
         buttons.push({ id: `trader_profiles|refresh|${traderProfile.id}`, text: '↻ Refresh' });
-        if (traderProfilesCount > 1){
-            buttons.push({ id: 'row', text: '' });
-            buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}`, text: '⭐️ Make default' });    
-        }
+        buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}`, text: '⭐️ Make default' });    
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: `trader_profiles|edit_name|${traderProfile.id}`, text: '✍️ Edit name' });
         buttons.push({ id: `trader_profiles|export|${traderProfile.id}`, text: '📤 Export' });
+        buttons.push({ id: `trader_profiles|delete|${traderProfile.id}`, text: '❌ Delete' });
 
 
         return { message, buttons };

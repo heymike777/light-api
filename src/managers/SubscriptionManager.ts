@@ -40,16 +40,16 @@ export class SubscriptionManager {
 
     static getMaxNumberOfTraderProfiles(tier?: SubscriptionTier): number {
         if (tier == SubscriptionTier.PLATINUM){
-            return 10;
+            return 50;
         }
         else if (tier == SubscriptionTier.GOLD){
-            return 5;
+            return 10;
         }
         else if (tier == SubscriptionTier.SILVER){
-            return 3;
+            return 5;
         }
         
-        return 1;
+        return 2;
     }
 
     static async updateUserSubscription(userId: string) {
