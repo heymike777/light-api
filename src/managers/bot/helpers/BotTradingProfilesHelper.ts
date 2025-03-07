@@ -9,6 +9,8 @@ import { SwapManager } from "../../SwapManager";
 import { IUserTraderProfile, UserTraderProfile } from "../../../entities/users/TraderProfile";
 import { CustomError } from "../../../errors/CustomError";
 import { parse } from "path";
+import { newConnection } from "../../../services/solana/lib/solana";
+import { SolanaManager } from "../../../services/solana/SolanaManager";
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -181,13 +183,17 @@ export class BotTraderProfilesHelper extends BotHelper {
         else {
             let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
             const replyMessage = this.getReplyMessage();
-            
+                        
             if (traderProfiles.length == 0){
                 replyMessage.text += 'You don\'t have any trader profiles yet. You have to create one to start trading.\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you\'ll have a separate wallet, trading history, and portfolio.';
             }
             else {
                 const defaultProfile = traderProfiles.find(tp => tp.default) || traderProfiles[0];
 
+                const connection = newConnection();
+                const walletAddresses = traderProfiles.map(tp => tp.wallet?.publicKey).filter(Boolean) as string[];
+                const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
+        
                 replyMessage.buttons = replyMessage.buttons || [];
                 replyMessage.text = `You have ${traderProfiles.length} trader profile${ traderProfiles.length==1?'':'s' }.`;
                 replyMessage.text += `\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you'll have a separate wallet, trading history, and portfolio.`;
@@ -200,8 +206,8 @@ export class BotTraderProfilesHelper extends BotHelper {
 
                 for (let index = 0; index < traderProfiles.length; index++) {
                     const traderProfile = traderProfiles[index];
-                    
-                    const { message, buttons } = await this.buildTraderProfileMessage(traderProfile);   
+                    const solBalance = balances.find(b => b.publicKey == traderProfile.wallet?.publicKey)?.uiAmount || 0;
+                    const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, solBalance);   
                     replyMessage.text += `\n\n---\n\n${message}`;
 
                     replyMessage.buttons.push({ id: 'row', text: '' });
@@ -220,10 +226,12 @@ export class BotTraderProfilesHelper extends BotHelper {
         }
     }
 
-    async buildTraderProfileMessage(traderProfile: IUserTraderProfile): Promise<{ message: string, buttons: InlineButton[] }> {
+    async buildTraderProfileMessage(traderProfile: IUserTraderProfile, solBalance?: number): Promise<{ message: string, buttons: InlineButton[] }> {
         let message = `<b>${traderProfile.title}</b>` + (traderProfile.default ? ' ⭐️' : '');
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
-        message += `\nBalance: <b>0 SOL</b>`;
+        if (solBalance !== undefined){
+            message += `\nBalance: <b>${solBalance} SOL</b>`;
+        }
 
         const buttons: InlineButton[] = [];
         // buttons.push({ id: `trader_profiles|edit|${traderProfile.id}`, text: '✏️ Edit' });

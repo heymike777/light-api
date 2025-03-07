@@ -360,6 +360,28 @@ export class SolanaManager {
         return undefined;
     }
 
+    static async getWalletsSolBalances(web3Conn: web3.Connection, walletAddresses: string[]): Promise<(TokenBalance & {publicKey: string})[]>{
+        const publicKeys = walletAddresses.map(address => new web3.PublicKey(address));
+        const accounts = await web3Conn.getMultipleAccountsInfo(publicKeys);
+
+        const balances: (TokenBalance & {publicKey: string})[] = [];
+        let index = 0;
+        for (const account of accounts) {
+            const publicKey = walletAddresses[index];
+
+            if (account) {
+                balances.push({amount: account.lamports, uiAmount: account.lamports / web3.LAMPORTS_PER_SOL, decimals: 9, publicKey});
+            }
+            else {
+                balances.push({amount: 0, uiAmount: 0, decimals: 9, publicKey});
+            }
+
+            index++;
+        }
+
+        return balances;
+    }
+
     static async getWalletTokenBalance(web3Conn: web3.Connection, walletAddress: string, tokenAddress: string): Promise<TokenBalance>{
         try {
             // LogManager.log(process.env.SERVER_NAME, 'getWalletTokenBalance', 'walletAddress', walletAddress, 'tokenAddress', tokenAddress);
