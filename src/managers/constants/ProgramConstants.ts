@@ -164,7 +164,7 @@ export const kPrograms: { [key: string]: {
             { 'buy': {title: 'BUY', priority: 3} },
             { 'sell': {title: 'SELL', priority: 3} },
             { 'create': {title: 'CREATE TOKEN', priority: 2} },
-            { 'withdraw': {title: 'WITHDRAW LIQUIDITY', priority: 3} },
+            { 'withdraw': {title: 'REMOVE LIQUIDITY', priority: 3} },
         ],
         skip: false,
         customIdl: {
@@ -338,8 +338,16 @@ export const kPrograms: { [key: string]: {
     [kProgram.PUMPFUN_AMM]: {
         name: 'PUMPFUN AMM',
         knownInstructions: [
-            // { 'any': {title: 'any', priority: 2} },
+            { 'buy': {title: 'BUY', priority: 3} },
+            { 'sell': {title: 'SELL', priority: 3} },
+            { 'create_pool': {title: 'ADD LIQUIDITY', priority: 2} },
+            // { 'deposit': {title: 'ADD LIQUIDITY', priority: 3} },
+            { 'withdraw': {title: 'REMOVE LIQUIDITY', priority: 3} },
         ],
+        customIdl: {
+            path: 'src/idls/pumpfun_amm.json',
+            type: 'anchorV1',
+        },
         skip: false,
     },
     [kProgram.JUPITER_LIMIT_ORDERS]: {

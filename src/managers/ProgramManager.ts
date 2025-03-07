@@ -278,7 +278,7 @@ export class ProgramManager {
                     }
                     else if (ixType == 'sell') {
                         description = {
-                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>${solAmountString} on Pump Fun`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> sold ${-amount} <a href="${ExplorerManager.getUrlToAddress(addresses[1])}">{address1}</a>${solAmountString} on Pump Fun`,
                             addresses: addresses,
                         };    
 
@@ -897,46 +897,47 @@ export class ProgramManager {
             }
             else if (programId == kProgram.PUMPFUN_AMM){
                 LogManager.log('!!!PUMPFUNAPP', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
-                // if (['swap', 'swapExactOut', 'swapWithPriceImpact'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[10]?.toBase58();
-                //     const market: ParsedSwapMarket = {
-                //         address: accounts?.[0]?.toBase58() || '',
-                //         pool1: accounts?.[2]?.toBase58() || '',
-                //         pool2: accounts?.[3]?.toBase58() || '',
+                if (['buy', 'sell'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[1]?.toBase58();
+                    const market: ParsedSwapMarket = {
+                        address: accounts?.[0]?.toBase58() || '',
+                        pool1: accounts?.[7]?.toBase58() || '',
+                        pool2: accounts?.[8]?.toBase58() || '',
+                    }
+                    swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
+                    description = this.getSwapDescription(swap, walletAddress, 'PumpFun AMM');    
+                }
+                // else if (['create_pool'].indexOf(ixType) != -1){
+                //     const walletAddress = accounts?.[11]?.toBase58();
+                //     if (walletAddress){
+                //         const addresses = [walletAddress];
+                //         description = {
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> created a token on PumpFun AMM`,
+                //             addresses: addresses,
+                //         }; 
                 //     }
-                //     swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
+                // }
+                else if (['withdraw'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[2]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on PumpFun AMM`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['create_pool'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[2]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on PumpFun AMM`,
+                            addresses: addresses,
+                        }; 
+                    }                
+                }
 
-                //     description = this.getSwapDescription(swap, walletAddress, 'Meteora DLMM');    
-                // }
-                // else if (['removeLiquidity', 'removeLiquidityByRange'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[11]?.toBase58();
-                //     if (walletAddress){
-                //         const addresses = [walletAddress];
-                //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> removed liquidity on Meteora`,
-                //             addresses: addresses,
-                //         }; 
-                //     }
-                // }
-                // else if (['addLiquidity', 'addLiquidityByWeight', 'addLiquidityByStrategy'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[11]?.toBase58();
-                //     if (walletAddress){
-                //         const addresses = [walletAddress];
-                //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
-                //             addresses: addresses,
-                //         }; 
-                //     }                }
-                // else if (['addLiquidityByStrategyOneSide', 'addLiquidityOneSide', 'addLiquidityOneSidePrecise'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[8]?.toBase58();
-                //     if (walletAddress){
-                //         const addresses = [walletAddress];
-                //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(addresses[0])}">{address0}</a> added liquidity on Meteora`,
-                //             addresses: addresses,
-                //         }; 
-                //     }                
-                // }
             }
         }
         catch (error){
