@@ -28,7 +28,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             markup: BotManager.buildInlineKeyboard(buttons),
         };
 
-        super('trader_profiles', replyMessage, ['choose_profile']);
+        super('trader_profiles', replyMessage, ['choose_profile', 'portfolio']);
     }
 
     async commandReceived(ctx: Context, user: IUser) {
@@ -53,6 +53,78 @@ export class BotTraderProfilesHelper extends BotHelper {
                 reply_markup: markup,
                 parse_mode: 'HTML',
             });
+        }
+        else if (ctx?.update?.message?.text == '/portfolio' || buttonId == 'portfolio' || (buttonId && buttonId.startsWith('trader_profiles|portfolio'))){
+            let traderProfileId: string | undefined;
+            let isRefresh = false;
+            if (buttonId && buttonId.startsWith('trader_profiles|portfolio')){
+                const parts = buttonId.split('|');
+                if (parts.length>2){
+                    traderProfileId = parts[2];
+                }
+                if (parts.length>3 && parts[3] == 'refresh'){
+                    isRefresh = true;
+                }
+            }
+
+            let traderProfile: IUserTraderProfile | undefined;
+            if (traderProfileId){
+                traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, traderProfileId);
+            }
+            else {
+                traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
+            }
+
+            if (!traderProfile){
+                await BotManager.reply(ctx, '🔴 Trader profile not found');
+                return;
+            }
+
+            const { values, assets, warning } = await TraderProfilesManager.getPortfolio(traderProfile);
+
+            let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
+            message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
+
+            if (warning){
+                message += `\n\n⚠️ ${warning.message}`;
+            }
+
+            if (values){
+                message += `\n\nTotal value: $${values.totalPrice}`;
+                if (values.pnl){
+                    message += `\nP&L: $${values.pnl}`;
+                }
+            }
+
+            if (assets.length == 0){
+                message += `\n\nNo assets on this wallet`;
+            }
+            else {
+                message += `\n\nAssets:`;
+                for (const asset of assets) {
+                    message += `\n${asset.symbol}: ${asset.uiAmount}`;
+                    if (asset.priceInfo){
+                        message += ` ($${asset.priceInfo.totalPrice})`;
+                    }
+                }
+            }
+
+            if (isRefresh){
+                const markup = BotManager.buildInlineKeyboard([
+                    { id: `trader_profiles|portfolio|${traderProfileId}|refresh`, text: '↻ Refresh' },
+                ]);
+                await BotManager.editMessage(ctx, message, markup);
+            }
+            else {
+                await BotManager.reply(ctx, message, {
+                    parse_mode: 'HTML',
+                    reply_markup: BotManager.buildInlineKeyboard([
+                        { id: `trader_profiles|portfolio|${traderProfile.id}|refresh`, text: '↻ Refresh' },
+                    ]),
+                });    
+            }
+
+
         }
         else if (buttonId && buttonId == 'trader_profiles|create'){
             const countAll = await UserTraderProfile.countDocuments({ userId: user.id });
