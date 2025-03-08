@@ -19,6 +19,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
         const buttons: InlineButton[] = [
             {id: 'trader_profiles|create', text: '➕ Add profile'},
+            {id: `trader_profiles|refresh`, text: '↻ Refresh'},
         ];
 
         const replyMessage: Message = {
@@ -103,7 +104,9 @@ export class BotTraderProfilesHelper extends BotHelper {
         }
         else if (buttonId && buttonId.startsWith('trader_profiles|edit_name')){
             const profileId = buttonId.split('|')[2];
-            await BotManager.reply(ctx, 'TODO: edit profile\' name ' + profileId);
+            await BotManager.reply(ctx, 'Enter the new name for this trader profile');
+
+            await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_PROFILE_EDIT_NAME, data: {profileId}, helper: this.kCommand});
         }
         else if (buttonId && buttonId.startsWith('trader_profiles|delete')){
             const parts = buttonId.split('|');
@@ -157,8 +160,24 @@ export class BotTraderProfilesHelper extends BotHelper {
             await BotManager.reply(ctx, 'TODO: portfolio of profile ' + profileId);
         }
         else if (buttonId && buttonId.startsWith('trader_profiles|refresh')){
-            const profileId = buttonId.split('|')[2];
-            await BotManager.reply(ctx, 'TODO: refresh profile ' + profileId);
+            const parts = buttonId.split('|');
+            const profileId = parts.length>2 ? parts[2] : undefined;
+
+            if (profileId){
+                //TODO: update one profile
+                const replyMessage = await this.buildReplyMessageForUserTraderProfile(user.id, profileId);
+                if (replyMessage){
+                    await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);
+                }
+                else {
+                    await BotManager.editMessage(ctx, `Trader profile not found`, undefined);
+                }
+            }
+            else {
+                // update all profiles
+                const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user.id);
+                await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);
+            }
         }
         else if (buttonId && buttonId.startsWith('trader_profiles|make_default')){
             const parts = buttonId.split('|');
@@ -180,51 +199,11 @@ export class BotTraderProfilesHelper extends BotHelper {
                     buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
                 }
                 const markup = BotManager.buildInlineKeyboard(buttons);
-                await BotManager.updateMessageReplyMarkup(ctx, markup);
+                await BotManager.editMessageReplyMarkup(ctx, markup);
             }
         }
         else {
-            let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
-            const replyMessage = this.getReplyMessage();
-                        
-            if (traderProfiles.length == 0){
-                replyMessage.text += 'You don\'t have any trader profiles yet. You have to create one to start trading.\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you\'ll have a separate wallet, trading history, and portfolio.';
-            }
-            else {
-                const defaultProfile = traderProfiles.find(tp => tp.default) || traderProfiles[0];
-
-                const connection = newConnection();
-                const walletAddresses = traderProfiles.map(tp => tp.wallet?.publicKey).filter(Boolean) as string[];
-                const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
-        
-                replyMessage.buttons = replyMessage.buttons || [];
-                replyMessage.text = `You have ${traderProfiles.length} trader profile${ traderProfiles.length==1?'':'s' }.`;
-                replyMessage.text += `\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you'll have a separate wallet, trading history, and portfolio.`;
-
-                if (traderProfiles.length > 1){
-                    replyMessage.text += `\n\nYour current default trader profile is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_profile.`;
-
-                    replyMessage.buttons.push({ id: 'choose_profile', text: '⭐️ Choose profile' });
-                }
-
-                for (let index = 0; index < traderProfiles.length; index++) {
-                    const traderProfile = traderProfiles[index];
-                    const solBalance = balances.find(b => b.publicKey == traderProfile.wallet?.publicKey)?.uiAmount || 0;
-                    const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, solBalance);   
-                    replyMessage.text += `\n\n---\n\n${message}`;
-
-                    replyMessage.buttons.push({ id: 'row', text: '' });
-                    replyMessage.buttons.push({
-                        id: `trader_profiles|show|${traderProfile.id}`,
-                        text: `✏️ ${traderProfile.title}`,
-                    });
-                }
-
-
-
-                replyMessage.markup = BotManager.buildInlineKeyboard(replyMessage.buttons);
-            }
-
+            const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user.id);
             await super.commandReceived(ctx, user, replyMessage);
         }
     }
@@ -237,7 +216,6 @@ export class BotTraderProfilesHelper extends BotHelper {
         }
 
         const buttons: InlineButton[] = [];
-        // buttons.push({ id: `trader_profiles|edit|${traderProfile.id}`, text: '✏️ Edit' });
         buttons.push({ id: `trader_profiles|portfolio|${traderProfile.id}`, text: '🎨 Portfolio' });
         buttons.push({ id: `trader_profiles|refresh|${traderProfile.id}`, text: '↻ Refresh' });
         buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}`, text: '⭐️ Make default' });    
@@ -246,8 +224,91 @@ export class BotTraderProfilesHelper extends BotHelper {
         buttons.push({ id: `trader_profiles|export|${traderProfile.id}`, text: '📤 Export' });
         buttons.push({ id: `trader_profiles|delete|${traderProfile.id}`, text: '❌ Delete' });
 
-
         return { message, buttons };
     }
+
+    async buildReplyMessageForUserTraderProfile(userId: string, profileId: string): Promise<Message | undefined> {
+        let traderProfile = await TraderProfilesManager.getUserTraderProfile(userId, profileId);
+        if (!traderProfile){
+            return undefined;
+        }
+
+        const connection = newConnection();
+        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet?.publicKey);
+
+        const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
+        const markup = BotManager.buildInlineKeyboard(buttons);
+
+        return { text: message, markup };
+    }
+
+    async buildReplyMessageForUserTraderProfiles(userId: string): Promise<Message> {
+        let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(userId, SwapManager.kNativeEngineId);
+        const replyMessage = this.getReplyMessage();
+                    
+        if (traderProfiles.length == 0){
+            replyMessage.text += 'You don\'t have any trader profiles yet. You have to create one to start trading.\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you\'ll have a separate wallet, trading history, and portfolio.';
+        }
+        else {
+            const defaultProfile = traderProfiles.find(tp => tp.default) || traderProfiles[0];
+
+            const connection = newConnection();
+            const walletAddresses = traderProfiles.map(tp => tp.wallet?.publicKey).filter(Boolean) as string[];
+            const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
+    
+            replyMessage.buttons = replyMessage.buttons || [];
+            replyMessage.text = `You have ${traderProfiles.length} trader profile${ traderProfiles.length==1?'':'s' }.`;
+            replyMessage.text += `\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you'll have a separate wallet, trading history, and portfolio.`;
+
+            if (traderProfiles.length > 1){
+                replyMessage.text += `\n\nYour current default trader profile is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_profile.`;
+
+                replyMessage.buttons.push({ id: 'choose_profile', text: '⭐️ Choose profile' });
+            }
+
+            for (let index = 0; index < traderProfiles.length; index++) {
+                const traderProfile = traderProfiles[index];
+                const solBalance = balances.find(b => b.publicKey == traderProfile.wallet?.publicKey)?.uiAmount || 0;
+                const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, solBalance);   
+                replyMessage.text += `\n\n---\n\n${message}`;
+
+                replyMessage.buttons.push({ id: 'row', text: '' });
+                replyMessage.buttons.push({
+                    id: `trader_profiles|show|${traderProfile.id}`,
+                    text: `✏️ ${traderProfile.title}`,
+                });
+            }
+
+
+
+            replyMessage.markup = BotManager.buildInlineKeyboard(replyMessage.buttons);
+        }
+        return replyMessage;
+
+    }
+
+        async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
+            LogManager.log('BotTradingProfilesHelper', 'messageReceived', message.text);
+    
+            super.messageReceived(message, ctx, user);
+    
+            if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_EDIT_NAME){
+                const title = message.text.trim();
+    
+                const profileId = user.telegramState.data.profileId;
+                const updated = await UserTraderProfile.updateOne({ userId: user.id, _id: profileId }, { $set: { title: title } });
+                if (updated.modifiedCount == 1){
+                    await BotManager.reply(ctx, `Trader profile updated ✅`);
+                }
+                else {
+                    await BotManager.reply(ctx, `Trader profile not found`);
+                }
+
+                await UserManager.updateTelegramState(user.id, undefined);
+                return true;
+            }
+    
+            return false;
+        }
 
 }

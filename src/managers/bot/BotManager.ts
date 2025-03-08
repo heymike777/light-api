@@ -399,7 +399,19 @@ export class BotManager {
         return undefined;
     }
 
-    static async updateMessageReplyMarkup(ctx?: Context, markup?: GrammyTypes.InlineKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+    static async editMessage(ctx?: Context, text?: string, markup?: GrammyTypes.InlineKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+        try {
+            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
+            if (chatId && messageId && text){
+                const botManager = await BotManager.getInstance();
+                await botManager.bot.api.editMessageText(chatId, messageId, text, { parse_mode: 'HTML', reply_markup: markup });
+            }
+        }
+        catch (e: any){}
+    }
+
+    static async editMessageReplyMarkup(ctx?: Context, markup?: GrammyTypes.InlineKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
             const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
