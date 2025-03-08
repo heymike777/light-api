@@ -347,7 +347,9 @@ export class SolanaManager {
         return ataAmount;
     }
 
-    static async getWalletSolBalance(web3Conn: web3.Connection, walletAddress: string): Promise<TokenBalance | undefined>{
+    static async getWalletSolBalance(web3Conn: web3.Connection, walletAddress?: string): Promise<TokenBalance | undefined>{
+        if (!walletAddress) return undefined;
+
         try {
             const mainWalletPublicKey = new web3.PublicKey(walletAddress);
             const balance = await web3Conn.getBalance(mainWalletPublicKey);

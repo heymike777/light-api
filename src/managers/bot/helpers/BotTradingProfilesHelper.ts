@@ -63,7 +63,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             try {
                 const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, defaultAmount, slippage, undefined);
 
-                const { message, buttons } = await this.buildTraderProfileMessage(traderProfile);
+                const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, 0);
                 const markup = BotManager.buildInlineKeyboard(buttons);
                 await BotManager.reply(ctx, message, {
                     reply_markup: markup,
@@ -91,7 +91,10 @@ export class BotTraderProfilesHelper extends BotHelper {
                 return;
             }
 
-            const { message, buttons } = await this.buildTraderProfileMessage(traderProfile);
+            const connection = newConnection();
+            const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet?.publicKey);
+
+            const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
             const markup = BotManager.buildInlineKeyboard(buttons);
             await BotManager.reply(ctx, message, {
                 reply_markup: markup,
