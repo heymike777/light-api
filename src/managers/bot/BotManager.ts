@@ -9,7 +9,6 @@ import { UserManager } from "../UserManager";
 import { IUser, User, UserBotStatus } from "../../entities/users/User";
 import { autoRetry } from "@grammyjs/auto-retry";
 import * as GrammyTypes from "grammy/types";
-import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
 import { EnvManager } from "../EnvManager";
@@ -17,7 +16,6 @@ import { MicroserviceManager } from "../MicroserviceManager";
 import { BotConnectEmailHelper } from "./helpers/BotConnectEmailHelper";
 import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
 import { BotTraderProfilesHelper } from "./helpers/BotTradingProfilesHelper";
-import { Other } from "grammy/out/core/api";
 import { BotDeleteMessageHelper } from "./helpers/BotDeleteMessageHelper";
 import { BotBuyHelper } from "./helpers/BotBuyHelper";
 import { InlineButton, kAdminUsernames, SendMessageData, TgMessage } from "./BotTypes";
@@ -100,7 +98,9 @@ export class BotManager {
                 await ctx.answerCallbackQuery(); // remove loading animation
             }
             else {
-                // buy / sell tokens
+                //TODO: buy / sell tokens
+                console.log('!mike', 'BUY/SELL', 'data:', ctx.callbackQuery.data);
+
                 const data = ctx.callbackQuery.data.split('_');
                 if (data.length < 2){
                     LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
@@ -206,28 +206,9 @@ export class BotManager {
             }
         }
 
-        const lastMessage = await Message.findOne({chatId: message.chat.id}).sort({createdAt: -1});//TODO: don't rely on last message. better save user's state in User
-        if (!lastMessage){
-            // do nothing?
-            return;
-        }
-
-        LogManager.log('lastMessage', lastMessage.data.text);
-
-        const lastMessageCommand = lastMessage.data.text.startsWith('/') ? lastMessage.data.text.substring(1) : undefined;
-        if (lastMessageCommand){
-            const helper = await this.findHelperByCommand(lastMessageCommand);
-            if (helper){
-                const success = await helper.messageReceived(message, ctx, user);
-                if (success){
-                    return;
-                }
-            }
-        }
-
         await UserManager.updateTelegramState(user.id, undefined); // reset user's state, if no found helper
-        //...
 
+        ctx.reply('🟡 TODO: TRY TO BUY TOKEN - ' + message.text);
     }
 
     async findHelperByCommand(command: string): Promise<BotHelper | undefined> {
