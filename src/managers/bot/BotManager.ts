@@ -188,7 +188,7 @@ export class BotManager {
 
         const user = await UserManager.getUserByTelegramUser(message.from, true);
 
-        await this.saveMessageToDB(message);
+        this.saveMessageToDB(message);
         
         if (message.text.startsWith('/')){
             const command = message.text.substring(1);
