@@ -19,84 +19,8 @@ import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
 import { BotTraderProfilesHelper } from "./helpers/BotTradingProfilesHelper";
 import { Other } from "grammy/out/core/api";
 import { BotDeleteMessageHelper } from "./helpers/BotDeleteMessageHelper";
-
-export interface SendMessageData {
-    chatId: number;
-    text?: string;
-    imageUrl?: string;
-    inlineKeyboard?: GrammyTypes.InlineKeyboardMarkup;
-}
-
-export enum InlineKeyboardType {
-    TOKEN_TX = 'token_tx',
-}
-
-export const kAdminUsernames = [
-    'heymike777'
-]
-
-export interface TgMessage {
-    message_id: number;
-    from: {
-        id: number;
-        is_bot: boolean;
-        first_name?: string;
-        last_name?: string;
-        username?: string;
-        language_code?: string;
-        is_premium?: boolean;
-    };
-    chat: {
-        id: number;
-        first_name?: string;
-        username?: string;
-        type: string;
-    };
-    voice?: {
-        duration: number;
-        mime_type: string;
-        file_id: string;
-        file_unique_id: string;
-        file_size: number;
-    };
-    document?: {
-        file_id: string;
-        file_unique_id: string;
-        thumb: {
-            file_id: string;
-            file_unique_id: string;
-            file_size: number;
-            width: number;
-            height: number;
-        };
-        thumbnail: {
-            file_id: string;
-            file_unique_id: string;
-            file_size: number;
-            width: number;
-            height: number;
-        };
-        file_name: string;
-        mime_type: string;
-        file_size: number;
-    };
-    photo?: {
-        file_id: string;
-        file_unique_id: string;
-        file_size: number;
-        width: number;
-        height: number;
-    }[];
-    date: number;
-    text: string;
-    entities: any[];
-}
-
-export interface InlineButton {
-    id: string;
-    text: string;
-    link?: string;
-}
+import { BotBuyHelper } from "./helpers/BotBuyHelper";
+import { InlineButton, kAdminUsernames, SendMessageData, TgMessage } from "./BotTypes";
 
 export class BotManager {
     bot: Bot;
@@ -109,6 +33,7 @@ export class BotManager {
         new BotRevokeAccountHelper(),
         new BotTraderProfilesHelper(),
         new BotDeleteMessageHelper(),
+        new BotBuyHelper(),
     ];
 
     constructor() {
@@ -381,22 +306,6 @@ export class BotManager {
             }
         });
         return inlineKeyboard;
-    }
-
-    static buildInlineKeyboardForToken(chain: Chain, type: InlineKeyboardType, mint: string, tokenName: string): GrammyTypes.InlineKeyboardMarkup | undefined {
-        if (chain == Chain.SOLANA){
-            if (type == InlineKeyboardType.TOKEN_TX){
-                const inlineKeyboard = new InlineKeyboard()
-                    .text(`Trade ${tokenName}`, `${chain}_trade_${mint}`)
-                    .url(`Explorer`, ExplorerManager.getUrlToAddress(mint));
-                return inlineKeyboard;
-            }
-            else {
-                LogManager.error('Unknown inline keyboard type', type);
-            }
-        }
-
-        return undefined;
     }
 
     static async editMessage(ctx?: Context, text?: string, markup?: GrammyTypes.InlineKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){

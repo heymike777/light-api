@@ -2,10 +2,10 @@ import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
-import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
-import { BotManager, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
+import { TgMessage } from "../BotTypes";
 
 export class BotMyWalletsHelper extends BotHelper {
 

@@ -1,7 +1,7 @@
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Program } from "../entities/Program";
 import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
-import { BotManager, InlineButton, InlineKeyboardType } from "../managers/bot/BotManager";
+import { BotManager } from "../managers/bot/BotManager";
 import { ProgramManager } from "../managers/ProgramManager";
 import { ExplorerManager } from "./explorers/ExplorerManager";
 import { HeliusManager } from "./solana/HeliusManager";
@@ -164,7 +164,6 @@ export class MigrationManager {
 
         // const mint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
         // const tokenName = 'BONK';
-        // const inlineKeyboard = BotManager.buildInlineKeyboardForToken(Chain.SOLANA, InlineKeyboardType.TOKEN_TX, mint, tokenName);
 
         // await BotManager.sendMessage({
         //     chatId, 

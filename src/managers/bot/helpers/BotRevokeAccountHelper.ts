@@ -1,9 +1,10 @@
 import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
-import { BotManager, InlineButton, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
-import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
+import { IUser } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
+import { InlineButton } from "../BotTypes";
 
 export class BotRevokeAccountHelper extends BotHelper {
 

@@ -1,6 +1,6 @@
 import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
-import { BotManager, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
@@ -9,6 +9,7 @@ import { Helpers } from "../../../services/helpers/Helpers";
 import { IAuth } from "../../../entities/Auth";
 import { Wallet } from "../../../entities/Wallet";
 import { UserTransaction } from "../../../entities/users/UserTransaction";
+import { TgMessage } from "../BotTypes";
 
 export class BotConnectEmailHelper extends BotHelper {
 

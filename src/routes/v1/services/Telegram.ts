@@ -5,7 +5,8 @@ import { TxParser } from "../../../services/solana/geyser/TxParser";
 import { WalletManager } from "../../../managers/WalletManager";
 import { SwapManager } from "../../../managers/SwapManager";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
-import { BotManager, SendMessageData } from "../../../managers/bot/BotManager";
+import { BotManager } from "../../../managers/bot/BotManager";
+import { SendMessageData } from "../../../managers/bot/BotTypes";
 
 const router = express.Router();
 

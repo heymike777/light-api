@@ -1,14 +1,14 @@
 import { Context } from "grammy";
 import { PremiumError } from "../../../errors/PremiumError";
 import { BonfidaManager } from "../../../services/solana/BonfidaManager";
-import { newConnection } from "../../../services/solana/lib/solana";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { UserManager } from "../../UserManager";
 import { WalletManager } from "../../WalletManager";
-import { BotManager, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType } from "../../../entities/users/User";
+import { TgMessage } from "../BotTypes";
 
 export class BotAddWalletHelper extends BotHelper {
 

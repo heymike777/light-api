@@ -2,8 +2,9 @@ import { Context } from "grammy";
 import { IUser, User, UserBotStatus } from "../../../entities/users/User";
 import { UserRefClaim } from "../../../entities/users/UserRefClaim";
 import { LogManager } from "../../LogManager";
-import { BotManager, InlineButton, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
+import { InlineButton, TgMessage } from "../BotTypes";
 
 export class BotStartHelper extends BotHelper {
 
@@ -96,14 +97,5 @@ export class BotStartHelper extends BotHelper {
 
         super.commandReceived(ctx, user);
     }
-
-    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
-        LogManager.log('BotStartHelper', 'messageReceived', message.text, 'ctx.match:', ctx.match);
-
-        super.messageReceived(message, ctx, user);
-        return false;
-    }
-
-
 
 }

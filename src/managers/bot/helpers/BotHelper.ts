@@ -1,7 +1,8 @@
 import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { LogManager } from "../../LogManager";
-import { BotManager, InlineButton, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
+import { InlineButton, TgMessage } from "../BotTypes";
 
 export interface Message {
     text: string;

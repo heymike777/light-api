@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import { TgMessage } from '../managers/bot/BotManager';
 import { Chain } from '../services/solana/types';
 
 export let Schema = mongoose.Schema;

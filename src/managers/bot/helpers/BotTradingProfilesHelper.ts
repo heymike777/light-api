@@ -1,6 +1,6 @@
 import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
-import { BotManager, InlineButton, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
@@ -11,6 +11,7 @@ import { CustomError } from "../../../errors/CustomError";
 import { parse } from "path";
 import { newConnection } from "../../../services/solana/lib/solana";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
+import { InlineButton, TgMessage } from "../BotTypes";
 
 export class BotTraderProfilesHelper extends BotHelper {
 

@@ -2,10 +2,11 @@ import { Context } from "grammy";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { WalletManager } from "../../WalletManager";
-import { BotManager, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
+import { TgMessage } from "../BotTypes";
 
 export class BotRemoveWalletHelper extends BotHelper {
 

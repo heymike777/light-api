@@ -1,8 +1,9 @@
 import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
-import { BotManager, TgMessage } from "../BotManager";
+import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser } from "../../../entities/users/User";
+import { TgMessage } from "../BotTypes";
 
 export class BotDeleteMessageHelper extends BotHelper {
 
