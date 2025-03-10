@@ -1,11 +1,12 @@
 import * as GrammyTypes from "grammy/types";
 
+export type BotKeyboardMarkup = GrammyTypes.InlineKeyboardMarkup;// | GrammyTypes.ReplyKeyboardMarkup | GrammyTypes.ReplyKeyboardRemove | GrammyTypes.ForceReply;
 
 export interface SendMessageData {
     chatId: number;
     text?: string;
     imageUrl?: string;
-    inlineKeyboard?: GrammyTypes.InlineKeyboardMarkup;
+    inlineKeyboard?: BotKeyboardMarkup;
 }
 
 export const kAdminUsernames = [

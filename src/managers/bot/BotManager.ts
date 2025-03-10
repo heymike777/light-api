@@ -18,7 +18,7 @@ import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
 import { BotTraderProfilesHelper } from "./helpers/BotTradingProfilesHelper";
 import { BotDeleteMessageHelper } from "./helpers/BotDeleteMessageHelper";
 import { BotBuyHelper } from "./helpers/BotBuyHelper";
-import { InlineButton, kAdminUsernames, SendMessageData, TgMessage } from "./BotTypes";
+import { BotKeyboardMarkup, InlineButton, kAdminUsernames, SendMessageData, TgMessage } from "./BotTypes";
 
 export class BotManager {
     bot: Bot;
@@ -167,25 +167,6 @@ export class BotManager {
     async onMessage(message: TgMessage, ctx: Context){
         LogManager.log('onMessage', message);
 
-        if (message.from.username && kAdminUsernames.includes(message.from.username)){
-            if (message.voice){
-                await BotManager.reply(ctx, 'File ID (audio): ' + message.voice.file_id);
-            }
-            if (message.document){
-                await BotManager.reply(ctx, 'File ID (document): ' + message.document.file_id);
-            }
-            if (message.photo){
-                // find the biggest photo
-                let biggestPhoto = message.photo[0];
-                for (const photo of message.photo){
-                    if (photo.width > biggestPhoto.width){
-                        biggestPhoto = photo;
-                    }
-                }
-                await BotManager.reply(ctx, 'File ID (photo): ' + biggestPhoto.file_id);
-            }
-        }
-
         const user = await UserManager.getUserByTelegramUser(message.from, true);
 
         this.saveMessageToDB(message);
@@ -209,6 +190,7 @@ export class BotManager {
         await UserManager.updateTelegramState(user.id, undefined); // reset user's state, if no found helper
 
         ctx.reply('🟡 TODO: TRY TO BUY TOKEN - ' + message.text);
+
     }
 
     async findHelperByCommand(command: string): Promise<BotHelper | undefined> {
@@ -273,7 +255,7 @@ export class BotManager {
         }
     }
 
-    static buildInlineKeyboard(buttons: InlineButton[]): GrammyTypes.InlineKeyboardMarkup | undefined {
+    static buildInlineKeyboard(buttons: InlineButton[]): BotKeyboardMarkup | undefined {
         const inlineKeyboard = new InlineKeyboard();
         buttons.forEach(button => {
             if (button.id == 'row'){
@@ -289,7 +271,7 @@ export class BotManager {
         return inlineKeyboard;
     }
 
-    static async editMessage(ctx?: Context, text?: string, markup?: GrammyTypes.InlineKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+    static async editMessage(ctx?: Context, text?: string, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
             const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
@@ -301,7 +283,7 @@ export class BotManager {
         catch (e: any){}
     }
 
-    static async editMessageReplyMarkup(ctx?: Context, markup?: GrammyTypes.InlineKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+    static async editMessageReplyMarkup(ctx?: Context, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
             const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
@@ -335,6 +317,20 @@ export class BotManager {
             LogManager.error('BotManager Error while replying', e);
         }
     }
+
+    static async replyWithPhoto(ctx: Context, photo: string, text?: string, markup?: BotKeyboardMarkup): Promise<GrammyTypes.Message.PhotoMessage | undefined> {
+        try {
+            return await ctx.replyWithPhoto(photo, { 
+                caption: text, 
+                reply_markup: markup,
+                parse_mode: 'HTML',
+            });
+        }
+        catch (e: any){
+            LogManager.error('BotManager Error while replying with photo', e);
+        }
+    }
+
 
     static async replyWithPremiumError(ctx: Context, text: string): Promise<GrammyTypes.Message.TextMessage | undefined> {
         try {

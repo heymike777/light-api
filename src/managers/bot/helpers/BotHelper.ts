@@ -2,11 +2,11 @@ import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
 import { LogManager } from "../../LogManager";
 import { BotManager } from "../BotManager";
-import { InlineButton, TgMessage } from "../BotTypes";
+import { BotKeyboardMarkup, InlineButton, TgMessage } from "../BotTypes";
 
 export interface Message {
     text: string;
-    markup?: any;
+    markup?: BotKeyboardMarkup;
     photo?: string,
     buttons?: InlineButton[],
 }
@@ -30,11 +30,7 @@ export class BotHelper {
     async commandReceived(ctx: Context, user: IUser, replyMsg?: Message) {
         const replyMessage = replyMsg || this.kReplyMessage;
         if (replyMessage.photo) {
-            await ctx.replyWithPhoto(replyMessage.photo, { 
-                caption: replyMessage.text, 
-                reply_markup: replyMessage.markup,
-                parse_mode: 'HTML',
-            });
+            await BotManager.replyWithPhoto(ctx, replyMessage.photo, replyMessage.text, replyMessage.markup);
         }
         else {
             await BotManager.reply(ctx, replyMessage.text, { 
