@@ -521,7 +521,7 @@ export class SolanaManager {
             return true; // web3.PublicKey.isOnCurve(pk);
         }
         catch (err){
-            LogManager.error('isValidPublicKey', err);
+            // LogManager.error('isValidPublicKey', err);
         }
 
         return false;

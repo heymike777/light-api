@@ -23,6 +23,8 @@ import { SearchManager } from "../SearchManager";
 import { IToken, ITokenModel } from "../../entities/tokens/Token";
 import { TraderProfilesManager } from "../TraderProfilesManager";
 import { IUserTraderProfile } from "../../entities/users/TraderProfile";
+import { Currency } from "../../models/types";
+import { SwapType } from "../../entities/payments/Swap";
 
 export class BotManager {
     bot: Bot;
@@ -99,59 +101,13 @@ export class BotManager {
             const helper = await this.findHelperByCommand(buttonId);
             if (helper && ctx.chat){
                 helper.commandReceived(ctx, user);
-                await ctx.answerCallbackQuery(); // remove loading animation
             }
             else {
-                //TODO: buy / sell tokens
-                console.log('!mike', 'BUY/SELL', 'data:', ctx.callbackQuery.data);
-
-                const data = ctx.callbackQuery.data.split('_');
-                if (data.length < 2){
-                    LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
-                    await ctx.answerCallbackQuery(); // remove loading animation
-                    return;
-                }
-
-                const chain = data[0];
-                const command = data[1];
-                if (chain == Chain.SOLANA){
-                    if (command == 'trade'){
-                        if (data.length < 2){
-                            LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
-                            await ctx.answerCallbackQuery(); // remove loading animation
-                            return;
-                        }
-
-                        const mint = data[2];
-                        LogManager.log('trade', mint, 'by', ctx.callbackQuery.from.username);
-
-                        //TODO: send message with this token info and buttons to buy/sell
-
-                        await ctx.answerCallbackQuery(); // remove loading animation
-                        return;
-                    }
-                    else if (command == 'buy'){
-                        if (data.length < 3){
-                            LogManager.error('Unknown button event with payload', ctx.callbackQuery.data);
-                            await ctx.answerCallbackQuery(); // remove loading animation
-                            return;
-                        }
-
-                        const mint = data[2];
-                        const amount = data[3];
-                        LogManager.log('buy', mint, 'for', amount, 'SOL', 'by', ctx.callbackQuery.from.username);
-
-                        //TODO: buy token
-
-                        await ctx.answerCallbackQuery(); // remove loading animation
-                        return;
-                    }
-                }
-
-                LogManager.log("Unknown button event with payload", ctx.callbackQuery.data);
-                await ctx.answerCallbackQuery(); // remove loading animation
+                LogManager.error('Unknown command:', buttonId);
+                await BotManager.reply(ctx, `🔴 Unknown command`);
             }
 
+            await ctx.answerCallbackQuery(); // remove loading animation
         });
     
         this.bot.start();
@@ -363,16 +319,32 @@ export class BotManager {
 
     static async buildBuyMessageForToken(token: ITokenModel, user: IUser, traderProfile?: IUserTraderProfile): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
 
+        const currency = traderProfile?.currency || Currency.SOL;
+        let amounts: number[] = [];
+        const type = SwapType.BUY;
+        if (type == SwapType.BUY){
+            amounts = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
+        }
+        else {
+            amounts = traderProfile?.sellAmounts || [25, 50, 100];
+        }
 
         const buttons: InlineButton[] = [
-            { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
+            { id: `${type}|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
             { id: 'row', text: '' },
-            { id: `buy|${token.chain}|${token.address}|0.5`, text: 'Buy 0.5 SOL' },
-            { id: `buy|${token.chain}|${token.address}|1`, text: 'Buy 1 SOL' },
-            { id: `buy|${token.chain}|${token.address}|x`, text: 'Buy X SOL' },
         ];
+
+        for (const amount of amounts) {
+            buttons.push({ id: `${type}|${token.chain}|${token.address}|${amount}`, text: `${type==SwapType.BUY?'Buy':'Sell'} ${amount}${type==SwapType.BUY?' '+currency:'%'}` });
+        }
+
+        if (type == SwapType.BUY){
+            buttons.push({ id: `${type}|${token.chain}|${token.address}|X`, text: `Buy X ${currency}` });
+        }
+
+
         const markup = BotManager.buildInlineKeyboard(buttons);
-        const message = `Buy <b>${token.symbol}</b> (${token.name})`;
+        const message = `${SwapType.BUY?'Buy':'Sell'} <b>${token.symbol}</b> (${token.name})`;
         return { message, markup };
     }
      
