@@ -1,7 +1,8 @@
 import axios from "axios";
-import { ConfigurationParameters, Instruction, QuoteGetSwapModeEnum, QuoteResponse, ResponseError, createJupiterApiClient } from '@jup-ag/api';
+import { ConfigurationParameters, Instruction, QuoteResponse, ResponseError, SwapMode, createJupiterApiClient } from '@jup-ag/api';
 import * as web3 from '@solana/web3.js';
 import { LogManager } from "./LogManager";
+import { Priority } from "../services/solana/types";
 
 export interface JupQuotes {
     inAmount: string,
@@ -10,7 +11,7 @@ export interface JupQuotes {
 }
 
 export interface JupSwapInstructionsInclude {
-    includeTokenLedgerInstruction?: boolean,
+    includeOtherInstruction?: boolean,
     includeComputeBudgetInstructions?: boolean,
     includeSetupInstructions?: boolean,
     includeSwapInstruction?: boolean,
@@ -51,10 +52,19 @@ export class JupiterManager {
         return [];
     }
 
-    static async getQuote(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: QuoteGetSwapModeEnum = QuoteGetSwapModeEnum.ExactIn): Promise<JupQuotes | undefined> {
+    static async getQuote(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: SwapMode = SwapMode.ExactIn): Promise<JupQuotes | undefined> {
         try {
             const maxAutoSlippageBps = Math.round(slippage * 100);
             LogManager.forceLog('maxAutoSlippageBps:', maxAutoSlippageBps);
+            
+            console.log('get quotes for', {
+                inputMint,
+                outputMint,
+                amount,
+                swapMode: swapMode,
+                slippageBps: maxAutoSlippageBps,     
+            });
+
             const quotes = await this.quoteApi.quoteGet({
                 inputMint,
                 outputMint,
@@ -70,7 +80,7 @@ export class JupiterManager {
                 // restrictIntermediateTokens: false,
             });
 
-            // console.log('quotes:', JSON.stringify(quotes, null, 2));
+            console.log('quotes:', JSON.stringify(quotes, null, 2));
 
             return {
                 inAmount: quotes.inAmount,
@@ -79,32 +89,43 @@ export class JupiterManager {
             };
         }
         catch (e: any) {
+            console.error('getQuote error:', e);
         }
 
         return undefined;
     }
 
-    static async swapInstructions(quoteResponse: QuoteResponse, walletAddress: string, slippage: number, prioritizationFeeLamports: 'auto' | number = 'auto', include?: JupSwapInstructionsInclude): Promise<{instructions: web3.TransactionInstruction[], addressLookupTableAddresses: string[]}> {
+    static async swapInstructions(quoteResponse: QuoteResponse, walletAddress: string, priorityFee: Priority, include?: JupSwapInstructionsInclude): Promise<{instructions: web3.TransactionInstruction[], addressLookupTableAddresses: string[]}> {
+        let priorityLevel: 'medium' | 'high' | 'veryHigh' | undefined = undefined;
+        let prioritizationFeeMaxLamports = 10;
+        if (priorityFee == Priority.MEDIUM) { priorityLevel = 'medium'; }
+        else if (priorityFee == Priority.HIGH) { priorityLevel = 'high'; }
+        else if (priorityFee == Priority.ULTRA) { priorityLevel = 'veryHigh'; }
+
+        console.log('swapInstructions', 'priorityFee:', priorityFee, 'priorityLevel:', priorityLevel, 'prioritizationFeeMaxLamports:', prioritizationFeeMaxLamports);
+
         const response = await this.quoteApi.swapInstructionsPost({
             swapRequest: {
                 userPublicKey: walletAddress,
                 quoteResponse: quoteResponse,    
                 useSharedAccounts: false,    
                 dynamicComputeUnitLimit: true,
-                prioritizationFeeLamports: prioritizationFeeLamports,
                 wrapAndUnwrapSol: true,
-                dynamicSlippage: {
-                    maxBps: Math.round(slippage * 100),
-                },                
+                prioritizationFeeLamports: {
+                    priorityLevelWithMaxLamports: {
+                        priorityLevel: priorityFee,
+                        maxLamports: prioritizationFeeMaxLamports
+                    }
+                }
             }
         });
 
         const instructions: Instruction[] = [];
-        if (response.tokenLedgerInstruction && (!include || include.includeTokenLedgerInstruction)) { instructions.push(response.tokenLedgerInstruction); }
         if (response.computeBudgetInstructions && (!include || include.includeComputeBudgetInstructions)) { instructions.push(...response.computeBudgetInstructions); }
         if (response.setupInstructions && (!include || include.includeSetupInstructions)) { instructions.push(...response.setupInstructions); }
         if (response.swapInstruction && (!include || include.includeSwapInstruction)) { instructions.push(response.swapInstruction); }
         if (response.cleanupInstruction && (!include || include.includeCleanupInstruction)) { instructions.push(response.cleanupInstruction); }
+        if (response.otherInstructions && (!include || include.includeOtherInstruction)) { instructions.push(response.otherInstructions); }
 
         return {instructions: this.instructionsToTransactionInstructions(instructions), addressLookupTableAddresses: response.addressLookupTableAddresses};
     }

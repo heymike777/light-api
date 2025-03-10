@@ -20,7 +20,7 @@ import { token } from "@coral-xyz/anchor/dist/cjs/utils";
 import { TokenManager } from "../../managers/TokenManager";
 import { LogManager } from "../../managers/LogManager";
 import { UserTraderProfile } from "../../entities/users/TraderProfile";
-import { WalletModel } from "../../services/solana/types";
+import { Priority, WalletModel } from "../../services/solana/types";
 import { SolanaManager } from "../../services/solana/SolanaManager";
 import { PremiumError } from "../../errors/PremiumError";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
@@ -71,6 +71,7 @@ router.post(
 
         const engineId = '' + req.body.engineId;
         const title = '' + req.body.title;
+        const priorityFee: Priority | undefined = req.body.priorityFee;
         let defaultAmount: number | undefined;
         let slippage: number | undefined;
 
@@ -95,7 +96,7 @@ router.post(
             slippage = +req.body.slippage;
         }
 
-        const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, defaultAmount, slippage, ipAddress);
+        const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, priorityFee || Priority.MEDIUM, defaultAmount, slippage, ipAddress);
 
         res.status(200).send({ traderProfile });
     }
@@ -146,6 +147,10 @@ router.put(
 
         if (req.body.slippage){
             traderProfile.buySlippage = +req.body.slippage;
+        }
+
+        if (req.body.priorityFee){
+            traderProfile.priorityFee = req.body.priorityFee;
         }
 
         if (req.body.default != undefined){

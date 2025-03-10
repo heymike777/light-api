@@ -12,6 +12,7 @@ import { parse } from "path";
 import { newConnection } from "../../../services/solana/lib/solana";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { InlineButton, TgMessage } from "../BotTypes";
+import { Priority } from "../../../services/solana/types";
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -135,7 +136,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             const slippage = 10;
 
             try {
-                const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, defaultAmount, slippage, undefined);
+                const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, Priority.MEDIUM, defaultAmount, slippage, undefined);
 
                 const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, 0);
                 const markup = BotManager.buildInlineKeyboard(buttons);

@@ -1,7 +1,7 @@
 import { AddressLookupTableAccount, Keypair, TransactionInstruction } from '@solana/web3.js';
 import { DAS, EnrichedTransaction, Helius, MintApiRequest, SmartTransactionContext } from "helius-sdk";
 import { HeliusAsset, HeliusAssetDisplayOptions, MintApiResult } from './HeliusTypes';
-import { Asset, AssetType, Priority } from './types';
+import { Asset, AssetType } from './types';
 import { kRaydiumAuthority } from './Constants';
 import axios from 'axios';
 import { LogManager } from '../../managers/LogManager';

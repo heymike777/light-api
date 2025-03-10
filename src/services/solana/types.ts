@@ -67,8 +67,10 @@ export interface Amount {
 }
 
 export enum Priority {
-    LOW = 'LOW',
-    HIGH = 'HIGH'
+    LOW = 'low',
+    MEDIUM = 'medium',
+    HIGH = 'high',
+    ULTRA = 'ultra',
 }
 
 export enum Chain {

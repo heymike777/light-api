@@ -7,7 +7,7 @@ import { PortfolioAsset } from "../models/types";
 import { Helpers } from "../services/helpers/Helpers";
 import { kSolAddress } from "../services/solana/Constants";
 import { SolanaManager } from "../services/solana/SolanaManager";
-import { WalletModel } from "../services/solana/types";
+import { Priority, WalletModel } from "../services/solana/types";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SwapManager } from "./SwapManager";
 import { TokenManager } from "./TokenManager";
@@ -54,7 +54,7 @@ export class TraderProfilesManager {
         return (profile && profile.active) ? profile : undefined;
     }
 
-    static async createTraderProfile(user: IUser, engineId: string, title: string, defaultAmount?: number, slippage?: number, ipAddress?: string): Promise<IUserTraderProfile> {
+    static async createTraderProfile(user: IUser, engineId: string, title: string, priority: Priority, defaultAmount?: number, slippage?: number, ipAddress?: string): Promise<IUserTraderProfile> {
         const maxNumberOfTraderProfiles = user.maxNumberOfTraderProfiles || SubscriptionManager.getMaxNumberOfTraderProfiles();
         const nativeProfilesCount = user.traderProfiles ? user.traderProfiles.filter(p => p.engineId == SwapManager.kNativeEngineId).length : 0;
 
@@ -76,6 +76,7 @@ export class TraderProfilesManager {
         traderProfile.defaultAmount = defaultAmount;
         traderProfile.buySlippage = slippage;
         traderProfile.createdAt = new Date();
+        traderProfile.priorityFee = priority;
         traderProfile.active = true;
         traderProfile.default = (!user.traderProfiles || user.traderProfiles.length == 0); // default=true for the first profile
         traderProfile.wallet = wallet;

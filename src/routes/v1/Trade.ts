@@ -12,6 +12,7 @@ import { SolanaManager } from "../../services/solana/SolanaManager";
 import { newConnection } from "../../services/solana/lib/solana";
 import { kSolAddress } from "../../services/solana/Constants";
 import { BN } from "bn.js";
+import { Currency } from "../../models/types";
 
 const router = express.Router();
 
@@ -32,49 +33,7 @@ router.post(
         }
 
         const { traderProfileId, amount, mint } = req.body;
-
-        const traderProfile = await TraderProfilesManager.findById(traderProfileId);
-        if (!traderProfile){
-            throw new BadRequestError('Trader profile not found');
-        }
-
-        if (traderProfile.engineId !== SwapManager.kNativeEngineId){
-            throw new BadRequestError('Only Light engine is supported');
-        }
-
-        if (!traderProfile.wallet){
-            throw new BadRequestError('Trader profile wallet not found');
-        }
-
-        if (amount <= 0.0001){
-            throw new BadRequestError('Amount should be greater than 0');
-        }
-
-        const connection = newConnection();
-        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
-        const minSolRequired = amount * 1.01 + 0.01;
-        if (!balance || balance.uiAmount < minSolRequired){
-            throw new BadRequestError('Insufficient balance');
-        }
-
-        const amountInLamports = new BN(amount).mul(new BN(10).pow(new BN(9)));
-
-        const swap = new Swap();
-        swap.type = SwapType.BUY;
-        swap.dex = SwapDex.JUPITER;
-        swap.userId = userId;
-        swap.traderProfileId = traderProfileId;
-        swap.amountIn = amountInLamports.toString();
-        swap.mint = mint;
-        swap.createdAt = new Date();
-        swap.status = {
-            type: StatusType.CREATED,
-            tryIndex: 0,
-        };
-        await swap.save();
-
-
-        const signature = await SwapManager.buy(swap, traderProfile);
+        const signature = await SwapManager.initiateBuy(SwapDex.JUPITER, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }
@@ -97,57 +56,7 @@ router.post(
         }
 
         const { traderProfileId, amount, mint } = req.body;
-
-        const traderProfile = await TraderProfilesManager.findById(traderProfileId);
-        if (!traderProfile){
-            throw new BadRequestError('Trader profile not found');
-        }
-
-        if (traderProfile.engineId !== SwapManager.kNativeEngineId){
-            throw new BadRequestError('Only Light engine is supported');
-        }
-
-        if (!traderProfile.wallet){
-            throw new BadRequestError('Trader profile wallet not found');
-        }
-
-        if (mint == kSolAddress){
-            throw new BadRequestError('Selling SOL is not supported');
-        }
-
-        if (amount <= 0.0001){
-            throw new BadRequestError('Amount should be greater than 0');
-        }
-
-        const connection = newConnection();
-        const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, mint);
-        if (!balance){
-            throw new BadRequestError('Insufficient balance');
-        }
-
-        const decimals = balance.decimals || 0;
-        const amountInLamports = new BN(amount).mul(new BN(10).pow(new BN(decimals)));
-        const balanceAmount = new BN(balance.amount || 0);
-
-        if (balanceAmount < amountInLamports){
-            throw new BadRequestError('Insufficient balance');
-        }
-
-        const swap = new Swap();
-        swap.type = SwapType.SELL;
-        swap.dex = SwapDex.JUPITER;
-        swap.userId = userId;
-        swap.traderProfileId = traderProfileId;
-        swap.amountIn = amountInLamports.toString();
-        swap.mint = mint;
-        swap.createdAt = new Date();
-        swap.status = {
-            type: StatusType.CREATED,
-            tryIndex: 0,
-        };
-        await swap.save();
-
-        const signature = await SwapManager.sell(swap, traderProfile);
+        const signature = await SwapManager.initiateSell(SwapDex.JUPITER, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }

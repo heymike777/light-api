@@ -8,6 +8,9 @@ import { Currency } from "../../../models/types";
 import { TokenManager } from "../../TokenManager";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotTypes";
+import { SwapManager } from "../../SwapManager";
+import { SwapDex } from "../../../entities/payments/Swap";
+import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 
 export class BotBuyHelper extends BotHelper {
 
@@ -34,7 +37,12 @@ export class BotBuyHelper extends BotHelper {
                 const mint = parts[2];
 
                 const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
-                const currency = traderProfile?.currency || Currency.SOL;
+                if (!traderProfile){
+                    await BotManager.reply(ctx, '🟡 Please, create a trader profile first');
+                    return;
+                }
+
+                const currency = traderProfile.currency || Currency.SOL;
 
                 if (parts[3] == 'refresh'){
                     const token = await TokenManager.getToken(mint);
@@ -50,7 +58,7 @@ export class BotBuyHelper extends BotHelper {
                 else {
                     const amount = parseFloat(parts[3]);
                     if (amount > 0){
-                        await this.buy(ctx, user, chain, mint, amount, currency, traderProfile?.id);
+                        await this.buy(ctx, user, chain, mint, amount, currency, traderProfile.id);
                     }
                 }
             }
@@ -87,9 +95,9 @@ export class BotBuyHelper extends BotHelper {
         return false;
     }
 
-    async buy(ctx: Context, user: IUser, chain: string, mint: string, amount: number, currency: Currency, traderProfileId?: string) {
-        //TODO: buy token
-        await BotManager.reply(ctx, `Buy ${mint} for ${amount} ${currency} on ${chain} with traderProfileId=${traderProfileId}`);
+    async buy(ctx: Context, user: IUser, chain: string, mint: string, amount: number, currency: Currency, traderProfileId: string) {
+        const signature = await SwapManager.initiateBuy(SwapDex.JUPITER, traderProfileId, mint, amount);
+        await BotManager.reply(ctx, `Buy ${mint} for ${amount} ${currency} on ${chain}\n\nTX: ${signature ? ExplorerManager.getUrlToTransaction(signature) : undefined}`);        
     }
 
 }

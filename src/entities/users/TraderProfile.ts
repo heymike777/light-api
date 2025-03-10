@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { WalletModel } from '../../services/solana/types';
+import { Priority, WalletModel } from '../../services/solana/types';
 import { SwapManager } from '../../managers/SwapManager';
 import { Currency } from '../../models/types';
 
@@ -13,6 +13,7 @@ export interface IUserTraderProfile extends mongoose.Document {
     title: string;
     default: boolean;
     active: boolean;
+    priorityFee: Priority;
 
     // only for Light engine
     wallet?: WalletModel;
@@ -33,6 +34,7 @@ export const UserTraderProfileSchema = new mongoose.Schema<IUserTraderProfile>({
     title: { type: String },
     default: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
+    priorityFee: { type: String },
 
     wallet: { type: Mixed },
     defaultAmount: { type: Number },
@@ -73,6 +75,7 @@ UserTraderProfileSchema.methods.toJSON = function () {
         currency: this.currency,
         buyAmounts: this.buyAmounts,
         sellAmounts: this.sellAmounts,
+        priorityFee: this.priorityFee,
     };
 };
 

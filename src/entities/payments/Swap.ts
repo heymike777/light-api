@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import { Currency } from '../../models/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -34,6 +35,7 @@ export interface ISwap extends mongoose.Document {
     traderProfileId: string;
     type: SwapType;
     dex: SwapDex;
+    currency: Currency;
     mint: string;
     amountIn: string; // lamports
     value?: {
@@ -57,6 +59,7 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     traderProfileId: { type: String },
     type: { type: String },
     dex: { type: String },
+    currency: { type: String },
     mint: { type: String },
     amountIn: { type: String },
     status: { type: Mixed },

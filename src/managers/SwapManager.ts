@@ -1,16 +1,15 @@
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
 import { kSolAddress, kUsdcAddress } from "../services/solana/Constants";
-import { Engine } from "../services/solana/types";
+import { DexId, Engine, Priority } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
-import { QuoteGetSwapModeEnum } from "@jup-ag/api";
 import { BadRequestError } from "../errors/BadRequestError";
 import * as web3 from "@solana/web3.js";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnection } from "../services/solana/lib/solana";
 import { SolanaManager } from "../services/solana/SolanaManager";
-import { ISwap, StatusType, Swap, SwapType } from "../entities/payments/Swap";
+import { ISwap, StatusType, Swap, SwapDex, SwapType } from "../entities/payments/Swap";
 import { LogManager } from "./LogManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 import { UserTransaction } from "../entities/users/UserTransaction";
@@ -25,6 +24,7 @@ import { BN } from "bn.js";
 import { RedisManager } from "./db/RedisManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { Currency } from "../models/types";
+import { SwapMode } from "@jup-ag/api";
 
 export class SwapManager {
 
@@ -122,6 +122,7 @@ export class SwapManager {
     }
 
     static async buyAndSell(type: SwapType, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
+        console.log('buyAndSell', type, swap, traderProfile, triesLeft);
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {
@@ -151,8 +152,9 @@ export class SwapManager {
             const inputMint = type == SwapType.BUY ? currencyMintAddress : mint;
             const outputMint = type == SwapType.BUY ? mint : currencyMintAddress;
             const slippage = (type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
+            console.log('SwapManager', 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
 
-            const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, QuoteGetSwapModeEnum.ExactIn);
+            const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, SwapMode.ExactIn);
             if (!quote) {
                 swap.status.type = StatusType.CREATED;
                 swap.status.tryIndex++;
@@ -160,12 +162,13 @@ export class SwapManager {
                 return;
             }
 
-            LogManager.log('SwapManager', 'quote', quote);
+            console.log('SwapManager', 'quote', quote);
 
-            const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
+            // const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
+            const priorityFee = traderProfile.priorityFee || Priority.MEDIUM;
 
-            const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, slippage, prioritizationFeeLamports, {
-                includeTokenLedgerInstruction: true,
+            const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, priorityFee, {
+                includeOtherInstruction: true,
                 includeSwapInstruction: true,
                 includeComputeBudgetInstructions: true,
                 includeCleanupInstruction: true,
@@ -176,7 +179,7 @@ export class SwapManager {
             const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
             const addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
 
-            LogManager.log('SwapManager', 'swapData', swapData);
+            console.log('SwapManager', 'swapData', swapData);
 
             // add 1% fee instruction to tx
             const swapAmountInLamports = type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
@@ -196,14 +199,14 @@ export class SwapManager {
             }
             await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
             
-            LogManager.log('SwapManager', 'instructions.length =', instructions.length);
+            console.log('SwapManager', 'instructions.length =', instructions.length);
 
             blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
             const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
-            LogManager.log('SwapManager', 'tx', tx);
+            console.log('SwapManager', 'tx', tx);
 
             signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
-            LogManager.log('SwapManager', 'signature', signature);
+            console.log('SwapManager', 'signature', signature);
         }
         catch (error) {
             console.error('SwapManager', type, error);
@@ -470,5 +473,131 @@ export class SwapManager {
             usdValue,
         });
     }
+
+    static async initiateBuy(dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+        console.log('initiateBuy', dex, traderProfileId, mint, amount);
+
+        const traderProfile = await TraderProfilesManager.findById(traderProfileId);
+        if (!traderProfile){
+            throw new BadRequestError('Trader profile not found');
+        }
+        const userId = traderProfile.userId;
+        const currency = traderProfile.currency || Currency.SOL;
+
+        if (traderProfile.engineId !== SwapManager.kNativeEngineId){
+            throw new BadRequestError('Only Light engine is supported');
+        }
+
+        if (!traderProfile.wallet){
+            throw new BadRequestError('Trader profile wallet not found');
+        }
+
+        if (amount <= 0.0001){
+            throw new BadRequestError('Amount should be greater than 0');
+        }
+
+        const connection = newConnection();
+
+        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
+        const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
+        if (!balance || balance.uiAmount < minSolRequired){
+            throw new BadRequestError('Insufficient SOL balance');
+        }
+
+        if (currency == Currency.USDC){
+            const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, kUsdcAddress);
+            if (!balance || balance.uiAmount < amount){
+                throw new BadRequestError('Insufficient USDC balance');
+            }    
+        }
+
+        const decimals = currency == Currency.SOL ? 9 : 6;
+        const amountInLamports = amount * (10 ** decimals);
+
+        const swap = new Swap();
+        swap.type = SwapType.BUY;
+        swap.dex = SwapDex.JUPITER;
+        swap.currency = currency;
+        swap.userId = userId;
+        swap.traderProfileId = traderProfileId;
+        swap.amountIn = amountInLamports.toString();
+        swap.mint = mint;
+        swap.createdAt = new Date();
+        swap.status = {
+            type: StatusType.CREATED,
+            tryIndex: 0,
+        };
+        await swap.save();
+
+
+        const signature = await SwapManager.buy(swap, traderProfile);
+        return signature;
+    }
+
+    static async initiateSell(dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+        const traderProfile = await TraderProfilesManager.findById(traderProfileId);
+        if (!traderProfile){
+            throw new BadRequestError('Trader profile not found');
+        }
+
+        if (traderProfile.engineId !== SwapManager.kNativeEngineId){
+            throw new BadRequestError('Only Light engine is supported');
+        }
+
+        if (!traderProfile.wallet){
+            throw new BadRequestError('Trader profile wallet not found');
+        }
+
+        if (mint == kSolAddress){
+            throw new BadRequestError('Selling SOL is not supported');
+        }
+
+        if (amount <= 0.0001){
+            throw new BadRequestError('Amount should be greater than 0');
+        }
+
+        const currency = traderProfile.currency || Currency.SOL;
+        const userId = traderProfile.userId;
+
+        const connection = newConnection();
+
+        const solBalance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
+        const minSolRequired = 0.01;
+        if (!solBalance || solBalance.uiAmount < minSolRequired){
+            throw new BadRequestError('Insufficient SOL balance');
+        }
+
+        const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, mint);
+        if (!balance){
+            throw new BadRequestError('Insufficient balance');
+        }
+
+        const decimals = balance.decimals || 0;
+        const amountInLamports = new BN(amount).mul(new BN(10).pow(new BN(decimals)));
+        const balanceAmount = new BN(balance.amount || 0);
+
+        if (balanceAmount < amountInLamports){
+            throw new BadRequestError('Insufficient balance');
+        }
+
+        const swap = new Swap();
+        swap.type = SwapType.SELL;
+        swap.dex = SwapDex.JUPITER;
+        swap.userId = userId;
+        swap.traderProfileId = traderProfileId;
+        swap.amountIn = amountInLamports.toString();
+        swap.currency = currency;
+        swap.mint = mint;
+        swap.createdAt = new Date();
+        swap.status = {
+            type: StatusType.CREATED,
+            tryIndex: 0,
+        };
+        await swap.save();
+
+        const signature = await SwapManager.sell(swap, traderProfile);
+        return signature;
+    }
+
 
 }
