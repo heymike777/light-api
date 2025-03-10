@@ -145,7 +145,7 @@ router.put(
         }
 
         if (req.body.slippage){
-            traderProfile.slippage = +req.body.slippage;
+            traderProfile.buySlippage = +req.body.slippage;
         }
 
         if (req.body.default != undefined){

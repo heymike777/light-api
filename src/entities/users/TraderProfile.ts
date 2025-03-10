@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose';
 import { WalletModel } from '../../services/solana/types';
 import { SwapManager } from '../../managers/SwapManager';
+import { Currency } from '../../models/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -15,8 +16,12 @@ export interface IUserTraderProfile extends mongoose.Document {
 
     // only for Light engine
     wallet?: WalletModel;
-    defaultAmount?: number;
-    slippage?: number;
+    defaultAmount?: number;// in SOL / USDC (for mobile app. telegram bot uses buyAmounts)
+    buySlippage?: number;// in percents
+    sellSlippage?: number;// in percents
+    currency?: Currency;// USDC or SOL
+    buyAmounts?: number[];// in SOL / USDC
+    sellAmounts?: number[];// in percents
 
     updatedAt?: Date;
     createdAt: Date;
@@ -31,7 +36,11 @@ export const UserTraderProfileSchema = new mongoose.Schema<IUserTraderProfile>({
 
     wallet: { type: Mixed },
     defaultAmount: { type: Number },
-    slippage: { type: Number },
+    buySlippage: { type: Number },
+    sellSlippage: { type: Number },
+    currency: { type: String, default: Currency.SOL },
+    buyAmounts: { type: [Number], default: [0.5, 1] },
+    sellAmounts: { type: [Number], default: [25, 50, 100] },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -55,10 +64,15 @@ UserTraderProfileSchema.methods.toJSON = function () {
         userId: this.userId,
         title: this.title,
         defaultAmount: this.defaultAmount,
-        slippage: this.slippage,
         engine: SwapManager.engines.find(e => e.id === this.engineId),
         walletAddress: this.wallet?.publicKey,
         default: this.default,
+        slippage: this.buySlippage,
+        buySlippage: this.buySlippage,
+        sellSlippage: this.sellSlippage,
+        currency: this.currency,
+        buyAmounts: this.buyAmounts,
+        sellAmounts: this.sellAmounts,
     };
 };
 

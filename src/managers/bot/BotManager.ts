@@ -18,7 +18,11 @@ import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
 import { BotTraderProfilesHelper } from "./helpers/BotTradingProfilesHelper";
 import { BotDeleteMessageHelper } from "./helpers/BotDeleteMessageHelper";
 import { BotBuyHelper } from "./helpers/BotBuyHelper";
-import { BotKeyboardMarkup, InlineButton, kAdminUsernames, SendMessageData, TgMessage } from "./BotTypes";
+import { BotKeyboardMarkup, InlineButton, SendMessageData, TgMessage } from "./BotTypes";
+import { SearchManager } from "../SearchManager";
+import { IToken, ITokenModel } from "../../entities/tokens/Token";
+import { TraderProfilesManager } from "../TraderProfilesManager";
+import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 
 export class BotManager {
     bot: Bot;
@@ -189,7 +193,18 @@ export class BotManager {
 
         await UserManager.updateTelegramState(user.id, undefined); // reset user's state, if no found helper
 
-        ctx.reply('🟡 TODO: TRY TO BUY TOKEN - ' + message.text);
+        const tokens = await SearchManager.search(message.text, user.id);
+        if (tokens.length > 0){
+            const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
+            const { message, markup } = await BotManager.buildBuyMessageForToken(tokens[0], user, traderProfile);
+            await BotManager.reply(ctx, message, { 
+                parse_mode: 'HTML', 
+                reply_markup: markup 
+            });
+        }
+        else {
+            await BotManager.reply(ctx, '🔴 No tokens found');
+        }
 
     }
 
@@ -344,6 +359,21 @@ export class BotManager {
         catch (e: any){
             LogManager.error('BotManager Error while replying', e);
         }
+    }
+
+    static async buildBuyMessageForToken(token: ITokenModel, user: IUser, traderProfile?: IUserTraderProfile): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
+
+
+        const buttons: InlineButton[] = [
+            { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
+            { id: 'row', text: '' },
+            { id: `buy|${token.chain}|${token.address}|0.5`, text: 'Buy 0.5 SOL' },
+            { id: `buy|${token.chain}|${token.address}|1`, text: 'Buy 1 SOL' },
+            { id: `buy|${token.chain}|${token.address}|x`, text: 'Buy X SOL' },
+        ];
+        const markup = BotManager.buildInlineKeyboard(buttons);
+        const message = `Buy <b>${token.symbol}</b> (${token.name})`;
+        return { message, markup };
     }
      
 

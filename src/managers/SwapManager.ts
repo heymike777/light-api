@@ -1,6 +1,6 @@
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
-import { kSolAddress } from "../services/solana/Constants";
+import { kSolAddress, kUsdcAddress } from "../services/solana/Constants";
 import { Engine } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { QuoteGetSwapModeEnum } from "@jup-ag/api";
@@ -24,6 +24,7 @@ import { Helpers } from "../services/helpers/Helpers";
 import { BN } from "bn.js";
 import { RedisManager } from "./db/RedisManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
+import { Currency } from "../models/types";
 
 export class SwapManager {
 
@@ -142,13 +143,16 @@ export class SwapManager {
         const keypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey));
         const connection = newConnection();
         let signature: string | undefined;
-        let blockhash: string | undefined
+        let blockhash: string | undefined;
+        const currency = traderProfile.currency || Currency.SOL;
+        const currencyMintAddress = currency == Currency.SOL ? kSolAddress : kUsdcAddress;
 
         try {
-            const inputMint = type == SwapType.BUY ? kSolAddress : mint;
-            const outputMint = type == SwapType.BUY ? mint : kSolAddress;
+            const inputMint = type == SwapType.BUY ? currencyMintAddress : mint;
+            const outputMint = type == SwapType.BUY ? mint : currencyMintAddress;
+            const slippage = (type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
 
-            const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, traderProfile.slippage || 10, QuoteGetSwapModeEnum.ExactIn);
+            const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, QuoteGetSwapModeEnum.ExactIn);
             if (!quote) {
                 swap.status.type = StatusType.CREATED;
                 swap.status.tryIndex++;
@@ -160,7 +164,7 @@ export class SwapManager {
 
             const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
 
-            const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, traderProfile.slippage || 10, prioritizationFeeLamports, {
+            const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, slippage, prioritizationFeeLamports, {
                 includeTokenLedgerInstruction: true,
                 includeSwapInstruction: true,
                 includeComputeBudgetInstructions: true,
@@ -175,13 +179,20 @@ export class SwapManager {
             LogManager.log('SwapManager', 'swapData', swapData);
 
             // add 1% fee instruction to tx
-            const swapSolAmountInLamports = type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
-            instructions.push(this.createFeeInstruction(+swapSolAmountInLamports, traderProfile.wallet.publicKey));
-            //TODO: pay instantly to referrer wallet his %
+            const swapAmountInLamports = type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
+            instructions.push(this.createFeeInstruction(+swapAmountInLamports, traderProfile.wallet.publicKey, currency));
 
-            swap.value = {
-                sol: +swapSolAmountInLamports / LAMPORTS_PER_SOL,
-                usd : Math.round((+swapSolAmountInLamports / LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+            if (currency == Currency.SOL){
+                swap.value = {
+                    sol: +swapAmountInLamports / LAMPORTS_PER_SOL,
+                    usd : Math.round((+swapAmountInLamports / LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+                }
+            }
+            else if (currency == Currency.USDC){
+                swap.value = {
+                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getSolPrice()) / 1000000000, // 10**6 / 10**9
+                    usd: +swapAmountInLamports / (10 ** 6),
+                }
             }
             await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
             
@@ -223,20 +234,31 @@ export class SwapManager {
         return signature;
     }
 
-    static createFeeInstruction(swapAmountInLamports: number, walletAddress: string, fee = 0.01): web3.TransactionInstruction {
-        const feeWalletAddress = process.env.FEE_SOL_WALLET_ADDRESS;
-        if (!feeWalletAddress) {
-            throw new BadRequestError('Fee wallet address not found');
+    static createFeeInstruction(swapAmountInLamports: number, walletAddress: string, currency = Currency.SOL, fee = 0.01): web3.TransactionInstruction {
+        if (currency == Currency.USDC){
+            const usdcTokenAta = process.env.FEE_USDC_TOKEN_ADDRESS;
+            if (!usdcTokenAta) {
+                throw new BadRequestError('USDC token address not found');
+            }
+
+            throw new BadRequestError('USDC fee instruction not implemented yet');
+            //TODO: add USDC fee instruction + add FEE_USDC_TOKEN_ADDRESS to env
         }
+        else {
+            const feeWalletAddress = process.env.FEE_SOL_WALLET_ADDRESS;
+            if (!feeWalletAddress) {
+                throw new BadRequestError('Fee wallet address not found');
+            }
 
-        const feeAmount = Math.round(swapAmountInLamports * fee);
-        const feeInstruction = web3.SystemProgram.transfer({
-            fromPubkey: new web3.PublicKey(walletAddress),
-            toPubkey: new web3.PublicKey(feeWalletAddress),
-            lamports: feeAmount,
-        });
+            const feeAmount = Math.round(swapAmountInLamports * fee);
+            const feeInstruction = web3.SystemProgram.transfer({
+                fromPubkey: new web3.PublicKey(walletAddress),
+                toPubkey: new web3.PublicKey(feeWalletAddress),
+                lamports: feeAmount,
+            });
 
-        return feeInstruction;
+            return feeInstruction;
+        }
     }
 
     static async receivedConfirmationForSignature(signature: string) {

@@ -51,3 +51,8 @@ export type PortfolioAsset = Asset & {
     tagsList?: TokenTag[];
     isTradable?: boolean;
 }
+
+export enum Currency {
+    SOL = 'SOL',
+    USDC = 'USDC',
+}

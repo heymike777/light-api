@@ -74,7 +74,7 @@ export class TraderProfilesManager {
         traderProfile.engineId = engineId;
         traderProfile.title = title;
         traderProfile.defaultAmount = defaultAmount;
-        traderProfile.slippage = slippage;
+        traderProfile.buySlippage = slippage;
         traderProfile.createdAt = new Date();
         traderProfile.active = true;
         traderProfile.default = (!user.traderProfiles || user.traderProfiles.length == 0); // default=true for the first profile
