@@ -75,7 +75,8 @@ export class JupiterManager {
                 // minimizeSlippage: true,
                 // maxAutoSlippageBps: maxAutoSlippageBps,
                 slippageBps: maxAutoSlippageBps,     
-                
+                // platformFeeBps: 100, // 1% fee
+
                 // maxAccounts: 30,
                 // restrictIntermediateTokens: false,
             });
@@ -97,7 +98,7 @@ export class JupiterManager {
 
     static async swapInstructions(quoteResponse: QuoteResponse, walletAddress: string, priorityFee: Priority, include?: JupSwapInstructionsInclude): Promise<{instructions: web3.TransactionInstruction[], addressLookupTableAddresses: string[]}> {
         let priorityLevel: 'medium' | 'high' | 'veryHigh' | undefined = undefined;
-        let prioritizationFeeMaxLamports = 10;
+        let prioritizationFeeMaxLamports = 10000000; // 0.01 SOL
         if (priorityFee == Priority.MEDIUM) { priorityLevel = 'medium'; }
         else if (priorityFee == Priority.HIGH) { priorityLevel = 'high'; }
         else if (priorityFee == Priority.ULTRA) { priorityLevel = 'veryHigh'; }
@@ -108,7 +109,7 @@ export class JupiterManager {
             swapRequest: {
                 userPublicKey: walletAddress,
                 quoteResponse: quoteResponse,    
-                useSharedAccounts: false,    
+                useSharedAccounts: false,   
                 dynamicComputeUnitLimit: true,
                 wrapAndUnwrapSol: true,
                 prioritizationFeeLamports: {

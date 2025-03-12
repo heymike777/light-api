@@ -577,28 +577,14 @@ export class WalletManager {
         let tokensMessage = '';
         if (tokens && tokens.length > 0){
             for (const token of tokens) {
-                if (token.symbol && !TokenManager.excludedTokens.includes(token.address)){
-                    tokensMessage += `<b>#${token.symbol}</b>`;
-                    if (token.name){
-                        tokensMessage += ` | ${token.name}`;
-                    }
-                    if (token.liquidity){
-                        tokensMessage += ` | LIQ: $${Helpers.numberFormatter(token.liquidity, 2)}`;
-                    }
-                    if (token.marketCap){
-                        tokensMessage += ` | MC: $${Helpers.numberFormatter(token.marketCap, 2)}`;
-                    }
-                    if (token.price){
-                        tokensMessage += ` | P: $${token.price}`;
-                    }
-
-                    tokensMessage += '\n';
+                const msg = BotManager.buildTokenMetricsMessage(token);
+                if (msg){
+                    tokensMessage += msg + '\n';
                 }
             }
         }
         if (tokensMessage.length > 0){
-            message += '\n';
-            message += '\n';
+            message += '\n\n';
             message += tokensMessage;
             message += '\n';
         }

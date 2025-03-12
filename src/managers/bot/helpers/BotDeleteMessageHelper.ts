@@ -18,8 +18,4 @@ export class BotDeleteMessageHelper extends BotHelper {
         await super.commandReceived(ctx, user);
     }
 
-    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
-        return super.messageReceived(message, ctx, user);
-    }
-
 }

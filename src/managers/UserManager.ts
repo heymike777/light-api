@@ -208,7 +208,7 @@ export class UserManager {
         }
 
         toUser.telegram = toUser.telegram?.id ? toUser.telegram : fromUser.telegram;
-        toUser.referralCode = (!toUser.referralCode || toUser.referralCode=='default') ? fromUser.referralCode : toUser.referralCode;
+        toUser.referralCode = !toUser.referralCode ? fromUser.referralCode : toUser.referralCode;
         toUser.email = toUser.email || fromUser.email;
         toUser.bots = toUser.bots || fromUser.bots;
         toUser.defaultBot = toUser.defaultBot || fromUser.defaultBot;

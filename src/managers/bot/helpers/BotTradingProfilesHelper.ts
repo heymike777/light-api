@@ -37,6 +37,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         await UserManager.updateTelegramState(user.id, undefined);
 
         const buttonId = ctx.update?.callback_query?.data;
+        const botUsername = BotManager.getBotUsername(ctx);
 
         if (ctx?.update?.message?.text == '/choose_profile' || buttonId == 'choose_profile'){
             let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
@@ -82,34 +83,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 return;
             }
 
-            const { values, assets, warning } = await TraderProfilesManager.getPortfolio(traderProfile);
-
-            let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
-            message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
-
-            if (warning){
-                message += `\n\n⚠️ ${warning.message}`;
-            }
-
-            if (values){
-                message += `\n\nTotal value: $${values.totalPrice}`;
-                if (values.pnl){
-                    message += `\nP&L: $${values.pnl}`;
-                }
-            }
-
-            if (assets.length == 0){
-                message += `\n\nNo assets on this wallet`;
-            }
-            else {
-                message += `\n\nAssets:`;
-                for (const asset of assets) {
-                    message += `\n${asset.symbol}: ${asset.uiAmount}`;
-                    if (asset.priceInfo){
-                        message += ` ($${asset.priceInfo.totalPrice})`;
-                    }
-                }
-            }
+            const { message } = await BotManager.buildPortfolioMessage(traderProfile, botUsername);
 
             if (isRefresh){
                 const markup = BotManager.buildInlineKeyboard([

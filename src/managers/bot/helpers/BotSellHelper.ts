@@ -12,14 +12,14 @@ import { SwapManager } from "../../SwapManager";
 import { SwapDex } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 
-export class BotBuyHelper extends BotHelper {
+export class BotSellHelper extends BotHelper {
 
     constructor() {
         const replyMessage: Message = {
-            text: 'Enter a token symbol or address to buy'
+            text: 'sell?'
         };
 
-        super('buy', replyMessage);
+        super('sell', replyMessage);
     }
 
     async commandReceived(ctx: Context, user: IUser) {
@@ -27,11 +27,26 @@ export class BotBuyHelper extends BotHelper {
         await UserManager.updateTelegramState(user.id, undefined);
 
         const buttonId = ctx.update?.callback_query?.data;
+        const botUsername = BotManager.getBotUsername(ctx);
 
-        if (ctx?.update?.message?.text == '/buy' || buttonId == 'buy'){
-            return await super.commandReceived(ctx, user);
+        if (ctx?.update?.message?.text == '/sell' || buttonId == 'sell'){
+            const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
+            if (!traderProfile){
+                await BotManager.reply(ctx, '🟡 Please, create a trader profile first');
+                return;
+            }
+
+            const { message } = await BotManager.buildPortfolioMessage(traderProfile, botUsername);
+
+            await BotManager.reply(ctx, message, {
+                parse_mode: 'HTML',
+                reply_markup: BotManager.buildInlineKeyboard([
+                    { id: `trader_profiles|portfolio|${traderProfile.id}|refresh`, text: '↻ Refresh' },
+                ]),
+            });    
+
         }
-        else if (buttonId && buttonId.startsWith('buy|')){
+        else if (buttonId && buttonId.startsWith('sell|')){
             const parts = buttonId.split('|');
             if (parts.length == 4){
                 const chain = parts[1];
@@ -49,18 +64,18 @@ export class BotBuyHelper extends BotHelper {
                     const token = await TokenManager.getToken(mint);
                     if (token){
                         const botUsername = BotManager.getBotUsername(ctx);
-                        const { message, markup } = await BotManager.buildBuyMessageForToken(token, user, traderProfile, botUsername);
+                        const { message, markup } = await BotManager.buildSellMessage(); //token, user, traderProfile, botUsername
                         await BotManager.editMessage(ctx, message, markup);
                     }
                 }
                 else if (parts[3] == 'x' || parts[3] == 'X') {
-                    await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.BUY_AMOUNT, data: { chain, mint, traderProfileId: traderProfile?.id, currency }, helper: this.kCommand });
-                    await BotManager.reply(ctx, `Enter ${currency} amount`);
+                    await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.SELL_AMOUNT, data: { chain, mint, traderProfileId: traderProfile?.id, currency }, helper: this.kCommand });
+                    await BotManager.reply(ctx, `Enter % to sell (e.g. "50%" or "50")`);
                 }
                 else {
                     const amount = parseFloat(parts[3]);
                     if (amount > 0){
-                        await this.buy(ctx, user, chain, mint, amount, currency, traderProfile.id);
+                        await this.sell(ctx, user, chain, mint, amount, currency, traderProfile.id);
                     }
                 }
             }
@@ -71,14 +86,14 @@ export class BotBuyHelper extends BotHelper {
     }
 
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
-        LogManager.log('BotBuylHelper', 'messageReceived', message.text);
+        LogManager.log('BotSelllHelper', 'messageReceived', message.text);
 
         super.messageReceived(message, ctx, user);
 
-        if (user.telegramState?.waitingFor == TelegramWaitingType.BUY_AMOUNT){
-            const amountString = message.text.trim().replaceAll(',', '.');
+        if (user.telegramState?.waitingFor == TelegramWaitingType.SELL_AMOUNT){
+            const amountString = message.text.trim().replaceAll(',', '.').replace('%', '');
             const amount = parseFloat(amountString);
-            if (isNaN(amount) || amount <= 0){
+            if (isNaN(amount) || amount <= 0 || amount > 100){
                 await BotManager.reply(ctx, 'Invalid amount. Please, try again.');
                 return false;
             }
@@ -88,7 +103,7 @@ export class BotBuyHelper extends BotHelper {
             const currency = user.telegramState.data.currency;
             const traderProfileId = user.telegramState.data.traderProfileId;
 
-            await this.buy(ctx, user, chain, mint, amount, currency, traderProfileId);
+            await this.sell(ctx, user, chain, mint, amount, currency, traderProfileId);
 
             await UserManager.updateTelegramState(user.id, undefined);
             return true;
@@ -97,11 +112,12 @@ export class BotBuyHelper extends BotHelper {
         return false;
     }
 
-    async buy(ctx: Context, user: IUser, chain: string, mint: string, amount: number, currency: Currency, traderProfileId: string) {
-        await BotManager.reply(ctx, `Buy ${mint} for ${amount} ${currency} on ${chain}`);                    
+    async sell(ctx: Context, user: IUser, chain: string, mint: string, amountPercent: number, currency: Currency, traderProfileId: string) {
+        await BotManager.reply(ctx, `Sell ${amountPercent}% of ${mint} for ${currency}`);
         try {
-            const signature = await SwapManager.initiateBuy(SwapDex.JUPITER, traderProfileId, mint, amount);
-            await BotManager.reply(ctx, `BUY TX: ${signature ? ExplorerManager.getUrlToTransaction(signature) : undefined}`);                    
+            //TODO: initiateSell
+            // const signature = await SwapManager.initiateSell(SwapDex.JUPITER, traderProfileId, mint, amountPercent);
+            // await BotManager.reply(ctx, `SELL TX: ${signature ? ExplorerManager.getUrlToTransaction(signature) : undefined}`);                    
         }
         catch (error: any) {
             await BotManager.reply(ctx, '🔴 ' + error.message);

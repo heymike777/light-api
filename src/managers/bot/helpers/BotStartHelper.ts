@@ -46,20 +46,51 @@ export class BotStartHelper extends BotHelper {
         super('start', replyMessage);
     }
 
-    async commandReceived(ctx: Context, user: IUser) {        
-        let referralCode: string | undefined = ctx?.update?.message?.text;
-        if (referralCode){
-            referralCode = referralCode.replace('/start', '');
-            referralCode = referralCode.trim();
+    async commandReceived(ctx: Context, user: IUser) {      
+        let paramsString: string | undefined = ctx?.update?.message?.text;
+
+        if (paramsString){
+            paramsString = paramsString.replace('/start', '');
+            paramsString = paramsString.trim();
         }
-        if (!referralCode) {
-            referralCode = 'default';
+
+        console.log('BotStartHelper', 'start', 'params:', paramsString);
+
+        const botUsername = ctx.me?.username;
+        let referralCode: string | undefined = undefined;
+        let mint: string | undefined = undefined;
+        let shouldSendStartMessage = true;
+
+        if (paramsString){
+            let params = paramsString.split('-');
+            
+            while (params.length > 1){
+                const key = params.shift();
+                const value = params.shift();
+
+                if (key == 'r'){
+                    referralCode = value;
+                }
+                else if (key == 'ca'){
+                    mint = value;
+
+                    // if this user already have messages - don't send start message
+                    if (user?.bots && user.bots[botUsername]){
+                        shouldSendStartMessage = false;
+                    }
+                }
+                else if (key == 'sell'){
+                    mint = value;
+                    shouldSendStartMessage = false;
+                }
+            }
+    
         }
 
         const userTelegramId = ctx.update.message?.from.id;
         LogManager.log('BotStartHelper', 'start', 'userTelegramId:', userTelegramId, 'referralCode:', referralCode);
 
-        if (!user.referralCode){
+        if (!user.referralCode && referralCode){
             user.referralCode = referralCode;
 
             await User.updateOne({ _id: user._id }, {
@@ -68,9 +99,13 @@ export class BotStartHelper extends BotHelper {
                 }
             });
 
+            await UserRefClaim.create({
+                userId: user.id,
+                referralCode: referralCode,
+                claimedAt: new Date()
+            });
         }
 
-        const botUsername = ctx.me?.username;
         if (botUsername && (!user.bots || !user.bots[botUsername] || user.bots[botUsername] == UserBotStatus.BLOCKED)){
             user.bots = user.bots || {};
             user.bots[botUsername] = UserBotStatus.ACTIVE;
@@ -86,16 +121,22 @@ export class BotStartHelper extends BotHelper {
             });
         }
 
-        if (referralCode != 'default'){
-            await UserRefClaim.create({
-                userId: user.id,
-                referralCode: referralCode,
-                claimedAt: new Date()
-            });
+        if (shouldSendStartMessage){
+            await super.commandReceived(ctx, user);
         }
 
+        if (mint){
+            await BotManager.tryToSendTokenInfo(ctx, mint, user);
+        }
 
-        super.commandReceived(ctx, user);
+        if (!shouldSendStartMessage){
+            await BotManager.deleteMessage(ctx);
+        }
+    }
+
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
+        console.log('BotStartHelper', 'messageReceived', message.text);
+        return await super.messageReceived(message, ctx, user);
     }
 
 }

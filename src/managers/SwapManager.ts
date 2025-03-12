@@ -113,20 +113,24 @@ export class SwapManager {
         // BullX / BullX NEO
     ];
 
-    static async buy(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
+    static async buy(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 3): Promise<string | undefined> {
         return this.buyAndSell(SwapType.BUY, swap, traderProfile, triesLeft);
     }
 
-    static async sell(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
+    static async sell(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 3): Promise<string | undefined> {
         return this.buyAndSell(SwapType.SELL, swap, traderProfile, triesLeft);
     }
 
-    static async buyAndSell(type: SwapType, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 10): Promise<string | undefined> {
-        console.log('buyAndSell', type, swap, traderProfile, triesLeft);
+    static async buyAndSell(type: SwapType, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number): Promise<string | undefined> {
+        console.log('buyAndSell', 'type:', type, 'triesLeft', triesLeft, 'swap:', swap, 'traderProfile:', traderProfile);
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {
             LogManager.error('SwapManager', type, 'Swap status is not CREATED', { swap });
+
+            const tmpSwap = await Swap.findById(swap._id);
+            console.log('tmpSwap:', tmpSwap);
+
             return;
         }
 
@@ -181,8 +185,9 @@ export class SwapManager {
 
             console.log('SwapManager', 'swapData', swapData);
 
-            // add 1% fee instruction to tx
             const swapAmountInLamports = type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
+
+            // add 1% fee instruction to tx
             instructions.push(this.createFeeInstruction(+swapAmountInLamports, traderProfile.wallet.publicKey, currency));
 
             if (currency == Currency.SOL){
@@ -209,15 +214,20 @@ export class SwapManager {
             console.log('SwapManager', 'signature', signature);
         }
         catch (error) {
-            console.error('SwapManager', type, error);
+            console.error('!catched SwapManager', type, error);
 
+            
             if (triesLeft <= 0) {
-                swap.status.type = StatusType.CREATED;
+                swap.status.type = StatusType.CANCELLED;
                 swap.status.tryIndex++;
                 await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
 
                 return;
             }
+
+            swap.status.type = StatusType.CREATED;
+            swap.status.tryIndex++;
+            await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
 
             // repeat the transaction            
             return type == SwapType.BUY ? await this.buy(swap, traderProfile, triesLeft - 1) : await this.sell(swap, traderProfile, triesLeft - 1);

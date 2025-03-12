@@ -9,7 +9,6 @@ import { UserManager } from "../UserManager";
 import { IUser, User, UserBotStatus } from "../../entities/users/User";
 import { autoRetry } from "@grammyjs/auto-retry";
 import * as GrammyTypes from "grammy/types";
-import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
 import { EnvManager } from "../EnvManager";
 import { MicroserviceManager } from "../MicroserviceManager";
@@ -20,11 +19,17 @@ import { BotDeleteMessageHelper } from "./helpers/BotDeleteMessageHelper";
 import { BotBuyHelper } from "./helpers/BotBuyHelper";
 import { BotKeyboardMarkup, InlineButton, SendMessageData, TgMessage } from "./BotTypes";
 import { SearchManager } from "../SearchManager";
-import { IToken, ITokenModel } from "../../entities/tokens/Token";
+import { ITokenModel } from "../../entities/tokens/Token";
 import { TraderProfilesManager } from "../TraderProfilesManager";
 import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { Currency } from "../../models/types";
-import { SwapType } from "../../entities/payments/Swap";
+import { ExplorerManager } from "../../services/explorers/ExplorerManager";
+import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager";
+import { newConnection } from "../../services/solana/lib/solana";
+import { TokenManager } from "../TokenManager";
+import { Helpers } from "../../services/helpers/Helpers";
+import { BotSellHelper } from "./helpers/BotSellHelper";
+import { kSolAddress } from "../../services/solana/Constants";
 
 export class BotManager {
     bot: Bot;
@@ -38,6 +43,7 @@ export class BotManager {
         new BotTraderProfilesHelper(),
         new BotDeleteMessageHelper(),
         new BotBuyHelper(),
+        new BotSellHelper(),
     ];
 
     constructor() {
@@ -149,12 +155,16 @@ export class BotManager {
 
         await UserManager.updateTelegramState(user.id, undefined); // reset user's state, if no found helper
 
-        const tokens = await SearchManager.search(message.text, user.id);
+        await BotManager.tryToSendTokenInfo(ctx, message.text, user);
+    }
+
+    static async tryToSendTokenInfo(ctx: Context, query: string, user: IUser){
+        const tokens = await SearchManager.search(query, user.id);
         if (tokens.length > 0){
             const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
-            const { message, markup } = await BotManager.buildBuyMessageForToken(tokens[0], user, traderProfile);
+            const botUsername = BotManager.getBotUsername(ctx);
+            const { message, markup } = await BotManager.buildBuyMessageForToken(tokens[0], user, traderProfile, botUsername);
             await BotManager.reply(ctx, message, { 
-                parse_mode: 'HTML', 
                 reply_markup: markup 
             });
         }
@@ -234,6 +244,7 @@ export class BotManager {
             }
             else if (button.link){
                 inlineKeyboard.url(button.text, button.link);
+
             }
             else {
                 inlineKeyboard.text(button.text, button.id);
@@ -248,7 +259,7 @@ export class BotManager {
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
             if (chatId && messageId && text){
                 const botManager = await BotManager.getInstance();
-                await botManager.bot.api.editMessageText(chatId, messageId, text, { parse_mode: 'HTML', reply_markup: markup });
+                await botManager.bot.api.editMessageText(chatId, messageId, text, { parse_mode: 'HTML', link_preview_options: {is_disabled: true}, reply_markup: markup });
             }
         }
         catch (e: any){}
@@ -282,6 +293,15 @@ export class BotManager {
     // other?: Other<R, "sendMessage", "chat_id" | "text">
     static async reply(ctx: Context, text: string, other?: any): Promise<GrammyTypes.Message.TextMessage | undefined> {
         try {
+            if (!other){
+                other = {};
+            }
+
+            other.parse_mode = 'HTML';
+            other.link_preview_options = {
+                is_disabled: true,
+            };
+
             return await ctx.reply(text, other);
         }
         catch (e: any){
@@ -310,42 +330,149 @@ export class BotManager {
             ];
             const markup = BotManager.buildInlineKeyboard(buttons);
 
-            return await ctx.reply(text, { reply_markup: markup });
+            return await ctx.reply(text, { parse_mode: 'HTML', link_preview_options: { is_disabled: true }, reply_markup: markup });
         }
         catch (e: any){
             LogManager.error('BotManager Error while replying', e);
         }
     }
 
-    static async buildBuyMessageForToken(token: ITokenModel, user: IUser, traderProfile?: IUserTraderProfile): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
-
+    static async buildBuyMessageForToken(token: ITokenModel, user: IUser, traderProfile?: IUserTraderProfile, botUsername?: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
         const currency = traderProfile?.currency || Currency.SOL;
-        let amounts: number[] = [];
-        const type = SwapType.BUY;
-        if (type == SwapType.BUY){
-            amounts = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
-        }
-        else {
-            amounts = traderProfile?.sellAmounts || [25, 50, 100];
-        }
+        const buyAmounts: number[] = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
+        const sellAmounts: number[] = traderProfile?.sellAmounts || [50, 100];
 
         const buttons: InlineButton[] = [
-            { id: `${type}|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
+            { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
             { id: 'row', text: '' },
         ];
 
-        for (const amount of amounts) {
-            buttons.push({ id: `${type}|${token.chain}|${token.address}|${amount}`, text: `${type==SwapType.BUY?'Buy':'Sell'} ${amount}${type==SwapType.BUY?' '+currency:'%'}` });
+        for (const amount of buyAmounts) {
+            buttons.push({ id: `buy|${token.chain}|${token.address}|${amount}`, text: `Buy ${amount} ${currency}` });
+        }
+        buttons.push({ id: `buy|${token.chain}|${token.address}|X`, text: `Buy X ${currency}` });
+
+        let message = `<b>${token.symbol}</b> (${token.name})`;
+
+        const dexscreenerUrl = ExplorerManager.getDexscreenerTokenUrl(token.address, token.chain);
+        if (dexscreenerUrl){
+            message += ` ᐧ <a href="${dexscreenerUrl}">📈</a>`;
         }
 
-        if (type == SwapType.BUY){
-            buttons.push({ id: `${type}|${token.chain}|${token.address}|X`, text: `Buy X ${currency}` });
+        const bubblemapsUrl = ExplorerManager.getBubblemapsTokenUrl(token.address, token.chain);
+        if (bubblemapsUrl){
+            message += ` ᐧ <a href="${bubblemapsUrl}">🫧</a>`;
         }
 
+        message += '\n';
+        message += `<code>${token.address}</code>`;
+        message += '\n';
+        const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
+        message += `<a href="${reflink}">Share token with your Reflink</a>`
+
+        const connection = newConnection();
+        let solBalance: TokenBalance | undefined = undefined;
+        let tokenBalance: TokenBalance | undefined = undefined;
+        if (traderProfile && traderProfile.wallet?.publicKey){
+            const walletAddress = traderProfile.wallet.publicKey;
+            solBalance = await SolanaManager.getWalletSolBalance(connection, walletAddress);
+            tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
+
+            message += '\n\n';
+            message += `Balance: ${solBalance?.uiAmount || 0} SOL`;
+            if (tokenBalance && tokenBalance.uiAmount>0){
+                message += ` | ${tokenBalance.uiAmount} ${token.symbol}`;
+
+                buttons.push({ id: 'row', text: '' });
+                for (const amount of sellAmounts) {
+                    buttons.push({ id: `sell|${token.chain}|${token.address}|${amount}`, text: `Sell ${amount}%` });
+                }
+                buttons.push({ id: `sell|${token.chain}|${token.address}|X`, text: `Sell X%` });
+            }
+            message += ` — <b>${traderProfile.title}</b> ✏️`;
+        }
+
+        const metricsMessage = BotManager.buildTokenMetricsMessage(token);
+        if (metricsMessage){
+            message += '\n\n';
+            message += metricsMessage;
+        }
+
+        if (traderProfile && traderProfile.wallet?.publicKey){
+            if (!solBalance || solBalance.uiAmount < 0.01){
+                message += '\n🔴 Send some SOL to your trading wallet to ape into memes and cover gas fee.';                
+            }
+        }
 
         const markup = BotManager.buildInlineKeyboard(buttons);
-        const message = `${SwapType.BUY?'Buy':'Sell'} <b>${token.symbol}</b> (${token.name})`;
+
         return { message, markup };
+    }
+
+    static getBotUsername(ctx: Context): string {
+        const result = ctx.me.username;
+        return result;
+    }
+
+    static buildTokenMetricsMessage(token: ITokenModel): string | undefined {
+        let tokensMessage: string | undefined = undefined;
+        if (token.symbol && !TokenManager.excludedTokens.includes(token.address)){
+            tokensMessage = `<b>#${token.symbol}</b>`;
+            if (token.name){
+                tokensMessage += ` | ${token.name}`;
+            }
+            if (token.liquidity){
+                tokensMessage += ` | LIQ: $${Helpers.numberFormatter(token.liquidity, 2)}`;
+            }
+            if (token.marketCap){
+                tokensMessage += ` | MC: $${Helpers.numberFormatter(token.marketCap, 2)}`;
+            }
+            if (token.price){
+                tokensMessage += ` | P: $${token.price}`;
+            }
+        }
+        return tokensMessage;
+    }
+
+    static async buildSellMessage(): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
+        return { message: 'test sell message' };
+    }
+
+    static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
+        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(traderProfile);
+
+        let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
+        message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
+
+        if (warning){
+            message += `\n\n⚠️ ${warning.message}`;
+        }
+
+        if (values){
+            message += `\n\nTotal value: $${values.totalPrice}`;
+            if (values.pnl){
+                message += `\nP&L: $${values.pnl}`;
+            }
+        }
+
+        if (assets.length == 0){
+            message += `\n\nNo assets on this wallet`;
+        }
+        else {
+            message += `\n\nAssets:`;
+            for (const asset of assets) {
+                message += `\n${asset.symbol}: ${asset.uiAmount}`;
+                if (asset.priceInfo){
+                    message += ` ($${asset.priceInfo.totalPrice})`;
+                }
+
+                if (asset.address != kSolAddress){
+                    message += ` <a href="${ExplorerManager.getTokenReflink(asset.address, undefined, botUsername)}">[Sell]</a>`;
+                }
+            }
+        }
+
+        return { message, markup: undefined };
     }
      
 

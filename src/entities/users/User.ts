@@ -24,6 +24,7 @@ export enum TelegramWaitingType {
     REMOVE_WALLET = 'remove_wallet',
     TRADER_PROFILE_EDIT_NAME = 'trader_profile_edit_name',
     BUY_AMOUNT = 'buy_amount',
+    SELL_AMOUNT = 'SELL_amount',
 }
 
 export interface TelegramState {

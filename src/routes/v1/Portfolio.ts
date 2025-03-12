@@ -36,10 +36,10 @@ router.get(
 
         const { values, assets, warning } = await TraderProfilesManager.getPortfolio(traderProfile);
 
-        for (const asset of assets) {
-            asset.amount = asset.uiAmount;
-            asset.uiAmount = 0;
-        }
+        // for (const asset of assets) {
+        //     asset.amount = asset.uiAmount;
+        //     asset.uiAmount = 0;
+        // }
 
         res.status(200).send({ warning, traderProfiles, traderProfile, values, assets });
     }
