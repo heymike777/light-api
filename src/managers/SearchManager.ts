@@ -1,5 +1,6 @@
 import { ITokenModel, Token, tokenToTokenModel } from "../entities/tokens/Token";
 import { SolanaManager } from "../services/solana/SolanaManager";
+import { Chain } from "../services/solana/types";
 import { TokenManager } from "./TokenManager";
 
 export class SearchManager {
@@ -47,14 +48,14 @@ export class SearchManager {
         const tokens: ITokenModel[] = [];
 
         if (mint){
-            const token = await TokenManager.getToken(mint);
+            const token = await TokenManager.getToken(Chain.SOLANA, mint);
             if (token){
                 tokens.push(token);
             }
         }
         
         if (pairId){
-            const pairTokens = await TokenManager.getTokensByPair(pairId);
+            const pairTokens = await TokenManager.getTokensByPair(Chain.SOLANA, pairId);
             if (pairTokens && pairTokens.length > 0){
                 tokens.push(...pairTokens);
             }

@@ -247,7 +247,7 @@ router.post(
             parsedTransactions.push({
                 title: transaction.title || parsedTx?.title || '[TX]',
                 description: description,
-                explorerUrl: parsedTx ? ExplorerManager.getUrlToTransaction(parsedTx.signature) : undefined,
+                explorerUrl: parsedTx ? ExplorerManager.getUrlToTransaction(transaction.chain, parsedTx.signature) : undefined,
                 asset: assetToken?.nft,
                 signature: parsedTx?.signature,
                 blockTime: parsedTx?.blockTime || Math.round(transaction.createdAt.getTime()/1000),

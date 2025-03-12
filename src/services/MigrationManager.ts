@@ -9,7 +9,7 @@ import { Chain } from "./solana/types";
 import { Helpers } from "./helpers/Helpers";
 import { BN } from "bn.js";
 import { SolanaManager } from "./solana/SolanaManager";
-import { newConnection } from "./solana/lib/solana";
+import { newConnection, newConnectionByChain } from "./solana/lib/solana";
 import { TokenBalance } from "@solana/web3.js";
 import { kSolAddress, kUsdcAddress, kUsdtAddress } from "./solana/Constants";
 import { WalletManager } from "../managers/WalletManager";
@@ -67,7 +67,7 @@ export class MigrationManager {
         const chatId = 862473;
 
         if (process.env.TEST === 'TRUE'){
-            const connection = newConnection();
+            const connection = newConnection(undefined);
             const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
             console.log('balance', balance);
             exit(0);
@@ -159,9 +159,9 @@ export class MigrationManager {
         // await this.processTx('3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp        
 
         // SONIC SVM
-        await this.processTx('5V9cB7VyDQANcEMG5QLH67uqsobDC1tYhivra93GU88HZVgrsRRtuJpbCbAwikwCyhh58EoEfQWUvsiigJMfpWuv', kSonicSvmMainnet);
+        await this.processTx(Chain.SONIC, '5V9cB7VyDQANcEMG5QLH67uqsobDC1tYhivra93GU88HZVgrsRRtuJpbCbAwikwCyhh58EoEfQWUvsiigJMfpWuv');
 
-        // const connection = newConnection();
+        // const connection = newConnection(undefined);
         // for (let index = 0; index < 200; index++) {
         //     this.ddos(connection, index);
         // }  
@@ -194,16 +194,9 @@ export class MigrationManager {
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
-    // static async testDebridge() {
-    //     const rpcConnection = newConnection();
-    //     const txParser = new SolanaParser([
-    //         { idl: JupiterIdl as unknown as Idl, programId: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo" }
-    //     ]);
-
-    // }
-
     static async testGeyserTx() {
         const jsonString = fs.readFileSync('test_tx.json', "utf8");
+        const chain = Chain.SOLANA;
         const signature = '5kSaebxQ9LA9rDLaDMThpEHLtf1s3gHmgB6sRUaaR2ZdewWzdLQLsNPaHDkFTAg2GpFqb3TF5rjZjeRMTsZ4j98Q';
 
         await UserTransaction.deleteMany({ signature });
@@ -233,7 +226,7 @@ export class MigrationManager {
         const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(geyserData);
         LogManager.log('!parsedTransactionWithMeta', parsedTransactionWithMeta);
         if (parsedTransactionWithMeta){
-            WalletManager.processWalletTransaction(parsedTransactionWithMeta, 'SHYFT0');
+            WalletManager.processWalletTransaction(chain, parsedTransactionWithMeta, 'SHYFT0');
         }
     }
 
@@ -301,8 +294,8 @@ export class MigrationManager {
         await UserTraderProfile.syncIndexes();
     }
 
-    static async processTx(signature: string, svm?: SVM) {
-        const connection = newConnection(svm?.rpc);
+    static async processTx(chain: Chain, signature: string) {
+        const connection = newConnectionByChain(chain);
 
         const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
@@ -316,7 +309,7 @@ export class MigrationManager {
         const tx = await SolanaManager.getParsedTransaction(connection, signature);
         // LogManager.log('!tx', JSON.stringify(tx));
         if (tx){
-            await WalletManager.processTxForChats(signature, tx, chats, 'test');
+            await WalletManager.processTxForChats(chain, signature, tx, chats, 'test');
         }
     }
 

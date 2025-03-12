@@ -5,6 +5,7 @@ import {
   ParsedTransactionWithMeta,
   PublicKey,
 } from "@solana/web3.js";
+import { Chain } from "../../types";
 
 export const maxSupportedTransactionVersion = 2;
 
@@ -14,17 +15,24 @@ export function newConnection(fixedRpc?: string): Connection {
     config.httpHeaders = { Authorization: process.env.SOLANA_RPC_KEY_SECRET };
   }
 
-  const rpc = fixedRpc || getRpc();
-  return new Connection(rpc, config);
+  const rpcHttp = fixedRpc || getRpc().http;
+  return new Connection(rpcHttp, config);
 }
 
-export function getRpc(): string {
-    return process.env.SOLANA_RPC || "";
-    // const rpcs: string[] = [];
-    // if (process.env.SOLANA_RPC) { rpcs.push(process.env.SOLANA_RPC); }
-    // if (process.env.SOLANA_RPC_2) { rpcs.push(process.env.SOLANA_RPC_2); }
-    // const rpc = rpcs[Math.floor(Math.random() * rpcs.length)];
-    // return rpc || "";
+export function newConnectionByChain(chain: Chain): Connection {
+    const rpc = getRpc(chain);
+    const config: ConnectionConfig = {
+        commitment: 'confirmed',
+        wsEndpoint: rpc.ws,
+    };  
+    return new Connection(rpc.http, config);
+  }
+
+export function getRpc(chain?: Chain): {http: string, ws: string} {
+    if (chain === Chain.SONIC) {
+        return { http: process.env.SONIC_RPC || "", ws: process.env.SONIC_RPC_WSS || "" };
+    }
+    return { http: process.env.SOLANA_RPC || "", ws: '' };
 }
 
 interface Opt extends ConfirmedSignaturesForAddress2Options {

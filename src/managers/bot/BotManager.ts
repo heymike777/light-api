@@ -30,6 +30,7 @@ import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
 import { kSolAddress } from "../../services/solana/Constants";
+import { Chain } from "../../services/solana/types";
 
 export class BotManager {
     bot: Bot;
@@ -439,7 +440,8 @@ export class BotManager {
     }
 
     static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
-        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(traderProfile);
+        const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
+        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 

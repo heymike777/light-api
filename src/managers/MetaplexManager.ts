@@ -7,15 +7,16 @@ import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubbl
 import { ExplorerManager } from '../services/explorers/ExplorerManager';
 import { TokenNft, TokenNftAttribute } from '../entities/tokens/Token';
 import { LogManager } from './LogManager';
+import { Chain } from '../services/solana/types';
 
 export class MetaplexManager {
 
     static commitment: Commitment = 'processed';
     static assetsCache: {[key: string]: {id: string, asset: DasApiAsset, createdAt: number}} = {};
 
-    static async fetchAllDigitalAssets(mints: string[]): Promise<DigitalAsset[]> {
+    static async fetchAllDigitalAssets(chain: Chain, mints: string[]): Promise<DigitalAsset[]> {
         try {
-            const umi = createUmi(getRpc(), this.commitment); 
+            const umi = createUmi(getRpc(chain).http, this.commitment); 
             const pubKeys = mints.map(mint => publicKey(mint));
             const assets = await fetchAllDigitalAsset(umi, pubKeys);
             return assets;

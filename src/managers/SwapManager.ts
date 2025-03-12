@@ -1,7 +1,7 @@
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
 import { kSolAddress, kUsdcAddress } from "../services/solana/Constants";
-import { DexId, Engine, Priority } from "../services/solana/types";
+import { Chain, DexId, Engine, Priority } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { BadRequestError } from "../errors/BadRequestError";
 import * as web3 from "@solana/web3.js";
@@ -25,6 +25,7 @@ import { RedisManager } from "./db/RedisManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { Currency } from "../models/types";
 import { SwapMode } from "@jup-ag/api";
+import { SVM } from "./svm/SvmManager";
 
 export class SwapManager {
 
@@ -122,6 +123,7 @@ export class SwapManager {
     }
 
     static async buyAndSell(type: SwapType, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number): Promise<string | undefined> {
+
         console.log('buyAndSell', 'type:', type, 'triesLeft', triesLeft, 'swap:', swap, 'traderProfile:', traderProfile);
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
@@ -206,8 +208,8 @@ export class SwapManager {
             
             console.log('SwapManager', 'instructions.length =', instructions.length);
 
-            blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
-            const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
+            blockhash = (await SolanaManager.getRecentBlockhash(undefined)).blockhash;
+            const tx = await SolanaManager.createVersionedTransaction(undefined, instructions, keypair, addressLookupTableAccounts, blockhash, false)
             console.log('SwapManager', 'tx', tx);
 
             signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
@@ -309,7 +311,12 @@ export class SwapManager {
             return;
         }
 
-        const blockhashes: string[] = [];
+        const blockhashes: { [key: string]: string[] } = {};
+        const chainValues = Object.values(Chain); 
+        for (const chain of chainValues) {
+            blockhashes[chain] = [];
+        }
+
         const signatures = swaps.map(swap => swap.status.tx?.signature).filter(signature => signature) as string[];
 
         if (signatures.length === 0) {
@@ -330,8 +337,8 @@ export class SwapManager {
 
             if (!signatureStatus) {
                 if (swap.status.tx && swap.status.tx.blockhash) {
-                    if (!blockhashes.includes(swap.status.tx.blockhash)) {
-                        blockhashes.push(swap.status.tx.blockhash);
+                    if (!blockhashes[swap.chain].includes(swap.status.tx.blockhash)) {
+                        blockhashes[swap.chain].push(swap.status.tx.blockhash);
                     }
                 }
                 continue;
@@ -358,24 +365,29 @@ export class SwapManager {
         }
 
         // fetch blockhashes statusses
-        for (const blockhash of blockhashes) {
-            const isValid = await SolanaManager.isBlockhashValid(blockhash);
-            if (isValid) {
-                continue;
-            }
-            else if (isValid == false){
-                // then set status from PENDING to CREATED 
-                for (const swap of swaps) {
-                    if (swap.status.tx?.blockhash == blockhash && swap.status.type == StatusType.PROCESSING) {
-                        swap.status.type = StatusType.CREATED;
-                        swap.status.tryIndex++;
-                        await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.PROCESSING }, { $set: { status: swap.status } });
+        for (const chain in blockhashes) {
+            if (Object.prototype.hasOwnProperty.call(blockhashes, chain)) {
+                const chainBlockhashes = blockhashes[chain];
+                for (const blockhash of chainBlockhashes) {
+                    const isValid = await SolanaManager.isBlockhashValid(blockhash, chain as Chain);
+                    if (isValid) {
+                        continue;
+                    }
+                    else if (isValid == false){
+                        // then set status from PENDING to CREATED 
+                        for (const swap of swaps) {
+                            if (swap.chain == chain &&  swap.status.tx?.blockhash == blockhash && swap.status.type == StatusType.PROCESSING) {
+                                swap.status.type = StatusType.CREATED;
+                                swap.status.tryIndex++;
+                                await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.PROCESSING }, { $set: { status: swap.status } });
+                            }
+                        }
+                    }
+                    else if (isValid == undefined){
+                        LogManager.error('SwapManager', 'checkPendingSwaps', 'Blockhash is undefined', { blockhash });
+                        // is this the same as isValid == false ??
                     }
                 }
-            }
-            else if (isValid == undefined){
-                LogManager.error('SwapManager', 'checkPendingSwaps', 'Blockhash is undefined', { blockhash });
-                // is this the same as isValid == false ??
             }
         }
     }
@@ -417,7 +429,7 @@ export class SwapManager {
             return;
         }
 
-        const token = await TokenManager.getToken(swap.mint);
+        const token = await TokenManager.getToken(swap.chain, swap.mint);
 
         let internalMessage = `${swap.type} tx`;
         if (token){
@@ -435,6 +447,7 @@ export class SwapManager {
 
         const userTx = new UserTransaction();
         userTx.geyserId = 'manual';
+        userTx.chain = swap.chain;
         userTx.userId = swap.userId;
         userTx.title = swap.type == SwapType.BUY ? 'BUY ERROR' : 'SELL ERROR';
         userTx.description = message;
@@ -484,7 +497,7 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+    static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
         console.log('initiateBuy', dex, traderProfileId, mint, amount);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
@@ -525,8 +538,9 @@ export class SwapManager {
         const amountInLamports = amount * (10 ** decimals);
 
         const swap = new Swap();
+        swap.chain = chain;
         swap.type = SwapType.BUY;
-        swap.dex = SwapDex.JUPITER;
+        swap.dex = dex;
         swap.currency = currency;
         swap.userId = userId;
         swap.traderProfileId = traderProfileId;
@@ -544,7 +558,7 @@ export class SwapManager {
         return signature;
     }
 
-    static async initiateSell(dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+    static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
             throw new BadRequestError('Trader profile not found');
@@ -591,8 +605,9 @@ export class SwapManager {
         }
 
         const swap = new Swap();
+        swap.chain = chain;
         swap.type = SwapType.SELL;
-        swap.dex = SwapDex.JUPITER;
+        swap.dex = dex;
         swap.userId = userId;
         swap.traderProfileId = traderProfileId;
         swap.amountIn = amountInLamports.toString();

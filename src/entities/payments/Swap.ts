@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Currency } from '../../models/types';
+import { Chain } from '../../services/solana/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -31,6 +32,7 @@ export enum SwapDex {
 }
 
 export interface ISwap extends mongoose.Document {
+    chain: Chain;
     userId: string;
     traderProfileId: string;
     type: SwapType;
@@ -55,6 +57,7 @@ export interface ISwap extends mongoose.Document {
 }
 
 export const SwapSchema = new mongoose.Schema<ISwap>({
+    chain: { type: String },
     userId: { type: String },
     traderProfileId: { type: String },
     type: { type: String },

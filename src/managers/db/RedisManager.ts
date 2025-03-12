@@ -7,6 +7,7 @@ import { LogManager } from "../LogManager";
 import { IWallet } from "../../entities/Wallet";
 import { WalletManager } from "../WalletManager";
 import { Helpers } from "../../services/helpers/Helpers";
+import { Chain } from "../../services/solana/types";
 
 export interface WalletEvent {
     instanceId?: string;
@@ -232,7 +233,7 @@ export class RedisManager {
         }
 
         try {
-            const key = `token:sol:${token.address}`;
+            const key = `token:${token.chain}:${token.address}`;
             const result = await redis.client.set(key, JSON.stringify(token));
             return result ? true : false;
         }
@@ -243,14 +244,14 @@ export class RedisManager {
         return false;
     }
 
-    static async getToken(mint: string): Promise<IToken | undefined> {
+    static async getToken(chain: Chain, mint: string): Promise<IToken | undefined> {
         const redis = RedisManager.getInstance();
         if (!redis) return undefined;
         if (!redis.client) return undefined;
         if (!redis.client.isReady) return undefined;
 
         try {
-            const key = `token:sol:${mint}`;
+            const key = `token:${chain}:${mint}`;
             const token = await redis.client.get(key);
             if (token) {
                 return JSON.parse(token);
@@ -263,7 +264,7 @@ export class RedisManager {
         return undefined;
     }
 
-    static async getTokens(mints: string[]): Promise<IToken[]> {
+    static async getTokens(chain: Chain, mints: string[]): Promise<IToken[]> {
         console.log('RedisManager', 'getTokens', mints);
 
         const redis = RedisManager.getInstance();
@@ -273,7 +274,7 @@ export class RedisManager {
 
         try {
             const uniqueMints = Array.from(new Set(mints));
-            const keys = mints.map(mint => `token:sol:${mint}`)
+            const keys = mints.map(mint => `token:${chain}:${mint}`)
             console.log('RedisManager', 'keys', keys);
 
             const tokens = await redis.client.mGet(keys);

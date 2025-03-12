@@ -6,13 +6,14 @@ import { WalletManager } from "../../../managers/WalletManager";
 import { SwapManager } from "../../../managers/SwapManager";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
 import { YellowstoneManager } from "../../../services/solana/geyser/YellowstoneManager";
+import { Chain } from "../../../services/solana/types";
 
 const router = express.Router();
 
 router.post(
     '/api/v1/service/main/received-tx',
     [
-        header("serviceKey").equals(kServiceKey).withMessage('Service key is not valid'),
+        header('serviceKey').equals(kServiceKey).withMessage('Service key is not valid'),
         body('data').exists().withMessage('Data is required'),
         body('signature').exists().withMessage('Signature is required'),
         body('geyserId').exists().withMessage('Geyser ID is required'),
@@ -22,6 +23,7 @@ router.post(
         const data = '' + req.body.data;
         const signature = '' + req.body.signature;
         const geyserId = '' + req.body.geyserId;
+        const chain = req.body.chain ? req.body.chain as Chain : Chain.SOLANA;
         let success = false;
 
         try {
@@ -31,7 +33,7 @@ router.post(
             
             const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(jsonParsed);
             if (parsedTransactionWithMeta){
-                WalletManager.processWalletTransaction(parsedTransactionWithMeta, geyserId);
+                WalletManager.processWalletTransaction(chain, parsedTransactionWithMeta, geyserId);
             }
 
             SwapManager.receivedConfirmationForSignature(signature);

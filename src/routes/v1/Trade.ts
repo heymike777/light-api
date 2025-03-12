@@ -13,6 +13,7 @@ import { newConnection } from "../../services/solana/lib/solana";
 import { kSolAddress } from "../../services/solana/Constants";
 import { BN } from "bn.js";
 import { Currency } from "../../models/types";
+import { Chain } from "../../services/solana/types";
 
 const router = express.Router();
 
@@ -33,7 +34,8 @@ router.post(
         }
 
         const { traderProfileId, amount, mint } = req.body;
-        const signature = await SwapManager.initiateBuy(SwapDex.JUPITER, traderProfileId, mint, amount);
+        const chain = Chain.SOLANA; //TODO: get chain - by mint? or front should send it?
+        const signature = await SwapManager.initiateBuy(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }
@@ -56,7 +58,8 @@ router.post(
         }
 
         const { traderProfileId, amount, mint } = req.body;
-        const signature = await SwapManager.initiateSell(SwapDex.JUPITER, traderProfileId, mint, amount);
+        const chain = Chain.SOLANA; //TODO: get chain - by mint? or front should send it?
+        const signature = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }

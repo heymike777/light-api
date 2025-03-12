@@ -7,7 +7,7 @@ import { PortfolioAsset } from "../models/types";
 import { Helpers } from "../services/helpers/Helpers";
 import { kSolAddress } from "../services/solana/Constants";
 import { SolanaManager } from "../services/solana/SolanaManager";
-import { Priority, WalletModel } from "../services/solana/types";
+import { Chain, Priority, WalletModel } from "../services/solana/types";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SwapManager } from "./SwapManager";
 import { TokenManager } from "./TokenManager";
@@ -122,7 +122,7 @@ export class TraderProfilesManager {
         }
     }
 
-    static async getPortfolio(traderProfile?: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
+    static async getPortfolio(chain: Chain, traderProfile?: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
         if (!traderProfile){
             return { values: undefined, assets: [], warning: undefined };
         }
@@ -148,7 +148,7 @@ export class TraderProfilesManager {
             const tmpAssets = await SolanaManager.getAssetsByOwner(walletAddress);
 
             const mints = tmpAssets.map(a => a.address);
-            const tokens = await TokenManager.getTokens(mints);
+            const tokens = await TokenManager.getTokens(chain, mints);
             let totalPrice = 0;
 
             for (const tmpAsset of tmpAssets) {
@@ -161,8 +161,8 @@ export class TraderProfilesManager {
                 pAsset.tags = token?.tags || undefined;
                 pAsset.tagsList = token?.tagsList || [];
 
-                const rand = Helpers.getRandomInt(1, 3);
-                pAsset.pnl = rand == 1 ? 1234 : (rand == 2 ? -1234 : undefined);
+                // const rand = Helpers.getRandomInt(1, 3);
+                // pAsset.pnl = rand == 1 ? 1234 : (rand == 2 ? -1234 : undefined);
                 assets.push(pAsset);
 
                 totalPrice += pAsset.priceInfo?.totalPrice || 0;
@@ -171,7 +171,7 @@ export class TraderProfilesManager {
             values.totalPrice = Math.round(totalPrice * 100) / 100;
 
             //TODO: calc PnL for this wallet (existing and OLD, which I've already sold)
-            values.pnl = 1000; 
+            // values.pnl = 1000; 
 
             //TODO: calc PnL for each token in this wallet
         }

@@ -8,6 +8,7 @@ import { WalletManager } from './WalletManager';
 import { RedisManager } from './db/RedisManager';
 import { EnvManager } from './EnvManager';
 import { kSolAddress } from '../services/solana/Constants';
+import { Chain } from '../services/solana/types';
 
 export class CronManager {
 
@@ -30,7 +31,7 @@ export class CronManager {
             });
 
             cron.schedule('* * * * *', () => {
-                TokenManager.updateTokenPrice(kSolAddress);
+                TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
 
                 // once a minute
                 // TokenManager.fetchTokensInfo();

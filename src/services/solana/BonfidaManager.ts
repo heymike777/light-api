@@ -10,7 +10,7 @@ export class BonfidaManager {
                 domain = domain.substring(0, domain.length - 4);
             }
 
-            const connection = newConnection();
+            const connection = newConnection(undefined);
             const owner = await resolve(connection, domain);
             const walletAddress = owner.toBase58();
             return walletAddress;

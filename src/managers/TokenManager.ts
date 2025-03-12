@@ -39,14 +39,14 @@ export class TokenManager {
         kUsdtAddress,
     ];
 
-    static async fetchDigitalAsset(address: string): Promise<IToken> {
+    static async fetchDigitalAsset(chain: Chain, address: string): Promise<IToken> {
         const token = new Token();
-        token.chain = Chain.SOLANA;
+        token.chain = chain;
         token.address = address;
         token.priceUpdatedAt = 0;
         token.isVerified = false;
 
-        const digitalAssets = await MetaplexManager.fetchAllDigitalAssets([address]);
+        const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(chain, [address]);
         LogManager.log('TokenManager', 'getToken', address, '=', digitalAssets);
         if (digitalAssets && digitalAssets.length > 0){
             const digitalAsset = digitalAssets[0];
@@ -115,10 +115,10 @@ export class TokenManager {
         return token;
     }
 
-    static async getToken(address: string): Promise<ITokenModel | undefined> {
-        let token = await RedisManager.getToken(address);
+    static async getToken(chain: Chain, address: string): Promise<ITokenModel | undefined> {
+        let token = await RedisManager.getToken(chain, address);
         if (!token){
-            token = await this.fetchDigitalAsset(address);
+            token = await this.fetchDigitalAsset(chain, address);
         }
 
         LogManager.log('TokenManager', 'getToken1', 'address:', address, 'token:', token);
@@ -173,25 +173,25 @@ export class TokenManager {
         return tokenToTokenModel(token);
     }
 
-    static async getTokens(mints: string[]): Promise<ITokenModel[]> {
-        const tokens = await RedisManager.getTokens(mints);
+    static async getTokens(chain: Chain, mints: string[]): Promise<ITokenModel[]> {
+        const tokens = await RedisManager.getTokens(chain, mints);
         return tokens.map(token => tokenToTokenModel(token));
     }
 
-    static async getTokensByPair(pairAddress: string): Promise<ITokenModel[]> {
+    static async getTokensByPair(chain: Chain, pairAddress: string): Promise<ITokenModel[]> {
         const tokens: ITokenModel[] = [];
 
-        const pair = await TokenPair.findOne({ pairAddress });
+        const pair = await TokenPair.findOne({ pairAddress, chain });
         if (pair){
             if (pair.token1 != kSolAddress && pair.token1 != kUsdcAddress && pair.token1 != kUsdtAddress){
-                const token = await this.getToken(pair.token1);
+                const token = await this.getToken(pair.chain, pair.token1);
                 if (token){
                     tokens.push(token);
                 }
             }
 
             if (pair.token2 != kSolAddress && pair.token2 != kUsdcAddress && pair.token2 != kUsdtAddress){
-                const token = await this.getToken(pair.token2);
+                const token = await this.getToken(pair.chain, pair.token2);
                 if (token){
                     tokens.push(token);
                 }
@@ -352,20 +352,32 @@ export class TokenManager {
     }
 
     static async fillTokenModelsWithData(tokens: ITokenModel[]): Promise<ITokenModel[]> {
-        const mints = tokens.map(token => token.address);
-        const cachedTokens = await RedisManager.getTokens(mints);
-
+        const tokensByChains: { [key: string]: ITokenModel[] } = {};
         for (const token of tokens){
-            const freshToken = cachedTokens.find(cachedToken => cachedToken.address === token.address);
-            if (freshToken){
-                token.isVerified = freshToken.isVerified;
+            if (!tokensByChains[token.chain]){  
+                tokensByChains[token.chain] = [];
+            }
+            tokensByChains[token.chain].push(token);
+        }
+
+        for (const chain in tokensByChains){
+            const chainTokens = tokensByChains[chain];
+            const chainMints = chainTokens.map(token => token.address);
+            const cachedTokens = await RedisManager.getTokens(chain as Chain, chainMints);
+
+            for (const token of tokens){
+                const freshToken = cachedTokens.find(cachedToken => chain == token.chain &&  cachedToken.address === token.address);
+                if (freshToken){
+                    token.isVerified = freshToken.isVerified;
+                }
             }
         }
+
         return tokens;
     }
 
-    static async updateTokenPrice(mint: string) {
-        const token = await RedisManager.getToken(mint);
+    static async updateTokenPrice(chain: Chain, mint: string) {
+        const token = await RedisManager.getToken(chain, mint);
 
         if (token){
             const prices = await JupiterManager.getPrices([mint]);
@@ -378,7 +390,7 @@ export class TokenManager {
     }
 
     static async fetchSolPriceFromRedis(){
-        const price = await RedisManager.getToken(kSolAddress);
+        const price = await RedisManager.getToken(Chain.SOLANA, kSolAddress);
         if (price && price.price!=undefined){
             TokenManager.solPrice = price.price;
         }
@@ -391,7 +403,7 @@ export class TokenManager {
         return this.tokenTags.filter(tag => tagsMap[tag.id]);
     }
 
-    static async setTokenTags(mint: string, tagsIds: string[], deleteOtherTags = false) {
+    static async setTokenTags(chain: Chain, mint: string, tagsIds: string[], deleteOtherTags = false) {
         // set in mongo
         const token = await Token.findOne({ address: mint });
         if (token){
@@ -404,7 +416,7 @@ export class TokenManager {
         }
 
         // set in redis
-        const tokenFromRedis = await RedisManager.getToken(mint);
+        const tokenFromRedis = await RedisManager.getToken(chain, mint);
         if (tokenFromRedis){
             const tags = deleteOtherTags ? {} : tokenFromRedis.tags || {};
             for (const tagId of tagsIds){
