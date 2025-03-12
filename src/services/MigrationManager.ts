@@ -48,6 +48,7 @@ import { exit } from "process";
 import { RedisManager } from "../managers/db/RedisManager";
 import mongoose from 'mongoose';
 import { InlineKeyboardButton } from "grammy/types";
+import { kSonicSvmMainnet, SVM, SvmManager } from "../managers/svm/SvmManager";
 
 // 174962
 
@@ -156,6 +157,9 @@ export class MigrationManager {
         // await this.processTx('2PZmsmcekxhTh1xCatopVuS1W32j8178zZRJZBpNGnUXBabnxo2TbkbhixA7xTgpnhz4DzYXQkPhqcpbPLtyYxUs'); // swap
         // await this.processTx('5XjvUxArVST3p6wpF6JnwboAgbJohVq3AKXrCisotNreZVMrxm7aARgtuS4U7F1XWWCpc5BVn732hQSoNb7izeoo'); // add lp
         // await this.processTx('3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp        
+
+        // SONIC SVM
+        await this.processTx('5V9cB7VyDQANcEMG5QLH67uqsobDC1tYhivra93GU88HZVgrsRRtuJpbCbAwikwCyhh58EoEfQWUvsiigJMfpWuv', kSonicSvmMainnet);
 
         // const connection = newConnection();
         // for (let index = 0; index < 200; index++) {
@@ -297,7 +301,9 @@ export class MigrationManager {
         await UserTraderProfile.syncIndexes();
     }
 
-    static async processTx(signature: string) {
+    static async processTx(signature: string, svm?: SVM) {
+        const connection = newConnection(svm?.rpc);
+
         const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
         await RedisManager.cleanUserTransactions(userId);
@@ -307,7 +313,6 @@ export class MigrationManager {
         const user = await UserManager.getUserById(userId, true);
         const chats = [{user, wallets}];
         // LogManager.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
-        const connection = newConnection();
         const tx = await SolanaManager.getParsedTransaction(connection, signature);
         // LogManager.log('!tx', JSON.stringify(tx));
         if (tx){
