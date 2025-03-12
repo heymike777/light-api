@@ -9,10 +9,10 @@ import { SwapManager } from "../../SwapManager";
 import { IUserTraderProfile, UserTraderProfile } from "../../../entities/users/TraderProfile";
 import { CustomError } from "../../../errors/CustomError";
 import { parse } from "path";
-import { newConnection } from "../../../services/solana/lib/solana";
+import { newConnection, newConnectionByChain } from "../../../services/solana/lib/solana";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { InlineButton, TgMessage } from "../BotTypes";
-import { Priority } from "../../../services/solana/types";
+import { Chain, Priority } from "../../../services/solana/types";
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -140,7 +140,8 @@ export class BotTraderProfilesHelper extends BotHelper {
                 return;
             }
 
-            const connection = newConnection();
+            const chain = Chain.SOLANA; //TODO: get for other chains as well
+            const connection = newConnectionByChain(chain);
             const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet?.publicKey);
 
             const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
@@ -281,7 +282,8 @@ export class BotTraderProfilesHelper extends BotHelper {
             return undefined;
         }
 
-        const connection = newConnection();
+        const chain = Chain.SOLANA; //TODO: get for other chains as well
+        const connection = newConnectionByChain(chain);
         const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet?.publicKey);
 
         const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
@@ -300,7 +302,8 @@ export class BotTraderProfilesHelper extends BotHelper {
         else {
             const defaultProfile = traderProfiles.find(tp => tp.default) || traderProfiles[0];
 
-            const connection = newConnection();
+            const chain = Chain.SOLANA; //TODO: get for other chains as well
+            const connection = newConnectionByChain(chain);
             const walletAddresses = traderProfiles.map(tp => tp.wallet?.publicKey).filter(Boolean) as string[];
             const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
     

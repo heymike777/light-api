@@ -21,11 +21,5 @@ export const kSonicSvmMainnet: SVM = {
 };
 
 export class SvmManager {
-
-    static async getTransaction(svm: SVM, signature: string){
-        const connection = newConnection(svm.rpc);
-        const tx = await connection.getParsedTransaction(signature, { commitment: 'confirmed' });
-        return tx;
-    }
     
 }

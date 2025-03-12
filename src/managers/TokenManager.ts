@@ -8,7 +8,7 @@ import { MetaplexManager } from "./MetaplexManager";
 import { kSolAddress, kUsdcAddress, kUsdtAddress } from "../services/solana/Constants";
 import { BN } from "bn.js";
 import { SolScanManager } from "../services/solana/SolScanManager";
-import { newConnection } from "../services/solana/lib/solana";
+import { newConnection, newConnectionByChain } from "../services/solana/lib/solana";
 import { ITokenPair, TokenPair } from "../entities/tokens/TokenPair";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import * as web3 from "@solana/web3.js";
@@ -311,7 +311,7 @@ export class TokenManager {
     }
 
     static async updateTokenPairLiquidity(pair: ITokenPair) {
-        const connection = newConnection();
+        const connection = newConnectionByChain(pair.chain);
         const tokenBalance1 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount1));
         const tokenBalance2 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount2));
 

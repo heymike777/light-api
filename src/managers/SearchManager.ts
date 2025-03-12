@@ -8,6 +8,7 @@ export class SearchManager {
     static async search(query: string, userId: string): Promise<ITokenModel[]> {
         let mint: string | undefined = undefined;
         let pairId: string | undefined = undefined;
+        const chain = Chain.SOLANA;
 
         // check if query is a valid token mint address
         const isValidPublicKey = SolanaManager.isValidPublicKey(query);
@@ -48,21 +49,21 @@ export class SearchManager {
         const tokens: ITokenModel[] = [];
 
         if (mint){
-            const token = await TokenManager.getToken(Chain.SOLANA, mint);
+            const token = await TokenManager.getToken(chain, mint);
             if (token){
                 tokens.push(token);
             }
         }
         
         if (pairId){
-            const pairTokens = await TokenManager.getTokensByPair(Chain.SOLANA, pairId);
+            const pairTokens = await TokenManager.getTokensByPair(chain, pairId);
             if (pairTokens && pairTokens.length > 0){
                 tokens.push(...pairTokens);
             }
         }
         
         if (tokens.length === 0){
-            const tmpTokens = await Token.find({ symbol: { $regex : new RegExp(query, "i") } });
+            const tmpTokens = await Token.find({ chain, symbol: { $regex : new RegExp(query, "i") } });
             if (tmpTokens && tmpTokens.length > 0){
                 tokens.push(...(tmpTokens.map(token => tokenToTokenModel(token))));
             }

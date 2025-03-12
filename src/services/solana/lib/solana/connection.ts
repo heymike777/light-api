@@ -26,11 +26,24 @@ export function newConnectionByChain(chain: Chain): Connection {
         wsEndpoint: rpc.ws,
     };  
     return new Connection(rpc.http, config);
-  }
+}
 
-export function getRpc(chain?: Chain): {http: string, ws: string} {
+export function newConnectionForLandingTxs(chain: Chain): Connection {
+    const rpc = getRpc(chain, true);
+    const config: ConnectionConfig = {
+        commitment: 'confirmed',
+    };  
+    return new Connection(rpc.http, config);
+}
+
+export function getRpc(chain?: Chain, isForLandingTxs = false): {http: string, ws: string} {
     if (chain === Chain.SONIC) {
         return { http: process.env.SONIC_RPC || "", ws: process.env.SONIC_RPC_WSS || "" };
+    }
+
+    // SOLANA
+    if (isForLandingTxs){
+        return { http: process.env.HELIUS_STAKED_CONNECTIONS_URL || "", ws: '' };
     }
     return { http: process.env.SOLANA_RPC || "", ws: '' };
 }

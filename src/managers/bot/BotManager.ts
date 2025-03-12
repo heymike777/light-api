@@ -25,7 +25,7 @@ import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { Currency } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager";
-import { newConnection } from "../../services/solana/lib/solana";
+import { newConnection, newConnectionByChain } from "../../services/solana/lib/solana";
 import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
@@ -371,7 +371,7 @@ export class BotManager {
         const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
         message += `<a href="${reflink}">Share token with your Reflink</a>`
 
-        const connection = newConnection();
+        const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
         let tokenBalance: TokenBalance | undefined = undefined;
         if (traderProfile && traderProfile.wallet?.publicKey){
