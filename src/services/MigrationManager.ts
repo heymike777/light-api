@@ -159,7 +159,20 @@ export class MigrationManager {
         // await this.processTx('3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp        
 
         // SONIC SVM
-        await this.processTx(Chain.SONIC, '5V9cB7VyDQANcEMG5QLH67uqsobDC1tYhivra93GU88HZVgrsRRtuJpbCbAwikwCyhh58EoEfQWUvsiigJMfpWuv');
+        // await this.processTx(Chain.SONIC, '5V9cB7VyDQANcEMG5QLH67uqsobDC1tYhivra93GU88HZVgrsRRtuJpbCbAwikwCyhh58EoEfQWUvsiigJMfpWuv'); // stake
+        // await this.processTx(Chain.SONIC, '4g4KAqWS4jNYhSgWWVu8CnG5Si9YUASWVY4GaMYGNHcYtkjeFVLr7NgbuoF6f73FqqNera6iCg3x4yiApVkxFBMW'); // SWAP on SEGA
+        // await this.processTx(Chain.SONIC, '24ER3mdG69QTAFoUuVyrQSyDLLYw1JeNtRPzQikorEqgjbaqDniFyfMZE7nCynsC77Bo1wAuuJ7o4J6fshbZg7bf'); // ADD LIQUIDITY on SEGA
+        // await this.processTx(Chain.SONIC, '66mhhqK9UzBWtqriYNTRqUnBw1BYopKDK8ZwSgrhTemTBBws4GLhj6AHHZP94xru7KKgenUHQUPYsJHXiKjpRms'); // REMOVE LIQUIDITY on SEGA
+
+        // const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(Chain.SONIC, [
+        //     'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', 
+        //     'HbDgpvHVxeNSRCGEUFvapCYmtYfqxexWcCbxtYecruy8'
+        // ]);
+        // console.log('SONIC digitalAssets:', digitalAssets);
+
+        // const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(Chain.SOLANA, [this.kBonk]);
+        // console.log('BONK digitalAssets:', digitalAssets);
+
 
         // const connection = newConnection(undefined);
         // for (let index = 0; index < 200; index++) {

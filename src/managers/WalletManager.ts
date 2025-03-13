@@ -303,7 +303,7 @@ export class WalletManager {
             let asset: TokenNft | undefined = undefined;
             
             if (parsedTx.assetId){
-                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(parsedTx.assetId);
+                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(chain, parsedTx.assetId);
                 // LogManager.log('!asset', asset);
             }
 
@@ -550,7 +550,7 @@ export class WalletManager {
             }
 
             for (const mint of uniqueNftMints) {
-                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(mint);
+                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(chain, mint);
                 if (asset){
                     break;
                 }
@@ -623,6 +623,7 @@ export class WalletManager {
         LogManager.log('!changedWallets', JSON.stringify(changedWallets));
 
         const txApiResponse: TransactionApiResponse = {
+            chain: chain,
             title: parsedTx.title,
             description: description,
             explorerUrl: explorerUrl,

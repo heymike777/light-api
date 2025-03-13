@@ -48,6 +48,14 @@ export function getRpc(chain?: Chain, isForLandingTxs = false): {http: string, w
     return { http: process.env.SOLANA_RPC || "", ws: '' };
 }
 
+export function getSharedRpc(chain?: Chain): {http: string, ws: string} {
+    if (chain === Chain.SONIC) {
+        return { http: process.env.SONIC_RPC || "", ws: process.env.SONIC_RPC_WSS || "" };
+    }
+
+    return { http: process.env.HELIUS_SHARED_RPC || "", ws: '' };
+}
+
 interface Opt extends ConfirmedSignaturesForAddress2Options {
   onTransaction?: (tx: ParsedTransactionWithMeta) => Promise<void>;
 }

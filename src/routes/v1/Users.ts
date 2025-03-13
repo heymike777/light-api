@@ -20,6 +20,7 @@ import { Announcement, AnnouncementsManager } from "../../managers/Announcements
 import { TokenManager } from "../../managers/TokenManager";
 import { LogManager } from "../../managers/LogManager";
 import { RedisManager } from "../../managers/db/RedisManager";
+import { Chain } from "../../services/solana/types";
 
 const router = express.Router();
 
@@ -195,7 +196,6 @@ router.post(
                 }
             }
         }
-        console.log('FROM REDIS', transactions.length, 'transactions');
         times.push({time: Date.now(), message: `got transactions from redis (${transactions.length} txs)`, took: Date.now()-times[times.length-1].time});
         if (isLogs){ LogManager.forceLog("MIKE", "GET TRANSACTIONS", "times:", times);}
 
@@ -245,6 +245,7 @@ router.post(
             }
 
             parsedTransactions.push({
+                chain: transaction.chain,
                 title: transaction.title || parsedTx?.title || '[TX]',
                 description: description,
                 explorerUrl: parsedTx ? ExplorerManager.getUrlToTransaction(transaction.chain, parsedTx.signature) : undefined,
@@ -260,6 +261,12 @@ router.post(
         }
 
         // LogManager.log("GET TRANSACTIONS RETURN", "hasMore", hasMore, "newPageToken", newPageToken);
+
+        // for (const transaction of parsedTransactions) {
+        //     if (transaction.chain != Chain.SOLANA){
+        //         transaction.title += ` (${transaction.chain})`;
+        //     }
+        // }
 
         let announcements: Announcement[] | undefined = undefined;
         if (!pageToken || !pageToken?.ids || pageToken.ids.length==0) {

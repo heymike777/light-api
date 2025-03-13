@@ -1347,11 +1347,11 @@ export class ProgramManager {
                     }
                 }
                 else if (parsedInstruction.programId == kProgram.MAGIC_EDEN_V3){
-                    assetId = this.getAssetIdFromIxs(parsedInstructions);
+                    assetId = this.getAssetIdFromIxs(chain, parsedInstructions);
                 }
 
                 if (!assetId){
-                    assetId = this.getAssetIdFromIxs(parsedInstructions);
+                    assetId = this.getAssetIdFromIxs(chain, parsedInstructions);
                 }
 
                 // I add only first instruction to the tx parsed title. 
@@ -1404,7 +1404,7 @@ export class ProgramManager {
         }
     }
 
-    static getAssetIdFromIxs(parsedInstructions: ParsedIx[]): string | undefined {
+    static getAssetIdFromIxs(chain: Chain, parsedInstructions: ParsedIx[]): string | undefined {
         const ix = parsedInstructions.find((ix) => ix.programId == SPL_ACCOUNT_COMPRESSION_PROGRAM_ID.toString());
         const treeAddress = ix?.accountKeys?.[0] || undefined;
         const leafIndex = this.findCompressedLeafIndex(parsedInstructions);
@@ -1413,7 +1413,7 @@ export class ProgramManager {
             return undefined;
         }
 
-        const assetId = MetaplexManager.fetchAssetIdByTreeAnfLeafIndex(treeAddress.toBase58(), leafIndex);
+        const assetId = MetaplexManager.fetchAssetIdByTreeAnfLeafIndex(chain, treeAddress.toBase58(), leafIndex);
         return assetId;
     }
 
