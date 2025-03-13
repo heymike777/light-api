@@ -940,6 +940,36 @@ export class ProgramManager {
                 }
 
             }
+            else if (programId == kProgram.SONIC_STAKING){
+                if (['walletStaking'].indexOf(ixType) != -1){
+                    const stakingAmountString: string | undefined = ixParsed.data?.params?.stakingAmount;
+                    let stakeAmountString: string | undefined = undefined;
+                    if (stakingAmountString){
+                        const stakingAmount = new BN(stakingAmountString || '0');
+                        stakeAmountString = Helpers.bnToUiAmount(stakingAmount, 9); 
+                    }
+
+                    const walletAddress = accounts?.[2]?.toBase58() || 'unknown';
+                    const tokenMint = accounts?.[4]?.toBase58() || 'unknown';
+
+                    const addresses = [walletAddress, tokenMint];
+                    description = {
+                        html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> staked ${stakeAmountString} <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a>`,
+                        addresses,
+                    };
+                }
+                else if (['walletStakingWithdraw'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[2]?.toBase58() || 'unknown';
+                    const tokenMint = accounts?.[4]?.toBase58() || 'unknown';
+
+                    const addresses = [walletAddress, tokenMint];
+                    description = {
+                        html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> unstaked <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a>`,
+                        addresses,
+                    };
+                }
+            }
+
         }
         catch (error){
             LogManager.error('!catched parseParsedIx', error);

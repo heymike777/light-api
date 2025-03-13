@@ -226,12 +226,18 @@ export class Helpers {
 
         if (!mod.eqn(0)){
             result += '.';
-            const modStr = mod.toString();
+            let modStr = mod.toString();
             const modStrLen = modStr.length;
             const zeros = decimals - modStrLen;
             for (let i = 0; i < zeros; i++) {
                 result += '0';
             }
+
+            // remove trailing zeros from modStr, since it's already after the decimal point
+            while (modStr.length>0 && modStr[modStr.length - 1] == '0'){
+                modStr = modStr.substring(0, modStr.length - 1);
+            }
+
             result += modStr;
         }
 
