@@ -173,7 +173,6 @@ export class RedisManager {
         // fetch all the keys
         const keys = await redis.client.keys('user:*:transactions');
         if (keys) {
-            console.log('migrateAllUsersTransactionsToMongo', 'keys:', keys);
             for (const key of keys) {
                 const userId = key.split(':')[1];
                 await RedisManager.migrateUserTransactionsToMongo(userId);

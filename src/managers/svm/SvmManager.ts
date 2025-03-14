@@ -7,5 +7,4 @@ export class SvmManager {
         this.chain = chain;
     }
 
-
 }

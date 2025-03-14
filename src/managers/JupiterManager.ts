@@ -57,14 +57,6 @@ export class JupiterManager {
             const maxAutoSlippageBps = Math.round(slippage * 100);
             LogManager.forceLog('maxAutoSlippageBps:', maxAutoSlippageBps);
             
-            console.log('get quotes for', {
-                inputMint,
-                outputMint,
-                amount,
-                swapMode: swapMode,
-                slippageBps: maxAutoSlippageBps,     
-            });
-
             const quotes = await this.quoteApi.quoteGet({
                 inputMint,
                 outputMint,
@@ -81,8 +73,6 @@ export class JupiterManager {
                 // restrictIntermediateTokens: false,
             });
 
-            console.log('quotes:', JSON.stringify(quotes, null, 2));
-
             return {
                 inAmount: quotes.inAmount,
                 outAmount: quotes.outAmount,
@@ -90,7 +80,7 @@ export class JupiterManager {
             };
         }
         catch (e: any) {
-            console.error('getQuote error:', e);
+            LogManager.error('getQuote error:', e);
         }
 
         return undefined;
@@ -102,8 +92,6 @@ export class JupiterManager {
         if (priorityFee == Priority.MEDIUM) { priorityLevel = 'medium'; }
         else if (priorityFee == Priority.HIGH) { priorityLevel = 'high'; }
         else if (priorityFee == Priority.ULTRA) { priorityLevel = 'veryHigh'; }
-
-        console.log('swapInstructions', 'priorityFee:', priorityFee, 'priorityLevel:', priorityLevel, 'prioritizationFeeMaxLamports:', prioritizationFeeMaxLamports);
 
         const response = await this.quoteApi.swapInstructionsPost({
             swapRequest: {
@@ -126,7 +114,7 @@ export class JupiterManager {
         if (response.setupInstructions && (!include || include.includeSetupInstructions)) { instructions.push(...response.setupInstructions); }
         if (response.swapInstruction && (!include || include.includeSwapInstruction)) { instructions.push(response.swapInstruction); }
         if (response.cleanupInstruction && (!include || include.includeCleanupInstruction)) { instructions.push(response.cleanupInstruction); }
-        if (response.otherInstructions && (!include || include.includeOtherInstruction)) { instructions.push(response.otherInstructions); }
+        if (response.otherInstructions && (!include || include.includeOtherInstruction)) { instructions.push(...response.otherInstructions); }
 
         return {instructions: this.instructionsToTransactionInstructions(instructions), addressLookupTableAddresses: response.addressLookupTableAddresses};
     }
