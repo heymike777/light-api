@@ -35,6 +35,7 @@ import { telegramServiceRouter } from './routes/v1/services/Telegram';
 import { initSolscanLabels } from './managers/constants/ValidatorConstants';
 import { searchRouter } from './routes/v1/Search';
 import { portfolioRouter } from './routes/v1/Portfolio';
+import { WalletGeneratorManager } from './managers/WalletGeneratorManager';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -108,6 +109,9 @@ const onExpressStarted = async () => {
     if (EnvManager.isMainProcess) {
         await TokenManager.fetchSolPriceFromRedis();
         initSolscanLabels();
+    }
+    if (EnvManager.isWalletGeneratorProcess) {
+        await WalletGeneratorManager.start();
     }
 
     await MixpanelManager.init();
