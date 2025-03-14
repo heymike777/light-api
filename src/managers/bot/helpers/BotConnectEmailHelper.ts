@@ -79,16 +79,13 @@ export class BotConnectEmailHelper extends BotHelper {
             if (!existingUser){    
                 // if this email is new - just add email to user
                 await User.updateOne({ _id: user.id }, { email: auth.email });
-                console.log('Mike1', 'User updated with email', auth.email);
             }
             else {
                 // check if this (telegram) user has ZERO wallet and ZERO transactions - just merge two users
                 try {
                     await UserManager.mergeUsers(user.id, existingUser.id);
-                    console.log('Mike2', 'Users merged', user.id, existingUser.id);
                 }
                 catch (e: any){
-                    console.log('Mike3', 'Error merging users', e.message);
                     await BotManager.reply(ctx, `Another user already has this email connected. Please, connect another email or do /revoke_account of this user (it will remove all your transactions history, trading profiles, etc). After cleaning, you'll be able to connect this email.`);
                     return true;
                 }

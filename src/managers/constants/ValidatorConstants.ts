@@ -165,8 +165,6 @@ export const kKnownAddresses: {[key: string]: {name: string}} = {
 
 export const kSolscanAddresses: {[key: string]: {name: string}} = {};
 export const initSolscanLabels = async () => {
-    console.log('initSolscanLabels');
-
     try {
         const jsonString = fs.readFileSync('src/files/solscan-labels.json', 'utf8');
         const labels: {

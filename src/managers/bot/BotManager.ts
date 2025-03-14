@@ -79,7 +79,7 @@ export class BotManager {
         this.bot.on("my_chat_member", async (ctx) => {            
             const botUsername = ctx.myChatMember?.new_chat_member?.user?.username;        
             if (ctx.myChatMember.new_chat_member.status == 'kicked'){        
-                console.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) blocked bot ${botUsername}`);
+                LogManager.log(`User ${ctx.myChatMember.from.id} (${ctx.myChatMember.from.username}) blocked bot ${botUsername}`);
                 
                 // handle user blocked bot
                 if (botUsername){

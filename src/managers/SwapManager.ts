@@ -123,15 +123,11 @@ export class SwapManager {
 
     static async buyAndSell(type: SwapType, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number): Promise<string | undefined> {
 
-        console.log('buyAndSell', 'type:', type, 'triesLeft', triesLeft, 'swap:', swap, 'traderProfile:', traderProfile);
+        LogManager.log('buyAndSell', 'type:', type, 'triesLeft', triesLeft, 'swap:', swap, 'traderProfile:', traderProfile);
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {
             LogManager.error('SwapManager', type, 'Swap status is not CREATED', { swap });
-
-            const tmpSwap = await Swap.findById(swap._id);
-            console.log('tmpSwap:', tmpSwap);
-
             return;
         }
 
@@ -157,7 +153,7 @@ export class SwapManager {
             const inputMint = type == SwapType.BUY ? currencyMintAddress : mint;
             const outputMint = type == SwapType.BUY ? mint : currencyMintAddress;
             const slippage = (type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
-            console.log('SwapManager', 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
+            LogManager.log('SwapManager', 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
 
             const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, SwapMode.ExactIn);
             if (!quote) {
@@ -167,7 +163,7 @@ export class SwapManager {
                 return;
             }
 
-            console.log('SwapManager', 'quote', quote);
+            LogManager.log('SwapManager', 'quote', quote);
 
             // const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
             const priorityFee = traderProfile.priorityFee || Priority.MEDIUM;
@@ -184,7 +180,7 @@ export class SwapManager {
             const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
             const addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
 
-            console.log('SwapManager', 'swapData', swapData);
+            LogManager.log('SwapManager', 'swapData', swapData);
 
             const swapAmountInLamports = type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
 
@@ -205,18 +201,16 @@ export class SwapManager {
             }
             await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
             
-            console.log('SwapManager', 'instructions.length =', instructions.length);
+            LogManager.log('SwapManager', 'instructions.length =', instructions.length);
 
             blockhash = (await SolanaManager.getRecentBlockhash(Chain.SOLANA)).blockhash;
             const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, instructions, keypair, addressLookupTableAccounts, blockhash, false)
-            console.log('SwapManager', 'tx', tx);
 
             signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
-            console.log('SwapManager', 'signature', signature);
+            LogManager.log('SwapManager', 'signature', signature);
         }
         catch (error) {
-            console.error('!catched SwapManager', type, error);
-
+            LogManager.error('!catched SwapManager', type, error);
             
             if (triesLeft <= 0) {
                 swap.status.type = StatusType.CANCELLED;
@@ -328,7 +322,7 @@ export class SwapManager {
                 const signatureStatus = signatureStatuses.value[index];
                 const swap = swaps.find(swap => swap.status.tx?.signature == signature);
                 if (!swap) {
-                    console.error('SwapManager', 'checkPendingSwaps', 'Swap not found', { signature });
+                    LogManager.error('SwapManager', 'checkPendingSwaps', 'Swap not found', { signature });
                     continue;
                 }
     
@@ -342,7 +336,7 @@ export class SwapManager {
                 }
                 else {
                     if (signatureStatus.err) {
-                        console.error('SwapManager', 'checkPendingSwaps', signatureStatus.err);
+                        LogManager.error('SwapManager', 'checkPendingSwaps', signatureStatus.err);
                         swap.status.type = StatusType.CREATED;
                         swap.status.tryIndex++;
                         await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
@@ -496,7 +490,7 @@ export class SwapManager {
     }
 
     static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
-        console.log('initiateBuy', dex, traderProfileId, mint, amount);
+        LogManager.log('initiateBuy', dex, traderProfileId, mint, amount);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){

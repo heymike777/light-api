@@ -30,18 +30,18 @@ export class RedisManager {
         this.client = createClient({
             url: process.env.REDIS_CONNECTION_URL
         });   
-        this.client.on('error', (err: Error) => console.log('Redis Client Error', err));
+        this.client.on('error', (err: Error) => LogManager.log('Redis Client Error', err));
 
         await this.client.connect();
 
         this.subscriber = this.client.duplicate();
-        this.subscriber.on('error', (err: Error) => console.log('Redis Subscriber Error', err));
+        this.subscriber.on('error', (err: Error) => LogManager.log('Redis Subscriber Error', err));
         await this.subscriber.connect();
 
         await this.subscriber.subscribe('wallets', this.onWalletChangedEvent);    
 
         this.publisher = this.client.duplicate();
-        this.publisher.on('error', (err: Error) => console.log('Redis Publisher Error', err));
+        this.publisher.on('error', (err: Error) => LogManager.log('Redis Publisher Error', err));
         await this.publisher.connect();
     }
 
@@ -64,7 +64,7 @@ export class RedisManager {
 
     async onWalletChangedEvent(message: string){
         try{
-            console.log('onWalletChangedEvent', 'message:', message);
+            LogManager.log('onWalletChangedEvent', 'message:', message);
             const event: WalletEvent = JSON.parse(message);
             const redis = RedisManager.getInstance();
             if (event.instanceId === redis?.instanceId) return;
@@ -190,7 +190,7 @@ export class RedisManager {
         if (!redis.client.isReady) return [];
 
         const key = `user:${userId}:transactions`;
-        console.log('migrateUserTransactionsToMongo', key);
+        LogManager.log('migrateUserTransactionsToMongo', key);
 
         try {
             // fetch the transactions from redis
@@ -202,7 +202,7 @@ export class RedisManager {
                         if (tx) {
                             await tx.save();
 
-                            console.log('migrateUserTransactionsToMongo', tx.signature, 'success');
+                            LogManager.log('migrateUserTransactionsToMongo', tx.signature, 'success');
 
                             redis.client.lRem(key, 0, txString);
                         }
@@ -264,7 +264,7 @@ export class RedisManager {
     }
 
     static async getTokens(chain: Chain, mints: string[]): Promise<IToken[]> {
-        console.log('RedisManager', 'getTokens', mints);
+        LogManager.log('RedisManager', 'getTokens', mints);
 
         const redis = RedisManager.getInstance();
         if (!redis) return [];
@@ -274,7 +274,7 @@ export class RedisManager {
         try {
             const uniqueMints = Array.from(new Set(mints));
             const keys = mints.map(mint => `token:${chain}:${mint}`)
-            console.log('RedisManager', 'keys', keys);
+            LogManager.log('RedisManager', 'keys', keys);
 
             const tokens = await redis.client.mGet(keys);
             if (tokens) {

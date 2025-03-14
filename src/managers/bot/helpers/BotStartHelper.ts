@@ -54,7 +54,7 @@ export class BotStartHelper extends BotHelper {
             paramsString = paramsString.trim();
         }
 
-        console.log('BotStartHelper', 'start', 'params:', paramsString);
+        LogManager.log('BotStartHelper', 'start', 'params:', paramsString);
 
         const botUsername = ctx.me?.username;
         let referralCode: string | undefined = undefined;
@@ -135,7 +135,7 @@ export class BotStartHelper extends BotHelper {
     }
 
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
-        console.log('BotStartHelper', 'messageReceived', message.text);
+        LogManager.log('BotStartHelper', 'messageReceived', message.text);
         return await super.messageReceived(message, ctx, user);
     }
 

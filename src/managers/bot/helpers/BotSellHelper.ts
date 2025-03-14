@@ -24,7 +24,6 @@ export class BotSellHelper extends BotHelper {
     }
 
     async commandReceived(ctx: Context, user: IUser) {
-        console.log('!mike', 'commandReceived', 'ctx', ctx);
         await UserManager.updateTelegramState(user.id, undefined);
 
         const buttonId = ctx.update?.callback_query?.data;

@@ -120,7 +120,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 });
             }
             catch (e: any){
-                console.log('e:', e);
+                LogManager.error('e:', e);
                 if (e.statusCode == 444){
                     // premium error
                     await BotManager.replyWithPremiumError(ctx, e.message);

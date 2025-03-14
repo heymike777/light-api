@@ -5,6 +5,7 @@ import { IUser, TelegramState, TelegramUser, User } from "../entities/users/User
 import { UserTransaction } from "../entities/users/UserTransaction";
 import { Wallet } from "../entities/Wallet";
 import { BadRequestError } from "../errors/BadRequestError";
+import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
@@ -95,7 +96,7 @@ export class UserManager {
 
     static async cleanOldUserTransactions(userId: string) {
         const count = await UserTransaction.countDocuments({ userId: userId });
-        console.log('user', userId, 'UserTransaction.count', count);
+        LogManager.log('user', userId, 'UserTransaction.count', count);
 
         const kLimit = 100;
         if (count > kLimit){
@@ -112,7 +113,7 @@ export class UserManager {
                     break;
                 }
                 const tmp = await UserTransaction.deleteMany({ _id: { $in: deletedTxs.map((tx) => tx.id) } });
-                console.log('user', userId, 'deleted', tmp.deletedCount, 'transactions');
+                LogManager.log('user', userId, 'deleted', tmp.deletedCount, 'transactions');
                 index++;
             }
         }
@@ -177,13 +178,13 @@ export class UserManager {
             });
         }
 
-        console.log('updateTelegramState', userId, state);
+        LogManager.log('updateTelegramState', userId, state);
     }
 
     static async mergeUsers(fromUserId: string, toUserId: string){
         const fromUser = await User.findById(fromUserId);
         const toUser = await User.findById(toUserId);
-        console.log('mergeUsers', 'fromUserId:', fromUserId, 'toUserId:', toUserId, 'fromUser:', fromUser, 'toUser:', toUser);
+        LogManager.log('mergeUsers', 'fromUserId:', fromUserId, 'toUserId:', toUserId, 'fromUser:', fromUser, 'toUser:', toUser);
         if (!fromUser || !toUser){
             throw new BadRequestError('User not found');
         }
@@ -202,7 +203,7 @@ export class UserManager {
 
         //TODO: check trader profiles. If user has trader profiles - just move them to toUser
 
-        console.log('mergeUsers', 'fromUser.telegram:', fromUser.telegram, 'toUser.telegram:', toUser.telegram);
+        LogManager.log('mergeUsers', 'fromUser.telegram:', fromUser.telegram, 'toUser.telegram:', toUser.telegram);
         if (fromUser.telegram?.id && toUser.telegram?.id){
             throw new BadRequestError('Both users have telegram connected');
         }

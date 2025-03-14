@@ -8,6 +8,7 @@ import { Helpers } from "../services/helpers/Helpers";
 import { kSolAddress } from "../services/solana/Constants";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import { Chain, Priority, WalletModel } from "../services/solana/types";
+import { LogManager } from "./LogManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SwapManager } from "./SwapManager";
 import { TokenManager } from "./TokenManager";
@@ -91,7 +92,7 @@ export class TraderProfilesManager {
 
     static async deactivateTraderProfile(traderProfileId: string, userId: string, ipAddress?: string) {
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
-        console.log('deactivateTraderProfile', 'traderProfile:', traderProfile);
+        LogManager.log('deactivateTraderProfile', 'traderProfile:', traderProfile);
         if (!traderProfile){
             throw new BadRequestError("Trader profile not found");
         }
@@ -110,15 +111,15 @@ export class TraderProfilesManager {
             }
         }
 
-        console.log('deactivateTraderProfile', 'traderProfile.default:', traderProfile.default);
+        LogManager.log('deactivateTraderProfile', 'traderProfile.default:', traderProfile.default);
 
         if (traderProfile.default){
             // if the deleted profile was default, make the first profile default
             const res = await UserTraderProfile.updateOne({ userId: userId, active: true, engineId: SwapManager.kNativeEngineId }, { $set: { default: true } });            
-            console.log('deactivateTraderProfile', 'updateOne res:', res);
+            LogManager.log('deactivateTraderProfile', 'updateOne res:', res);
 
             const traderProfiles = await TraderProfilesManager.getUserTraderProfiles(userId);
-            console.log('deactivateTraderProfile', 'traderProfiles:', traderProfiles);
+            LogManager.log('deactivateTraderProfile', 'traderProfiles:', traderProfiles);
         }
     }
 
@@ -153,7 +154,7 @@ export class TraderProfilesManager {
 
             for (const tmpAsset of tmpAssets) {
                 const token = tokens.find(t => t.address == tmpAsset.address);
-                console.log('!token', token);
+                LogManager.log('!token', token);
 
                 const pAsset: PortfolioAsset = tmpAsset;
                 pAsset.isVerified = token?.isVerified || false;

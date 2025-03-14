@@ -82,11 +82,6 @@ export class HeliusManager {
                 displayOptions: options,
             });
             const items = response.items;
-            // console.log('HELIUS RESPONSE:', JSON.stringify(response));
-            console.log('HELIUS RESPONSE items.length:', items.length);
-            console.log('HELIUS RESPONSE nativeBalance:', response.nativeBalance);
-
-            LogManager.log('grand_total:', response.grand_total);
 
             if (items.length == limit && page < 3){
                 const next = await this.getAssetsByOwner(walletAddress, options, page+1);

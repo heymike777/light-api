@@ -39,7 +39,7 @@ export class MetaplexManager {
 
         const leftMints = mints.filter(mint => !assets.find(asset => asset.mint.toString() == mint));
         if (leftMints.length > 0){
-            console.log('MetaplexManager', 'fetchAllDigitalAssets', 'leftMints', leftMints);
+            LogManager.log('MetaplexManager', 'fetchAllDigitalAssets', 'leftMints', leftMints);
 
             for (const mint of leftMints) {
                 const tmpAsset = await this.getDigitalAssetManually(chain, mint);
@@ -53,7 +53,7 @@ export class MetaplexManager {
     }
 
     static async getDigitalAssetManually(chain: Chain, mint: string): Promise<DigitalAsset | undefined> {
-        console.log('getDigitalAssetManually', chain, mint);
+        LogManager.log('getDigitalAssetManually', chain, mint);
 
         try {
             const umi = createUmi(getRpc(chain).http, this.commitment); 

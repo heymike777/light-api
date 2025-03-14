@@ -27,8 +27,6 @@ router.post(
         let success = false;
 
         try {
-            // console.log('received-tx', 'signature:', signature, 'data:', data);
-
             const jsonParsed = JSON.parse(data);
             
             const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(jsonParsed);

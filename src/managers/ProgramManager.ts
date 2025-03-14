@@ -856,11 +856,9 @@ export class ProgramManager {
                 if (tx){
                     try {
                         const logs = this.findTxLogs(tx, 'SWAP_SUMMARY');
-                        console.log('GO_FUND_MEME logs:', logs);    
                         if (logs.length > 0){
                             const swapSummaryStr = logs[0].replace('Program log: SWAP_SUMMARY-', '');
                             const swapSummary = JSON.parse(swapSummaryStr);
-                            console.log('GO_FUND_MEME swapSummary:', swapSummary);
 
                             // swapSummary: {
                             //     direction: 'buy',
@@ -1307,7 +1305,7 @@ export class ProgramManager {
             else {
                 const ixData = await ProgramManager.parseIx(ixProgramId, instruction.data);
                 instruction.ixParsed = ixData?.output;
-                console.log('!!!!instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData, 'instruction.data:', instruction.data);
+                LogManager.log('!!!!instruction', ixIndex++, 'ixProgramId:', ixProgramId, 'ixData', '=', ixData, 'instruction.data:', instruction.data);
 
                 const info = await this.parseParsedIx(chain, ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx, instructions);
 
