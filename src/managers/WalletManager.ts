@@ -193,7 +193,7 @@ export class WalletManager {
         YellowstoneManager.resubscribeAll();
     }
 
-    static async processWalletTransaction(tx: web3.ParsedTransactionWithMeta, geyserId: string) {
+    static async processWalletTransaction(chain: Chain, tx: web3.ParsedTransactionWithMeta, geyserId: string) {
         try{
             const signature = tx.transaction.signatures[0];
                         
@@ -229,7 +229,7 @@ export class WalletManager {
                 return;
             }
 
-            await this.processTxForChats(signature, tx, chats, geyserId);   
+            await this.processTxForChats(chain, signature, tx, chats, geyserId);   
         }
         catch (err) {
             LogManager.error('processWalletTransaction1', 'Error:', err);
@@ -289,7 +289,7 @@ export class WalletManager {
         return bs58.encode(byteArray);
     }
 
-    static async processTxForChats(signature: string, tx: ParsedTransactionWithMeta, chats: ChatWallets[], geyserId: string){
+    static async processTxForChats(chain: Chain, signature: string, tx: ParsedTransactionWithMeta, chats: ChatWallets[], geyserId: string){
         try {
             if (!tx.meta){
                 LogManager.error('MigrationManager', 'migrate', 'tx not found', signature);
@@ -298,12 +298,12 @@ export class WalletManager {
 
             // LogManager.log('processTxForChats', 'signature', signature, 'chats', chats);
 
-            const parsedTx = await ProgramManager.parseTx(tx);
+            const parsedTx = await ProgramManager.parseTx(chain, tx);
             // LogManager.log('!!parsedTx', parsedTx);
             let asset: TokenNft | undefined = undefined;
             
             if (parsedTx.assetId){
-                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(parsedTx.assetId);
+                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(chain, parsedTx.assetId);
                 // LogManager.log('!asset', asset);
             }
 
@@ -313,7 +313,7 @@ export class WalletManager {
 
             for (const chat of chats) {
                 // LogManager.log('!!!chat', chat);
-                const info = await this.processTx(parsedTx, asset, chat);
+                const info = await this.processTx(chain, parsedTx, asset, chat);
                 asset = info.asset;
 
                 if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
@@ -324,6 +324,7 @@ export class WalletManager {
 
                         const userTx = new UserTransaction();
                         userTx.geyserId = geyserId;
+                        userTx.chain = chain;
                         userTx.userId = chat.wallets[0].userId;
                         userTx.parsedTx = parsedTx;
                         userTx.changedWallets = info.changedWallets;
@@ -376,7 +377,7 @@ export class WalletManager {
 
     }
 
-    static async processTx(parsedTx: ParsedTx, asset: TokenNft | undefined, chat: ChatWallets){
+    static async processTx(chain: Chain, parsedTx: ParsedTx, asset: TokenNft | undefined, chat: ChatWallets){
         LogManager.log('!processTx', 'parsedTx', JSON.stringify(parsedTx), 'asset', asset, 'chat', chat);
         let hasWalletsChanges = false;
         let message = `[${parsedTx.title}]\n`;
@@ -402,7 +403,7 @@ export class WalletManager {
 
                 let blockMessage = '';
                 const walletTitle = wallet.title || Helpers.prettyWallet(wallet.walletAddress);
-                blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(wallet.walletAddress)}">${walletTitle}</a>`;
+                blockMessage += `\n🏦 <a href="${ExplorerManager.getUrlToAddress(chain, wallet.walletAddress)}">${walletTitle}</a>`;
 
                 const walletTokenChanges: ChangedWalletTokenChange[] = [];
                 const tokenBalances: { accountIndex: number, mint?: string, balanceChange: number, pre: TokenBalance | undefined, post: TokenBalance | undefined }[] = [];
@@ -448,7 +449,7 @@ export class WalletManager {
                 if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
                     hasBalanceChange = true;
                     hasWalletsChanges = true;
-                    const token = await TokenManager.getToken(kSolAddress);
+                    const token = await TokenManager.getToken(chain, kSolAddress);
                     if (token) {
                         const existing = tokens.find((t) => t.address == token.address);
                         if (!existing) tokens.push(token);
@@ -460,7 +461,7 @@ export class WalletManager {
 
                     const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
                     const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+ totalUsdValue + ')' : '';
-                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(kSolAddress)}">SOL</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
+                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, kSolAddress)}">SOL</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
 
                     walletTokenChanges.push({
                         mint: kSolAddress,
@@ -474,7 +475,7 @@ export class WalletManager {
                     if (mint && mint != kSolAddress){
                         hasBalanceChange = true;
                         hasWalletsChanges = true;
-                        const token = await TokenManager.getToken(mint);
+                        const token = await TokenManager.getToken(chain, mint);
                         if (token) {
                             const existing = tokens.find((t) => t.address == token.address);
                             if (!existing) tokens.push(token);
@@ -487,7 +488,7 @@ export class WalletManager {
                         const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
                         const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+totalUsdValue + ')' : '';
                         const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
-                        blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;            
+                        blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;            
 
                         walletTokenChanges.push({
                             mint: mint,
@@ -505,7 +506,7 @@ export class WalletManager {
                     const changedWallet: ChangedWallet = {
                         walletAddress: wallet.walletAddress,
                         title: walletTitle,
-                        explorerUrl: ExplorerManager.getUrlToAddress(wallet.walletAddress),
+                        explorerUrl: ExplorerManager.getUrlToAddress(chain, wallet.walletAddress),
                         tokenChanges: walletTokenChanges,
                     };
                     changedWallets.push(changedWallet);
@@ -549,7 +550,7 @@ export class WalletManager {
             }
 
             for (const mint of uniqueNftMints) {
-                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(mint);
+                asset = await MetaplexManager.fetchAssetAndParseToTokenNft(chain, mint);
                 if (asset){
                     break;
                 }
@@ -607,7 +608,7 @@ export class WalletManager {
 
         message += '\n\n';
 
-        const explorerUrl = ExplorerManager.getUrlToTransaction(parsedTx.signature);
+        const explorerUrl = ExplorerManager.getUrlToTransaction(chain, parsedTx.signature);
         message += `<a href="${explorerUrl}">Explorer</a>`;
 
         if (txDescription){
@@ -622,6 +623,7 @@ export class WalletManager {
         LogManager.log('!changedWallets', JSON.stringify(changedWallets));
 
         const txApiResponse: TransactionApiResponse = {
+            chain: chain,
             title: parsedTx.title,
             description: description,
             explorerUrl: explorerUrl,

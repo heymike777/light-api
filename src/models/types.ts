@@ -3,6 +3,7 @@ import { IUser } from "../entities/users/User";
 import { IWallet } from "../entities/Wallet";
 import { TokenTag } from "../managers/TokenManager";
 import { Asset } from "../services/solana/SolanaManager";
+import { Chain } from "../services/solana/types";
 
 export enum Environment {
     PRODUCTION = 'PRODUCTION',
@@ -15,6 +16,7 @@ export interface ChatWallets {
 }
 
 export interface TransactionApiResponse {
+    chain: Chain,
     title: string,
     description?: string,
     explorerUrl?: string,

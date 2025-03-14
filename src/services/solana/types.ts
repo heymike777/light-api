@@ -75,10 +75,7 @@ export enum Priority {
 
 export enum Chain {
     SOLANA = 'sol',
-    ETHEREUM = 'eth',
-    TON = 'ton',
-    TRON = 'tron',
-    NEAR = 'near',
+    SONIC = 'sonic', // Sonic SVM mainnet
 }
 
 export interface SubscriptionConfig {

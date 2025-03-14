@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { FirebaseManager } from "../../managers/FirebaseManager";
 import { LogManager } from "../../managers/LogManager";
 import { TokenManager } from "../../managers/TokenManager";
+import { Chain } from "../../services/solana/types";
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.get(
     async (req: Request, res: Response) => {
         const mint = req.params.mint;
 
-        const token = await TokenManager.getToken(mint);
+        const token = await TokenManager.getToken(Chain.SOLANA, mint);
         res.status(200).send({ token });
     }
 );

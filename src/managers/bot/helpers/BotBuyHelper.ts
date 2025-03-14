@@ -11,6 +11,7 @@ import { TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
 import { SwapDex } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
+import { Chain } from "../../../services/solana/types";
 
 export class BotBuyHelper extends BotHelper {
 
@@ -34,8 +35,8 @@ export class BotBuyHelper extends BotHelper {
         else if (buttonId && buttonId.startsWith('buy|')){
             const parts = buttonId.split('|');
             if (parts.length == 4){
-                const chain = parts[1];
-                const mint = parts[2];
+                const chain = parts[1] as Chain;
+                const mint: string = parts[2];
 
                 const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
                 if (!traderProfile){
@@ -46,7 +47,7 @@ export class BotBuyHelper extends BotHelper {
                 const currency = traderProfile.currency || Currency.SOL;
 
                 if (parts[3] == 'refresh'){
-                    const token = await TokenManager.getToken(mint);
+                    const token = await TokenManager.getToken(chain, mint);
                     if (token){
                         const botUsername = BotManager.getBotUsername(ctx);
                         const { message, markup } = await BotManager.buildBuyMessageForToken(token, user, traderProfile, botUsername);
@@ -83,10 +84,10 @@ export class BotBuyHelper extends BotHelper {
                 return false;
             }
 
-            const chain = user.telegramState.data.chain;
-            const mint = user.telegramState.data.mint;
-            const currency = user.telegramState.data.currency;
-            const traderProfileId = user.telegramState.data.traderProfileId;
+            const chain: Chain = user.telegramState.data.chain;
+            const mint: string = user.telegramState.data.mint;
+            const currency: Currency = user.telegramState.data.currency;
+            const traderProfileId: string = user.telegramState.data.traderProfileId;
 
             await this.buy(ctx, user, chain, mint, amount, currency, traderProfileId);
 
@@ -97,11 +98,11 @@ export class BotBuyHelper extends BotHelper {
         return false;
     }
 
-    async buy(ctx: Context, user: IUser, chain: string, mint: string, amount: number, currency: Currency, traderProfileId: string) {
+    async buy(ctx: Context, user: IUser, chain: Chain, mint: string, amount: number, currency: Currency, traderProfileId: string) {
         await BotManager.reply(ctx, `Buy ${mint} for ${amount} ${currency} on ${chain}`);                    
         try {
-            const signature = await SwapManager.initiateBuy(SwapDex.JUPITER, traderProfileId, mint, amount);
-            await BotManager.reply(ctx, `BUY TX: ${signature ? ExplorerManager.getUrlToTransaction(signature) : undefined}`);                    
+            const signature = await SwapManager.initiateBuy(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
+            await BotManager.reply(ctx, `BUY TX: ${signature ? ExplorerManager.getUrlToTransaction(chain, signature) : undefined}`);                    
         }
         catch (error: any) {
             await BotManager.reply(ctx, '🔴 ' + error.message);

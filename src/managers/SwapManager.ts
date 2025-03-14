@@ -1,13 +1,13 @@
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
 import { kSolAddress, kUsdcAddress } from "../services/solana/Constants";
-import { DexId, Engine, Priority } from "../services/solana/types";
+import { Chain, DexId, Engine, Priority } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { BadRequestError } from "../errors/BadRequestError";
 import * as web3 from "@solana/web3.js";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { newConnection } from "../services/solana/lib/solana";
+import { newConnection, newConnectionByChain, newConnectionForLandingTxs } from "../services/solana/lib/solana";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import { ISwap, StatusType, Swap, SwapDex, SwapType } from "../entities/payments/Swap";
 import { LogManager } from "./LogManager";
@@ -122,6 +122,7 @@ export class SwapManager {
     }
 
     static async buyAndSell(type: SwapType, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number): Promise<string | undefined> {
+
         console.log('buyAndSell', 'type:', type, 'triesLeft', triesLeft, 'swap:', swap, 'traderProfile:', traderProfile);
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
@@ -144,9 +145,9 @@ export class SwapManager {
         const mint = swap.mint;
         const amount = swap.amountIn;
 
-        const stakedConnection = newConnection(process.env.HELIUS_STAKED_CONNECTIONS_URL!);
+        const stakedConnection = newConnectionForLandingTxs(swap.chain);
         const keypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey));
-        const connection = newConnection();
+        const connection = newConnectionByChain(swap.chain);
         let signature: string | undefined;
         let blockhash: string | undefined;
         const currency = traderProfile.currency || Currency.SOL;
@@ -206,8 +207,8 @@ export class SwapManager {
             
             console.log('SwapManager', 'instructions.length =', instructions.length);
 
-            blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
-            const tx = await SolanaManager.createVersionedTransaction(instructions, keypair, addressLookupTableAccounts, blockhash, false)
+            blockhash = (await SolanaManager.getRecentBlockhash(Chain.SOLANA)).blockhash;
+            const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, instructions, keypair, addressLookupTableAccounts, blockhash, false)
             console.log('SwapManager', 'tx', tx);
 
             signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
@@ -309,73 +310,82 @@ export class SwapManager {
             return;
         }
 
-        const blockhashes: string[] = [];
-        const signatures = swaps.map(swap => swap.status.tx?.signature).filter(signature => signature) as string[];
+        const chainValues = Object.values(Chain); 
+        for (const chain of chainValues) {
+            const blockhashes: string[] = [];
 
-        if (signatures.length === 0) {
-            return;
-        }
+            const signatures = swaps.map(swap => swap.chain == chain && swap.status.tx?.signature).filter(signature => signature) as string[];
 
-        const connection = newConnection();
-        const signatureStatuses = await connection.getSignatureStatuses(signatures);
-
-        for (let index = 0; index < signatures.length; index++) {
-            const signature = signatures[index];
-            const signatureStatus = signatureStatuses.value[index];
-            const swap = swaps.find(swap => swap.status.tx?.signature == signature);
-            if (!swap) {
-                console.error('SwapManager', 'checkPendingSwaps', 'Swap not found', { signature });
+            if (signatures.length === 0) {
                 continue;
             }
 
-            if (!signatureStatus) {
-                if (swap.status.tx && swap.status.tx.blockhash) {
-                    if (!blockhashes.includes(swap.status.tx.blockhash)) {
-                        blockhashes.push(swap.status.tx.blockhash);
-                    }
-                }
-                continue;
-            }
-            else {
-                if (signatureStatus.err) {
-                    console.error('SwapManager', 'checkPendingSwaps', signatureStatus.err);
-                    swap.status.type = StatusType.CREATED;
-                    swap.status.tryIndex++;
-                    await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
-
+            const connection = newConnectionByChain(chain);
+            const signatureStatuses = await connection.getSignatureStatuses(signatures);
+    
+            for (let index = 0; index < signatures.length; index++) {
+                const signature = signatures[index];
+                const signatureStatus = signatureStatuses.value[index];
+                const swap = swaps.find(swap => swap.status.tx?.signature == signature);
+                if (!swap) {
+                    console.error('SwapManager', 'checkPendingSwaps', 'Swap not found', { signature });
                     continue;
                 }
-                else if (signatureStatus.confirmationStatus === 'confirmed' || signatureStatus.confirmationStatus === 'finalized') {
-                    // should I do anything here? I think at this moment swap is already confirmed from geyser. 
-                    // maybe I should add this tx to geyser, just in case it's missed?
-
-                    swap.status.type = StatusType.COMPLETED;
-                    swap.status.tx!.confirmedAt = new Date();
-                    await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
-                    this.trackSwapInMixpanel(swap);
+    
+                if (!signatureStatus) {
+                    if (swap.status.tx && swap.status.tx.blockhash) {
+                        if (!blockhashes.includes(swap.status.tx.blockhash)) {
+                            blockhashes.push(swap.status.tx.blockhash);
+                        }
+                    }
+                    continue;
                 }
-            }
-        }
-
-        // fetch blockhashes statusses
-        for (const blockhash of blockhashes) {
-            const isValid = await SolanaManager.isBlockhashValid(blockhash);
-            if (isValid) {
-                continue;
-            }
-            else if (isValid == false){
-                // then set status from PENDING to CREATED 
-                for (const swap of swaps) {
-                    if (swap.status.tx?.blockhash == blockhash && swap.status.type == StatusType.PROCESSING) {
+                else {
+                    if (signatureStatus.err) {
+                        console.error('SwapManager', 'checkPendingSwaps', signatureStatus.err);
                         swap.status.type = StatusType.CREATED;
                         swap.status.tryIndex++;
-                        await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.PROCESSING }, { $set: { status: swap.status } });
+                        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+    
+                        continue;
+                    }
+                    else if (signatureStatus.confirmationStatus === 'confirmed' || signatureStatus.confirmationStatus === 'finalized') {
+                        // should I do anything here? I think at this moment swap is already confirmed from geyser. 
+                        // maybe I should add this tx to geyser, just in case it's missed?
+    
+                        swap.status.type = StatusType.COMPLETED;
+                        swap.status.tx!.confirmedAt = new Date();
+                        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+                        this.trackSwapInMixpanel(swap);
                     }
                 }
             }
-            else if (isValid == undefined){
-                LogManager.error('SwapManager', 'checkPendingSwaps', 'Blockhash is undefined', { blockhash });
-                // is this the same as isValid == false ??
+    
+            // fetch blockhashes statusses
+            for (const chain in blockhashes) {
+                if (Object.prototype.hasOwnProperty.call(blockhashes, chain)) {
+                    const chainBlockhashes = blockhashes[chain];
+                    for (const blockhash of chainBlockhashes) {
+                        const isValid = await SolanaManager.isBlockhashValid(blockhash, chain as Chain);
+                        if (isValid) {
+                            continue;
+                        }
+                        else if (isValid == false){
+                            // then set status from PENDING to CREATED 
+                            for (const swap of swaps) {
+                                if (swap.chain == chain &&  swap.status.tx?.blockhash == blockhash && swap.status.type == StatusType.PROCESSING) {
+                                    swap.status.type = StatusType.CREATED;
+                                    swap.status.tryIndex++;
+                                    await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.PROCESSING }, { $set: { status: swap.status } });
+                                }
+                            }
+                        }
+                        else if (isValid == undefined){
+                            LogManager.error('SwapManager', 'checkPendingSwaps', 'Blockhash is undefined', { blockhash });
+                            // is this the same as isValid == false ??
+                        }
+                    }
+                }
             }
         }
     }
@@ -417,7 +427,7 @@ export class SwapManager {
             return;
         }
 
-        const token = await TokenManager.getToken(swap.mint);
+        const token = await TokenManager.getToken(swap.chain, swap.mint);
 
         let internalMessage = `${swap.type} tx`;
         if (token){
@@ -435,6 +445,7 @@ export class SwapManager {
 
         const userTx = new UserTransaction();
         userTx.geyserId = 'manual';
+        userTx.chain = swap.chain;
         userTx.userId = swap.userId;
         userTx.title = swap.type == SwapType.BUY ? 'BUY ERROR' : 'SELL ERROR';
         userTx.description = message;
@@ -484,7 +495,7 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+    static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
         console.log('initiateBuy', dex, traderProfileId, mint, amount);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
@@ -506,7 +517,7 @@ export class SwapManager {
             throw new BadRequestError('Amount should be greater than 0');
         }
 
-        const connection = newConnection();
+        const connection = newConnectionByChain(chain);
 
         const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
         const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
@@ -525,8 +536,9 @@ export class SwapManager {
         const amountInLamports = amount * (10 ** decimals);
 
         const swap = new Swap();
+        swap.chain = chain;
         swap.type = SwapType.BUY;
-        swap.dex = SwapDex.JUPITER;
+        swap.dex = dex;
         swap.currency = currency;
         swap.userId = userId;
         swap.traderProfileId = traderProfileId;
@@ -544,7 +556,7 @@ export class SwapManager {
         return signature;
     }
 
-    static async initiateSell(dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+    static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
             throw new BadRequestError('Trader profile not found');
@@ -569,7 +581,7 @@ export class SwapManager {
         const currency = traderProfile.currency || Currency.SOL;
         const userId = traderProfile.userId;
 
-        const connection = newConnection();
+        const connection = newConnectionByChain(chain);
 
         const solBalance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
         const minSolRequired = 0.01;
@@ -591,8 +603,9 @@ export class SwapManager {
         }
 
         const swap = new Swap();
+        swap.chain = chain;
         swap.type = SwapType.SELL;
-        swap.dex = SwapDex.JUPITER;
+        swap.dex = dex;
         swap.userId = userId;
         swap.traderProfileId = traderProfileId;
         swap.amountIn = amountInLamports.toString();

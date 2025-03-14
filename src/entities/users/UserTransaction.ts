@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose';
 import { ParsedTx } from '../../managers/ProgramManager';
 import { ChangedWallet } from '../../models/types';
 import { IToken, ITokenModel } from '../tokens/Token';
+import { Chain } from '../../services/solana/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -11,6 +12,7 @@ export interface IUserTransaction extends mongoose.Document {
     geyserId: string;
     userId: string;
     signature: string;
+    chain: Chain;
 
     title?: string;
     description?: string;
@@ -29,6 +31,7 @@ export const UserTransactionSchema = new mongoose.Schema<IUserTransaction>({
     geyserId: { type: String },
     userId: { type: String },
     signature: { type: String },
+    chain: { type: String },
 
     title: { type: String },
     description: { type: String },
@@ -55,6 +58,7 @@ UserTransactionSchema.pre('save', function (next) {
 UserTransactionSchema.methods.toJSON = function () {
     return {
         id: this._id,
+        chain: this.chain,
         geyserId: this.geyserId,
         userId: this.userId,
         signature: this.signature,
@@ -72,6 +76,7 @@ export function userTransactionFromJson(json: string): IUserTransaction | undefi
         const obj = JSON.parse(json);
         const tx = new UserTransaction();
         tx._id = obj.id;
+        tx.chain = obj.chain;
         tx.geyserId = obj.geyserId;
         tx.userId = obj.userId;
         tx.signature = obj.signature;

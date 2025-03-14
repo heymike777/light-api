@@ -1,9 +1,9 @@
 import nacl from "tweetnacl";
 import * as web3 from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
-import { getRpc, newConnection } from "./lib/solana";
+import { getRpc, newConnection, newConnectionByChain } from "./lib/solana";
 import axios from "axios";
-import { Priority, WalletModel } from "./types";
+import { Chain, Priority, WalletModel } from "./types";
 import base58 from "bs58";
 import { HeliusManager } from "./HeliusManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
@@ -131,8 +131,8 @@ export class SolanaManager {
         return undefined;
     }
 
-    static async isBlockhashValid(blockhash: string) : Promise<boolean | undefined> {
-        const { data } = await axios.post(getRpc(), {
+    static async isBlockhashValid(blockhash: string, chain?: Chain) : Promise<boolean | undefined> {
+        const { data } = await axios.post(getRpc(chain).http, {
             "id": 45,
             "jsonrpc": "2.0",
             "method": "isBlockhashValid",
@@ -147,22 +147,6 @@ export class SolanaManager {
         const value = data?.result?.value;
 
         return (value==true || value==false) ? value : undefined;
-    }
-
-    static async getRecentPrioritizationFees() : Promise<number | undefined> {
-        //LogManager.log(process.env.SERVER_NAME, '----- isBlockhashValid -----', blockhash);
-        const { data } = await axios.post(getRpc(), {
-            "id": 1,
-            "jsonrpc": "2.0",
-            "method": "getRecentPrioritizationFees",
-            "params": []
-        });
-
-        const value = data?.result;
-
-        LogManager.log(process.env.SERVER_NAME, 'getRecentPrioritizationFees', value);
-
-        return undefined;
     }
 
     static createWallet(): WalletModel {
@@ -429,9 +413,9 @@ export class SolanaManager {
         return transaction;
     }
 
-    static async createVersionedTransaction(instructions: web3.TransactionInstruction[], keypair: web3.Keypair, addressLookupTableAccounts?: web3.AddressLookupTableAccount[], blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
+    static async createVersionedTransaction(chain: Chain, instructions: web3.TransactionInstruction[], keypair: web3.Keypair, addressLookupTableAccounts?: web3.AddressLookupTableAccount[], blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
         if (!blockhash) {
-            blockhash = (await SolanaManager.getRecentBlockhash()).blockhash;
+            blockhash = (await SolanaManager.getRecentBlockhash(chain)).blockhash;
         }
 
         if (addPriorityFee){
@@ -451,18 +435,12 @@ export class SolanaManager {
         return versionedTransaction;
     }
 
-    static async fetchTransaction(signature: string) {
-        const connection = newConnection();
-        const tx = connection.getTransaction(signature, {commitment: 'confirmed', maxSupportedTransactionVersion: 0});
-        return tx;
-    }
-
     static async createFreezeAccountTransaction(mint: web3.PublicKey, account: web3.PublicKey, freezeAuthority: web3.Keypair, blockhash?: string): Promise<web3.VersionedTransaction> {
         const instructions = [
             spl.createFreezeAccountInstruction(account, mint, freezeAuthority.publicKey)
         ];
 
-        const transaction = await this.createVersionedTransaction(instructions, freezeAuthority, undefined, blockhash, false);
+        const transaction = await this.createVersionedTransaction(Chain.SOLANA, instructions, freezeAuthority, undefined, blockhash, false);
         return transaction;
     }
 
@@ -471,47 +449,8 @@ export class SolanaManager {
             spl.createThawAccountInstruction(account, mint, freezeAuthority.publicKey)
         ];
 
-        const transaction = await this.createVersionedTransaction(instructions, freezeAuthority, undefined, blockhash, false);
+        const transaction = await this.createVersionedTransaction(Chain.SOLANA, instructions, freezeAuthority, undefined, blockhash, false);
         return transaction;
-    }
-
-    static async getTokenSupply(mint: web3.PublicKey): Promise<web3.TokenAmount | undefined> {
-        try {
-            const connection = newConnection();
-            const supply = await connection.getTokenSupply(mint);
-            return supply.value;
-        }
-        catch (err){
-            LogManager.error('getTokenSupply', err);
-        }
-    }
-
-    static async signAndSendTx(tx: web3.VersionedTransaction, keypair: Keypair, sendThrough?: SendThrough) {
-        tx.sign([keypair]);
-
-        if (sendThrough?.useJito){
-            throw new Error('Jito is not supported');
-            // LogManager.log(process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useJito', 'sendTransaction');
-            // JitoManager.sendTransaction(tx, keypair, true, tx.message.recentBlockhash, sendThrough?.priority);
-        }
-
-        const rawTransaction = tx.serialize();
-        const options: web3.SendOptions = {
-            skipPreflight: true,
-            maxRetries: 0,
-        }
-
-        if (sendThrough?.useHelius && process.env.HELIUS_RPC){
-            LogManager.log(process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useHelius', 'sendTransaction');
-            const connection = newConnection(process.env.HELIUS_RPC);
-            connection.sendRawTransaction(rawTransaction, options);    
-        }
-
-        if (sendThrough?.useTriton && process.env.TRITON_RPC){
-            LogManager.log(process.env.SERVER_NAME, 'buildAndSendTx', 'sendThrough.useTriton', 'sendTransaction');
-            const connection = newConnection(process.env.TRITON_RPC);
-            connection.sendRawTransaction(rawTransaction, options);    
-        }
     }
 
     static isValidPublicKey(publicKey: string): boolean {
@@ -550,52 +489,7 @@ export class SolanaManager {
         }
 
         return txs.filter(tx => tx != null) as web3.ParsedTransactionWithMeta[];
-    }
-
-    static lookupTableAccounts: {[key: string]: {createdAt: Date, value: web3.AddressLookupTableAccount}} = {};
-    static async fetchLookupTableAccount(accountKey: string, forseFetch = false): Promise<web3.AddressLookupTableAccount | undefined>{
-        if (!forseFetch && this.lookupTableAccounts[accountKey]){
-            const diff = new Date().getTime() - this.lookupTableAccounts[accountKey].createdAt.getTime();
-            if (diff < 1000 * 60 * 5) { // 5 min cache
-                return this.lookupTableAccounts[accountKey].value;
-            }
-            else {
-                delete this.lookupTableAccounts[accountKey];
-            }
-        }
-
-        let lookupTableAccount: web3.AddressLookupTableAccount | null = null;
-
-        if (!lookupTableAccount){
-            try {
-                const connection = newConnection();
-                lookupTableAccount = (
-                    await connection.getAddressLookupTable(new web3.PublicKey(accountKey))
-                ).value;
-            }
-            catch (err){
-                LogManager.error('fetchLookupTableAccount (1)', err);
-            }
-        }
-
-        if (!lookupTableAccount){
-            try {
-                const connection = newConnection(process.env.HELIUS_SHARED_RPC!);
-                lookupTableAccount = (
-                    await connection.getAddressLookupTable(new web3.PublicKey(accountKey))
-                ).value;
-            }
-            catch (err){
-                LogManager.error('fetchLookupTableAccount (2)', err);
-            }
-        }
-
-        if (lookupTableAccount){
-            this.lookupTableAccounts[accountKey] = {createdAt: new Date(), value: lookupTableAccount};
-        }
-
-        return lookupTableAccount || undefined;
-    }
+    }    
 
     static async getTokenAccountBalance(web3Conn: web3.Connection, tokenAccount: web3.PublicKey): Promise<web3.TokenAmount | undefined>{
         try {
@@ -714,9 +608,16 @@ export class SolanaManager {
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
     private static recentBlockhashUpdatedAt: Date | undefined;
-    static async getRecentBlockhash(): Promise<web3.BlockhashWithExpiryBlockHeight> {
-        await this.updateBlockhash();
-        return SolanaManager.recentBlockhash!;
+    static async getRecentBlockhash(chain: Chain): Promise<web3.BlockhashWithExpiryBlockHeight> {
+        if (chain == Chain.SOLANA){
+            await this.updateBlockhash();
+            return SolanaManager.recentBlockhash!;    
+        }
+        else {
+            const connection = newConnectionByChain(chain);
+            const blockhash = await connection.getLatestBlockhash('confirmed');
+            return blockhash;
+        }
     }
     static async updateBlockhash(){
         // if now is less than 15 seconds from last update, then skip
@@ -726,7 +627,7 @@ export class SolanaManager {
         }
 
         try {
-            const web3Conn = newConnection();
+            const web3Conn = newConnection(undefined);
             SolanaManager.recentBlockhash = await web3Conn.getLatestBlockhash('confirmed');    
             SolanaManager.recentBlockhashUpdatedAt = now;
         }

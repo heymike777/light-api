@@ -12,6 +12,7 @@ import { SolanaManager } from "../../services/solana/SolanaManager";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
 import { PortfolioAsset } from "../../models/types";
 import { kSolAddress } from "../../services/solana/Constants";
+import { Chain } from "../../services/solana/types";
 
 const router = express.Router();
 
@@ -34,7 +35,9 @@ router.get(
         let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(userId, SwapManager.kNativeEngineId);
         let traderProfile = traderProfileId ? traderProfiles.find(tp => tp.id == traderProfileId) : traderProfiles.find(tp => tp.default) || traderProfiles[0];
 
-        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(traderProfile);
+        const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
+
+        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
 
         // for (const asset of assets) {
         //     asset.amount = asset.uiAmount;

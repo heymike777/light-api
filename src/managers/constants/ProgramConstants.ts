@@ -34,7 +34,11 @@ export enum kProgram {
 
     GO_FUND_MEME = 'GFMioXjhuDWMEBtuaoaDPJFPEnL2yDHCWKoVPhj1MeA7',
 
-    //METEORA DDLM
+
+    // SONIC SVM
+    SONIC_STAKING = 'g3yMgSB3Q7gNjMfSoCm1PiJihqHdNJeUuPHvRyf45qY',
+    SEGA = 'SegazTQwbYWknDZkJ6j2Kgvm5gw3MrHGKtWstZdoNKZ',
+
 }
 
 export interface KnownInstruction {
@@ -371,6 +375,21 @@ export const kPrograms: { [key: string]: {
             path: 'src/idls/gofundmeme.json',
             type: 'anchor',
         },
+    },
+    [kProgram.SONIC_STAKING]: {
+        name: 'SONIC STAKING',
+        knownInstructions: [
+            { 'walletStaking': {title: 'STAKE', priority: 1} },
+            { 'walletStakingWithdraw': {title: 'UNSTAKE', priority: 1} }
+        ],
+        skip: false,
+    },
+    [kProgram.SEGA]: {
+        name: 'SEGA',
+        knownInstructions: [
+            { 'any': {title: 'any', priority: 1} },
+        ],
+        skip: false,
     },
 }
 

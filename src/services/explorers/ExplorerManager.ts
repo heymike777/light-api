@@ -2,11 +2,19 @@ import { Chain } from "../solana/types";
 
 export class ExplorerManager {
 
-    static getUrlToAddress(address: string): string {
+    static getUrlToAddress(chain: Chain, address: string): string {
+        if (chain === Chain.SONIC){
+            return `https://solscan.io/address/${address}?cluster=custom&customUrl=https://sonic.helius-rpc.com/`;
+        }
+
         return `https://solscan.io/address/${address}`;
     }
 
-    static getUrlToTransaction(signature: string): string {
+    static getUrlToTransaction(chain: Chain, signature: string): string {
+        if (chain === Chain.SONIC){
+            return `https://solscan.io/tx/${signature}?cluster=custom&customUrl=https://sonic.helius-rpc.com/`;
+        }
+
         return `https://solscan.io/tx/${signature}`;
     }
     

@@ -25,11 +25,12 @@ import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { Currency } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager";
-import { newConnection } from "../../services/solana/lib/solana";
+import { newConnection, newConnectionByChain } from "../../services/solana/lib/solana";
 import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
 import { kSolAddress } from "../../services/solana/Constants";
+import { Chain } from "../../services/solana/types";
 
 export class BotManager {
     bot: Bot;
@@ -370,7 +371,7 @@ export class BotManager {
         const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
         message += `<a href="${reflink}">Share token with your Reflink</a>`
 
-        const connection = newConnection();
+        const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
         let tokenBalance: TokenBalance | undefined = undefined;
         if (traderProfile && traderProfile.wallet?.publicKey){
@@ -439,7 +440,8 @@ export class BotManager {
     }
 
     static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
-        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(traderProfile);
+        const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
+        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 

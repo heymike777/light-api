@@ -11,6 +11,7 @@ import { TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
 import { SwapDex } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
+import { Chain } from "../../../services/solana/types";
 
 export class BotSellHelper extends BotHelper {
 
@@ -49,7 +50,7 @@ export class BotSellHelper extends BotHelper {
         else if (buttonId && buttonId.startsWith('sell|')){
             const parts = buttonId.split('|');
             if (parts.length == 4){
-                const chain = parts[1];
+                const chain = parts[1] as Chain;
                 const mint = parts[2];
 
                 const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
@@ -61,7 +62,7 @@ export class BotSellHelper extends BotHelper {
                 const currency = traderProfile.currency || Currency.SOL;
 
                 if (parts[3] == 'refresh'){
-                    const token = await TokenManager.getToken(mint);
+                    const token = await TokenManager.getToken(chain, mint);
                     if (token){
                         const botUsername = BotManager.getBotUsername(ctx);
                         const { message, markup } = await BotManager.buildSellMessage(); //token, user, traderProfile, botUsername
@@ -98,10 +99,10 @@ export class BotSellHelper extends BotHelper {
                 return false;
             }
 
-            const chain = user.telegramState.data.chain;
-            const mint = user.telegramState.data.mint;
-            const currency = user.telegramState.data.currency;
-            const traderProfileId = user.telegramState.data.traderProfileId;
+            const chain: Chain = user.telegramState.data.chain;
+            const mint: string = user.telegramState.data.mint;
+            const currency: Currency = user.telegramState.data.currency;
+            const traderProfileId: string = user.telegramState.data.traderProfileId;
 
             await this.sell(ctx, user, chain, mint, amount, currency, traderProfileId);
 
@@ -112,11 +113,11 @@ export class BotSellHelper extends BotHelper {
         return false;
     }
 
-    async sell(ctx: Context, user: IUser, chain: string, mint: string, amountPercent: number, currency: Currency, traderProfileId: string) {
+    async sell(ctx: Context, user: IUser, chain: Chain, mint: string, amountPercent: number, currency: Currency, traderProfileId: string) {
         await BotManager.reply(ctx, `Sell ${amountPercent}% of ${mint} for ${currency}`);
         try {
             //TODO: initiateSell
-            // const signature = await SwapManager.initiateSell(SwapDex.JUPITER, traderProfileId, mint, amountPercent);
+            // const signature = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amountPercent);
             // await BotManager.reply(ctx, `SELL TX: ${signature ? ExplorerManager.getUrlToTransaction(signature) : undefined}`);                    
         }
         catch (error: any) {

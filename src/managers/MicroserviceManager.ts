@@ -1,5 +1,6 @@
 import axios from "axios";
 import { LogManager } from "./LogManager";
+import { Chain } from "../services/solana/types";
 
 export const kServiceKey = 'KjeisSkasfsJK21-sd2lsdksjE3L-13LRKJ';
 
@@ -39,6 +40,7 @@ export class MicroserviceManager {
                 data: {
                     geyserId,
                     signature,
+                    chain: Chain.SOLANA,
                     data: txData
                 }
             });
