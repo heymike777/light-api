@@ -134,6 +134,11 @@ export class BotManager {
     async onMessage(message: TgMessage, ctx: Context){
         LogManager.log('onMessage', message);
 
+        if (!message.text){
+            await BotManager.reply(ctx, `🔴 Unknown command`);
+            return;
+        }
+
         const user = await UserManager.getUserByTelegramUser(message.from, true);
 
         this.saveMessageToDB(message);

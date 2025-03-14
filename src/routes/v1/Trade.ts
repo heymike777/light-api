@@ -35,7 +35,7 @@ router.post(
 
         const { traderProfileId, amount, mint } = req.body;
         const chain = Chain.SOLANA; //TODO: get chain - by mint? or front should send it?
-        const signature = await SwapManager.initiateBuy(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
+        const { signature, swap } = await SwapManager.initiateBuy(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }
@@ -59,7 +59,7 @@ router.post(
 
         const { traderProfileId, amount, mint } = req.body;
         const chain = Chain.SOLANA; //TODO: get chain - by mint? or front should send it?
-        const signature = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
+        const { signature, swap } = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }

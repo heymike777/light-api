@@ -14,6 +14,7 @@ import { Helpers } from "../helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
 import { Interface } from "helius-sdk";
 import { kSolAddress } from "./Constants";
+import BN from "bn.js";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -21,7 +22,7 @@ export interface CreateTransactionResponse {
 }
 
 export interface TokenBalance {
-    amount: number;
+    amount: BN;
     uiAmount: number;
     decimals?: number;
     ataPubKey?: web3.PublicKey;
@@ -337,7 +338,7 @@ export class SolanaManager {
         try {
             const mainWalletPublicKey = new web3.PublicKey(walletAddress);
             const balance = await web3Conn.getBalance(mainWalletPublicKey);
-            return {amount: balance, uiAmount: Math.round(100 * balance / web3.LAMPORTS_PER_SOL) / 100, decimals: 9};
+            return {amount: new BN(balance), uiAmount: Math.round(100 * balance / web3.LAMPORTS_PER_SOL) / 100, decimals: 9};
         }
         catch (err){
             LogManager.error('getWalletSolBalance', err);
@@ -356,10 +357,10 @@ export class SolanaManager {
             const publicKey = walletAddresses[index];
 
             if (account) {
-                balances.push({amount: account.lamports, uiAmount: account.lamports / web3.LAMPORTS_PER_SOL, decimals: 9, publicKey});
+                balances.push({amount: new BN(account.lamports), uiAmount: account.lamports / web3.LAMPORTS_PER_SOL, decimals: 9, publicKey});
             }
             else {
-                balances.push({amount: 0, uiAmount: 0, decimals: 9, publicKey});
+                balances.push({amount: new BN(0), uiAmount: 0, decimals: 9, publicKey});
             }
 
             index++;
@@ -377,7 +378,7 @@ export class SolanaManager {
             // LogManager.log(process.env.SERVER_NAME, 'getWalletTokenBalance', 'tmp', JSON.stringify(tmp));
 
             return {
-                amount: +(tmp.value[0].account.data.parsed.info.tokenAmount.amount), 
+                amount: new BN(tmp.value[0].account.data.parsed.info.tokenAmount.amount), 
                 uiAmount: +(tmp.value[0].account.data.parsed.info.tokenAmount.uiAmount),
                 decimals: tmp.value[0].account.data.parsed.info.tokenAmount.decimals,
                 ataPubKey: tmp.value[0].pubkey
@@ -387,7 +388,7 @@ export class SolanaManager {
             // LogManager.error('getWalletTokenBalance', err);
         }
 
-        return {amount: 0, uiAmount: 0};
+        return {amount: new BN(0), uiAmount: 0};
     }
 
     static async addPriorityFeeToTransaction(transaction: web3.Transaction): Promise<web3.Transaction>{

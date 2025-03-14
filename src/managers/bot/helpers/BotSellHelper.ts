@@ -113,14 +113,41 @@ export class BotSellHelper extends BotHelper {
     }
 
     async sell(ctx: Context, user: IUser, chain: Chain, mint: string, amountPercent: number, currency: Currency, traderProfileId: string) {
-        await BotManager.reply(ctx, `Sell ${amountPercent}% of ${mint} for ${currency}`);
+        let tokenName: string | undefined = mint;
         try {
-            //TODO: initiateSell
-            // const signature = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amountPercent);
-            // await BotManager.reply(ctx, `SELL TX: ${signature ? ExplorerManager.getUrlToTransaction(signature) : undefined}`);                    
+            const token = await TokenManager.getToken(chain, mint);
+            if (token?.symbol){
+                tokenName = token.symbol;
+            }
+        } catch (error: any) {}
+
+        const message = await BotManager.reply(ctx, `Selling ${amountPercent}% of <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.\n\nPlease, wait...`);      
+
+        try {
+            const { signature, swap } = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amountPercent);
+
+            // let msg = `🟢 Sold <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.`
+            let msg = `🟡 Transaction sent. Waiting for confirmation.`
+            if (signature){
+                msg += '\n\n';
+                msg += `<a href="${ExplorerManager.getUrlToTransaction(chain, signature)}">Explorer</a>`;
+            }
+            if (message){
+                await BotManager.editMessage(ctx, msg, undefined, message.message_id);
+            }
+            else {
+                await BotManager.reply(ctx, msg);
+            }
         }
         catch (error: any) {
-            await BotManager.reply(ctx, '🔴 ' + error.message);
+            const msg = `🔴 Error selling <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>. Try again.\n\nError: ${error.message}`;
+
+            if (message){
+                await BotManager.editMessage(ctx, msg, undefined, message.message_id);
+            }
+            else {
+                await BotManager.reply(ctx, msg);
+            }
         }
     }
 

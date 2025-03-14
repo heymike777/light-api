@@ -98,15 +98,21 @@ export class BotBuyHelper extends BotHelper {
     }
 
     async buy(ctx: Context, user: IUser, chain: Chain, mint: string, amount: number, currency: Currency, traderProfileId: string) {
-        const message = await BotManager.reply(ctx, `Buying ${mint} for ${amount} ${currency}.\n\nPlease, wait...`);      
-        let tokenName: string | undefined = undefined;
+        let tokenName: string | undefined = mint;
+        try {
+            const token = await TokenManager.getToken(chain, mint);
+            if (token?.symbol){
+                tokenName = token.symbol;
+            }
+        } catch (error: any) {}
+
+        const message = await BotManager.reply(ctx, `Buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}.\n\nPlease, wait...`);      
 
         try {
-            const signature = await SwapManager.initiateBuy(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
-            const token = await TokenManager.getToken(chain, mint);
-            tokenName = token?.symbol || mint;
+            const { signature, swap } = await SwapManager.initiateBuy(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
 
-            let msg = `🟢 Bought <a href="${ExplorerManager.getUrlToAddress(chain, tokenName)}">${mint}</a> for ${amount} ${currency}.`
+            // let msg = `🟢 Bought <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}.`
+            let msg = `🟡 Transaction sent. Waiting for confirmation.`
             if (signature){
                 msg += '\n\n';
                 msg += `<a href="${ExplorerManager.getUrlToTransaction(chain, signature)}">Explorer</a>`;
@@ -119,12 +125,7 @@ export class BotBuyHelper extends BotHelper {
             }
         }
         catch (error: any) {
-            if (!tokenName){
-                const token = await TokenManager.getToken(chain, mint);
-                tokenName = token?.symbol || mint;    
-            }
-
-            const msg = `🔴 Error buying <a href="${ExplorerManager.getUrlToAddress(chain, tokenName)}">${mint}</a> for ${amount} ${currency}. Try again.\n\nError: ${error.message}`;
+            const msg = `🔴 Error buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}. Try again.\n\nError: ${error.message}`;
 
             if (message){
                 await BotManager.editMessage(ctx, msg, undefined, message.message_id);

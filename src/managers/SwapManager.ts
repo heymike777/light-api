@@ -489,7 +489,7 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+    static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<{signature?: string, swap: ISwap}>{
         LogManager.log('initiateBuy', dex, traderProfileId, mint, amount);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
@@ -545,12 +545,11 @@ export class SwapManager {
         };
         await swap.save();
 
-
         const signature = await SwapManager.buy(swap, traderProfile);
-        return signature;
+        return { signature, swap };
     }
 
-    static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number): Promise<string | undefined>{
+    static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amountPercents: number): Promise<{ signature?: string, swap: ISwap }>{
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
             throw new BadRequestError('Trader profile not found');
@@ -568,8 +567,8 @@ export class SwapManager {
             throw new BadRequestError('Selling SOL is not supported');
         }
 
-        if (amount <= 0.0001){
-            throw new BadRequestError('Amount should be greater than 0');
+        if (amountPercents <= 0 || amountPercents > 100){
+            throw new BadRequestError('Amount is invalid');
         }
 
         const currency = traderProfile.currency || Currency.SOL;
@@ -589,10 +588,10 @@ export class SwapManager {
         }
 
         const decimals = balance.decimals || 0;
-        const amountInLamports = new BN(amount).mul(new BN(10).pow(new BN(decimals)));
+        const amountInLamports = amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100);
         const balanceAmount = new BN(balance.amount || 0);
 
-        if (balanceAmount < amountInLamports){
+        if (amountInLamports.gt(balanceAmount)){
             throw new BadRequestError('Insufficient balance');
         }
 
@@ -613,7 +612,7 @@ export class SwapManager {
         await swap.save();
 
         const signature = await SwapManager.sell(swap, traderProfile);
-        return signature;
+        return { signature, swap };
     }
 
 
