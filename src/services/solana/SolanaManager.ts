@@ -1,7 +1,7 @@
 import nacl from "tweetnacl";
 import * as web3 from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
-import { getRpc, newConnection } from "./lib/solana";
+import { getRpc, newConnection, newConnectionByChain } from "./lib/solana";
 import axios from "axios";
 import { Chain, Priority, WalletModel } from "./types";
 import base58 from "bs58";
@@ -14,7 +14,6 @@ import { Helpers } from "../helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
 import { Interface } from "helius-sdk";
 import { kSolAddress } from "./Constants";
-import { SVM } from "../../managers/svm/SvmManager";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -414,9 +413,9 @@ export class SolanaManager {
         return transaction;
     }
 
-    static async createVersionedTransaction(svm: SVM | undefined, instructions: web3.TransactionInstruction[], keypair: web3.Keypair, addressLookupTableAccounts?: web3.AddressLookupTableAccount[], blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
+    static async createVersionedTransaction(chain: Chain, instructions: web3.TransactionInstruction[], keypair: web3.Keypair, addressLookupTableAccounts?: web3.AddressLookupTableAccount[], blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
         if (!blockhash) {
-            blockhash = (await SolanaManager.getRecentBlockhash(svm)).blockhash;
+            blockhash = (await SolanaManager.getRecentBlockhash(chain)).blockhash;
         }
 
         if (addPriorityFee){
@@ -441,7 +440,7 @@ export class SolanaManager {
             spl.createFreezeAccountInstruction(account, mint, freezeAuthority.publicKey)
         ];
 
-        const transaction = await this.createVersionedTransaction(undefined, instructions, freezeAuthority, undefined, blockhash, false);
+        const transaction = await this.createVersionedTransaction(Chain.SOLANA, instructions, freezeAuthority, undefined, blockhash, false);
         return transaction;
     }
 
@@ -450,19 +449,8 @@ export class SolanaManager {
             spl.createThawAccountInstruction(account, mint, freezeAuthority.publicKey)
         ];
 
-        const transaction = await this.createVersionedTransaction(undefined, instructions, freezeAuthority, undefined, blockhash, false);
+        const transaction = await this.createVersionedTransaction(Chain.SOLANA, instructions, freezeAuthority, undefined, blockhash, false);
         return transaction;
-    }
-
-    static async getTokenSupply(mint: web3.PublicKey, svm?: SVM): Promise<web3.TokenAmount | undefined> {
-        try {
-            const connection = svm?.connection || newConnection(undefined);
-            const supply = await connection.getTokenSupply(mint);
-            return supply.value;
-        }
-        catch (err){
-            LogManager.error('getTokenSupply', err);
-        }
     }
 
     static isValidPublicKey(publicKey: string): boolean {
@@ -620,13 +608,14 @@ export class SolanaManager {
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
     private static recentBlockhashUpdatedAt: Date | undefined;
-    static async getRecentBlockhash(svm?: SVM): Promise<web3.BlockhashWithExpiryBlockHeight> {
-        if (!svm){
+    static async getRecentBlockhash(chain: Chain): Promise<web3.BlockhashWithExpiryBlockHeight> {
+        if (chain == Chain.SOLANA){
             await this.updateBlockhash();
             return SolanaManager.recentBlockhash!;    
         }
         else {
-            const blockhash = await svm.connection.getLatestBlockhash('confirmed');
+            const connection = newConnectionByChain(chain);
+            const blockhash = await connection.getLatestBlockhash('confirmed');
             return blockhash;
         }
     }

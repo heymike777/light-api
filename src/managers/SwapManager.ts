@@ -25,7 +25,6 @@ import { RedisManager } from "./db/RedisManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { Currency } from "../models/types";
 import { SwapMode } from "@jup-ag/api";
-import { SVM } from "./svm/SvmManager";
 
 export class SwapManager {
 
@@ -208,8 +207,8 @@ export class SwapManager {
             
             console.log('SwapManager', 'instructions.length =', instructions.length);
 
-            blockhash = (await SolanaManager.getRecentBlockhash(undefined)).blockhash;
-            const tx = await SolanaManager.createVersionedTransaction(undefined, instructions, keypair, addressLookupTableAccounts, blockhash, false)
+            blockhash = (await SolanaManager.getRecentBlockhash(Chain.SOLANA)).blockhash;
+            const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, instructions, keypair, addressLookupTableAccounts, blockhash, false)
             console.log('SwapManager', 'tx', tx);
 
             signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });

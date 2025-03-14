@@ -48,9 +48,6 @@ import { exit } from "process";
 import { RedisManager } from "../managers/db/RedisManager";
 import mongoose from 'mongoose';
 import { InlineKeyboardButton } from "grammy/types";
-import { kSonicSvmMainnet, SVM, SvmManager } from "../managers/svm/SvmManager";
-
-// 174962
 
 export class MigrationManager {
 
