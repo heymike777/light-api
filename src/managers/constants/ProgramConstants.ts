@@ -51,6 +51,7 @@ export const kPrograms: { [key: string]: {
     knownInstructions: {[key: string]: KnownInstruction}[],
     skip?: boolean,
     skipIdl?: boolean,
+    searchLogs?: boolean,
     customIdl?: { path: string, type: 'anchor' | 'anchorV1' | 'shank' | 'kinobi' },
     fee?: {
         account: string,
@@ -387,9 +388,14 @@ export const kPrograms: { [key: string]: {
     [kProgram.SEGA]: {
         name: 'SEGA',
         knownInstructions: [
-            { 'any': {title: 'any', priority: 1} },
+            // { 'any': {title: 'UNDEFINED', priority: 1} },
+            { 'SwapBaseInput': {title: 'SWAP', priority: 1} },
+            { 'SwapBaseOutput': {title: 'SWAP', priority: 1} },
+            { 'Deposit': {title: 'ADD LIQUIDITY', priority: 2} },
+            { 'Withdraw': {title: 'REMOVE LIQUIDITY', priority: 2} },
         ],
         skip: false,
+        searchLogs: true,
     },
 }
 

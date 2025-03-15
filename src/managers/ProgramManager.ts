@@ -968,6 +968,7 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.SEGA){
+
             }
 
         }
@@ -1310,7 +1311,8 @@ export class ProgramManager {
                 const info = await this.parseParsedIx(chain, ixProgramId, ixData?.output, previousIxs, instruction.accounts, tx, instructions);
 
                 let ixTitle = ixData?.output?.name;
-                const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle);
+                const programLogs = tx.meta?.logMessages?.join('\n');
+                const knownInstruction = this.findKnownInstruction(ixProgramId, ixTitle, programLogs);
                 ixTitle = info.ixTitle || knownInstruction?.title || ixTitle;
                 LogManager.log('!description2', info?.description);
 
@@ -1420,7 +1422,7 @@ export class ProgramManager {
         }
     }
 
-    static findKnownInstruction(programId: string, title?: string): KnownInstruction | undefined {
+    static findKnownInstruction(programId: string, title?: string, programLogs?: string): KnownInstruction | undefined {
         const program = kPrograms[programId];
         if (program){
             for (const knownInstruction of program.knownInstructions){
@@ -1429,6 +1431,16 @@ export class ProgramManager {
                 }
                 else if (knownInstruction['any']){
                     return knownInstruction['any'];
+                }
+                else if (program.searchLogs && programLogs){
+                    for (const key in knownInstruction) {
+                        if (Object.prototype.hasOwnProperty.call(knownInstruction, key)) {
+                            const value = knownInstruction[key];
+                            if (programLogs.includes(key)){
+                                return value;
+                            }
+                        }
+                    }
                 }
             }
         }
