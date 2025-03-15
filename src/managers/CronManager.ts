@@ -59,6 +59,8 @@ export class CronManager {
         if (EnvManager.isMainProcess){
             cron.schedule('* * * * *', () => {
                 TokenManager.fetchSolPriceFromRedis();
+
+                WalletManager.fetchAllWalletAddresses(false);
             });
         }
     }

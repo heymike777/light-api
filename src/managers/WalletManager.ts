@@ -179,7 +179,7 @@ export class WalletManager {
         return Wallet.find({ userId });
     }
 
-    static async fetchAllWalletAddresses() {
+    static async fetchAllWalletAddresses(shouldResubscribe: boolean = true){
         const wallets = await Wallet.find({status: {$in: [WalletStatus.ACTIVE, WalletStatus.TRADER]}});
         
         this.walletsMap.clear();
@@ -192,7 +192,7 @@ export class WalletManager {
             }
         }        
 
-        if (EnvManager.isGeyserProcess){
+        if (shouldResubscribe && EnvManager.isGeyserProcess){
             if (EnvManager.chain == Chain.SOLANA){
                 YellowstoneManager.resubscribeAll();
             }
