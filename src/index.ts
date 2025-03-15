@@ -36,6 +36,8 @@ import { initSolscanLabels } from './managers/constants/ValidatorConstants';
 import { searchRouter } from './routes/v1/Search';
 import { portfolioRouter } from './routes/v1/Portfolio';
 import { WalletGeneratorManager } from './managers/WalletGeneratorManager';
+import { Chain } from './services/solana/types';
+import { SvmManager } from './managers/svm/SvmManager';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -118,7 +120,13 @@ const onExpressStarted = async () => {
     await WalletManager.fetchAllWalletAddresses();
 
     if (EnvManager.isGeyserProcess){
-        YellowstoneManager.createInstances();
+        if (EnvManager.chain == Chain.SOLANA){
+            YellowstoneManager.createInstances();
+        }
+        else if (EnvManager.chain == Chain.SONIC){
+            const sonic = new SvmManager(Chain.SONIC);
+            await sonic.subscribe();
+        }
     }
 
     // await TokenManager.updateTokensPrices();

@@ -11,6 +11,7 @@ import { SwapManager } from "../../../managers/SwapManager";
 import { EnvManager } from "../../../managers/EnvManager";
 import { MicroserviceManager } from "../../../managers/MicroserviceManager";
 import { WasmUiTransactionEncoding } from "@triton-one/yellowstone-grpc/dist/types/encoding/yellowstone_grpc_solana_encoding_wasm";
+import { Chain } from "../types";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -227,7 +228,7 @@ export class YellowstoneManager {
 
     static async resubscribeAll(){
         console.log('YellowstoneManager resubscribeAll', 'isGeyserProcess:', EnvManager.isGeyserProcess);
-        if (EnvManager.isGeyserProcess){
+        if (EnvManager.isGeyserProcess && EnvManager.chain == Chain.SOLANA){
             if (!this.instances){
                 return;
             }

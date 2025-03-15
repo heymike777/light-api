@@ -15,8 +15,10 @@ export class CronManager {
     static async setupCron() {
         if (EnvManager.isGeyserProcess){
             cron.schedule('* * * * *', () => {
-                YellowstoneManager.cleanupProcessedSignatures();
-                // this.printStats();
+                if (EnvManager.chain == Chain.SOLANA){
+                    YellowstoneManager.cleanupProcessedSignatures();
+                }
+                //TODO: need to cleanup for SONIC as well?
             });
         }
 

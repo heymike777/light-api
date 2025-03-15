@@ -1,12 +1,26 @@
 module.exports = {
     apps : [
         {
+            name   : "light-main",
+            script : "build/index.js",
+            node_args: "--max-old-space-size=4096",
+            min_uptime: "5s",
+            exec_mode: "cluster",
+            instances: 10,
+            env: {
+                IS_MAIN_PROCESS: "true",
+                SERVER_NAME: "light-main",
+                PORT: 3333,
+            },
+        },
+        {
             name   : "light-geyser",
             script : "build/index.js",
             node_args: "--max-old-space-size=8192",
             min_uptime: "5s",
             env: {
                 IS_GEYSER_PROCESS: "true",
+                CHAIN: 'sol',
                 SERVER_NAME: "light-geyser",
                 PORT: 3340,
             },
@@ -34,19 +48,6 @@ module.exports = {
             },
         },
         {
-            name   : "light-main",
-            script : "build/index.js",
-            node_args: "--max-old-space-size=4096",
-            min_uptime: "5s",
-            exec_mode: "cluster",
-            instances: 10,
-            env: {
-                IS_MAIN_PROCESS: "true",
-                SERVER_NAME: "light-main",
-                PORT: 3333,
-            },
-        },
-        {
             name   : "light-wallets-generator",
             script : "build/index.js",
             node_args: "--max-old-space-size=4096",
@@ -57,6 +58,18 @@ module.exports = {
                 IS_WALLET_GENERATOR_PROCESS: "true",
                 SERVER_NAME: "light-wallets-generator",
                 PORT: 3343,
+            },
+        },
+        {
+            name   : "light-geyser-sonic-svm",
+            script : "build/index.js",
+            node_args: "--max-old-space-size=8192",
+            min_uptime: "5s",
+            env: {
+                IS_GEYSER_PROCESS: "true",
+                CHAIN: 'sonic',
+                SERVER_NAME: "light-geyser-sonic-svm",
+                PORT: 3344,
             },
         },
     ]

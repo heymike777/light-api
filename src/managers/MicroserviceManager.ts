@@ -1,6 +1,7 @@
 import axios from "axios";
 import { LogManager } from "./LogManager";
 import { Chain } from "../services/solana/types";
+import { EnvManager } from "./EnvManager";
 
 export const kServiceKey = 'KjeisSkasfsJK21-sd2lsdksjE3L-13LRKJ';
 
@@ -11,6 +12,7 @@ export class MicroserviceManager {
         // send POST API to /geyser/resubscribe with axios
         console.log('MicroserviceManager geyserResubscribe');
         
+        // chain == SOLANA
         try {
             const { data } = await axios({
                 url: `http://127.0.0.1:3340/api/v1/service/geyser/resubscribe`,
@@ -20,11 +22,24 @@ export class MicroserviceManager {
                     'serviceKey': kServiceKey
                 },
             });
-
-            console.log('MicroserviceManager', 'geyserResubscribe', data);
         }
         catch (e: any){
-            LogManager.error('MicroserviceManager', 'geyserResubscribe', 'error', e?.response?.data?.message);
+            LogManager.error('MicroserviceManager', 'geyserResubscribe for solana', 'error', e?.response?.data?.message);
+        }
+
+        // chain == SONIC
+        try {
+            const { data } = await axios({
+                url: `http://127.0.0.1:3344/api/v1/service/geyser/resubscribe`,
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'serviceKey': kServiceKey
+                },
+            });
+        }
+        catch (e: any){
+            LogManager.error('MicroserviceManager', 'geyserResubscribe for sonic', 'error', e?.response?.data?.message);
         }
     }
 
@@ -40,7 +55,7 @@ export class MicroserviceManager {
                 data: {
                     geyserId,
                     signature,
-                    chain: Chain.SOLANA,
+                    chain: EnvManager.chain,
                     data: txData
                 }
             });

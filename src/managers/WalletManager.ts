@@ -31,6 +31,8 @@ import { LogManager } from "./LogManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 import { RedisManager } from "./db/RedisManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
+import { EnvManager } from "./EnvManager";
+import { SvmManager } from "./svm/SvmManager";
 
 export class WalletManager {
 
@@ -190,7 +192,17 @@ export class WalletManager {
             }
         }        
 
-        YellowstoneManager.resubscribeAll();
+        if (EnvManager.isGeyserProcess){
+            if (EnvManager.chain == Chain.SOLANA){
+                YellowstoneManager.resubscribeAll();
+            }
+            else {
+                const svms = SvmManager.svms;
+                for (const svm of svms) {
+                    await svm.resubscribeAll();                    
+                }
+            }
+        }
     }
 
     static async processWalletTransaction(chain: Chain, tx: web3.ParsedTransactionWithMeta, geyserId: string) {
