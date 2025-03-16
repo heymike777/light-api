@@ -76,6 +76,7 @@ export enum Priority {
 export enum Chain {
     SOLANA = 'sol',
     SONIC = 'sonic', // Sonic SVM mainnet
+    SONIC_TESTNET = 'sonic_testnet',
 }
 
 export interface SubscriptionConfig {

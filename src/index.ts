@@ -127,6 +127,10 @@ const onExpressStarted = async () => {
             const sonic = new SvmManager(Chain.SONIC);
             await sonic.subscribe();
         }
+        else if (EnvManager.chain == Chain.SONIC_TESTNET){
+            const sonic = new SvmManager(Chain.SONIC_TESTNET);
+            await sonic.subscribe();
+        }
     }
 
     // await TokenManager.updateTokensPrices();

@@ -72,5 +72,18 @@ module.exports = {
                 PORT: 3344,
             },
         },
+        {
+            name   : "light-geyser-sonic-svm-testnet",
+            script : "build/index.js",
+            node_args: "--max-old-space-size=8192",
+            min_uptime: "5s",
+            env: {
+                IS_GEYSER_PROCESS: "true",
+                CHAIN: 'sonic_testnet',
+                SERVER_NAME: "light-geyser-sonic-svm-testnet",
+                PORT: 3345,
+            },
+        },
+
     ]
 }

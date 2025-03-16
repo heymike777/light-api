@@ -1,21 +1,22 @@
+import { getRpc } from "../solana/lib/solana";
 import { Chain } from "../solana/types";
 
 export class ExplorerManager {
 
     static getUrlToAddress(chain: Chain, address: string): string {
-        if (chain === Chain.SONIC){
-            return `https://solscan.io/address/${address}?cluster=custom&customUrl=https://sonic.helius-rpc.com/`;
+        if (chain === Chain.SOLANA){
+            return `https://solscan.io/address/${address}`;
         }
 
-        return `https://solscan.io/address/${address}`;
+        return `https://solscan.io/address/${address}?cluster=custom&customUrl=${getRpc(chain).http}`;
     }
 
     static getUrlToTransaction(chain: Chain, signature: string): string {
-        if (chain === Chain.SONIC){
-            return `https://solscan.io/tx/${signature}?cluster=custom&customUrl=https://sonic.helius-rpc.com/`;
+        if (chain === Chain.SOLANA){
+            return `https://solscan.io/tx/${signature}`;
         }
 
-        return `https://solscan.io/tx/${signature}`;
+        return `https://solscan.io/tx/${signature}?cluster=custom&customUrl=${getRpc(chain).http}`;
     }
     
     static getUrlToRugCheck(address: string): string {

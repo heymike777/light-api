@@ -40,6 +40,9 @@ export function getRpc(chain?: Chain, isForLandingTxs = false): {http: string, w
     if (chain === Chain.SONIC) {
         return { http: process.env.SONIC_RPC || "", ws: process.env.SONIC_RPC_WSS || "" };
     }
+    else if (chain === Chain.SONIC_TESTNET) {
+        return { http: process.env.SONIC_RPC_TESTNET || "", ws: process.env.SONIC_RPC_WSS_TESTNET || "" };
+    }
 
     // SOLANA
     if (isForLandingTxs){
@@ -49,11 +52,11 @@ export function getRpc(chain?: Chain, isForLandingTxs = false): {http: string, w
 }
 
 export function getSharedRpc(chain?: Chain): {http: string, ws: string} {
-    if (chain === Chain.SONIC) {
-        return { http: process.env.SONIC_RPC || "", ws: process.env.SONIC_RPC_WSS || "" };
+    if (chain == Chain.SOLANA){
+        return { http: process.env.HELIUS_SHARED_RPC || "", ws: '' };
     }
-
-    return { http: process.env.HELIUS_SHARED_RPC || "", ws: '' };
+    
+    return getRpc(chain);
 }
 
 interface Opt extends ConfirmedSignaturesForAddress2Options {
