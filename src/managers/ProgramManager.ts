@@ -1249,7 +1249,7 @@ export class ProgramManager {
             }
         }
         catch (error){
-            LogManager.error('!catched parseIx', error);
+            // LogManager.error('!catched parseIx', error);
         }
 
         return undefined;

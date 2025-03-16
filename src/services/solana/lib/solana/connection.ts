@@ -52,7 +52,7 @@ export function getRpc(chain?: Chain, isForLandingTxs = false): {http: string, w
 }
 
 export function getSharedRpc(chain?: Chain): {http: string, ws: string} {
-    if (chain == Chain.SOLANA){
+    if (!chain || chain == Chain.SOLANA){
         return { http: process.env.HELIUS_SHARED_RPC || "", ws: '' };
     }
     
