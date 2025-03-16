@@ -75,7 +75,7 @@ export class MicroserviceManager {
                 }
             });
 
-            // LogManager.forceLog('receivedTx', data);
+            LogManager.forceLog('receivedTx', data);
         }
         catch (e: any){
             LogManager.error('MicroserviceManager', 'receivedTx', 'error', e?.response?.data?.message);
