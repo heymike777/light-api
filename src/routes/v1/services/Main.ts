@@ -17,6 +17,7 @@ router.post(
         body('data').exists().withMessage('Data is required'),
         body('signature').exists().withMessage('Signature is required'),
         body('geyserId').exists().withMessage('Geyser ID is required'),
+        body('chain').exists().withMessage('Chain is required'),
     ],
     validateRequest,
     async (req: Request, res: Response) => {
@@ -25,6 +26,8 @@ router.post(
         const geyserId = '' + req.body.geyserId;
         const chain = req.body.chain ? req.body.chain as Chain : Chain.SOLANA;
         let success = false;
+
+        console.log('received-tx', data, signature, geyserId, chain);
 
         try {
             const jsonParsed = JSON.parse(data);

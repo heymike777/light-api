@@ -215,6 +215,7 @@ export class WalletManager {
             }
 
             const walletsInvolved = this.getInvolvedWallets(tx);
+            console.log(tx.transaction.signatures[0], 'walletsInvolved', walletsInvolved);
 
             const wallets: IWallet[] = [];
             for (const walletInvolved of walletsInvolved) {
