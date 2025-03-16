@@ -48,6 +48,7 @@ import { exit } from "process";
 import { RedisManager } from "../managers/db/RedisManager";
 import mongoose from 'mongoose';
 import { InlineKeyboardButton } from "grammy/types";
+import { SvmManager } from "../managers/svm/SvmManager";
 
 export class MigrationManager {
 
@@ -200,6 +201,11 @@ export class MigrationManager {
         //     // This can kill Node depending on your configuration,
         //     // so you must fix whatever code triggers the unhandled rejection.
         // });
+
+        // const svm = new SvmManager(Chain.SONIC);
+        // await svm.subscribe();
+        // const svm = new SvmManager(Chain.SONIC_TESTNET);
+        // await svm.subscribe();
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

@@ -237,6 +237,7 @@ export class WalletManager {
                     chats.push({user: user, wallets: [wallet]});
                 }
             }
+            console.log(tx.transaction.signatures[0], 'chats.length', chats.length);
 
             if (chats.length == 0){
                 return;
@@ -309,7 +310,7 @@ export class WalletManager {
                 return;
             }
 
-            // LogManager.log('processTxForChats', 'signature', signature, 'chats', chats);
+            LogManager.forceLog('processTxForChats', 'signature', signature, 'chats', chats);
 
             const parsedTx = await ProgramManager.parseTx(chain, tx);
             // LogManager.log('!!parsedTx', parsedTx);
@@ -322,12 +323,13 @@ export class WalletManager {
 
             let sentUserIds: string[] = [];
 
-            LogManager.log('processTxForChats', 'chats', JSON.stringify(chats));
+            LogManager.log('processTxForChats', signature, 'chats', JSON.stringify(chats));
 
             for (const chat of chats) {
                 // LogManager.log('!!!chat', chat);
                 const info = await this.processTx(chain, parsedTx, asset, chat);
                 asset = info.asset;
+                LogManager.log('processTxForChats', signature, 'info.hasWalletsChanges:', info.hasWalletsChanges);
 
                 if (info.hasWalletsChanges || info.asset || process.env.ENVIRONMENT == 'DEVELOPMENT'){
                     try {
