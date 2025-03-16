@@ -43,19 +43,19 @@ export class MicroserviceManager {
         }
 
         // chain == SONIC_TESTNET
-        // try {
-        //     const { data } = await axios({
-        //         url: `http://127.0.0.1:3345/api/v1/service/geyser/resubscribe`,
-        //         method: 'post',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //             'serviceKey': kServiceKey
-        //         },
-        //     });
-        // }
-        // catch (e: any){
-        //     LogManager.error('MicroserviceManager', 'geyserResubscribe for sonic', 'error', e?.response?.data?.message);
-        // }
+        try {
+            const { data } = await axios({
+                url: `http://127.0.0.1:3345/api/v1/service/geyser/resubscribe`,
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'serviceKey': kServiceKey
+                },
+            });
+        }
+        catch (e: any){
+            LogManager.error('MicroserviceManager', 'geyserResubscribe for sonic', 'error', e?.response?.data?.message);
+        }
     }
 
     static async receivedTx(geyserId: string, signature: string, txData: string){

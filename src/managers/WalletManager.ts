@@ -215,7 +215,7 @@ export class WalletManager {
             }
 
             const walletsInvolved = this.getInvolvedWallets(tx);
-            console.log(tx.transaction.signatures[0], 'walletsInvolved', walletsInvolved);
+            // console.log(tx.transaction.signatures[0], 'walletsInvolved', walletsInvolved);
 
             const wallets: IWallet[] = [];
             for (const walletInvolved of walletsInvolved) {
@@ -237,7 +237,6 @@ export class WalletManager {
                     chats.push({user: user, wallets: [wallet]});
                 }
             }
-            console.log(tx.transaction.signatures[0], 'chats.length', chats.length);
 
             if (chats.length == 0){
                 return;
@@ -310,7 +309,7 @@ export class WalletManager {
                 return;
             }
 
-            LogManager.forceLog('processTxForChats', 'signature', signature, 'chats', chats);
+            LogManager.log('processTxForChats', 'signature', signature, 'chats', chats);
 
             const parsedTx = await ProgramManager.parseTx(chain, tx);
             // LogManager.log('!!parsedTx', parsedTx);

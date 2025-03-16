@@ -27,7 +27,7 @@ router.post(
         const chain = req.body.chain ? req.body.chain as Chain : Chain.SOLANA;
         let success = false;
 
-        console.log('received-tx', signature, geyserId, chain);
+        // console.log('received-tx', signature, geyserId, chain);
 
         try {
             const jsonParsed = JSON.parse(data);

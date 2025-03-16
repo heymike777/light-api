@@ -167,7 +167,7 @@ export class YellowstoneManager {
             if (transaction.meta.err){ return; }
 
             const signature = base58.encode(transaction.signature);
-            console.log('YellowstoneManager receivedTx', signature);
+            // console.log('YellowstoneManager receivedTx', signature);
 
             const jsonParsed = txEncode.encode(data.transaction.transaction, txEncode.encoding.JsonParsed, 255, true);
             const jsonParsedAny: any = jsonParsed;
