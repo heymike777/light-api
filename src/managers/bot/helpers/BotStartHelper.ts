@@ -106,21 +106,18 @@ export class BotStartHelper extends BotHelper {
             });
         }
 
-        console.log('BotStartHelper', 'start', 'user:', user.id, 'botUsername:', botUsername, 'user.bots:', user.bots);
+        user.bots = user.bots || {};
+        user.bots[botUsername] = UserBotStatus.ACTIVE;
+        user.defaultBot = botUsername;
+        BotManager.defaultBots[user.id] = botUsername;
 
-        if (botUsername && (!user.bots || !user.bots[botUsername] || user.bots[botUsername] == UserBotStatus.BLOCKED)){
-            user.bots = user.bots || {};
-            user.bots[botUsername] = UserBotStatus.ACTIVE;
-            user.defaultBot = botUsername;
-            BotManager.defaultBots[user.id] = botUsername;
+        await User.updateOne({ _id: user._id }, {
+            $set: {
+                bots: user.bots,
+                defaultBot: user.defaultBot,
+            }
+        });
 
-            await User.updateOne({ _id: user._id }, {
-                $set: {
-                    bots: user.bots,
-                    defaultBot: user.defaultBot,
-                }
-            });
-        }
 
         if (shouldSendStartMessage){
             await super.commandReceived(ctx, user);
