@@ -28,7 +28,7 @@ export class SvmManager {
             try {
                 const parsedTx = await connection.getParsedTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
 
-                if (parsedTx) {
+                if (parsedTx && !parsedTx.meta?.err) {
                     MicroserviceManager.receivedTx(this.id, signature, JSON.stringify(parsedTx));
                 } 
             } catch (err) {
