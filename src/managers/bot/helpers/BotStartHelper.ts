@@ -106,10 +106,11 @@ export class BotStartHelper extends BotHelper {
             });
         }
 
+        console.log('BotStartHelper', 'start', 'user:', user.id, 'botUsername:', botUsername, 'user.bots:', user.bots);
+
         if (botUsername && (!user.bots || !user.bots[botUsername] || user.bots[botUsername] == UserBotStatus.BLOCKED)){
             user.bots = user.bots || {};
             user.bots[botUsername] = UserBotStatus.ACTIVE;
-
             user.defaultBot = botUsername;
             BotManager.defaultBots[user.id] = botUsername;
 
