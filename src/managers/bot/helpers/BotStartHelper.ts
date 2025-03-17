@@ -109,10 +109,9 @@ export class BotStartHelper extends BotHelper {
         if (botUsername && (!user.bots || !user.bots[botUsername] || user.bots[botUsername] == UserBotStatus.BLOCKED)){
             user.bots = user.bots || {};
             user.bots[botUsername] = UserBotStatus.ACTIVE;
-            if (!user.defaultBot){
-                user.defaultBot = botUsername;
-                BotManager.defaultBots[user.id] = botUsername;
-            }
+
+            user.defaultBot = botUsername;
+            BotManager.defaultBots[user.id] = botUsername;
 
             await User.updateOne({ _id: user._id }, {
                 $set: {
