@@ -362,7 +362,7 @@ export class WalletManager {
                             let isTelegramSent = false;
                             if (chat.user.telegram?.id){
                                 BotManager.sendMessage({ 
-                                    botUsername: chat.user.defaultBot,
+                                    userId: chat.user.id,
                                     chatId: chat.user.telegram?.id, 
                                     text: info.message, 
                                     imageUrl: asset?.image 
