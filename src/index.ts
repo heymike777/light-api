@@ -148,7 +148,7 @@ const connectToRedis = async () => {
 }  
 
 const setupBot = async () => {
-    await BotManager.getInstance();
+    await BotManager.init();
 }
 
 start();

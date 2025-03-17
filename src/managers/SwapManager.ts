@@ -463,6 +463,7 @@ export class SwapManager {
             let isTelegramSent = false;
             if (user.telegram?.id){
                 BotManager.sendMessage({ 
+                    userId: user.id,
                     chatId: user.telegram?.id, 
                     text: message, 
                 });

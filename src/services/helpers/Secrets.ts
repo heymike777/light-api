@@ -13,7 +13,3 @@ else {
     }
 }
 LogManager.log('process.env.ENVIRONMENT', process.env.ENVIRONMENT);
-
-if (!process.env.TELEGRAM_BOT_TOKEN) {
-    throw new Error('TELEGRAM_BOT_TOKEN must be defined');
-}

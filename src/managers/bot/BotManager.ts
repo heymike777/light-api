@@ -33,6 +33,7 @@ import { kSolAddress } from "../../services/solana/Constants";
 import { Chain } from "../../services/solana/types";
 
 export class BotManager {
+    botUsername: string;
     bot: Bot;
     helpers: BotHelper[] = [
         new BotStartHelper(),
@@ -46,12 +47,14 @@ export class BotManager {
         new BotBuyHelper(),
         new BotSellHelper(),
     ];
+    static defaultBots: { [key: string]: string } = {}
 
-    constructor() {
-        LogManager.log('BotManager', 'constructor');
+    constructor(botUsername: string, botToken: string) {
+        LogManager.log('BotManager', 'constructor', botUsername);
 
         LogManager.log('Starting bot...');
-        this.bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
+        this.botUsername = botUsername;
+        this.bot = new Bot(botToken);
 
         this.bot.api.config.use(autoRetry());
     
@@ -224,18 +227,36 @@ export class BotManager {
     }
 
     // -------- static --------
-    static instance: BotManager | undefined = undefined;
-    static async getInstance() {
-        if (!BotManager.instance) {
-            BotManager.instance = new BotManager();
+    static instances: BotManager[] = [];
+    static async init(){
+        const botUsernames = EnvManager.getBotUsernames();
+        for (const botUsername of botUsernames) {
+            await BotManager.getInstance(botUsername);
         }
-        return BotManager.instance;        
+    }
+    static async getInstance(botUsername: string) {
+        const instance = BotManager.instances.find(instance => instance.botUsername == botUsername);
+        if (instance){
+            return instance;
+        }
+
+        const botToken = EnvManager.getBotToken(botUsername);
+        if (botToken){
+            const instance = new BotManager(botUsername, botToken);
+            BotManager.instances.push(instance);
+            return instance;        
+        }
     }
 
     static async sendMessage(data: SendMessageData){
         if (EnvManager.isTelegramProcess){
-            const botManager = await BotManager.getInstance();
-            await botManager.sendMessage(data);    
+            const defaultBot = await this.getUserDefaultBot(data.userId);
+            if (defaultBot){
+                const botManager = await BotManager.getInstance(defaultBot);
+                if (botManager){
+                    await botManager.sendMessage(data);    
+                }
+            }
         }
         else {
             await MicroserviceManager.sendMessageToTelegram(JSON.stringify(data));
@@ -259,38 +280,47 @@ export class BotManager {
         return inlineKeyboard;
     }
 
-    static async editMessage(ctx?: Context, text?: string, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+    static async editMessage(ctx: Context, text?: string, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
             const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
             if (chatId && messageId && text){
-                const botManager = await BotManager.getInstance();
-                await botManager.bot.api.editMessageText(chatId, messageId, text, { parse_mode: 'HTML', link_preview_options: {is_disabled: true}, reply_markup: markup });
+                const botUsername = BotManager.getBotUsername(ctx);
+                const botManager = await BotManager.getInstance(botUsername);
+                if (botManager){
+                    await botManager.bot.api.editMessageText(chatId, messageId, text, { parse_mode: 'HTML', link_preview_options: {is_disabled: true}, reply_markup: markup });
+                }
             }
         }
         catch (e: any){}
     }
 
-    static async editMessageReplyMarkup(ctx?: Context, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+    static async editMessageReplyMarkup(ctx: Context, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
             const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
             if (chatId && messageId){
-                const botManager = await BotManager.getInstance();
-                await botManager.bot.api.editMessageReplyMarkup(chatId, messageId, { reply_markup: markup });
+                const botUsername = BotManager.getBotUsername(ctx);
+                const botManager = await BotManager.getInstance(botUsername);
+                if (botManager){
+                    await botManager.bot.api.editMessageReplyMarkup(chatId, messageId, { reply_markup: markup });
+                }
             }
         }
         catch (e: any){}
     }
 
-    static async deleteMessage(ctx?: Context, sourceMessageId?: number, sourceChatId?: number){
+    static async deleteMessage(ctx: Context, sourceMessageId?: number, sourceChatId?: number){
         try {
             const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
 
             if (chatId && messageId){
-                const botManager = await BotManager.getInstance();
-                await botManager.bot.api.deleteMessage(chatId, messageId);
+                const botUsername = BotManager.getBotUsername(ctx);
+                const botManager = await BotManager.getInstance(botUsername);
+                if (botManager){
+                    await botManager.bot.api.deleteMessage(chatId, messageId);
+                }
             }    
         }
         catch (e: any){}
@@ -482,5 +512,16 @@ export class BotManager {
         return { message, markup: undefined };
     }
      
+    static async getUserDefaultBot(userId: string): Promise<string | undefined> {
+        if (this.defaultBots[userId]){
+            return this.defaultBots[userId];
+        }
+
+        const user = await UserManager.getUserById(userId);
+        if (user && user.defaultBot){
+            this.defaultBots[userId] = user.defaultBot;
+            return user.defaultBot;
+        }
+    }
 
 }

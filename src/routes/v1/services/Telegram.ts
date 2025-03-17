@@ -1,9 +1,6 @@
 import express, { Request, Response } from "express";
 import { body, header } from "express-validator";
 import { validateRequest } from "../../../middlewares/ValidateRequest";
-import { TxParser } from "../../../services/solana/geyser/TxParser";
-import { WalletManager } from "../../../managers/WalletManager";
-import { SwapManager } from "../../../managers/SwapManager";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
 import { BotManager } from "../../../managers/bot/BotManager";
 import { SendMessageData } from "../../../managers/bot/BotTypes";
@@ -23,7 +20,6 @@ router.post(
 
         try {
             const message: SendMessageData = JSON.parse(messageData);
-            
             await BotManager.sendMessage(message);
             success = true;
         } catch (error) {

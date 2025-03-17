@@ -111,6 +111,7 @@ export class BotStartHelper extends BotHelper {
             user.bots[botUsername] = UserBotStatus.ACTIVE;
             if (!user.defaultBot){
                 user.defaultBot = botUsername;
+                BotManager.defaultBots[user.id] = botUsername;
             }
 
             await User.updateOne({ _id: user._id }, {
