@@ -606,6 +606,15 @@ export class SolanaManager {
         return assets;
     }
 
+    static createBurnSplAccountInstruction(tokenAta: web3.PublicKey, destination: web3.PublicKey, authority: web3.PublicKey): web3.TransactionInstruction {
+        return spl.createCloseAccountInstruction(
+            tokenAta,
+            destination,
+            authority,
+        );    
+    }  
+
+
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
     private static recentBlockhashUpdatedAt: Date | undefined;
