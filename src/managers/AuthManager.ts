@@ -156,7 +156,7 @@ export class AuthManager {
         user.createdAt = new Date();
         await user.save();
 
-        await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Trader', Priority.MEDIUM);
+        await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
 
         MixpanelManager.updateProfile(user, undefined);
     

@@ -83,7 +83,7 @@ export class UserManager {
                 createdAt: now,
             });
 
-            await TraderProfilesManager.createTraderProfile(newUser, SwapManager.kNativeEngineId, 'Trader', Priority.MEDIUM);
+            await TraderProfilesManager.createTraderProfile(newUser, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
 
             MixpanelManager.updateProfile(newUser, undefined);
 
