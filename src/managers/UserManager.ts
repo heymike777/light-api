@@ -5,9 +5,11 @@ import { IUser, TelegramState, TelegramUser, User } from "../entities/users/User
 import { UserTransaction } from "../entities/users/UserTransaction";
 import { Wallet } from "../entities/Wallet";
 import { BadRequestError } from "../errors/BadRequestError";
+import { Priority } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { SubscriptionManager } from "./SubscriptionManager";
+import { SwapManager } from "./SwapManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 
@@ -80,6 +82,8 @@ export class UserManager {
                 telegram: from,
                 createdAt: now,
             });
+
+            await TraderProfilesManager.createTraderProfile(newUser, SwapManager.kNativeEngineId, 'Trader', Priority.MEDIUM);
 
             MixpanelManager.updateProfile(newUser, undefined);
 

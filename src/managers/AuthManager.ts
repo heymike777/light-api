@@ -10,6 +10,9 @@ import { TwilioManager } from '../services/TwilioManager';
 import { UserManager } from './UserManager';
 import { MixpanelManager } from './MixpanelManager';
 import { StringSchemaDefinition } from 'mongoose';
+import { TraderProfilesManager } from './TraderProfilesManager';
+import { SwapManager } from './SwapManager';
+import { Priority } from '../services/solana/types';
 
 export enum VerificationService {
     TWILIO = 'TWILIO',
@@ -152,6 +155,8 @@ export class AuthManager {
         user.email = email;
         user.createdAt = new Date();
         await user.save();
+
+        await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Trader', Priority.MEDIUM);
 
         MixpanelManager.updateProfile(user, undefined);
     

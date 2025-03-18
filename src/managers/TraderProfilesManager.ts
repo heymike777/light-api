@@ -1,3 +1,4 @@
+import { PreWallet } from "../entities/PreWallet";
 import { IUserTraderProfile, UserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser } from "../entities/users/User";
 import { Wallet } from "../entities/Wallet";
@@ -65,7 +66,13 @@ export class TraderProfilesManager {
 
         let wallet: WalletModel | undefined;
         if (engineId == SwapManager.kNativeEngineId){
-            wallet = SolanaManager.createWallet();
+            const niceWallet = await PreWallet.findOneAndUpdate({ isUsed: false }, { $set: { isUsed: true } });
+            if (niceWallet){
+                wallet = { publicKey: niceWallet.publicKey, privateKey: niceWallet.privateKey };
+            }
+            else {
+                wallet = SolanaManager.createWallet();
+            }
 
             fs.appendFileSync('wallets.txt', `UserId: ${user.id}, PublicKey: ${wallet.publicKey}, PrivateKey: ${wallet.privateKey}\n`);
         }
