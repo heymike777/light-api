@@ -20,7 +20,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         LogManager.log('BotTraderProfilesHelper', 'constructor');
 
         const buttons: InlineButton[] = [
-            {id: 'traders|create', text: '➕ Add profile'},
+            {id: 'traders|create', text: '➕ Add trader'},
             {id: `traders|refresh`, text: '↻ Refresh'},
         ];
 
@@ -314,7 +314,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             if (traderProfiles.length > 1){
                 replyMessage.text += `\n\nYour current main trader is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_trader.`;
 
-                replyMessage.buttons.push({ id: 'choose_trader', text: '⭐️ Choose trader' });
+                replyMessage.buttons.push({ id: 'choose_trader', text: '⭐️ Pick main' });
             }
 
             for (let index = 0; index < traderProfiles.length; index++) {
