@@ -31,6 +31,10 @@ import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
 import { kSolAddress } from "../../services/solana/Constants";
 import { Chain } from "../../services/solana/types";
+import { BotReferralProgramHelper } from "./helpers/BotReferralProgramHelper";
+import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
+import { BotSettingsHelper } from "./helpers/BotSettingsHelper";
+import { BotHelpHelper } from "./helpers/BotHelpHelper";
 
 export class BotManager {
     botUsername: string;
@@ -46,6 +50,10 @@ export class BotManager {
         new BotDeleteMessageHelper(),
         new BotBuyHelper(),
         new BotSellHelper(),
+        new BotReferralProgramHelper(),
+        new BotUpgradeHelper(),
+        new BotSettingsHelper(),
+        new BotHelpHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 

@@ -36,7 +36,9 @@ export class TraderProfilesManager {
         }
     }
 
-    static async getUserDefaultTraderProfile(userId: string): Promise<IUserTraderProfile | undefined> {
+    static async getUserDefaultTraderProfile(userId?: string): Promise<IUserTraderProfile | undefined> {
+        if (!userId){ return; }
+        
         const profiles = await this.getUserTraderProfiles(userId, SwapManager.kNativeEngineId);
         if (profiles.length == 0){
             return undefined;

@@ -62,12 +62,12 @@ export class SearchManager {
             }
         }
         
-        if (tokens.length === 0){
-            const tmpTokens = await Token.find({ chain, symbol: { $regex : new RegExp(query, "i") } });
-            if (tmpTokens && tmpTokens.length > 0){
-                tokens.push(...(tmpTokens.map(token => tokenToTokenModel(token))));
-            }
-        }
+        // if (tokens.length === 0){
+        //     const tmpTokens = await Token.find({ chain, symbol: { $regex : new RegExp(query, "i") } });
+        //     if (tmpTokens && tmpTokens.length > 0){
+        //         tokens.push(...(tmpTokens.map(token => tokenToTokenModel(token))));
+        //     }
+        // }
 
         return tokens;
     }
