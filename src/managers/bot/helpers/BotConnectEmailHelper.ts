@@ -86,7 +86,7 @@ export class BotConnectEmailHelper extends BotHelper {
                     await UserManager.mergeUsers(user.id, existingUser.id);
                 }
                 catch (e: any){
-                    await BotManager.reply(ctx, `Another user already has this email connected. Please, connect another email or do /revoke_account of this user (it will remove all your transactions history, trading profiles, etc). After cleaning, you'll be able to connect this email.`);
+                    await BotManager.reply(ctx, `Another user already has this email connected. Please, connect another email or do /revoke_account of this user (it will remove all your transactions history, traders, etc). After cleaning, you'll be able to connect this email.`);
                     return true;
                 }
             }

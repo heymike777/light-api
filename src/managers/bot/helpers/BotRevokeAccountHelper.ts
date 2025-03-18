@@ -17,7 +17,7 @@ export class BotRevokeAccountHelper extends BotHelper {
         ];
 
         const replyMessage: Message = {
-            text: 'This command will permanently revoke your account, removing all tracked wallets, transaction history, and trader profiles. This action cannot be undone. Are you sure you want to proceed?',
+            text: 'This command will permanently revoke your account, removing all tracked wallets, transaction history, and traders. This action cannot be undone. Are you sure you want to proceed?',
             buttons: buttons,
             markup: BotManager.buildInlineKeyboard(buttons),
         };

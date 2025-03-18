@@ -132,7 +132,7 @@ export class SwapManager {
         }
 
         if (!traderProfile.wallet){
-            LogManager.error('SwapManager', type, 'Trader profile wallet not found', { traderProfile });
+            LogManager.error('SwapManager', type, 'Trader wallet not found', { traderProfile });
             swap.status.type = StatusType.CREATED;
             swap.status.tryIndex++;
             await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
@@ -495,7 +495,7 @@ export class SwapManager {
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
-            throw new BadRequestError('Trader profile not found');
+            throw new BadRequestError('Trader not found');
         }
         const userId = traderProfile.userId;
         const currency = traderProfile.currency || Currency.SOL;
@@ -505,7 +505,7 @@ export class SwapManager {
         }
 
         if (!traderProfile.wallet){
-            throw new BadRequestError('Trader profile wallet not found');
+            throw new BadRequestError('Trader wallet not found');
         }
 
         if (amount <= 0.0001){
@@ -553,7 +553,7 @@ export class SwapManager {
     static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amountPercents: number): Promise<{ signature?: string, swap: ISwap }>{
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
-            throw new BadRequestError('Trader profile not found');
+            throw new BadRequestError('Trader not found');
         }
 
         if (traderProfile.engineId !== SwapManager.kNativeEngineId){
@@ -561,7 +561,7 @@ export class SwapManager {
         }
 
         if (!traderProfile.wallet){
-            throw new BadRequestError('Trader profile wallet not found');
+            throw new BadRequestError('Trader wallet not found');
         }
 
         if (mint == kSolAddress){

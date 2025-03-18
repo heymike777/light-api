@@ -32,7 +32,7 @@ export class BotSellHelper extends BotHelper {
         if (ctx?.update?.message?.text == '/sell' || buttonId == 'sell'){
             const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
             if (!traderProfile){
-                await BotManager.reply(ctx, '🟡 Please, create a trader profile first');
+                await BotManager.reply(ctx, '🟡 Please, create a trader first');
                 return;
             }
 
@@ -41,7 +41,7 @@ export class BotSellHelper extends BotHelper {
             await BotManager.reply(ctx, message, {
                 parse_mode: 'HTML',
                 reply_markup: BotManager.buildInlineKeyboard([
-                    { id: `trader_profiles|portfolio|${traderProfile.id}|refresh`, text: '↻ Refresh' },
+                    { id: `traders|portfolio|${traderProfile.id}|refresh`, text: '↻ Refresh' },
                 ]),
             });    
 
@@ -54,7 +54,7 @@ export class BotSellHelper extends BotHelper {
 
                 const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
                 if (!traderProfile){
-                    await BotManager.reply(ctx, '🟡 Please, create a trader profile first');
+                    await BotManager.reply(ctx, '🟡 Please, create a trader first');
                     return;
                 }
 

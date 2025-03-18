@@ -22,7 +22,7 @@ export enum TelegramWaitingType {
     EMAIL_VERIFICATION_CODE = 'email_verification_code',
     ADD_WALLET = 'add_wallet',
     REMOVE_WALLET = 'remove_wallet',
-    TRADER_PROFILE_EDIT_NAME = 'trader_profile_edit_name',
+    TRADER_EDIT_NAME = 'trader_edit_name',
     BUY_AMOUNT = 'buy_amount',
     SELL_AMOUNT = 'SELL_amount',
 }
