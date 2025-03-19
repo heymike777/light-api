@@ -6,6 +6,7 @@ import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
+import { UserUtm } from "../../../entities/users/UserUtm";
 
 export class BotStartHelper extends BotHelper {
 
@@ -32,7 +33,8 @@ export class BotStartHelper extends BotHelper {
         const botUsername = ctx.me?.username;
         let referralCode: string | undefined = undefined;
         let mint: string | undefined = undefined;
-        let shouldSendStartMessage = true;
+        let utm: string | undefined = undefined;
+        let shouldSendStartMessage = true;        
 
         if (paramsString){
             let params = paramsString.split('-');
@@ -55,6 +57,9 @@ export class BotStartHelper extends BotHelper {
                 else if (key == 'sell'){
                     mint = value;
                     shouldSendStartMessage = false;
+                }
+                else if (key == 'utm'){
+                    utm = value;
                 }
             }
     
@@ -102,6 +107,16 @@ export class BotStartHelper extends BotHelper {
 
         if (!shouldSendStartMessage){
             await BotManager.deleteMessage(ctx);
+        }
+
+        if (utm){
+            const item = new UserUtm();
+            item.userId = user.id;
+            item.utm = utm;
+            item.createdAt = new Date();
+            await item.save();
+
+            //TODO: save it to Mixpanel to User somehow (should have array of UTMs there)
         }
     }
 
