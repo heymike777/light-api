@@ -49,6 +49,7 @@ import { RedisManager } from "../managers/db/RedisManager";
 import mongoose from 'mongoose';
 import { InlineKeyboardButton } from "grammy/types";
 import { SvmManager } from "../managers/svm/SvmManager";
+import { TraderProfilesManager } from "../managers/TraderProfilesManager";
 
 export class MigrationManager {
 
@@ -206,6 +207,18 @@ export class MigrationManager {
         // await svm.subscribe();
         // const svm = new SvmManager(Chain.SONIC_TESTNET);
         // await svm.subscribe();
+
+        let countUsers = 0;
+        const users = await User.find({ });
+        for (const user of users) {
+            const traders = await TraderProfilesManager.getUserTraderProfiles(user.id);
+            if (traders.length == 0){
+                // console.log('!mike', 'traders', traders);
+                countUsers++;
+            }
+        }
+
+        console.log('!mike', 'countUsers', countUsers);
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

@@ -487,6 +487,7 @@ export class SwapManager {
             mint: swap.mint,
             solValue,
             usdValue,
+            currency: swap.currency,
         });
     }
 
@@ -545,6 +546,8 @@ export class SwapManager {
             tryIndex: 0,
         };
         await swap.save();
+
+        MixpanelManager.track('Swap Init', userId, { type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
 
         const signature = await SwapManager.buy(swap, traderProfile);
         return { signature, swap };
@@ -611,6 +614,8 @@ export class SwapManager {
             tryIndex: 0,
         };
         await swap.save();
+
+        MixpanelManager.track('Swap Init', userId, { type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
 
         const signature = await SwapManager.sell(swap, traderProfile);
         return { signature, swap };
