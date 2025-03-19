@@ -213,12 +213,17 @@ export class MigrationManager {
             let countUsers = 0;
             const users = await User.find({ });
             for (const user of users) {
-                const traders = await TraderProfilesManager.getUserTraderProfiles(user.id);
-                if (traders.length == 0){
-                    // console.log('!mike', 'traders', traders);
-                    countUsers++;
-                    
-                    await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
+                try {
+                    const traders = await TraderProfilesManager.getUserTraderProfiles(user.id);
+                    if (traders.length == 0){
+                        // console.log('!mike', 'traders', traders);
+                        countUsers++;
+                        
+                        await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
+                    }
+                }
+                catch (error) {
+                    console.error('!mike', 'error', error);
                 }
             }
             console.log('!mike', 'countUsers', countUsers);
