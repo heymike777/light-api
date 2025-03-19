@@ -459,9 +459,9 @@ export class BotManager {
     }
 
     static buildTokenMetricsMessage(token: ITokenModel): string | undefined {
-        let tokensMessage: string | undefined = undefined;
+        let tokensMessage = '';
         if (token.symbol && !TokenManager.excludedTokens.includes(token.address)){
-            tokensMessage = `<b>#${token.symbol}</b>`;
+            tokensMessage += `<b>#${token.symbol}</b>`;
             if (token.name){
                 tokensMessage += ` | ${token.name}`;
             }
@@ -474,7 +474,11 @@ export class BotManager {
             if (token.price){
                 tokensMessage += ` | P: $${token.price}`;
             }
+
+            tokensMessage += '\n';
+            tokensMessage += `CA: <code>${token.address}</code>`;
         }
+
         return tokensMessage;
     }
 

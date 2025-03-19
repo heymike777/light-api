@@ -96,67 +96,66 @@ export class MigrationManager {
 
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
 
-        // await this.processTx('34iFHNe89qhWKGU5cCpx57Jfu995QyTM1y9v3QW9oUKisisdqLeDRLb6dEbbdCaKKJ7P71t3ojPXaDvFabRCLePv'); // jupiter
+        // await this.processTx(Chain.SOLANA, '34iFHNe89qhWKGU5cCpx57Jfu995QyTM1y9v3QW9oUKisisdqLeDRLb6dEbbdCaKKJ7P71t3ojPXaDvFabRCLePv'); // jupiter
 
-        // await this.processTx('4RNU9HNaYdPwNCV3cuK1d5oh3zRctwqTphk3kp2m8tpPxWGR1VFaMt41L5EcGDUHbtXHDYVbUgJsQyECCHhBui13'); // pumpfun buy
-        // await this.processTx('xxBf1LjTesNATcbuebgcPqgRKBbr6CsZmudBQpwLyvkmpC43XsR8JGymG9H5c7QQtLqj8GawEcGVpUVMCuSMbZK'); // pumpfun sell
-        // await this.processTx('63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium amm sell
+        // await this.processTx(Chain.SOLANA, '4RNU9HNaYdPwNCV3cuK1d5oh3zRctwqTphk3kp2m8tpPxWGR1VFaMt41L5EcGDUHbtXHDYVbUgJsQyECCHhBui13'); // pumpfun buy
+        // await this.processTx(Chain.SOLANA, 'xxBf1LjTesNATcbuebgcPqgRKBbr6CsZmudBQpwLyvkmpC43XsR8JGymG9H5c7QQtLqj8GawEcGVpUVMCuSMbZK'); // pumpfun sell
+        // await this.processTx(Chain.SOLANA, '63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium amm sell
 
-        // await this.processTx('54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'); // jupiter
-        // await this.processTx('5snNUQUXKY7iJFnaBBv6LjWYuBAryQX3mTdtHorboe6mXrZpv694mXCQucho2W2PDGumsTAqykkqsqhs5FNLuAph'); // MAGIC EDEN AMM
-        // await this.processTx('26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'); // NFT SALE on !!!MAGIC_EDEN_V2
-        // await this.processTx('42Jybm1JcyGWQx3AAMZffwK3QagUb2RkWgJ3v3bHgoF7vV7xAXuGxiGouNE5K6czPtBNKcAqkY1kcLprmWJwf8Sn');
-        // await this.processTx('5XuB98XVfwMLLPetV5hzZt65P89WuN4YLTj6NSmz5uoiwc8qpqF2TPPoY8gsPHrFQgQYRWUQTphrU99eQNXTn2HV'); //jupiter
+        // await this.processTx(Chain.SOLANA, '54Q2VnyP9tLZo3oxCPUpNwxNmZrg32hkmNiDJ4LMEBfxSYAuuBxJuPZrgQESfaxYDPgRZa55CXCKAVEiRruFvNrH'); // jupiter
+        // await this.processTx(Chain.SOLANA, '5snNUQUXKY7iJFnaBBv6LjWYuBAryQX3mTdtHorboe6mXrZpv694mXCQucho2W2PDGumsTAqykkqsqhs5FNLuAph'); // MAGIC EDEN AMM
+        // await this.processTx(Chain.SOLANA, '26R1Je6V5Pv2g38ejgFbjXm3qQvrC8Qn7TH3pyNMG2QrEdWU2j7Am9vJdCMyNzeyu9wYXMVVNNuM8v5fwMPDfNfA'); // NFT SALE on !!!MAGIC_EDEN_V2
+        // await this.processTx(Chain.SOLANA, '42Jybm1JcyGWQx3AAMZffwK3QagUb2RkWgJ3v3bHgoF7vV7xAXuGxiGouNE5K6czPtBNKcAqkY1kcLprmWJwf8Sn');
+        // await this.processTx(Chain.SOLANA, '5XuB98XVfwMLLPetV5hzZt65P89WuN4YLTj6NSmz5uoiwc8qpqF2TPPoY8gsPHrFQgQYRWUQTphrU99eQNXTn2HV'); //jupiter
 
-        // await this.processTx('33KvrJbdkLMQPPzeex1idWA9A6oUYi7Fkdnf84Mk52UPxA571v65z2JCBwgHBkwfjcY5zmT9iHrC9RFhaHw8kKAE'); // Tensor 
-        // await this.processTx('2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'); // cNFT on Tensor_CNFT
-        // await this.processTx('5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'); // TENSOR
-        // await this.processTx('8cEwWEwEhPFLLkb5VjCouPGcnFhQCCz99BvX2pZCeSnWJraY1oGNadMHdeAtNArfgBwUvhPkGgn7UVUFDQ3NFwG'); // Jupiter Z
-        // await this.processTx('3S4oBuSpvaYXwZYjbhsdaby5tHAcxPEJjAeErU4UQ6y3nf52vT4BkuUmXRUHUBbgvjGgnE16pDTfAZbwzeB8pA14');
+        // await this.processTx(Chain.SOLANA, '33KvrJbdkLMQPPzeex1idWA9A6oUYi7Fkdnf84Mk52UPxA571v65z2JCBwgHBkwfjcY5zmT9iHrC9RFhaHw8kKAE'); // Tensor 
+        // await this.processTx(Chain.SOLANA, '2BijsH1TPDuNJbAHZzc1wgEU8p6C2WWpVwhTQZmqR6oEorHL6UPARHi55NFrPPSWE9MFobvNyMGdgczfoDCpS4T8'); // cNFT on Tensor_CNFT
+        // await this.processTx(Chain.SOLANA, '5NY9KTmssHEzrqa7ZjBX74PM3w35qruChz2S4B5A5LJFXppTvfgUN7ns7vNqzRiJaoUh8UVStfWdvJWuLU6DezYV'); // TENSOR
+        // await this.processTx(Chain.SOLANA, '8cEwWEwEhPFLLkb5VjCouPGcnFhQCCz99BvX2pZCeSnWJraY1oGNadMHdeAtNArfgBwUvhPkGgn7UVUFDQ3NFwG'); // Jupiter Z
+        // await this.processTx(Chain.SOLANA, '3S4oBuSpvaYXwZYjbhsdaby5tHAcxPEJjAeErU4UQ6y3nf52vT4BkuUmXRUHUBbgvjGgnE16pDTfAZbwzeB8pA14');
 
-        // await this.processTx('3XSLvqS4HYhaSsTkmkakSTLCv4FmfjigGsUGzsRPRRvhDWA8ss3Tek5XTzSygjii8BKncWMX5iu2Bax56Uimreof'); // jupiter
+        // await this.processTx(Chain.SOLANA, '3XSLvqS4HYhaSsTkmkakSTLCv4FmfjigGsUGzsRPRRvhDWA8ss3Tek5XTzSygjii8BKncWMX5iu2Bax56Uimreof'); // jupiter
 
-
-        // await this.processTx('42qrQrpjsoicAWmwEYGByAxTUAmoY1ZTx7Gaq15CsN7wVJUekfuEBAebmhTmU5mqEAggRHWCvBXRJyrJP7BsyW6p'); // Stake JUP
-        // await this.processTx('RPV6WyK78CHiAakSVYH3xZeqAyojHUpJRcoKKg9sJuEd1VmgG3git1SiCUkviQSSZ1UsrxW1iiW4aGT4bdKRKTu'); // Withdraw JUP from staking
-        // await this.processTx('wmwkYgyp3285tRzci9rcYpxYSAUrhSVVBUYHGAxDXDqf1CcTkvnLjfaPqNR8guG4LpCaUT8tCuaw9hWyQHbkXdH'); // Unstake JUP
-        // await this.processTx('3cPFBSS3p7VpDAn5nnXJ8UQx9wSCa8YaQTja17Mqp1KNi8oBnBCdPD253wNuo2AC7nY1hW2RXrzJparXGqqV8tGW')
+        // await this.processTx(Chain.SOLANA, '42qrQrpjsoicAWmwEYGByAxTUAmoY1ZTx7Gaq15CsN7wVJUekfuEBAebmhTmU5mqEAggRHWCvBXRJyrJP7BsyW6p'); // Stake JUP
+        // await this.processTx(Chain.SOLANA, 'RPV6WyK78CHiAakSVYH3xZeqAyojHUpJRcoKKg9sJuEd1VmgG3git1SiCUkviQSSZ1UsrxW1iiW4aGT4bdKRKTu'); // Withdraw JUP from staking
+        // await this.processTx(Chain.SOLANA, 'wmwkYgyp3285tRzci9rcYpxYSAUrhSVVBUYHGAxDXDqf1CcTkvnLjfaPqNR8guG4LpCaUT8tCuaw9hWyQHbkXdH'); // Unstake JUP
+        // await this.processTx(Chain.SOLANA, '3cPFBSS3p7VpDAn5nnXJ8UQx9wSCa8YaQTja17Mqp1KNi8oBnBCdPD253wNuo2AC7nY1hW2RXrzJparXGqqV8tGW')
 
         // Metaora DLMM 
-        // await this.processTx('4cYXQRVdVTWzTwU3ZcjBDRZHko3iLKsuJqThNmxuj4Njd4oC7faj2dvhBxYxrMdCnEzNETMduyvFECQVjYNhZgF8'); // Meteora DLMM swap
-        // await this.processTx('62zkFyUB6DAhpnZtsKaUVNpdTyNRi1GBUjwgDvYz6tUiZt5GfUnJFrimeBnttHMfBaHK3iTxkC8EZcRUCajB9NhW');
-        // await this.processTx('2JbwRCQ8cBF5tYkPRXP8G5wDeX2FKqRgVhLH6AZNYVHGjFaMKmbDykJiqRo2FAQdoGDAfUQHV38cXNbNK2rq28cL'); // Meteora DLMM remove LP
+        // await this.processTx(Chain.SOLANA, '4cYXQRVdVTWzTwU3ZcjBDRZHko3iLKsuJqThNmxuj4Njd4oC7faj2dvhBxYxrMdCnEzNETMduyvFECQVjYNhZgF8'); // Meteora DLMM swap
+        // await this.processTx(Chain.SOLANA, '62zkFyUB6DAhpnZtsKaUVNpdTyNRi1GBUjwgDvYz6tUiZt5GfUnJFrimeBnttHMfBaHK3iTxkC8EZcRUCajB9NhW');
+        // await this.processTx(Chain.SOLANA, '2JbwRCQ8cBF5tYkPRXP8G5wDeX2FKqRgVhLH6AZNYVHGjFaMKmbDykJiqRo2FAQdoGDAfUQHV38cXNbNK2rq28cL'); // Meteora DLMM remove LP
 
         // Meteora Pool
-        // await this.processTx('9zMP5NXui55L4V5vJsaTSfBk918JgZkHuPRVynoAZk7uMKqTUnwxwqqehgZqvjEtdyuMN2KnXVDgoXRrHQYuVKH'); // swap    
-        // await this.processTx('3Fyw9GPLXjmQrbpRLCKEs6qab3jF961ciCzdNhR1fadf6w3ruJTeXiSCEACNfnhyJmGQkoeA2ULQt8SMiZzaKcYM');
+        // await this.processTx(Chain.SOLANA, '9zMP5NXui55L4V5vJsaTSfBk918JgZkHuPRVynoAZk7uMKqTUnwxwqqehgZqvjEtdyuMN2KnXVDgoXRrHQYuVKH'); // swap    
+        // await this.processTx(Chain.SOLANA, '3Fyw9GPLXjmQrbpRLCKEs6qab3jF961ciCzdNhR1fadf6w3ruJTeXiSCEACNfnhyJmGQkoeA2ULQt8SMiZzaKcYM');
 
         // RAYDIUM CPMM
-        // await this.processTx('5xhE3xMkvpTTb4Btro4xdo3k1yDCdaYrktKr7Cd85NYBFVHhSpDGNEVr58HdymBE9ncZ1sCJoFApHu5qNuLh9duN');
-        // await this.processTx('5iczX6D2Vt3vBjee5YKkduQkDKUiFvSoT3j7THpscq4Z3jA52JBHbTyb9QxtRFR1WVCFfoevfPERpKQoUajbMF8v');
+        // await this.processTx(Chain.SOLANA, '5xhE3xMkvpTTb4Btro4xdo3k1yDCdaYrktKr7Cd85NYBFVHhSpDGNEVr58HdymBE9ncZ1sCJoFApHu5qNuLh9duN');
+        // await this.processTx(Chain.SOLANA, '5iczX6D2Vt3vBjee5YKkduQkDKUiFvSoT3j7THpscq4Z3jA52JBHbTyb9QxtRFR1WVCFfoevfPERpKQoUajbMF8v');
 
         // ORCA
-        // await this.processTx('5d63LQj5GJqBktRqXFyMiWF94jAWAEMGkREEXv1vcVX3VqbrEGUnm8kSZdUQHXLYkEEKTZFMspBwrFQEe23KgsbM');
-        // await this.processTx('2nQpZR4uktL3hpNdVbb99TDUAJ22oR5PdKmqPvrgXCMAnLjKESn261Zh3Fis19BqQpkBqNsNWtC1vq8TT5whPyLi'); // twoHopSwap
+        // await this.processTx(Chain.SOLANA, '5d63LQj5GJqBktRqXFyMiWF94jAWAEMGkREEXv1vcVX3VqbrEGUnm8kSZdUQHXLYkEEKTZFMspBwrFQEe23KgsbM');
+        // await this.processTx(Chain.SOLANA, '2nQpZR4uktL3hpNdVbb99TDUAJ22oR5PdKmqPvrgXCMAnLjKESn261Zh3Fis19BqQpkBqNsNWtC1vq8TT5whPyLi'); // twoHopSwap
 
         // JUP GOVERNANCE
-        // await this.processTx('uqLicPM7YydwbaJVzUxsMjgrGT6UZ66HD8bQKf4Ni4BRYu1bLWkk99mznReRcche6TsnnoX3bK1oP5pv7eq7A8W'); // vote
-        // await this.processTx('2Pdx6zxchz5S1RnCG5kVTy4GXAdupVCsN6DegnXirx4sV736kuH4kjEfL8jYJGBSZuwYrsE4FL9RSg1gguD8dVTh'); // vote
+        // await this.processTx(Chain.SOLANA, 'uqLicPM7YydwbaJVzUxsMjgrGT6UZ66HD8bQKf4Ni4BRYu1bLWkk99mznReRcche6TsnnoX3bK1oP5pv7eq7A8W'); // vote
+        // await this.processTx(Chain.SOLANA, '2Pdx6zxchz5S1RnCG5kVTy4GXAdupVCsN6DegnXirx4sV736kuH4kjEfL8jYJGBSZuwYrsE4FL9RSg1gguD8dVTh'); // vote
 
         // JUPITER LIMIT ORDERS
-        // await this.processTx('WV1AQhJNXPTvnvw7inFkiFPNtnPPixCjY5WnGZ1f2HUCYkupT9t3FY1AAUckpvAVe9DihNyK5YY294fx3KzshSe'); // limit order created
-        // await this.processTx('62fk1A3YEKvrhoU2Tk4Wjn9xXZ74NF7NWboLQgwCuFcNUjsKCSTG3d8psPeUVrahPq2xxeUAqtRK9GW8U7411YDH'); // limit order created
-        // await this.processTx('4NtiB2hgavCecDDtDkGqBTDUNZh6oMheQbepTPJaw1FiJwCb7zPvY1WhpvPyLKuKfR5mhL9WvXgrMWCQSrTbSVmU'); // cancel limit order
-        // await this.processTx('4JiKZEKCVGHZQQmoWptY78Cnuam53q83m9hbFeRiqTzxkmgsFmzbhyxVF13GDfmr4hQ7zgTfiNTNzQrmKzi2ES3S'); // fill limit order
+        // await this.processTx(Chain.SOLANA, 'WV1AQhJNXPTvnvw7inFkiFPNtnPPixCjY5WnGZ1f2HUCYkupT9t3FY1AAUckpvAVe9DihNyK5YY294fx3KzshSe'); // limit order created
+        // await this.processTx(Chain.SOLANA, '62fk1A3YEKvrhoU2Tk4Wjn9xXZ74NF7NWboLQgwCuFcNUjsKCSTG3d8psPeUVrahPq2xxeUAqtRK9GW8U7411YDH'); // limit order created
+        // await this.processTx(Chain.SOLANA, '4NtiB2hgavCecDDtDkGqBTDUNZh6oMheQbepTPJaw1FiJwCb7zPvY1WhpvPyLKuKfR5mhL9WvXgrMWCQSrTbSVmU'); // cancel limit order
+        // await this.processTx(Chain.SOLANA, '4JiKZEKCVGHZQQmoWptY78Cnuam53q83m9hbFeRiqTzxkmgsFmzbhyxVF13GDfmr4hQ7zgTfiNTNzQrmKzi2ES3S'); // fill limit order
 
         // GO FUND MEME
-        // await this.processTx('2k4dMaxXiN6Qs6z9kadGjyqvSDJdVCWEZyVBSe9rChDqo3o3KUVXbrvQPCuh9kEae4Bom55oMaCqmSHVXyVhj4gs'); // go fund meme - buy
-        // await this.processTx('3p7j3ggDGvSFmhvxQ4wVE8QTWX7JdkXbGJ2uuXvbS3otoxv71mYo6kPbvgLRvtvPxwmoHqELKig22SZVeTHaVZ1W'); // go fund meme - sell
+        // await this.processTx(Chain.SOLANA, '2k4dMaxXiN6Qs6z9kadGjyqvSDJdVCWEZyVBSe9rChDqo3o3KUVXbrvQPCuh9kEae4Bom55oMaCqmSHVXyVhj4gs'); // go fund meme - buy
+        // await this.processTx(Chain.SOLANA, '3p7j3ggDGvSFmhvxQ4wVE8QTWX7JdkXbGJ2uuXvbS3otoxv71mYo6kPbvgLRvtvPxwmoHqELKig22SZVeTHaVZ1W'); // go fund meme - sell
 
         // PUMPFUN AMM
-        // await this.processTx('2PZmsmcekxhTh1xCatopVuS1W32j8178zZRJZBpNGnUXBabnxo2TbkbhixA7xTgpnhz4DzYXQkPhqcpbPLtyYxUs'); // swap
-        // await this.processTx('5XjvUxArVST3p6wpF6JnwboAgbJohVq3AKXrCisotNreZVMrxm7aARgtuS4U7F1XWWCpc5BVn732hQSoNb7izeoo'); // add lp
-        // await this.processTx('3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp        
+        // await this.processTx(Chain.SOLANA, '2PZmsmcekxhTh1xCatopVuS1W32j8178zZRJZBpNGnUXBabnxo2TbkbhixA7xTgpnhz4DzYXQkPhqcpbPLtyYxUs'); // swap
+        // await this.processTx(Chain.SOLANA, '5XjvUxArVST3p6wpF6JnwboAgbJohVq3AKXrCisotNreZVMrxm7aARgtuS4U7F1XWWCpc5BVn732hQSoNb7izeoo'); // add lp
+        // await this.processTx(Chain.SOLANA, '3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp        
 
         // SONIC SVM
         // await this.processTx(Chain.SONIC, '5V9cB7VyDQANcEMG5QLH67uqsobDC1tYhivra93GU88HZVgrsRRtuJpbCbAwikwCyhh58EoEfQWUvsiigJMfpWuv'); // stake
