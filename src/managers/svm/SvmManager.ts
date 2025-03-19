@@ -23,7 +23,7 @@ export class SvmManager {
         const subscriptionId = connection.onLogs('all', async (logInfo) => {
             const { signature } = logInfo;
             
-            LogManager.forceLog(`New transaction observed: ${signature}`);
+            LogManager.log(`New transaction observed: ${signature}`);
 
             try {
                 const parsedTx = await connection.getParsedTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });

@@ -5,7 +5,7 @@ import { BotManager } from "../managers/bot/BotManager";
 import { ProgramManager } from "../managers/ProgramManager";
 import { ExplorerManager } from "./explorers/ExplorerManager";
 import { HeliusManager } from "./solana/HeliusManager";
-import { Chain } from "./solana/types";
+import { Chain, Priority } from "./solana/types";
 import { Helpers } from "./helpers/Helpers";
 import { BN } from "bn.js";
 import { SolanaManager } from "./solana/SolanaManager";
@@ -50,6 +50,7 @@ import mongoose from 'mongoose';
 import { InlineKeyboardButton } from "grammy/types";
 import { SvmManager } from "../managers/svm/SvmManager";
 import { TraderProfilesManager } from "../managers/TraderProfilesManager";
+import { EnvManager } from "../managers/EnvManager";
 
 export class MigrationManager {
 
@@ -208,17 +209,22 @@ export class MigrationManager {
         // const svm = new SvmManager(Chain.SONIC_TESTNET);
         // await svm.subscribe();
 
-        let countUsers = 0;
-        const users = await User.find({ });
-        for (const user of users) {
-            const traders = await TraderProfilesManager.getUserTraderProfiles(user.id);
-            if (traders.length == 0){
-                // console.log('!mike', 'traders', traders);
-                countUsers++;
+        if (EnvManager.isCronProcess){
+            let countUsers = 0;
+            const users = await User.find({ });
+            for (const user of users) {
+                const traders = await TraderProfilesManager.getUserTraderProfiles(user.id);
+                if (traders.length == 0){
+                    // console.log('!mike', 'traders', traders);
+                    countUsers++;
+                    
+                    await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
+                }
             }
+            console.log('!mike', 'countUsers', countUsers);
         }
 
-        console.log('!mike', 'countUsers', countUsers);
+
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
