@@ -103,11 +103,11 @@ export class TraderProfilesManager {
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         LogManager.log('deactivateTraderProfile', 'traderProfile:', traderProfile);
         if (!traderProfile){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         if (traderProfile.userId != userId){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         traderProfile.active = false;
@@ -150,7 +150,7 @@ export class TraderProfilesManager {
         if (traderProfile){
             let walletAddress = traderProfile.wallet?.publicKey;
             if (!walletAddress){
-                // That's impossible. All "light" traders should have a wallet
+                // That's impossible. All "light" trader profiles should have a wallet
                 throw new BadRequestError('Wallet not found');
             }
 

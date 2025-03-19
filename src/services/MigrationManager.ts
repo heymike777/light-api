@@ -300,7 +300,7 @@ export class MigrationManager {
             profile.createdAt = new Date();
             await profile.save();
 
-            LogManager.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'userId', user.id, 'engineId', engine.id, engine.title, 'trader created');
+            LogManager.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'userId', user.id, 'engineId', engine.id, engine.title, 'trader profile created');
         }
     }
 

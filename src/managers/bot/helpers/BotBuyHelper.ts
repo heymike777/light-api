@@ -39,7 +39,7 @@ export class BotBuyHelper extends BotHelper {
 
                 const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
                 if (!traderProfile){
-                    await BotManager.reply(ctx, '🟡 Please, create a trader first');
+                    await BotManager.reply(ctx, '🟡 Please, create a trader profile first');
                     return;
                 }
 

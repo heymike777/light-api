@@ -205,7 +205,7 @@ export class UserManager {
             throw new BadRequestError('User has transactions');
         }
 
-        //TODO: check traders. If user has traders - just move them to toUser
+        //TODO: check trader profiles. If user has trader profiles - just move them to toUser
 
         LogManager.log('mergeUsers', 'fromUser.telegram:', fromUser.telegram, 'toUser.telegram:', toUser.telegram);
         if (fromUser.telegram?.id && toUser.telegram?.id){

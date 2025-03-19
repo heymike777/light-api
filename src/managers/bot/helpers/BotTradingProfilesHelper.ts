@@ -20,24 +20,31 @@ export class BotTraderProfilesHelper extends BotHelper {
         LogManager.log('BotTraderProfilesHelper', 'constructor');
 
         const buttons: InlineButton[] = [
-            {id: 'traders|create', text: '➕ Add trader'},
-            {id: `traders|refresh`, text: '↻ Refresh'},
+            {id: 'trader_profiles|create', text: '➕ Add profile'},
+            // {id: 'trader_profiles|import', text: '⬇️ Import profile'},
+            // {id: 'row', text: ''},
+            {id: `trader_profiles|refresh`, text: '↻ Refresh'},
         ];
 
         const replyMessage: Message = {
-            text: 'Traders',
+            text: 'Trader profiles',
             buttons: buttons,
             markup: BotManager.buildInlineKeyboard(buttons),
         };
 
-        super('traders', replyMessage, ['choose_trader', 'portfolio']);
+        super('trader_profiles', replyMessage, ['choose_trader', 'portfolio', 'traders']);
     }
 
     async commandReceived(ctx: Context, user: IUser) {
         await UserManager.updateTelegramState(user.id, undefined);
 
-        const buttonId = ctx.update?.callback_query?.data;
+        let buttonId = ctx.update?.callback_query?.data;
         const botUsername = BotManager.getBotUsername(ctx);
+
+        if (buttonId && buttonId.startsWith('traders|')){
+            // this is a fix for the old buttonId. we can remove it later
+            buttonId = buttonId.replace('traders|', 'trader_profiles|');
+        }
 
         if (ctx?.update?.message?.text == '/choose_trader' || buttonId == 'choose_trader'){
             let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
@@ -47,20 +54,20 @@ export class BotTraderProfilesHelper extends BotHelper {
                 if (buttons.length > 0){
                     buttons.push({ id: 'row', text: '' });
                 }
-                buttons.push({ id: `traders|make_main|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
+                buttons.push({ id: `trader_profiles|make_main|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
             }
 
             const markup = BotManager.buildInlineKeyboard(buttons);
 
-            await BotManager.reply(ctx, 'Choose your main trader', {
+            await BotManager.reply(ctx, 'Choose your main trader profile', {
                 reply_markup: markup,
                 parse_mode: 'HTML',
             });
         }
-        else if (ctx?.update?.message?.text == '/portfolio' || buttonId == 'portfolio' || (buttonId && buttonId.startsWith('traders|portfolio'))){
+        else if (ctx?.update?.message?.text == '/portfolio' || buttonId == 'portfolio' || (buttonId && buttonId.startsWith('trader_profiles|portfolio'))){
             let traderProfileId: string | undefined;
             let isRefresh = false;
-            if (buttonId && buttonId.startsWith('traders|portfolio')){
+            if (buttonId && buttonId.startsWith('trader_profiles|portfolio')){
                 const parts = buttonId.split('|');
                 if (parts.length>2){
                     traderProfileId = parts[2];
@@ -79,7 +86,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             }
 
             if (!traderProfile){
-                await BotManager.reply(ctx, '🔴 Trader not found');
+                await BotManager.reply(ctx, '🔴 Trader profile not found');
                 return;
             }
 
@@ -87,7 +94,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
             if (isRefresh){
                 const markup = BotManager.buildInlineKeyboard([
-                    { id: `traders|portfolio|${traderProfileId}|refresh`, text: '↻ Refresh' },
+                    { id: `trader_profiles|portfolio|${traderProfileId}|refresh`, text: '↻ Refresh' },
                 ]);
                 await BotManager.editMessage(ctx, message, markup);
             }
@@ -95,14 +102,12 @@ export class BotTraderProfilesHelper extends BotHelper {
                 await BotManager.reply(ctx, message, {
                     parse_mode: 'HTML',
                     reply_markup: BotManager.buildInlineKeyboard([
-                        { id: `traders|portfolio|${traderProfile.id}|refresh`, text: '↻ Refresh' },
+                        { id: `trader_profiles|portfolio|${traderProfile.id}|refresh`, text: '↻ Refresh' },
                     ]),
                 });    
             }
-
-
         }
-        else if (buttonId && buttonId == 'traders|create'){
+        else if (buttonId && buttonId == 'trader_profiles|create'){
             const countAll = await UserTraderProfile.countDocuments({ userId: user.id });
             const engineId = SwapManager.kNativeEngineId;
             const title = `Wallet ${countAll+1}`;
@@ -130,13 +135,13 @@ export class BotTraderProfilesHelper extends BotHelper {
                 }
             }
         }
-        else if (buttonId && buttonId.startsWith('traders|show')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|show')){
             const parts = buttonId.split('|');
             const profileId = parts[2];
 
             let traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
             if (!traderProfile){
-                await BotManager.reply(ctx, '🔴 Trader not found');
+                await BotManager.reply(ctx, '🔴 Trader profile not found');
                 return;
             }
 
@@ -151,13 +156,13 @@ export class BotTraderProfilesHelper extends BotHelper {
                 parse_mode: 'HTML',
             });
         }
-        else if (buttonId && buttonId.startsWith('traders|edit_name')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|edit_name')){
             const profileId = buttonId.split('|')[2];
-            await BotManager.reply(ctx, 'Enter the new name for this trader');
+            await BotManager.reply(ctx, 'Enter the new name for this trader profile');
 
             await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_EDIT_NAME, data: {profileId}, helper: this.kCommand});
         }
-        else if (buttonId && buttonId.startsWith('traders|delete')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|delete')){
             const parts = buttonId.split('|');
             const profileId = parts[2];
             let confirm: boolean | undefined = undefined; 
@@ -173,11 +178,11 @@ export class BotTraderProfilesHelper extends BotHelper {
             if (confirm == undefined){
                 const traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
                 // ask for confirmation
-                await BotManager.reply(ctx, `Are you sure you want to delete <b>${traderProfile?.title}</b> trader? It will remove all access to this wallet. This action cannot be undone. Are you sure you want to proceed?`, {
+                await BotManager.reply(ctx, `Are you sure you want to delete <b>${traderProfile?.title}</b> trader profile? It will remove all access to this wallet. This action cannot be undone. Are you sure you want to proceed?`, {
                     parse_mode: 'HTML',
                     reply_markup: BotManager.buildInlineKeyboard([
-                        { id: `traders|delete|${profileId}|yes`, text: 'Yes' },
-                        { id: `traders|delete|${profileId}|no`, text: 'No' },
+                        { id: `trader_profiles|delete|${profileId}|yes`, text: 'Yes' },
+                        { id: `trader_profiles|delete|${profileId}|no`, text: 'No' },
                     ]),
                 });
             }
@@ -190,7 +195,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 await BotManager.deleteMessage(ctx);
             }
         }
-        else if (buttonId && buttonId.startsWith('traders|export')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|export')){
             const parts = buttonId.split('|');
             const profileId = parts[2];
 
@@ -204,11 +209,11 @@ export class BotTraderProfilesHelper extends BotHelper {
                 });    
             }
         }
-        else if (buttonId && buttonId.startsWith('traders|portfolio')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|portfolio')){
             const profileId = buttonId.split('|')[2];
             await BotManager.reply(ctx, 'TODO: portfolio of profile ' + profileId);
         }
-        else if (buttonId && buttonId.startsWith('traders|refresh')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|refresh')){
             const parts = buttonId.split('|');
             const profileId = parts.length>2 ? parts[2] : undefined;
 
@@ -219,7 +224,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                     await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);
                 }
                 else {
-                    await BotManager.editMessage(ctx, `Trader not found`, undefined);
+                    await BotManager.editMessage(ctx, `Trader profile not found`, undefined);
                 }
             }
             else {
@@ -228,7 +233,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);
             }
         }
-        else if (buttonId && buttonId.startsWith('traders|make_main')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|make_main')){
             const parts = buttonId.split('|');
             const profileId = parts[2];
             const select = parts.length>3 && parts[3] == 'select';
@@ -245,7 +250,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                     if (buttons.length > 0){
                         buttons.push({ id: 'row', text: '' });
                     }
-                    buttons.push({ id: `traders|make_main|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
+                    buttons.push({ id: `trader_profiles|make_main|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
                 }
                 const markup = BotManager.buildInlineKeyboard(buttons);
                 await BotManager.editMessageReplyMarkup(ctx, markup);
@@ -265,13 +270,13 @@ export class BotTraderProfilesHelper extends BotHelper {
         }
 
         const buttons: InlineButton[] = [];
-        buttons.push({ id: `traders|portfolio|${traderProfile.id}`, text: '🎨 Portfolio' });
-        buttons.push({ id: `traders|refresh|${traderProfile.id}`, text: '↻ Refresh' });
-        buttons.push({ id: `traders|make_main|${traderProfile.id}`, text: '⭐️ Make main' });    
+        buttons.push({ id: `trader_profiles|portfolio|${traderProfile.id}`, text: '🎨 Portfolio' });
+        buttons.push({ id: `trader_profiles|refresh|${traderProfile.id}`, text: '↻ Refresh' });
+        buttons.push({ id: `trader_profiles|make_main|${traderProfile.id}`, text: '⭐️ Make main' });    
         buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: `traders|edit_name|${traderProfile.id}`, text: '✍️ Edit name' });
-        buttons.push({ id: `traders|export|${traderProfile.id}`, text: '📤 Export' });
-        buttons.push({ id: `traders|delete|${traderProfile.id}`, text: '❌ Delete' });
+        buttons.push({ id: `trader_profiles|edit_name|${traderProfile.id}`, text: '✍️ Edit name' });
+        buttons.push({ id: `trader_profiles|export|${traderProfile.id}`, text: '📤 Export' });
+        buttons.push({ id: `trader_profiles|delete|${traderProfile.id}`, text: '❌ Delete' });
 
         return { message, buttons };
     }
@@ -297,7 +302,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         const replyMessage = this.getReplyMessage();
                     
         if (traderProfiles.length == 0){
-            replyMessage.text += 'You don\'t have any traders yet. You have to create one to start trading.\n\nYou can create multiple traders, if you want to use different strategies. For each trader you\'ll have a separate wallet, trading history, and portfolio.';
+            replyMessage.text += 'You don\'t have any trader profiles yet. You have to create one to start trading.\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you\'ll have a separate wallet, trading history, and portfolio.';
         }
         else {
             const defaultProfile = traderProfiles.find(tp => tp.default) || traderProfiles[0];
@@ -308,11 +313,11 @@ export class BotTraderProfilesHelper extends BotHelper {
             const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
     
             replyMessage.buttons = replyMessage.buttons || [];
-            replyMessage.text = `You have ${traderProfiles.length} trader${ traderProfiles.length==1?'':'s' }.`;
-            replyMessage.text += `\n\nYou can create multiple traders, if you want to use different strategies. For each trader you'll have a separate wallet, trading history, and portfolio.`;
+            replyMessage.text = `You have ${traderProfiles.length} trader profile${ traderProfiles.length==1?'':'s' }.`;
+            replyMessage.text += `\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you'll have a separate wallet, trading history, and portfolio.`;
 
             if (traderProfiles.length > 1){
-                replyMessage.text += `\n\nYour current main trader is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_trader.`;
+                replyMessage.text += `\n\nYour current main trader profile is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_trader.`;
 
                 replyMessage.buttons.push({ id: 'choose_trader', text: '⭐️ Pick main' });
             }
@@ -325,7 +330,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
                 replyMessage.buttons.push({ id: 'row', text: '' });
                 replyMessage.buttons.push({
-                    id: `traders|show|${traderProfile.id}`,
+                    id: `trader_profiles|show|${traderProfile.id}`,
                     text: `✏️ ${traderProfile.title}`,
                 });
             }
@@ -352,7 +357,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                     await BotManager.reply(ctx, `Trader updated ✅`);
                 }
                 else {
-                    await BotManager.reply(ctx, `Trader not found`);
+                    await BotManager.reply(ctx, `Trader profile not found`);
                 }
 
                 await UserManager.updateTelegramState(user.id, undefined);

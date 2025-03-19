@@ -59,11 +59,11 @@ router.get(
         const traderProfileId = req.params.traderProfileId;
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         if (traderProfile.userId != userId){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         if (traderProfile.active == false){
@@ -109,7 +109,7 @@ router.post(
         }
 
         if (engine.isSubscriptionRequired && !user.subscription){
-            throw new PremiumError("Subscription is required to create this trader");
+            throw new PremiumError("Subscription is required to create this trader profile");
         }
 
         if (engineId == SwapManager.kNativeEngineId){
@@ -150,11 +150,11 @@ router.put(
         const traderProfileId = req.params.traderProfileId;
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         if (traderProfile.userId != userId){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         if (req.body.title){
@@ -226,11 +226,11 @@ router.get(
         const traderProfileId = req.params.traderProfileId;
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         if (traderProfile.userId != userId){
-            throw new BadRequestError("Trader not found");
+            throw new BadRequestError("Trader profile not found");
         }
 
         if (traderProfile.engineId != SwapManager.kNativeEngineId){

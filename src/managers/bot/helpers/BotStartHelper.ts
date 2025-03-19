@@ -132,7 +132,7 @@ export class BotStartHelper extends BotHelper {
             {id: 'add_wallet', text: '➕ Add wallet'},
             {id: 'my_wallets', text: '👀 My wallets'},
             {id: 'row', text: ''},
-            {id: 'traders', text: '💰 Traders'},
+            {id: 'trader_profiles', text: '💰 Trader profiles'},
             {id: 'row', text: ''},
             {id: 'connect_email', text: '✉️ Connect email'},
             {id: 'referral_program', text: '🎁 Referrals'},
@@ -146,13 +146,13 @@ export class BotStartHelper extends BotHelper {
             text: '🚀 Light - real-time Solana wallet tracker and Trading Terminal.\n' + 
             '\n' +
 
-            (trader?.wallet ? '<b>Your main trader wallet:</b> <code>' + trader.wallet.publicKey + '</code> (Tap to copy)\n\n' : '') +
+            (trader?.wallet ? '<b>Your main trader profile:</b> <code>' + trader.wallet.publicKey + '</code> (Tap to copy)\n\n' : '') +
 
             '<b>Commands:</b>\n' +
             '/add_wallet - track a new wallet\n' +
             '/remove_wallet - remove a wallet from tracking\n' +
             '/my_wallets - list of your wallets\n' +
-            '/traders - list of your trader wallets\n' +
+            '/trader_profiles - list of your trader wallets\n' +
             '/buy - buy tokens\n' +
             '/sell - sell tokens\n' +
             '/help - help\n' +
