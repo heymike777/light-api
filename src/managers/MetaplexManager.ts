@@ -141,7 +141,7 @@ export class MetaplexManager {
                         if (attr.trait_type && attr.value){
                             attributes.push({
                                 trait_type: attr.trait_type,
-                                value: attr.value,
+                                value: '' + attr.value,
                             });
                         }
                     }
