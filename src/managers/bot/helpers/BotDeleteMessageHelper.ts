@@ -3,7 +3,6 @@ import { LogManager } from "../../LogManager";
 import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { IUser } from "../../../entities/users/User";
-import { TgMessage } from "../BotTypes";
 
 export class BotDeleteMessageHelper extends BotHelper {
 
@@ -15,7 +14,6 @@ export class BotDeleteMessageHelper extends BotHelper {
 
     async commandReceived(ctx: Context, user: IUser) {
         await BotManager.deleteMessage(ctx);
-        await super.commandReceived(ctx, user);
     }
 
 }

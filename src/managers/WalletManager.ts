@@ -67,16 +67,18 @@ export class WalletManager {
             return existingWallet;
         }
         else {
-            const walletsCount = await Wallet.countDocuments({userId: user.id});
-            const kMaxWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
-            if (walletsCount >= kMaxWallets){
-                if (user.subscription){
-                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with ${user.subscription.tier} subscription` }, ipAddress);
-                    throw new PremiumError(`You have reached the maximum number of wallets. Please get the higher plan to track more than ${kMaxWallets} wallets.`);
-                }
-                else {
-                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with free subscription` }, ipAddress);
-                    throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
+            if (!traderProfileId){
+                const walletsCount = await Wallet.countDocuments({userId: user.id, traderProfileId: {$exists: false}});
+                const kMaxWallets = SubscriptionManager.getMaxNumberOfWallets(user.subscription?.tier);
+                if (walletsCount >= kMaxWallets){
+                    MixpanelManager.trackError(user.id, { text: `Wallets limit reached with ${user.subscription?.tier || 'free'} subscription` }, ipAddress);
+
+                    if (user.subscription){
+                        throw new PremiumError(`You have reached the maximum number of wallets. Please get the higher plan to track more than ${kMaxWallets} wallets.`);
+                    }
+                    else {
+                        throw new PremiumError('You have reached the maximum number of wallets. Please upgrade to Pro to track more wallets.');
+                    }                    
                 }
             }
             LogManager.log('all good, add wallet');

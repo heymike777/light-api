@@ -13,6 +13,8 @@ import { newConnection, newConnectionByChain } from "../../../services/solana/li
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { Chain, Priority } from "../../../services/solana/types";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import * as web3 from '@solana/web3.js';
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -21,8 +23,8 @@ export class BotTraderProfilesHelper extends BotHelper {
 
         const buttons: InlineButton[] = [
             {id: 'trader_profiles|create', text: '➕ Add profile'},
-            // {id: 'trader_profiles|import', text: '⬇️ Import profile'},
-            // {id: 'row', text: ''},
+            {id: 'trader_profiles|import', text: '⬇️ Import profile'},
+            {id: 'row', text: ''},
             {id: `trader_profiles|refresh`, text: '↻ Refresh'},
         ];
 
@@ -160,7 +162,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             const profileId = buttonId.split('|')[2];
             await BotManager.reply(ctx, 'Enter the new name for this trader profile');
 
-            await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_EDIT_NAME, data: {profileId}, helper: this.kCommand});
+            await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_PROFILE_EDIT_NAME, data: {profileId}, helper: this.kCommand});
         }
         else if (buttonId && buttonId.startsWith('trader_profiles|delete')){
             const parts = buttonId.split('|');
@@ -256,6 +258,13 @@ export class BotTraderProfilesHelper extends BotHelper {
                 await BotManager.editMessageReplyMarkup(ctx, markup);
             }
         }
+        else if (buttonId && buttonId.startsWith('trader_profiles|import')){
+            await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_PROFILE_IMPORT_NAME, helper: this.kCommand});
+            const replyMessage: Message = {
+                text: 'What would you like to name this trader profile?',
+            }
+            await super.commandReceived(ctx, user, replyMessage);
+        }
         else {
             const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user.id);
             await super.commandReceived(ctx, user, replyMessage);
@@ -343,28 +352,92 @@ export class BotTraderProfilesHelper extends BotHelper {
 
     }
 
-        async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
-            LogManager.log('BotTradingProfilesHelper', 'messageReceived', message.text);
-    
-            super.messageReceived(message, ctx, user);
-    
-            if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_EDIT_NAME){
-                const title = message.text.trim();
-    
-                const profileId = user.telegramState.data.profileId;
-                const updated = await UserTraderProfile.updateOne({ userId: user.id, _id: profileId }, { $set: { title: title } });
-                if (updated.modifiedCount == 1){
-                    await BotManager.reply(ctx, `Trader updated ✅`);
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
+        LogManager.log('BotTradingProfilesHelper', 'messageReceived', message.text);
+
+        super.messageReceived(message, ctx, user);
+
+        if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_EDIT_NAME){
+            const title = message.text.trim();
+
+            const profileId = user.telegramState.data.profileId;
+            const updated = await UserTraderProfile.updateOne({ userId: user.id, _id: profileId }, { $set: { title: title } });
+            if (updated.modifiedCount == 1){
+                await BotManager.reply(ctx, `Trader updated ✅`);
+            }
+            else {
+                await BotManager.reply(ctx, `Trader profile not found`);
+            }
+
+            await UserManager.updateTelegramState(user.id, undefined);
+            return true;
+        }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_IMPORT_NAME){
+            const title = message.text.trim();
+
+            await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_PROFILE_IMPORT_PRIVATE_KEY, helper: this.kCommand, data: {title}});
+            await BotManager.reply(ctx, 'Please, send your private key');
+            return true;
+        }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_IMPORT_PRIVATE_KEY){
+            const privateKeyString = message.text.trim();
+            let privateKey: Uint8Array | undefined = undefined;
+
+            try {
+                if (privateKeyString.startsWith('[') == false){
+                    privateKey = bs58.decode(privateKeyString);
                 }
                 else {
-                    await BotManager.reply(ctx, `Trader profile not found`);
+                    // this is a solflare format
+                    const parts = privateKeyString.substring(1, privateKeyString.length-1).split(',');
+                    privateKey = new Uint8Array(parts.map(p => parseInt(p)));
                 }
+            }
+            catch (e: any){
+                LogManager.error('e:', e);
+            }
 
-                await UserManager.updateTelegramState(user.id, undefined);
+            if (!privateKey){
+                await BotManager.reply(ctx, '🔴 Invalid private key. Please, try again.');
                 return true;
             }
-    
-            return false;
+
+            let keypair: web3.Keypair | undefined;
+            try {
+                keypair = web3.Keypair.fromSecretKey(privateKey);
+            }
+            catch (e: any){
+                LogManager.error('e:', e);
+                await BotManager.reply(ctx, '🔴 Invalid private key. Please, try again.');
+                return true;
+            }
+
+            const wallet = {
+                publicKey: keypair.publicKey.toString(),
+                privateKey: bs58.encode(keypair.secretKey),
+            };
+
+            try {
+                const title = user.telegramState?.data?.title || 'Imported wallet';
+                await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, title, Priority.MEDIUM, undefined, undefined, undefined, wallet);
+                await BotManager.reply(ctx, `Trader profile imported ✅`);
+                await UserManager.updateTelegramState(user.id, undefined);
+            }
+            catch (e: any){
+                LogManager.error('e:', e);
+                if (e.statusCode == 444){
+                    // premium error
+                    await BotManager.replyWithPremiumError(ctx, e.message);
+                }
+                else {
+                    await BotManager.reply(ctx, e.message);
+                }
+            }
+            
+            return true;
         }
+
+        return false;
+    }
 
 }
