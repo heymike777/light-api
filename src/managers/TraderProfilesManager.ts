@@ -1,3 +1,4 @@
+import { PreWallet } from "../entities/PreWallet";
 import { IUserTraderProfile, UserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser } from "../entities/users/User";
 import { Wallet } from "../entities/Wallet";
@@ -35,7 +36,9 @@ export class TraderProfilesManager {
         }
     }
 
-    static async getUserDefaultTraderProfile(userId: string): Promise<IUserTraderProfile | undefined> {
+    static async getUserDefaultTraderProfile(userId?: string): Promise<IUserTraderProfile | undefined> {
+        if (!userId){ return; }
+        
         const profiles = await this.getUserTraderProfiles(userId, SwapManager.kNativeEngineId);
         if (profiles.length == 0){
             return undefined;
@@ -55,7 +58,7 @@ export class TraderProfilesManager {
         return (profile && profile.active) ? profile : undefined;
     }
 
-    static async createTraderProfile(user: IUser, engineId: string, title: string, priority: Priority, defaultAmount?: number, slippage?: number, ipAddress?: string): Promise<IUserTraderProfile> {
+    static async createTraderProfile(user: IUser, engineId: string, title: string, priority: Priority, defaultAmount?: number, slippage?: number, ipAddress?: string, importedWallet?: WalletModel): Promise<IUserTraderProfile> {
         const maxNumberOfTraderProfiles = user.maxNumberOfTraderProfiles || SubscriptionManager.getMaxNumberOfTraderProfiles();
         const nativeProfilesCount = user.traderProfiles ? user.traderProfiles.filter(p => p.engineId == SwapManager.kNativeEngineId).length : 0;
 
@@ -63,9 +66,22 @@ export class TraderProfilesManager {
             throw new PremiumError("Max number of trader profiles reached. Upgrade your account to create more trader profiles.");
         }
 
-        let wallet: WalletModel | undefined;
-        if (engineId == SwapManager.kNativeEngineId){
-            wallet = SolanaManager.createWallet();
+        let wallet: WalletModel | undefined = importedWallet;
+        if (importedWallet) {
+            //TODO: check if the wallet is already used
+            const existing = await UserTraderProfile.findOne({ userId: user.id, "wallet.publicKey": importedWallet.publicKey, active: true });
+            if (existing){
+                throw new BadRequestError("You already have trader profile with this wallet");
+            }
+        }
+        if (!wallet && engineId == SwapManager.kNativeEngineId){
+            const niceWallet = await PreWallet.findOneAndUpdate({ isUsed: false }, { $set: { isUsed: true } });
+            if (niceWallet){
+                wallet = { publicKey: niceWallet.publicKey, privateKey: niceWallet.privateKey };
+            }
+            else {
+                wallet = SolanaManager.createWallet();
+            }
 
             fs.appendFileSync('wallets.txt', `UserId: ${user.id}, PublicKey: ${wallet.publicKey}, PrivateKey: ${wallet.privateKey}\n`);
         }

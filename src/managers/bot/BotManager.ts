@@ -31,6 +31,10 @@ import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
 import { kSolAddress } from "../../services/solana/Constants";
 import { Chain } from "../../services/solana/types";
+import { BotReferralProgramHelper } from "./helpers/BotReferralProgramHelper";
+import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
+import { BotSettingsHelper } from "./helpers/BotSettingsHelper";
+import { BotHelpHelper } from "./helpers/BotHelpHelper";
 
 export class BotManager {
     botUsername: string;
@@ -46,6 +50,10 @@ export class BotManager {
         new BotDeleteMessageHelper(),
         new BotBuyHelper(),
         new BotSellHelper(),
+        new BotReferralProgramHelper(),
+        new BotUpgradeHelper(),
+        new BotSettingsHelper(),
+        new BotHelpHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 
@@ -451,9 +459,9 @@ export class BotManager {
     }
 
     static buildTokenMetricsMessage(token: ITokenModel): string | undefined {
-        let tokensMessage: string | undefined = undefined;
+        let tokensMessage = '';
         if (token.symbol && !TokenManager.excludedTokens.includes(token.address)){
-            tokensMessage = `<b>#${token.symbol}</b>`;
+            tokensMessage += `<b>#${token.symbol}</b>`;
             if (token.name){
                 tokensMessage += ` | ${token.name}`;
             }
@@ -466,7 +474,11 @@ export class BotManager {
             if (token.price){
                 tokensMessage += ` | P: $${token.price}`;
             }
+
+            tokensMessage += '\n';
+            tokensMessage += `CA: <code>${token.address}</code>`;
         }
+
         return tokensMessage;
     }
 

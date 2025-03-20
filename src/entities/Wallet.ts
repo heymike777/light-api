@@ -41,6 +41,7 @@ WalletSchema.index({ userId: 1, status: 1 });
 WalletSchema.index({ status: 1 });
 WalletSchema.index({ traderProfileId: 1 });
 WalletSchema.index({ userId: 1, wallletAddress: 1, status: 1 });
+WalletSchema.index({ userId: 1, traderProfileId: 1 });
 
 WalletSchema.pre('save', function (next) {
     this.updatedAt = new Date();

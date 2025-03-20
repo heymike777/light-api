@@ -5,9 +5,11 @@ import { IUser, TelegramState, TelegramUser, User } from "../entities/users/User
 import { UserTransaction } from "../entities/users/UserTransaction";
 import { Wallet } from "../entities/Wallet";
 import { BadRequestError } from "../errors/BadRequestError";
+import { Priority } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { SubscriptionManager } from "./SubscriptionManager";
+import { SwapManager } from "./SwapManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 
@@ -81,11 +83,14 @@ export class UserManager {
                 createdAt: now,
             });
 
+            await TraderProfilesManager.createTraderProfile(newUser, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
+
             MixpanelManager.updateProfile(newUser, undefined);
 
             let fullName = from.first_name || '' + (from.last_name ? ' ' + from.last_name : '');
             fullName = fullName.trim();
-            SystemNotificationsManager.sendSystemMessage(`New user: @${from.username} (${fullName})`);
+            const count = await User.countDocuments({});
+            SystemNotificationsManager.sendSystemMessage(`New user (${count}): @${from.username} (${fullName})`);
 
             if (this.cacheEnabled){
                 this.cachedUsers.push({ user: newUser, createdAt: now });

@@ -46,6 +46,34 @@ router.get(
     }
 );
 
+router.get(
+    '/api/v1/users/:userId/traderProfiles/:traderProfileId',
+    jwt({ secret: process.env.JWT_SECRET_KEY!, algorithms: [process.env.JWT_ALGORITHM], credentialsRequired: true }),
+    validateAuth(),  
+    async (req: Request, res: Response) => {
+        const userId = req.accessToken?.userId;
+        if (!userId){
+            throw new NotAuthorizedError();
+        }
+
+        const traderProfileId = req.params.traderProfileId;
+        const traderProfile = await TraderProfilesManager.findById(traderProfileId);
+        if (!traderProfile){
+            throw new BadRequestError("Trader profile not found");
+        }
+
+        if (traderProfile.userId != userId){
+            throw new BadRequestError("Trader profile not found");
+        }
+
+        if (traderProfile.active == false){
+            throw new BadRequestError("Trader is deactivated");
+        }
+        
+        res.status(200).send({ traderProfile });
+    }
+);
+
 router.post(
     '/api/v1/users/:userId/traderProfiles',
     [

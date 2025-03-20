@@ -23,6 +23,8 @@ export enum TelegramWaitingType {
     ADD_WALLET = 'add_wallet',
     REMOVE_WALLET = 'remove_wallet',
     TRADER_PROFILE_EDIT_NAME = 'trader_profile_edit_name',
+    TRADER_PROFILE_IMPORT_NAME = 'trader_profile_import_name',
+    TRADER_PROFILE_IMPORT_PRIVATE_KEY = 'trader_profile_import_private_key',
     BUY_AMOUNT = 'buy_amount',
     SELL_AMOUNT = 'SELL_amount',
 }

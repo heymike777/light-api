@@ -5,42 +5,21 @@ import { LogManager } from "../../LogManager";
 import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
 import { InlineButton, TgMessage } from "../BotTypes";
+import { TraderProfilesManager } from "../../TraderProfilesManager";
+import { UserUtm } from "../../../entities/users/UserUtm";
+import { WalletManager } from "../../WalletManager";
+import { PremiumError } from "../../../errors/PremiumError";
+import { IWallet } from "../../../entities/Wallet";
+import { LegacyContentInstance } from "twilio/lib/rest/content/v1/legacyContent";
+import { Helpers } from "../../../services/helpers/Helpers";
 
 export class BotStartHelper extends BotHelper {
 
     constructor() {
         LogManager.log('BotStartHelper', 'constructor');
-
-        const buttons: InlineButton[] = [
-            {id: 'add_wallet', text: '➕ Add wallet'},
-            {id: 'my_wallets', text: '👀 My wallets'},
-            {id: 'row', text: ''},
-            {id: 'trader_profiles', text: '💰 Trader profiles'},
-            {id: 'row', text: ''},
-            {id: 'connect_email', text: '✉️ Connect email'},
-            {id: 'referral_program', text: '🎁 Referrals'},
-            {id: 'row', text: ''},
-            {id: 'upgrade', text: '👑 Upgrade'},
-            {id: 'settings', text: '⚙️ Settings'},
-        ];
-
+        
         const replyMessage: Message = {
-            photo: 'https://light.dangervalley.com/static/telegram/start.png',
-            text: '🚀 Light - real-time Solana wallet tracker.\n' + 
-            '\n' +
-            'This bot will help you to track your Solana wallets in real-time.\n' +
-            '\n' +
-            'Commands:\n' +
-            '/add_wallet - add a new wallet\n' +
-            '/remove_wallet - remove a wallet\n' +
-            '/my_wallets - list of your wallets\n' +
-            '/help - help\n' +
-            '\n' +
-            'I have a mobile app, so if you want to use it, please download it from the <a href="https://apps.apple.com/app/id6739495155">AppStore</a> or <a href="https://play.google.com/store/apps/details?id=app.light.bot">Google Play</a>.\n' +
-            '\n' +
-            'If you want to use the same account in mobile app and Telegram bot, connect email address here, and you\'ll be able to login in mobile app with the same email.\n',
-            buttons: buttons,
-            markup: BotManager.buildInlineKeyboard(buttons),
+            text: '🚀 Light - real-time Solana wallet tracker and Trading Terminal.'
         };
 
         super('start', replyMessage);
@@ -59,7 +38,10 @@ export class BotStartHelper extends BotHelper {
         const botUsername = ctx.me?.username;
         let referralCode: string | undefined = undefined;
         let mint: string | undefined = undefined;
-        let shouldSendStartMessage = true;
+        let utm: string | undefined = undefined;
+        let trackWallet: string | undefined = undefined;
+        let trackWalletTitle: string | undefined = undefined;
+        let shouldSendStartMessage = true;        
 
         if (paramsString){
             let params = paramsString.split('-');
@@ -82,6 +64,15 @@ export class BotStartHelper extends BotHelper {
                 else if (key == 'sell'){
                     mint = value;
                     shouldSendStartMessage = false;
+                }
+                else if (key == 'utm'){
+                    utm = value;
+                }
+                else if (key == 'w'){
+                    trackWallet = value;
+                }
+                else if (key == 'wt'){
+                    trackWalletTitle = value;
                 }
             }
     
@@ -118,9 +109,9 @@ export class BotStartHelper extends BotHelper {
             }
         });
 
-
         if (shouldSendStartMessage){
-            await super.commandReceived(ctx, user);
+            const replyMessage = await this.generateReplyMessage(user);
+            await super.commandReceived(ctx, user, replyMessage);
         }
 
         if (mint){
@@ -130,11 +121,80 @@ export class BotStartHelper extends BotHelper {
         if (!shouldSendStartMessage){
             await BotManager.deleteMessage(ctx);
         }
+
+        if (utm){
+            const item = new UserUtm();
+            item.userId = user.id;
+            item.utm = utm;
+            item.createdAt = new Date();
+            await item.save();
+
+            //TODO: save it to Mixpanel to User somehow (should have array of UTMs there)
+        }
+
+        if (trackWallet){
+            let wallet: IWallet | undefined = undefined;
+            try {
+                wallet = await WalletManager.addWallet(ctx.chat?.id || -1, user, trackWallet, trackWalletTitle);
+            }
+            catch (err){
+                if (err instanceof PremiumError){
+                    await BotManager.reply(ctx, err.message);
+                }
+            }
+    
+            if (wallet){
+                await BotManager.reply(ctx, `${trackWalletTitle || Helpers.prettyWallet(trackWallet)} wallet saved! We will start tracking it within a minute.`);
+            }
+        }
     }
 
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
         LogManager.log('BotStartHelper', 'messageReceived', message.text);
         return await super.messageReceived(message, ctx, user);
+    }
+
+    async generateReplyMessage(user?: IUser): Promise<Message> {
+        const trader = await TraderProfilesManager.getUserDefaultTraderProfile(user?.id);
+
+        const buttons: InlineButton[] = [
+            {id: 'add_wallet', text: '➕ Add wallet'},
+            {id: 'my_wallets', text: '👀 My wallets'},
+            {id: 'row', text: ''},
+            {id: 'trader_profiles', text: '💰 Trader profiles'},
+            {id: 'row', text: ''},
+            {id: 'connect_email', text: '✉️ Connect email'},
+            {id: 'referral_program', text: '🎁 Referrals'},
+            {id: 'row', text: ''},
+            {id: 'upgrade', text: '👑 Upgrade'},
+            {id: 'settings', text: '⚙️ Settings'},
+        ];
+
+        const replyMessage: Message = {
+            photo: 'https://light.dangervalley.com/static/telegram/start.png',
+            text: '🚀 Light - real-time Solana wallet tracker and Trading Terminal.\n' + 
+            '\n' +
+
+            (trader?.wallet ? '<b>Your main trader profile:</b> <code>' + trader.wallet.publicKey + '</code> (Tap to copy)\n\n' : '') +
+
+            '<b>Commands:</b>\n' +
+            '/add_wallet - track a new wallet\n' +
+            '/remove_wallet - remove a wallet from tracking\n' +
+            '/my_wallets - list of your wallets\n' +
+            '/trader_profiles - list of your trader wallets\n' +
+            '/buy - buy tokens\n' +
+            '/sell - sell tokens\n' +
+            '/help - help\n' +
+            '\n' +
+            '<b>Light mobile app:</b> <a href="https://apps.apple.com/app/id6739495155">AppStore</a> or <a href="https://play.google.com/store/apps/details?id=app.light.bot">Google Play</a>.\n' +
+            '\n' +
+            'If you want to use the same account in mobile app and Telegram bot, connect email address here, and you\'ll be able to login in mobile app with the same email.\n',
+            buttons: buttons,
+            markup: BotManager.buildInlineKeyboard(buttons),
+        };
+
+        return replyMessage;
+
     }
 
 }

@@ -13,6 +13,8 @@ import { newConnection, newConnectionByChain } from "../../../services/solana/li
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { Chain, Priority } from "../../../services/solana/types";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import * as web3 from '@solana/web3.js';
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -21,6 +23,8 @@ export class BotTraderProfilesHelper extends BotHelper {
 
         const buttons: InlineButton[] = [
             {id: 'trader_profiles|create', text: '➕ Add profile'},
+            {id: 'trader_profiles|import', text: '⬇️ Import profile'},
+            {id: 'row', text: ''},
             {id: `trader_profiles|refresh`, text: '↻ Refresh'},
         ];
 
@@ -30,16 +34,21 @@ export class BotTraderProfilesHelper extends BotHelper {
             markup: BotManager.buildInlineKeyboard(buttons),
         };
 
-        super('trader_profiles', replyMessage, ['choose_profile', 'portfolio']);
+        super('trader_profiles', replyMessage, ['choose_trader', 'portfolio', 'traders']);
     }
 
     async commandReceived(ctx: Context, user: IUser) {
         await UserManager.updateTelegramState(user.id, undefined);
 
-        const buttonId = ctx.update?.callback_query?.data;
+        let buttonId = ctx.update?.callback_query?.data;
         const botUsername = BotManager.getBotUsername(ctx);
 
-        if (ctx?.update?.message?.text == '/choose_profile' || buttonId == 'choose_profile'){
+        if (buttonId && buttonId.startsWith('traders|')){
+            // this is a fix for the old buttonId. we can remove it later
+            buttonId = buttonId.replace('traders|', 'trader_profiles|');
+        }
+
+        if (ctx?.update?.message?.text == '/choose_trader' || buttonId == 'choose_trader'){
             let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
 
             const buttons: InlineButton[] = [];
@@ -47,12 +56,12 @@ export class BotTraderProfilesHelper extends BotHelper {
                 if (buttons.length > 0){
                     buttons.push({ id: 'row', text: '' });
                 }
-                buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
+                buttons.push({ id: `trader_profiles|make_main|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
             }
 
             const markup = BotManager.buildInlineKeyboard(buttons);
 
-            await BotManager.reply(ctx, 'Choose your default trader profile', {
+            await BotManager.reply(ctx, 'Choose your main trader profile', {
                 reply_markup: markup,
                 parse_mode: 'HTML',
             });
@@ -99,8 +108,6 @@ export class BotTraderProfilesHelper extends BotHelper {
                     ]),
                 });    
             }
-
-
         }
         else if (buttonId && buttonId == 'trader_profiles|create'){
             const countAll = await UserTraderProfile.countDocuments({ userId: user.id });
@@ -173,7 +180,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             if (confirm == undefined){
                 const traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
                 // ask for confirmation
-                await BotManager.reply(ctx, `Are you sure you want to delete <b>${traderProfile?.title}</b> trading profile? It will remove all access to this wallet. This action cannot be undone. Are you sure you want to proceed?`, {
+                await BotManager.reply(ctx, `Are you sure you want to delete <b>${traderProfile?.title}</b> trader profile? It will remove all access to this wallet. This action cannot be undone. Are you sure you want to proceed?`, {
                     parse_mode: 'HTML',
                     reply_markup: BotManager.buildInlineKeyboard([
                         { id: `trader_profiles|delete|${profileId}|yes`, text: 'Yes' },
@@ -228,7 +235,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);
             }
         }
-        else if (buttonId && buttonId.startsWith('trader_profiles|make_default')){
+        else if (buttonId && buttonId.startsWith('trader_profiles|make_main')){
             const parts = buttonId.split('|');
             const profileId = parts[2];
             const select = parts.length>3 && parts[3] == 'select';
@@ -245,11 +252,18 @@ export class BotTraderProfilesHelper extends BotHelper {
                     if (buttons.length > 0){
                         buttons.push({ id: 'row', text: '' });
                     }
-                    buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
+                    buttons.push({ id: `trader_profiles|make_main|${traderProfile.id}|select`, text: `${traderProfile.default?'⭐️ ':''}${traderProfile.title}` });
                 }
                 const markup = BotManager.buildInlineKeyboard(buttons);
                 await BotManager.editMessageReplyMarkup(ctx, markup);
             }
+        }
+        else if (buttonId && buttonId.startsWith('trader_profiles|import')){
+            await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_PROFILE_IMPORT_NAME, helper: this.kCommand});
+            const replyMessage: Message = {
+                text: 'What would you like to name this trader profile?',
+            }
+            await super.commandReceived(ctx, user, replyMessage);
         }
         else {
             const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user.id);
@@ -267,7 +281,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         const buttons: InlineButton[] = [];
         buttons.push({ id: `trader_profiles|portfolio|${traderProfile.id}`, text: '🎨 Portfolio' });
         buttons.push({ id: `trader_profiles|refresh|${traderProfile.id}`, text: '↻ Refresh' });
-        buttons.push({ id: `trader_profiles|make_default|${traderProfile.id}`, text: '⭐️ Make default' });    
+        buttons.push({ id: `trader_profiles|make_main|${traderProfile.id}`, text: '⭐️ Make main' });    
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: `trader_profiles|edit_name|${traderProfile.id}`, text: '✍️ Edit name' });
         buttons.push({ id: `trader_profiles|export|${traderProfile.id}`, text: '📤 Export' });
@@ -312,9 +326,9 @@ export class BotTraderProfilesHelper extends BotHelper {
             replyMessage.text += `\n\nYou can create multiple trader profiles, if you want to use different strategies. For each trader profile you'll have a separate wallet, trading history, and portfolio.`;
 
             if (traderProfiles.length > 1){
-                replyMessage.text += `\n\nYour current default trader profile is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_profile.`;
+                replyMessage.text += `\n\nYour current main trader profile is <b>${defaultProfile.title}</b>. It will be used in all trading operations. You can change it at any time - /choose_trader.`;
 
-                replyMessage.buttons.push({ id: 'choose_profile', text: '⭐️ Choose profile' });
+                replyMessage.buttons.push({ id: 'choose_trader', text: '⭐️ Pick main' });
             }
 
             for (let index = 0; index < traderProfiles.length; index++) {
@@ -338,28 +352,92 @@ export class BotTraderProfilesHelper extends BotHelper {
 
     }
 
-        async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
-            LogManager.log('BotTradingProfilesHelper', 'messageReceived', message.text);
-    
-            super.messageReceived(message, ctx, user);
-    
-            if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_EDIT_NAME){
-                const title = message.text.trim();
-    
-                const profileId = user.telegramState.data.profileId;
-                const updated = await UserTraderProfile.updateOne({ userId: user.id, _id: profileId }, { $set: { title: title } });
-                if (updated.modifiedCount == 1){
-                    await BotManager.reply(ctx, `Trader profile updated ✅`);
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
+        LogManager.log('BotTradingProfilesHelper', 'messageReceived', message.text);
+
+        super.messageReceived(message, ctx, user);
+
+        if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_EDIT_NAME){
+            const title = message.text.trim();
+
+            const profileId = user.telegramState.data.profileId;
+            const updated = await UserTraderProfile.updateOne({ userId: user.id, _id: profileId }, { $set: { title: title } });
+            if (updated.modifiedCount == 1){
+                await BotManager.reply(ctx, `Trader updated ✅`);
+            }
+            else {
+                await BotManager.reply(ctx, `Trader profile not found`);
+            }
+
+            await UserManager.updateTelegramState(user.id, undefined);
+            return true;
+        }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_IMPORT_NAME){
+            const title = message.text.trim();
+
+            await UserManager.updateTelegramState(user.id, {waitingFor: TelegramWaitingType.TRADER_PROFILE_IMPORT_PRIVATE_KEY, helper: this.kCommand, data: {title}});
+            await BotManager.reply(ctx, 'Please, send your private key');
+            return true;
+        }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.TRADER_PROFILE_IMPORT_PRIVATE_KEY){
+            const privateKeyString = message.text.trim();
+            let privateKey: Uint8Array | undefined = undefined;
+
+            try {
+                if (privateKeyString.startsWith('[') == false){
+                    privateKey = bs58.decode(privateKeyString);
                 }
                 else {
-                    await BotManager.reply(ctx, `Trader profile not found`);
+                    // this is a solflare format
+                    const parts = privateKeyString.substring(1, privateKeyString.length-1).split(',');
+                    privateKey = new Uint8Array(parts.map(p => parseInt(p)));
                 }
+            }
+            catch (e: any){
+                LogManager.error('e:', e);
+            }
 
-                await UserManager.updateTelegramState(user.id, undefined);
+            if (!privateKey){
+                await BotManager.reply(ctx, '🔴 Invalid private key. Please, try again.');
                 return true;
             }
-    
-            return false;
+
+            let keypair: web3.Keypair | undefined;
+            try {
+                keypair = web3.Keypair.fromSecretKey(privateKey);
+            }
+            catch (e: any){
+                LogManager.error('e:', e);
+                await BotManager.reply(ctx, '🔴 Invalid private key. Please, try again.');
+                return true;
+            }
+
+            const wallet = {
+                publicKey: keypair.publicKey.toString(),
+                privateKey: bs58.encode(keypair.secretKey),
+            };
+
+            try {
+                const title = user.telegramState?.data?.title || 'Imported wallet';
+                await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, title, Priority.MEDIUM, undefined, undefined, undefined, wallet);
+                await BotManager.reply(ctx, `Trader profile imported ✅`);
+                await UserManager.updateTelegramState(user.id, undefined);
+            }
+            catch (e: any){
+                LogManager.error('e:', e);
+                if (e.statusCode == 444){
+                    // premium error
+                    await BotManager.replyWithPremiumError(ctx, e.message);
+                }
+                else {
+                    await BotManager.reply(ctx, e.message);
+                }
+            }
+            
+            return true;
         }
+
+        return false;
+    }
 
 }

@@ -10,6 +10,9 @@ import { TwilioManager } from '../services/TwilioManager';
 import { UserManager } from './UserManager';
 import { MixpanelManager } from './MixpanelManager';
 import { StringSchemaDefinition } from 'mongoose';
+import { TraderProfilesManager } from './TraderProfilesManager';
+import { SwapManager } from './SwapManager';
+import { Priority } from '../services/solana/types';
 
 export enum VerificationService {
     TWILIO = 'TWILIO',
@@ -153,9 +156,11 @@ export class AuthManager {
         user.createdAt = new Date();
         await user.save();
 
+        await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
+
         MixpanelManager.updateProfile(user, undefined);
     
-        const count = await User.countDocuments({ email: {$exists: true} });
+        const count = await User.countDocuments({});
         SystemNotificationsManager.sendSystemMessage(`New user (${count}): ${email}`);
 
         return user;
