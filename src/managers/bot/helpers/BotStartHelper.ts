@@ -7,6 +7,11 @@ import { BotHelper, Message } from "./BotHelper";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
 import { UserUtm } from "../../../entities/users/UserUtm";
+import { WalletManager } from "../../WalletManager";
+import { PremiumError } from "../../../errors/PremiumError";
+import { IWallet } from "../../../entities/Wallet";
+import { LegacyContentInstance } from "twilio/lib/rest/content/v1/legacyContent";
+import { Helpers } from "../../../services/helpers/Helpers";
 
 export class BotStartHelper extends BotHelper {
 
@@ -34,6 +39,8 @@ export class BotStartHelper extends BotHelper {
         let referralCode: string | undefined = undefined;
         let mint: string | undefined = undefined;
         let utm: string | undefined = undefined;
+        let trackWallet: string | undefined = undefined;
+        let trackWalletTitle: string | undefined = undefined;
         let shouldSendStartMessage = true;        
 
         if (paramsString){
@@ -60,6 +67,12 @@ export class BotStartHelper extends BotHelper {
                 }
                 else if (key == 'utm'){
                     utm = value;
+                }
+                else if (key == 'w'){
+                    trackWallet = value;
+                }
+                else if (key == 'wt'){
+                    trackWalletTitle = value;
                 }
             }
     
@@ -117,6 +130,22 @@ export class BotStartHelper extends BotHelper {
             await item.save();
 
             //TODO: save it to Mixpanel to User somehow (should have array of UTMs there)
+        }
+
+        if (trackWallet){
+            let wallet: IWallet | undefined = undefined;
+            try {
+                wallet = await WalletManager.addWallet(ctx.chat?.id || -1, user, trackWallet, trackWalletTitle);
+            }
+            catch (err){
+                if (err instanceof PremiumError){
+                    await BotManager.reply(ctx, err.message);
+                }
+            }
+    
+            if (wallet){
+                await BotManager.reply(ctx, `${trackWalletTitle || Helpers.prettyWallet(trackWallet)} wallet saved! We will start tracking it within a minute.`);
+            }
         }
     }
 
