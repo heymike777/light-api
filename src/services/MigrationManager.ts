@@ -152,7 +152,7 @@ export class MigrationManager {
         // await this.processTx(Chain.SOLANA, '2k4dMaxXiN6Qs6z9kadGjyqvSDJdVCWEZyVBSe9rChDqo3o3KUVXbrvQPCuh9kEae4Bom55oMaCqmSHVXyVhj4gs'); // go fund meme - buy
         // await this.processTx(Chain.SOLANA, '3p7j3ggDGvSFmhvxQ4wVE8QTWX7JdkXbGJ2uuXvbS3otoxv71mYo6kPbvgLRvtvPxwmoHqELKig22SZVeTHaVZ1W'); // go fund meme - sell
 
-        // PUMPFUN AMM
+        // PUMPSWAP
         // await this.processTx(Chain.SOLANA, '2PZmsmcekxhTh1xCatopVuS1W32j8178zZRJZBpNGnUXBabnxo2TbkbhixA7xTgpnhz4DzYXQkPhqcpbPLtyYxUs'); // swap
         // await this.processTx(Chain.SOLANA, '5XjvUxArVST3p6wpF6JnwboAgbJohVq3AKXrCisotNreZVMrxm7aARgtuS4U7F1XWWCpc5BVn732hQSoNb7izeoo'); // add lp
         // await this.processTx(Chain.SOLANA, '3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp        

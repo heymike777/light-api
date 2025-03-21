@@ -341,7 +341,7 @@ export const kPrograms: { [key: string]: {
         skip: false,
     },
     [kProgram.PUMPFUN_AMM]: {
-        name: 'PUMPFUN AMM',
+        name: 'PUMPSWAP',
         knownInstructions: [
             { 'buy': {title: 'BUY', priority: 3} },
             { 'sell': {title: 'SELL', priority: 3} },
