@@ -34,6 +34,7 @@ export enum kProgram {
 
     GO_FUND_MEME = 'GFMioXjhuDWMEBtuaoaDPJFPEnL2yDHCWKoVPhj1MeA7',
 
+    TITAN_DEX = 'T1TANpTeScyeqVzzgNViGDNrkQ6qHz9KrSBS4aNXvGT',
 
     // SONIC SVM
     SONIC_STAKING = 'g3yMgSB3Q7gNjMfSoCm1PiJihqHdNJeUuPHvRyf45qY',
@@ -396,6 +397,14 @@ export const kPrograms: { [key: string]: {
         ],
         skip: false,
         searchLogs: true,
+    },
+    [kProgram.TITAN_DEX]: {
+        name: 'TITAN',
+        knownInstructions: [
+            { 'any': {title: 'SWAP', priority: 1} },
+        ],
+        skip: false,
+        searchLogs: false,
     },
 }
 
