@@ -406,7 +406,6 @@ export class ProgramManager {
             }
             else if (programId == kProgram.JUPITER_Z){
                 if (['fill'].indexOf(ixParsed.name) != -1){
-                    
                     const walletAddress = accounts?.[0]?.toBase58();
                     if (walletAddress && tx?.meta){
                         const changes = this.findChangedTokenBalances(walletAddress, tx, false);
@@ -904,14 +903,14 @@ export class ProgramManager {
                         pool2: accounts?.[8]?.toBase58() || '',
                     }
                     swap = tx ? this.getParsedSwapFromTxByMarket(tx, market, true) : undefined;
-                    description = this.getSwapDescription(chain, swap, walletAddress, 'PumpFun AMM');    
+                    description = this.getSwapDescription(chain, swap, walletAddress, 'PumpSwap');    
                 }
                 // else if (['create_pool'].indexOf(ixType) != -1){
                 //     const walletAddress = accounts?.[11]?.toBase58();
                 //     if (walletAddress){
                 //         const addresses = [walletAddress];
                 //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> created a token on PumpFun AMM`,
+                //             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> created a token on PumpSwap`,
                 //             addresses: addresses,
                 //         }; 
                 //     }
@@ -921,7 +920,7 @@ export class ProgramManager {
                     if (walletAddress){
                         const addresses = [walletAddress];
                         description = {
-                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> removed liquidity on PumpFun AMM`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> removed liquidity on PumpSwap`,
                             addresses: addresses,
                         }; 
                     }
@@ -931,7 +930,7 @@ export class ProgramManager {
                     if (walletAddress){
                         const addresses = [walletAddress];
                         description = {
-                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> added liquidity on PumpFun AMM`,
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> added liquidity on PumpSwap`,
                             addresses: addresses,
                         }; 
                     }                
@@ -968,7 +967,22 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.SEGA){
+            }
+            else if (programId == kProgram.TITAN_DEX){
+                const walletAddress = accounts?.[0]?.toBase58();
+                if (walletAddress && tx?.meta){
+                    const changes = this.findChangedTokenBalances(walletAddress, tx, false);
+                    if (changes.length > 0){
+                        const tokenMint = changes[0].mint;
+                        const amount = changes[0].uiAmountChange;
 
+                        const addresses = [walletAddress, tokenMint];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> ${amount>0?'bought':'sold'} ${Math.abs(amount)} <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> on Titan`,
+                            addresses: addresses,
+                        };    
+                    }
+                }    
             }
 
         }

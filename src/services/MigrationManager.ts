@@ -155,7 +155,7 @@ export class MigrationManager {
         // await this.processTx(Chain.SOLANA, '2k4dMaxXiN6Qs6z9kadGjyqvSDJdVCWEZyVBSe9rChDqo3o3KUVXbrvQPCuh9kEae4Bom55oMaCqmSHVXyVhj4gs'); // go fund meme - buy
         // await this.processTx(Chain.SOLANA, '3p7j3ggDGvSFmhvxQ4wVE8QTWX7JdkXbGJ2uuXvbS3otoxv71mYo6kPbvgLRvtvPxwmoHqELKig22SZVeTHaVZ1W'); // go fund meme - sell
 
-        // PUMPFUN AMM
+        // PUMPSWAP
         // await this.processTx(Chain.SOLANA, '2PZmsmcekxhTh1xCatopVuS1W32j8178zZRJZBpNGnUXBabnxo2TbkbhixA7xTgpnhz4DzYXQkPhqcpbPLtyYxUs'); // swap
         // await this.processTx(Chain.SOLANA, '5XjvUxArVST3p6wpF6JnwboAgbJohVq3AKXrCisotNreZVMrxm7aARgtuS4U7F1XWWCpc5BVn732hQSoNb7izeoo'); // add lp
         // await this.processTx(Chain.SOLANA, '3aKCXa39t1ma32pzdWqa2wzYrmc1L9z8KBj9V9Tf1bUpLemeSghQ4Q3hFEXwk7ZKcSXnLPji6cr6v9Nq2RMhkzWw'); // withdraw lp        
@@ -165,6 +165,9 @@ export class MigrationManager {
         // await this.processTx(Chain.SONIC, '4g4KAqWS4jNYhSgWWVu8CnG5Si9YUASWVY4GaMYGNHcYtkjeFVLr7NgbuoF6f73FqqNera6iCg3x4yiApVkxFBMW'); // SWAP on SEGA
         // await this.processTx(Chain.SONIC, '24ER3mdG69QTAFoUuVyrQSyDLLYw1JeNtRPzQikorEqgjbaqDniFyfMZE7nCynsC77Bo1wAuuJ7o4J6fshbZg7bf'); // ADD LIQUIDITY on SEGA
         // await this.processTx(Chain.SONIC, '66mhhqK9UzBWtqriYNTRqUnBw1BYopKDK8ZwSgrhTemTBBws4GLhj6AHHZP94xru7KKgenUHQUPYsJHXiKjpRms'); // REMOVE LIQUIDITY on SEGA
+
+        // TITAN DEX
+        // await this.processTx(Chain.SOLANA, '55FqEG5gr7bKADuH6oy539qbDwyfBVdNSif3c57pXE8kX6Tkz3KC1g9cvkKAjJa9HsAkXDuUGoTxaG8akhRfdYPu'); // swap
 
         // const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(Chain.SONIC, [
         //     'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', 
