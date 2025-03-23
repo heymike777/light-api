@@ -137,7 +137,10 @@ const onExpressStarted = async () => {
     // await TokenManager.updateTokensPrices();
     // JitoWebsocketManager.getInstance();
 
-    await JitoManager.initSearcherClient();
+    console.log('INIT_JITO_SEARCHER', process.env.INIT_JITO_SEARCHER);
+    if (process.env.INIT_JITO_SEARCHER == 'true'){
+        await JitoManager.initSearcherClient();
+    }
 
     await MigrationManager.migrate();
 }

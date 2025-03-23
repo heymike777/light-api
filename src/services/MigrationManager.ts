@@ -59,6 +59,7 @@ export class MigrationManager {
 
     static kBonk = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
     static kPyth = 'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3';
+    static kChillGuy = 'Df6yfrKC8kZE3KNkrHERKzAetSxbrWeniQfyJY4Jpump';
     static kMikeUserId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
     static async migrate() {
@@ -236,33 +237,35 @@ export class MigrationManager {
 
         await SolanaManager.getRecentBlockhash(Chain.SOLANA);
 
-        // 8GY5Ps1pdiaXDGSjjnEe2HX546HXvMnWMrJRFaQ3S7rQ
         const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
         const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
         if (!traderProfile){
             console.error('!mike', 'traderProfile not found');
             return;
         }
+        let txs = await RaydiumManager.buyHoneypot(Chain.SOLANA, userId, traderProfile, this.kChillGuy, 0.005 * LAMPORTS_PER_SOL, 50)
+        const jito = true;
 
-        // console.log('!mike', 'traderProfile', traderProfile);
-        const txs = await RaydiumManager.buyHoneypot(Chain.SOLANA, userId, traderProfile, this.kBonk, 0.005 * LAMPORTS_PER_SOL, 50)
-        const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet!.privateKey));
-        const jitoResult = await JitoManager.sendBundle(txs, traderKeypair, false);
-        console.log('!mike', 'jitoResult', jitoResult);
-        console.log('!mike', 'txs.length', txs.length);
+        if (jito){
+            const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet!.privateKey));
+            const jitoResult = await JitoManager.sendBundle(txs, traderKeypair, false);
+            console.log('!mike', 'jitoResult', jitoResult);
+            console.log('!mike', 'txs.length', txs.length);
+        }
+        else {
+            // remove last tx
+            txs.pop();
 
-        // const connection = newConnectionByChain(Chain.SOLANA);
-        // const signature = await connection.sendTransaction(txs[1], { skipPreflight: true, maxRetries: 0 });
-        // console.log('!mike', `signature_0`, signature);
-
-        // let index = 1;
-        // for (const tx of txs){
-        //     console.log('start tx', index);
-        //     const signature = await connection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
-        //     console.log('!mike', `signature_${index}`, signature);
-        //     await Helpers.sleep(30);
-        //     index++
-        // }
+            const connection = newConnectionByChain(Chain.SOLANA);
+            let index = 1;
+            for (const tx of txs){
+                console.log('start tx', index);
+                const signature = await connection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
+                console.log('!mike', `signature_${index}`, signature);
+                await Helpers.sleep(15);
+                index++
+            }
+        }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
         
