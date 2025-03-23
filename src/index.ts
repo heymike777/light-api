@@ -38,6 +38,7 @@ import { portfolioRouter } from './routes/v1/Portfolio';
 import { WalletGeneratorManager } from './managers/WalletGeneratorManager';
 import { Chain } from './services/solana/types';
 import { SvmManager } from './managers/svm/SvmManager';
+import { JitoManager } from './services/solana/JitoManager';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -135,7 +136,8 @@ const onExpressStarted = async () => {
 
     // await TokenManager.updateTokensPrices();
     // JitoWebsocketManager.getInstance();
-    // await JitoManager.initSearcherClient();
+
+    await JitoManager.initSearcherClient();
 
     await MigrationManager.migrate();
 }

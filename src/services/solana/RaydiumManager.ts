@@ -11,6 +11,13 @@ import { BadRequestError } from "../../errors/BadRequestError";
 import { kSolAddress } from "./Constants";
 import { MemoryManager } from "../../managers/MemoryManager";
 import Decimal from "decimal.js";
+import fs from 'fs';
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { IUserTraderProfile } from "../../entities/users/TraderProfile";
+import { connect } from "http2";
+import { JitoManager } from "./JitoManager";
+import { SwapManager } from "../../managers/SwapManager";
+import { Currency } from "../../models/types";
 
 const VALID_PROGRAM_ID = new Set([
     AMM_V4.toBase58(),
@@ -47,11 +54,7 @@ export type SwapInputIn = {
     shouldAddTips?: boolean,
     blockhash?: string,
 
-    poolInfoFromRpc?: {
-        poolRpcData: AmmRpcData,
-        poolInfo: ComputeAmountOutParam["poolInfo"],
-        poolKeys: AmmV4Keys | AmmV5Keys,
-    },
+    poolInfoFromRpc?: PoolInfoFromRpc,
 }
 
 export type SwapInputOut = {
@@ -68,11 +71,13 @@ export type SwapInputOut = {
     blockhash?: string,
     shouldAddFakeTokenAccountForMintIn?: boolean,
 
-    poolInfoFromRpc?: {
-        poolRpcData: AmmRpcData,
-        poolInfo: ComputeAmountOutParam["poolInfo"],
-        poolKeys: AmmV4Keys | AmmV5Keys,
-    },
+    poolInfoFromRpc?: PoolInfoFromRpc,
+}
+
+export type PoolInfoFromRpc = {
+    poolRpcData: AmmRpcData,
+    poolInfo: ComputeAmountOutParam["poolInfo"],
+    poolKeys: AmmV4Keys | AmmV5Keys,
 }
 
 export class RaydiumManager {   
@@ -87,18 +92,47 @@ export class RaydiumManager {
         this.connection = newConnectionByChain(chain);
     }
 
-    async init() {
-        this.raydium = await this.initRaydium(undefined, undefined);    
-        // await this.fetchWsolTokenAccount();    
+    async init(tokenAccounts?: TokenAccount[], tokenAccountRawInfos?: TokenAccountRaw[], shouldLoadTokens?: boolean) {
+        this.raydium = await this.initRaydium(tokenAccounts, tokenAccountRawInfos, shouldLoadTokens);    
+        // await this.fetchWsolTokenAccount();   
+    }
+
+    async addTokenAccount(tokenAccount: TokenAccount, tokenAccountRawInfo?: TokenAccountRaw) {
+        if (!this.raydium){
+            return false;
+        }
+
+        // remove old token account
+        const oldTokenAccount = this.raydium.account.tokenAccounts.find(ta => ta.mint.toBase58() == tokenAccount.mint.toBase58());
+        if (oldTokenAccount){
+            const index = this.raydium.account.tokenAccounts.indexOf(oldTokenAccount);
+            this.raydium.account.tokenAccounts.splice(index, 1);
+        }
+        this.raydium.account.tokenAccounts.push(tokenAccount);
+
+
+        if (tokenAccountRawInfo){
+            // remove old token account raw info
+            const oldTokenAccountRawInfo = this.raydium.account.tokenAccountRawInfos.find(ta => ta.accountInfo.mint.toBase58() == tokenAccount.mint.toBase58());
+            if (oldTokenAccountRawInfo){
+                const index = this.raydium.account.tokenAccountRawInfos.indexOf(oldTokenAccountRawInfo);
+                this.raydium.account.tokenAccountRawInfos.splice(index, 1);
+            }
+
+            this.raydium.account.tokenAccountRawInfos.push(tokenAccountRawInfo);
+        }
+        
+        return true;
     }
     
-    async initRaydium(tokenAccounts?: TokenAccount[], tokenAccountRawInfos?: TokenAccountRaw[]): Promise<Raydium> {
+    async initRaydium(tokenAccounts?: TokenAccount[], tokenAccountRawInfos?: TokenAccountRaw[], shouldLoadTokens?: boolean): Promise<Raydium> {
         let time = Date.now();
 
-        LogManager.log('RaydiumManager', 'init1', 'time:', (Date.now() - time), 'ms');
+        console.log('RaydiumManager', 'init1', 'time:', (Date.now() - time), 'ms');
         time = Date.now();
 
-        const disableLoadToken = tokenAccounts == undefined ? false : true;
+        const disableLoadToken = shouldLoadTokens==false || tokenAccounts!=undefined;
+        console.log('RaydiumManager', 'disableLoadToken:', disableLoadToken);
 
         const raydium = await Raydium.load({
             connection: this.connection,
@@ -109,7 +143,7 @@ export class RaydiumManager {
             tokenAccounts: tokenAccounts,
             tokenAccountRawInfos: tokenAccountRawInfos,
         });
-        LogManager.log('RaydiumManager', 'init2', 'time:', (Date.now() - time), 'ms');
+        console.log('RaydiumManager', 'init2', 'time:', (Date.now() - time), 'ms');
         time = Date.now();
         return raydium;
     }
@@ -126,7 +160,7 @@ export class RaydiumManager {
             throw new BadRequestError('Raydium is not initialized');
         }
 
-        const poolInfoFromRpc = await this.raydium.liquidity.getPoolInfoFromRpc({ poolId });
+        const poolInfoFromRpc = input.poolInfoFromRpc || (await this.raydium.liquidity.getPoolInfoFromRpc({ poolId }));
         const memoryPool = {
             poolInfo: poolInfoFromRpc.poolInfo,
             poolKeys: poolInfoFromRpc.poolKeys,
@@ -153,7 +187,7 @@ export class RaydiumManager {
 
         // I don't need this for sandwich bot, because I'll create token ata every time. But I need this for sniper bot and for Nova
         // const tokenMint = mintIn.address == Token.WSOL.mint.toBase58() ? mintOut.address : mintIn.address;
-        timeLogs.push({log: 'swap5', date: new Date()});        
+        timeLogs.push({log: 'swap5', date: new Date()});
 
         let amountIn: BN;
         let amountOut: BN;
@@ -207,8 +241,8 @@ export class RaydiumManager {
         }
         timeLogs.push({log: 'swap9', date: new Date()});
 
-        LogManager.log('swap9', 'amountIn:', amountIn.toString(), 'amountOut:', amountOut.toString());
-        LogManager.log('mintIn.address:', mintIn.address);
+        console.log('swap9', 'amountIn:', amountIn.toString(), 'amountOut:', amountOut.toString());
+        console.log('mintIn.address:', mintIn.address);
 
         let { transaction, builder } = await this.raydium.liquidity.swap({
             poolInfo,
@@ -226,26 +260,26 @@ export class RaydiumManager {
             },
         
             //TODO: set up priority fee here. do we need it since we use Jito?
-            // computeBudgetConfig: {
-            //     units: 120000,
-            //     microLamports: 1000000,
-            // },
+            computeBudgetConfig: { //TODO: remove
+                units: 200000,
+                microLamports: 1000000,
+            },
         });
 
         timeLogs.push({log: 'swap10', date: new Date()});
 
-        LogManager.log('swap10');
+        console.log('swap10');
 
         if (input.shouldCloseAta){
             const tokenAta = this.raydium.account.tokenAccounts.find(ta => ta.mint.toBase58() == mintIn.address)?.publicKey;
             if (tokenAta){
-                LogManager.log('!tokenAta found');
+                console.log('!tokenAta found');
                 const closeAtaIx = SolanaManager.createBurnSplAccountInstruction(tokenAta, this.owner.publicKey, this.owner.publicKey);
                 builder.addInstruction({endInstructions: [closeAtaIx]});
                 timeLogs.push({log: 'swap11', date: new Date()});
             }
             else {
-                LogManager.log('!tokenAta not found');
+                console.log('!tokenAta not found');
             }
         }
 
@@ -260,19 +294,12 @@ export class RaydiumManager {
         timeLogs.push({log: 'swap13', date: new Date()});
 
         const tookMs = timeLogs[timeLogs.length-1].date.getTime() - timeLogs[0].date.getTime();
-        LogManager.log('swap', 'took:', tookMs, 'ms', 'Times:', JSON.stringify(timeLogs));
+        console.log('swap', 'took:', tookMs, 'ms', 'Times:', JSON.stringify(timeLogs));
 
         return { tx };
     }
 
-    async calcAmountOut(input: SwapInput): Promise<{
-        amountOut: BN, 
-        poolInfoFromRpc: {
-            poolRpcData: AmmRpcData,
-            poolInfo: ComputeAmountOutParam["poolInfo"],
-            poolKeys: AmmV4Keys | AmmV5Keys,
-        }
-    }> {
+    async calcAmountOut(input: SwapInput): Promise<{ amountOut: BN, poolInfoFromRpc: PoolInfoFromRpc }> {
         if (!this.raydium){
             throw new BadRequestError('Raydium is not initialized');
         }
@@ -367,87 +394,152 @@ export class RaydiumManager {
         return {tokenAccount, tokenAccountRawInfo};
     }
 
-    async addLiquidity(poolId: string, slippage: number): Promise<web3.VersionedTransaction> {
+    buildFakeNativeTokenAccount(amount: BN): {tokenAccount: TokenAccount} {
+        const tokenAccount: TokenAccount = {
+            mint: new web3.PublicKey(kSolAddress),
+            amount: amount,
+            isNative: true,
+            programId: new web3.PublicKey('11111111111111111111111111111111'),
+        };
+
+        return {tokenAccount};
+    }
+
+    async addLiquidity(inputAmount: BN, slippage: number, blockhash: string, poolInfoFromRpc: PoolInfoFromRpc): Promise<web3.VersionedTransaction> {
         if (!this.raydium){
             throw new BadRequestError('Raydium is not initialized');
         }
 
+        console.log('addLiquidty', 'inputAmount:', inputAmount.toString());
+
         let poolKeys: AmmV4Keys | AmmV5Keys | undefined
         let poolInfo: ApiV3PoolInfoStandardItem;
       
-        const data = await this.raydium.liquidity.getPoolInfoFromRpc({ poolId })
-        poolInfo = data.poolInfo
-        poolKeys = data.poolKeys
+        poolInfo = poolInfoFromRpc.poolInfo
+        poolKeys = poolInfoFromRpc.poolKeys
       
         if (!isValidAmm(poolInfo.programId)) throw new Error('target pool is not AMM pool')
       
-        const inputAmount = '1'
-      
+        const { div, mod } = inputAmount.divmod(new BN(10 ** poolInfo.mintA.decimals));
+
+        const amount = `${div}.${mod.toString()}`;
+        console.log('addLiquidity', 'amount:', amount, 'slippage:', slippage);
+
         const r = this.raydium.liquidity.computePairAmount({
             poolInfo,
-            amount: inputAmount,
+            amount: amount,
             baseIn: true,
             slippage: new Percent(slippage, 100), 
         })
-      
-        const { transaction } = await this.raydium.liquidity.addLiquidity({
+
+        this.printTokenAccounts('3');
+
+        const amountInA = new TokenAmount(
+            toToken(poolInfo.mintA),
+            inputAmount,
+        );
+        const amountInB = new TokenAmount(
+            toToken(poolInfo.mintB),
+            new Decimal(r.maxAnotherAmount.toExact()).mul(10 ** poolInfo.mintB.decimals).toFixed(0)
+        );
+
+        console.log('addLiquidity', 'amountInA:', amountInA.toExact(), 'BN:', amountInA.raw.toString());
+        console.log('addLiquidity', 'amountInB:', amountInB.toExact(), 'BN:', amountInB.raw.toString());
+        console.log('addLiquidity', 'otherAmountMin:', r.minAnotherAmount.toExact(), 'BN:', r.minAnotherAmount.raw.toString());
+        console.log('addLiquidity', 'poolInfo.mintA:', poolInfo.mintA);
+        console.log('addLiquidity', 'poolInfo.mintB:', poolInfo.mintB);
+
+        const { transaction, builder, buildProps } = await this.raydium.liquidity.addLiquidity({
             poolInfo,
             poolKeys,
-            amountInA: new TokenAmount(
-                toToken(poolInfo.mintA),
-                new Decimal(inputAmount).mul(10 ** poolInfo.mintA.decimals).toFixed(0)
-            ),
-            amountInB: new TokenAmount(
-                toToken(poolInfo.mintB),
-                new Decimal(r.maxAnotherAmount.toExact()).mul(10 ** poolInfo.mintB.decimals).toFixed(0)
-            ),
+            amountInA: amountInA,
+            amountInB: amountInB,
             otherAmountMin: r.minAnotherAmount,
             fixedSide: 'a',
             txVersion: TxVersion.V0,
+            config: {
+                bypassAssociatedCheck: true,
+                checkCreateATAOwner: false,
+            },
             // optional: set up priority fee here
-            // computeBudgetConfig: {
-            //   units: 600000,
-            //   microLamports: 46591500,
-            // },
+            computeBudgetConfig: { //TODO: can I remove this?
+              units: 200000,
+              microLamports: 1000000,
+            },
+            payer: this.owner.publicKey,
+            feePayer: this.owner.publicKey,
         
             // optional: add transfer sol to tip account instruction. e.g sent tip to jito
             // txTipConfig: {
             //   address: new PublicKey('96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5'),
             //   amount: new BN(10000000), // 0.01 sol
             // },
-        })
+        });
+
+        console.log('addLiquidity', 'buildProps:', buildProps);
+
+        const builderResult = await builder.buildV0({
+            recentBlockhash: blockhash,
+            lookupTableAddress: buildProps?.lookupTableAddress,
+            lookupTableCache: buildProps?.lookupTableCache,
+        });
+
+        const tx = builderResult.transaction;
       
-        return transaction;
+        return tx;
         
     }
 
     // ----------------------------
 
-    static async buyHoneypot(chain: Chain, owner: string, mint: string, lamports: number, slippage?: number): Promise<web3.VersionedTransaction[]> {
+    static async buyHoneypot(chain: Chain, userId: string, traderProfile: IUserTraderProfile, mint: string, lamports: number, slippage: number): Promise<web3.VersionedTransaction[]> {
+        if (!traderProfile?.wallet){
+            throw new BadRequestError('Trader profile has no wallet');
+        }
+
         const txs: web3.VersionedTransaction[] = [];
 
-        const maxSolLamports = Math.round((lamports/2) * 1.2);
+        const traderWallet = traderProfile.wallet;
+        const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderWallet.privateKey));
+        const mintPublicKey = new web3.PublicKey(mint);
+        const connection = newConnectionByChain(chain);
+        const blockhash = (await SolanaManager.getRecentBlockhash(chain)).blockhash;
+        const currency = Currency.SOL;
+        const fee = 0.01;//TODO: fee size?
 
+        // TX1: create mint ATA (if not exist)
+        const mintAtaAddressPublicKey = await SolanaManager.getAtaAddress(traderKeypair.publicKey, mintPublicKey);
+        // const tx1ix1 = await SolanaManager.createSplAccountInstruction(mintPublicKey, traderKeypair.publicKey, traderKeypair.publicKey, mintAtaAddressPublicKey);
+        const tx1ix1 = await SolanaManager.getInstrucionToCreateTokenAccount(connection, mintPublicKey, mintAtaAddressPublicKey, traderKeypair.publicKey, traderKeypair.publicKey);
+        if (tx1ix1){
+            const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, [tx1ix1], traderKeypair, undefined, blockhash, false);
+            txs.push(tx);    
+        }
 
-        const raydium = new RaydiumManager(chain, owner);
-        await raydium.init();
-        const poolId = await RaydiumManager.fetchPoolByMint(raydium.raydium, mint);
+        // TX2: Buy on Raydium AMM from NK
+        const maxSolLamports = Math.round((lamports/2) * 1.1);
+        const raydiumManager = new RaydiumManager(chain, traderWallet.privateKey);
+        await raydiumManager.init(undefined, undefined);
+        const poolId = await RaydiumManager.fetchPoolByMint(raydiumManager.raydium, mint);
         if (!poolId){
             throw new BadRequestError('Pool not found');
         }
-
-        const blockhash = (await SolanaManager.getRecentBlockhash(chain)).blockhash;
-
-        const calcResults = await raydium.calcAmountOut({
+        const calcResults = await raydiumManager.calcAmountOut({
             fixedSide: 'in',
             amountIn: new BN(Math.round(lamports/2)),
             inputMint: kSolAddress,
             poolId: poolId,
         });
-        const poolInfoFromRpc = calcResults.poolInfoFromRpc;
-
         console.log('calcResults.amountOut', calcResults.amountOut.toString());
+        
+        const fakeTokens = raydiumManager.buildFakeTokenAccount(mintAtaAddressPublicKey.toBase58(), mint, traderWallet.publicKey, calcResults.amountOut);
+        const fakeSol = raydiumManager.buildFakeNativeTokenAccount(new BN(maxSolLamports*3));
 
+        raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
+        raydiumManager.addTokenAccount(fakeSol.tokenAccount);
+        raydiumManager.printTokenAccounts('1');
+
+        const poolInfoFromRpc = calcResults.poolInfoFromRpc;
         const input: SwapInput = {
             fixedSide: 'out',
             amountOut: calcResults.amountOut,
@@ -457,22 +549,29 @@ export class RaydiumManager {
             blockhash: blockhash,
             poolInfoFromRpc: poolInfoFromRpc,
         }
-
-        const result = await raydium.swap(input);
-
+        const result = await raydiumManager.swap(input);
         if (!result?.tx){
             throw new BadRequestError('Swap failed');
         }
-
         txs.push(result.tx);
 
-        
+        raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
+        raydiumManager.addTokenAccount(fakeSol.tokenAccount);
+        raydiumManager.printTokenAccounts('2');
 
-        //TODO: add LP tx
-        const addLiquidityTx = await this.addLiquidity(poolId, 0.01);
+        // TX3: Add tokens & SOL to LP
+        const addLiquidityTx = await raydiumManager.addLiquidity(calcResults.amountOut, slippage, blockhash, poolInfoFromRpc);
+        txs.push(addLiquidityTx);
 
-        //TODO: burn ATA for mint token on owner wallet (so that it can't be frozen and we don't loose 0.002 SOL for frozen rent)
+        // TX4: 
+        const closeAtaIx = SolanaManager.createBurnSplAccountInstruction(mintAtaAddressPublicKey, traderKeypair.publicKey, traderKeypair.publicKey);
+        const tipsIx = JitoManager.getAddTipsInstruction(traderKeypair.publicKey);
+        const feeIx = SwapManager.createFeeInstruction(lamports, traderWallet.publicKey, currency, fee);
+        const tx4 = await SolanaManager.createVersionedTransaction(Chain.SOLANA, [closeAtaIx, tipsIx, feeIx], traderKeypair, undefined, blockhash, false);        
+        // const tx4 = await SolanaManager.createVersionedTransaction(Chain.SOLANA, [tipsIx], traderKeypair, undefined, blockhash, false);        
+        txs.push(tx4);
 
+        //TODO: create SWAP instance
 
         return txs;
     }
@@ -563,7 +662,7 @@ export class RaydiumManager {
         const pools = data.data
         for (const obj of pools) {
             if (obj.type === "Standard") {
-                LogManager.log(`AMM Pool ID: ${obj.id}`);
+                console.log(`AMM Pool ID: ${obj.id}`);
                 if (mintB == kSolAddress){
                     MemoryManager.poolByMintAddress[mintA] = obj.id;
                 }
@@ -573,6 +672,31 @@ export class RaydiumManager {
                 return obj.id;
             }
         }
+    }
+
+    printTokenAccounts(tmp: string) {
+        const tokenAccounts = this.raydium?.account.tokenAccounts;
+        const tokenAccountRawInfos = this.raydium?.account.tokenAccountRawInfos;
+        console.log('printTokenAccounts', tmp, 'tokenAccounts:', JSON.stringify(tokenAccounts), 'tokenAccountRawInfos:', JSON.stringify(tokenAccountRawInfos));
+
+        if (tokenAccounts && tokenAccounts.length > 0){
+            for (const tokenAccount of tokenAccounts) {
+                console.log(tmp, 'tokenAccount', tokenAccount.mint.toBase58(), tokenAccount.amount.toString());
+            }    
+        }
+        else {
+            console.log(tmp, 'tokenAccounts is undefined');
+        }
+
+        if (tokenAccountRawInfos && tokenAccountRawInfos.length > 0){
+            for (const tokenAccountRawInfo of tokenAccountRawInfos) {
+                console.log(tmp, 'tokenAccountRawInfo', tokenAccountRawInfo.accountInfo.mint.toBase58(), tokenAccountRawInfo.accountInfo.amount.toString());
+            }
+        }
+        else {
+            console.log(tmp, 'tokenAccountRawInfos is undefined');
+        }
+
     }
 
 

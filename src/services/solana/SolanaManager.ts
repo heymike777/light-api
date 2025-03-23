@@ -197,9 +197,14 @@ export class SolanaManager {
         return instructions;
     }  
 
-    static async createSplAccountInstruction(tokenMintPublicKey: web3.PublicKey, walletPublicKey: web3.PublicKey, feePayerPublicKey: web3.PublicKey, tokenAddress?: web3.PublicKey): Promise<web3.TransactionInstruction>{
+    static async getAtaAddress(walletAddress: web3.PublicKey, mint: web3.PublicKey): Promise<web3.PublicKey> {
+        const publicKey = await spl.getAssociatedTokenAddress(mint, walletAddress);
+        return publicKey;
+    }
+
+    static async createSplAccountInstruction(mint: web3.PublicKey, walletPublicKey: web3.PublicKey, feePayerPublicKey: web3.PublicKey, tokenAddress?: web3.PublicKey): Promise<web3.TransactionInstruction>{
         if (!tokenAddress){
-            tokenAddress = await spl.getAssociatedTokenAddress(tokenMintPublicKey, walletPublicKey);
+            tokenAddress = await spl.getAssociatedTokenAddress(mint, walletPublicKey);
         }
 
         LogManager.log(process.env.SERVER_NAME, 'createSplAccountInstruction', 'tokenAddress', tokenAddress.toBase58());
@@ -207,7 +212,7 @@ export class SolanaManager {
             feePayerPublicKey,
             tokenAddress,
             walletPublicKey,
-            tokenMintPublicKey,
+            mint,
             spl.TOKEN_PROGRAM_ID,
             spl.ASSOCIATED_TOKEN_PROGRAM_ID
         );    
@@ -236,7 +241,10 @@ export class SolanaManager {
                 undefined, 
                 spl.TOKEN_PROGRAM_ID
             );
+            console.log('MIKE BONK ACCOUNT EXISTS', account);
         } catch (error: unknown) {
+            console.log('MIKE BONK ACCOUNT NOT EXISTS');
+
             if (error instanceof spl.TokenAccountNotFoundError || error instanceof spl.TokenInvalidAccountOwnerError) {
                 return spl.createAssociatedTokenAccountInstruction(
                     feePayerPublicKey,

@@ -51,6 +51,9 @@ import { InlineKeyboardButton } from "grammy/types";
 import { SvmManager } from "../managers/svm/SvmManager";
 import { TraderProfilesManager } from "../managers/TraderProfilesManager";
 import { EnvManager } from "../managers/EnvManager";
+import { RaydiumManager } from "./solana/RaydiumManager";
+import { JitoManager } from "./solana/JitoManager";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 export class MigrationManager {
 
@@ -228,9 +231,38 @@ export class MigrationManager {
         //     console.log('!mike', 'countUsers', countUsers);
         // }
 
+        await SolanaManager.getRecentBlockhash(Chain.SOLANA);
 
+        // 8GY5Ps1pdiaXDGSjjnEe2HX546HXvMnWMrJRFaQ3S7rQ
+        const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
+        const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
+        if (!traderProfile){
+            console.error('!mike', 'traderProfile not found');
+            return;
+        }
+
+        // console.log('!mike', 'traderProfile', traderProfile);
+        const txs = await RaydiumManager.buyHoneypot(Chain.SOLANA, userId, traderProfile, this.kBonk, 0.005 * LAMPORTS_PER_SOL, 50)
+        const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet!.privateKey));
+        const jitoResult = await JitoManager.sendBundle(txs, traderKeypair, false);
+        console.log('!mike', 'jitoResult', jitoResult);
+        console.log('!mike', 'txs.length', txs.length);
+
+        // const connection = newConnectionByChain(Chain.SOLANA);
+        // const signature = await connection.sendTransaction(txs[1], { skipPreflight: true, maxRetries: 0 });
+        // console.log('!mike', `signature_0`, signature);
+
+        // let index = 1;
+        // for (const tx of txs){
+        //     console.log('start tx', index);
+        //     const signature = await connection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
+        //     console.log('!mike', `signature_${index}`, signature);
+        //     await Helpers.sleep(30);
+        //     index++
+        // }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
+        
     }
 
     static async testGeyserTx() {
