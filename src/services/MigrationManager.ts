@@ -40,7 +40,6 @@ import { SolScanManager } from "./solana/SolScanManager";
 import { LogManager } from "../managers/LogManager";
 import { UserTraderProfile } from "../entities/users/TraderProfile";
 import { SwapManager } from "../managers/SwapManager";
-import { Swap } from "../entities/payments/Swap";
 import * as web3 from '@solana/web3.js';
 import { YellowstoneManager } from "./solana/geyser/YellowstoneManager";
 import { TxParser } from "./solana/geyser/TxParser";
@@ -54,6 +53,7 @@ import { EnvManager } from "../managers/EnvManager";
 import { RaydiumManager } from "./solana/RaydiumManager";
 import { JitoManager } from "./solana/JitoManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { SwapDex } from "../entities/payments/Swap";
 
 export class MigrationManager {
 
@@ -235,37 +235,15 @@ export class MigrationManager {
         //     console.log('!mike', 'countUsers', countUsers);
         // }
 
-        await SolanaManager.getRecentBlockhash(Chain.SOLANA);
-
-        const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
-        const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
-        if (!traderProfile){
-            console.error('!mike', 'traderProfile not found');
-            return;
-        }
-        let txs = await RaydiumManager.buyHoneypot(Chain.SOLANA, userId, traderProfile, this.kChillGuy, 0.005 * LAMPORTS_PER_SOL, 50)
-        const jito = true;
-
-        if (jito){
-            const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet!.privateKey));
-            const jitoResult = await JitoManager.sendBundle(txs, traderKeypair, false);
-            console.log('!mike', 'jitoResult', jitoResult);
-            console.log('!mike', 'txs.length', txs.length);
-        }
-        else {
-            // remove last tx
-            txs.pop();
-
-            const connection = newConnectionByChain(Chain.SOLANA);
-            let index = 1;
-            for (const tx of txs){
-                console.log('start tx', index);
-                const signature = await connection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
-                console.log('!mike', `signature_${index}`, signature);
-                await Helpers.sleep(15);
-                index++
-            }
-        }
+        // await SolanaManager.getRecentBlockhash(Chain.SOLANA);
+        // const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
+        // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
+        // if (!traderProfile){
+        //     console.error('!mike', 'traderProfile not found');
+        //     return;
+        // }        
+        // const { signature, swap } = await SwapManager.initiateBuy(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 0.005, true);
+        // console.log('signature:', signature, 'swap:', swap);
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
         

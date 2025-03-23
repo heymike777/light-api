@@ -9,6 +9,8 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export enum SwapType {
     BUY = 'buy',
     SELL = 'sell',
+    BUY_HONEYPOT = 'buy_honeypot',
+    SELL_HONEYPOT = 'sell_honeypot',
 }
 
 export enum StatusType {
@@ -29,6 +31,7 @@ export interface SentTx {
 
 export enum SwapDex {
     JUPITER = 'jupiter',
+    RAYDIUM_AMM = 'raydium_amm',
 }
 
 export interface ISwap extends mongoose.Document {
