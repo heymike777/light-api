@@ -134,7 +134,7 @@ export class RaydiumManager {
         const raydium = await Raydium.load({
             connection: this.connection,
             owner: this.owner, // key pair or publicKey, if you run a node process, provide keyPair
-            disableLoadToken: false, // default is false, if you don't need token info, set to true
+            disableLoadToken: true, // default is false, if you don't need token info, set to true
             blockhashCommitment: 'processed',
             jupTokenType: JupTokenType.ALL,
             tokenAccounts: tokenAccounts,
@@ -185,12 +185,16 @@ export class RaydiumManager {
         const [baseReserve, quoteReserve, status] = [rpcData.baseReserve, rpcData.quoteReserve, rpcData.status.toNumber()]
         timeLogs.push({log: 'swap4', date: new Date()});
 
+
+
         if (poolInfo.mintA.address !== inputMint && poolInfo.mintB.address !== inputMint){
             throw new Error('input mint does not match pool');
         }
       
         const baseIn = inputMint === poolInfo.mintA.address
         const [mintIn, mintOut] = baseIn ? [poolInfo.mintA, poolInfo.mintB] : [poolInfo.mintB, poolInfo.mintA]
+
+        console.log('!mike!', 'swap', 'baseIn:', baseIn, 'mintIn:', mintIn.address, 'mintOut:', mintOut.address);
 
         // I don't need this for sandwich bot, because I'll create token ata every time. But I need this for sniper bot and for Nova
         // const tokenMint = mintIn.address == Token.WSOL.mint.toBase58() ? mintOut.address : mintIn.address;
@@ -412,7 +416,7 @@ export class RaydiumManager {
         return {tokenAccount};
     }
 
-    async addLiquidity(inputAmount: BN, slippage: number, blockhash: string, poolInfoFromRpc: PoolInfoFromRpc): Promise<web3.VersionedTransaction> {
+    async addLiquidity(inputMint: string, inputAmount: BN, slippage: number, blockhash: string, poolInfoFromRpc: PoolInfoFromRpc): Promise<web3.VersionedTransaction> {
         if (!this.raydium){
             throw new BadRequestError('Raydium is not initialized');
         }
@@ -427,7 +431,10 @@ export class RaydiumManager {
       
         if (!isValidAmm(poolInfo.programId)) throw new Error('target pool is not AMM pool')
       
-        const { div, mod } = inputAmount.divmod(new BN(10 ** poolInfo.mintA.decimals));
+        const baseIn = inputMint === poolInfo.mintA.address
+        const [mintA, mintB] = baseIn ? [poolInfo.mintA, poolInfo.mintB] : [poolInfo.mintB, poolInfo.mintA]
+
+        const { div, mod } = inputAmount.divmod(new BN(10 ** mintA.decimals));
 
         const amount = `${div}.${mod.toString()}`;
         console.log('addLiquidity', 'amount:', amount, 'slippage:', slippage);
@@ -435,26 +442,26 @@ export class RaydiumManager {
         const r = this.raydium.liquidity.computePairAmount({
             poolInfo,
             amount: amount,
-            baseIn: true,
+            baseIn: baseIn,
             slippage: new Percent(slippage, 100), 
         })
 
         this.printTokenAccounts('3');
 
         const amountInA = new TokenAmount(
-            toToken(poolInfo.mintA),
+            toToken(mintA),
             inputAmount,
         );
         const amountInB = new TokenAmount(
-            toToken(poolInfo.mintB),
-            new Decimal(r.maxAnotherAmount.toExact()).mul(10 ** poolInfo.mintB.decimals).toFixed(0)
+            toToken(mintB),
+            new Decimal(r.maxAnotherAmount.toExact()).mul(10 ** mintB.decimals).toFixed(0)
         );
 
         console.log('addLiquidity', 'amountInA:', amountInA.toExact(), 'BN:', amountInA.raw.toString());
         console.log('addLiquidity', 'amountInB:', amountInB.toExact(), 'BN:', amountInB.raw.toString());
         console.log('addLiquidity', 'otherAmountMin:', r.minAnotherAmount.toExact(), 'BN:', r.minAnotherAmount.raw.toString());
-        console.log('addLiquidity', 'poolInfo.mintA:', poolInfo.mintA);
-        console.log('addLiquidity', 'poolInfo.mintB:', poolInfo.mintB);
+        console.log('addLiquidity', 'mintA:', mintA);
+        console.log('addLiquidity', 'mintB:', mintB);
 
         const { transaction, builder, buildProps } = await this.raydium.liquidity.addLiquidity({
             poolInfo,
@@ -525,6 +532,8 @@ export class RaydiumManager {
             throw new BadRequestError('Pool not found');
         }
 
+        console.log('!mike!', 'pool:', JSON.stringify(pool));
+
         // -------------------- TX1: create mint ATA (if not exist) and create lpMint ATA (if not exists) --------------------
         const lpMint = pool.lpMint.address;
         const lpMintPublicKey = new web3.PublicKey(lpMint);
@@ -582,7 +591,7 @@ export class RaydiumManager {
         raydiumManager.printTokenAccounts('2');
 
         // -------------------- TX3: Add tokens & SOL to LP --------------------
-        const addLiquidityTx = await raydiumManager.addLiquidity(calcResults.amountOut, slippage, blockhash, poolInfoFromRpc);
+        const addLiquidityTx = await raydiumManager.addLiquidity(mint, calcResults.amountOut, slippage, blockhash, poolInfoFromRpc);
         txs.push(addLiquidityTx);
 
         // -------------------- TX4: pay tips, pay light fee, close ata --------------------
