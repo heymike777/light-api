@@ -421,8 +421,6 @@ export class BotManager {
             solBalance = await SolanaManager.getWalletSolBalance(connection, walletAddress);
             const tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
 
-            const lpTokenBalance = await TraderProfilesManager.fetchTokenLpMintBalance(Chain.SOLANA, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
-
             message += '\n\n';
             message += `Balance: ${solBalance?.uiAmount || 0} SOL`;
             if (tokenBalance && tokenBalance.uiAmount>0){
@@ -435,6 +433,19 @@ export class BotManager {
                 buttons.push({ id: `sell|${token.chain}|${token.address}|X`, text: `Sell X%` });
             }
             message += ` — <b>${traderProfile.title}</b> ✏️`;
+
+            const lpBalances = await TraderProfilesManager.fetchTokenLpMintBalance(Chain.SOLANA, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
+            if (lpBalances && lpBalances.balances.length > 0){
+                const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
+                const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
+                const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
+
+                const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
+                const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
+
+                message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} SOL = $${Helpers.numberFormatter(usdValue, 2)}`;
+            }
+
         }
 
         const metricsMessage = BotManager.buildTokenMetricsMessage(token);

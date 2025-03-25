@@ -276,20 +276,19 @@ export class TraderProfilesManager {
         return { values, assets, lpAssets, warning };
     }
 
-    static async fetchTokenLpMintBalance(chain: Chain, dex: SwapDex, mint: string, walletAddress: string): Promise<{  } | undefined> {
+    static async fetchTokenLpMintBalance(chain: Chain, dex: SwapDex, mint: string, walletAddress: string) {
         const lpMint = await LpMint.findOne({ chain, dex, $or: [{ token1: mint }, { token2: mint }] });
         if (!lpMint){
             return;
         }
 
+        //TODO: this method could be optimized. I think I can replace 
+        //getWalletTokenBalance + updateTokenPairLiquidity + getAmmPoolInfo with one call getMultipleParsedAccount
+
         const lpMintAddress = lpMint.lpMint;
         const connection = newConnectionByChain(chain);
         const tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, lpMintAddress);
-        const supplyInfo = await SolanaManager.getTokenSupply(connection, lpMintAddress);
-        console.log(`fetchTokenLpMintBalance LP TOKEN (${lpMintAddress}): ${tokenBalance.uiAmount}`);
-        if (!supplyInfo){
-            return;
-        }
+        // console.log(`fetchTokenLpMintBalance LP TOKEN (${lpMintAddress}): ${tokenBalance.uiAmount}`);
 
         const pair = await TokenPair.findOne({ chain, pairAddress: lpMint.pairAddress });
         if (!pair){
@@ -297,7 +296,7 @@ export class TraderProfilesManager {
         }
 
         await TokenManager.updateTokenPairLiquidity(pair);
-        let lpReserve = new BN(supplyInfo.amount);
+        let lpReserve = new BN(0);// new BN(supplyInfo.amount);
 
         if (dex == SwapDex.RAYDIUM_AMM){
             const poolInfo = await RaydiumManager.getAmmPoolInfo(Chain.SOLANA, lpMint.pairAddress);
@@ -314,12 +313,23 @@ export class TraderProfilesManager {
         const myToken1 = num1_1.divmod(num1_2);
         const myTokenAmountString1 = myToken1.div.toString() + '.' + myToken1.mod.toString();
         const myTokenAmount1 = parseFloat(myTokenAmountString1);
-        console.log(`MY BONK: ${myTokenAmount1}`);
 
         const myTokenAmount2 = myTokenAmount1 * pair.liquidity.token2.uiAmount / pair.liquidity.token1.uiAmount;
-        console.log(`MY SOL: ${myTokenAmount2}`);
 
-        return 0;
+        const balances = [
+            {
+                mint: pair.token1,
+                uiAmount: myTokenAmount1,
+            },
+            {
+                mint: pair.token2,
+                uiAmount: myTokenAmount2,
+            },
+        ];
+
+        return {
+            balances
+        }
     }
 
 }

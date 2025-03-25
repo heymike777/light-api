@@ -257,6 +257,9 @@ export class MigrationManager {
         // const { signature, swap } = await SwapManager.initiateBuy(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 0.005, true);
         // console.log('signature:', signature, 'swap:', swap);
 
+        // TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
+
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
         
     }

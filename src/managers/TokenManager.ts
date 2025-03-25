@@ -361,28 +361,43 @@ export class TokenManager {
         if (!pair.tokenAccount1 || !pair.tokenAccount2){
             return;
         }
-        const connection = newConnectionByChain(pair.chain);
-        
-        const tokenBalance1 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount1));
-        const tokenBalance2 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount2));
+        try {
+            const connection = newConnectionByChain(pair.chain);
 
-        if (tokenBalance1?.uiAmount && tokenBalance1?.uiAmount>0 && tokenBalance2?.uiAmount && tokenBalance2?.uiAmount>0){
-            pair.liquidity = {
-                token1: {
-                    amount: tokenBalance1.amount,
-                    uiAmount: tokenBalance1.uiAmount,
-                    decimals: tokenBalance1.decimals,
-                },
-                token2: {
-                    amount: tokenBalance2.amount,
-                    uiAmount: tokenBalance2.uiAmount,
-                    decimals: tokenBalance2.decimals,
-                },
-            };
+            const accounts: any = await connection.getMultipleParsedAccounts([
+                new web3.PublicKey(pair.tokenAccount1),
+                new web3.PublicKey(pair.tokenAccount2),
+            ]);
+
+            const value1 = accounts.value.find((account: any) => account?.data?.parsed?.info?.mint == pair.token1);
+            const tokenBalance1: web3.TokenAmount | undefined = value1?.data?.parsed?.info?.tokenAmount;  
+            const value2 = accounts.value.find((account: any) => account?.data?.parsed?.info?.mint == pair.token2);
+            const tokenBalance2: web3.TokenAmount | undefined = value2?.data?.parsed?.info?.tokenAmount;  
+
+            // const tokenBalance1 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount1));
+            // const tokenBalance2 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount2));
+
+            if (tokenBalance1?.uiAmount && tokenBalance1?.uiAmount>0 && tokenBalance2?.uiAmount && tokenBalance2?.uiAmount>0){
+                pair.liquidity = {
+                    token1: {
+                        amount: tokenBalance1.amount,
+                        uiAmount: tokenBalance1.uiAmount,
+                        decimals: tokenBalance1.decimals,
+                    },
+                    token2: {
+                        amount: tokenBalance2.amount,
+                        uiAmount: tokenBalance2.uiAmount,
+                        decimals: tokenBalance2.decimals,
+                    },
+                };
+            }
+
+            pair.updatedAt = new Date();
+            await pair.save();
         }
-
-        pair.updatedAt = new Date();
-        await pair.save();
+        catch (error){
+            LogManager.error('!catched', 'TokenManager', 'updateTokenPairLiquidity', error);
+        }
     }
 
     static async updateTokenPairsLiquidity() {
@@ -430,10 +445,14 @@ export class TokenManager {
     static async updateTokenPrice(chain: Chain, mint: string) {
         const token = await RedisManager.getToken(chain, mint);
 
+        console.log('updateTokenPrice', mint);
+
+
         if (token){
             const prices = await JupiterManager.getPrices([mint]);
             if (prices && prices.length > 0){
                 token.price = prices[0].price;
+                console.log('updateTokenPrice', mint, 'newPrice:', token.price);
                 token.priceUpdatedAt = Date.now();
             } 
             await RedisManager.saveToken(token);   
@@ -442,6 +461,7 @@ export class TokenManager {
 
     static async fetchSolPriceFromRedis(){
         const price = await RedisManager.getToken(Chain.SOLANA, kSolAddress);
+        console.log('fetchSolPriceFromRedis price:', price?.price);
         if (price && price.price!=undefined){
             TokenManager.solPrice = price.price;
         }

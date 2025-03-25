@@ -63,6 +63,12 @@ export class CronManager {
                 WalletManager.fetchAllWalletAddresses(false);
             });
         }
+
+        if (EnvManager.isTelegramProcess){
+            cron.schedule('* * * * *', () => {
+                TokenManager.fetchSolPriceFromRedis();
+            });
+        }
     }
 
     static async checkAndRetrySwaps() {

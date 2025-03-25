@@ -105,12 +105,12 @@ const start = async () => {
 
 const onExpressStarted = async () => {
     CronManager.setupCron();
+    await TokenManager.fetchSolPriceFromRedis();
 
     if (EnvManager.isTelegramProcess) {
         setupBot();
     }
     if (EnvManager.isMainProcess) {
-        await TokenManager.fetchSolPriceFromRedis();
         initSolscanLabels();
     }
     if (EnvManager.isWalletGeneratorProcess) {
