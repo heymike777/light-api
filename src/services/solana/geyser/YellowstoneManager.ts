@@ -91,6 +91,8 @@ export class YellowstoneManager {
             return;
         }
 
+        accountInclude.push('DpVH8xQZ4aapxwZ6KW9nuEUs9zEePa8HQvXny9Ajj93T'); // JUP BUYBACK token account
+
         const request: SubscribeRequest = {
             "transactions": {
                 "all_transactions": {

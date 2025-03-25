@@ -1,6 +1,6 @@
 import * as web3 from "@solana/web3.js";
 import BN from 'bn.js';
-import { AMM_STABLE, AMM_V4, AmmRpcData, AmmV4Keys, AmmV5Keys, ApiV3PoolInfoStandardItem, ApiV3PoolInfoStandardItemCpmm, ComputeAmountOutParam, DEVNET_PROGRAM_ID, JupTokenType, Percent, Raydium, TokenAccount, TokenAccountRaw, TokenAmount, toToken, TxVersion } from "@raydium-io/raydium-sdk-v2";
+import { AMM_STABLE, AMM_V4, AmmRpcData, AmmV4Keys, AmmV5Keys, ApiV3PoolInfoStandardItem, ApiV3PoolInfoStandardItemCpmm, ComputeAmountOutParam, DEVNET_PROGRAM_ID, JupTokenType, liquidityStateV4Layout, Percent, Raydium, TokenAccount, TokenAccountRaw, TokenAmount, toToken, TxVersion } from "@raydium-io/raydium-sdk-v2";
 import base58 from "bs58";
 import * as spl from "@solana/spl-token";
 import { Chain } from "./types";
@@ -8,7 +8,7 @@ import { newConnectionByChain } from "./lib/solana";
 import { LogManager } from "../../managers/LogManager";
 import { SolanaManager } from "./SolanaManager";
 import { BadRequestError } from "../../errors/BadRequestError";
-import { kSolAddress } from "./Constants";
+import { kSolAddress, kUsdcAddress } from "./Constants";
 import { MemoryManager } from "../../managers/MemoryManager";
 import Decimal from "decimal.js";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
@@ -18,6 +18,8 @@ import { SwapManager } from "../../managers/SwapManager";
 import { Currency } from "../../models/types";
 import { ISwap, StatusType, Swap, SwapType } from "../../entities/payments/Swap";
 import { TokenManager } from "../../managers/TokenManager";
+import { GetProgramAccountsFilter } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 const VALID_PROGRAM_ID = new Set([
     AMM_V4.toBase58(),
@@ -547,6 +549,8 @@ export class RaydiumManager {
             if (!pool){
                 throw new BadRequestError('Pool not found');
             }
+            TokenManager.saveLpMint(swap.chain, swap.dex, pool.lpMint.address, pool.id, swap.mint, swap.currency == Currency.USDC ? kUsdcAddress : kSolAddress);
+            TokenManager.createTokenPair(swap.chain, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, undefined, pool.lpMint.address);
 
             console.log('!mike!', 'pool:', JSON.stringify(pool));
 
@@ -791,8 +795,35 @@ export class RaydiumManager {
         else {
             console.log(tmp, 'tokenAccountRawInfos is undefined');
         }
-
     }
+
+    static async getAmmPoolInfo(chain: Chain, poolId: string) {
+        const connection = newConnectionByChain(chain);
+        const data = await connection.getAccountInfo(new web3.PublicKey(poolId));
+        if (!data) return undefined;
+
+        const poolInfo = liquidityStateV4Layout.decode(data.data);
+
+        // if (poolInfo){
+        //     for (const key in poolInfo) {
+        //         const element = poolInfo[key];
+        //         console.log('!mike',  key, '=', element.toString());
+        //     }
+        // }
+
+        return {
+            baseMint: poolInfo.baseMint.toBase58(),
+            quoteMint: poolInfo.quoteMint.toBase58(),
+            baseVault: poolInfo.baseVault.toBase58(),
+            quoteVault: poolInfo.quoteVault.toBase58(),
+            lpMint: poolInfo.lpMint.toBase58(),
+            baseDecimal: poolInfo.baseDecimal.toNumber(),
+            quoteDecimal: poolInfo.quoteDecimal.toNumber(),
+            poolOpenTime: poolInfo.poolOpenTime.toNumber(),
+            lpReserve: poolInfo.lpReserve,
+        }
+    }
+      
 
 
 }

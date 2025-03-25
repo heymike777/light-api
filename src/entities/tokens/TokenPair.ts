@@ -7,13 +7,14 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface ITokenPair extends mongoose.Document {
     chain: Chain;
-    programId: string;
+    programId?: string;
     // dexId: DexId;
     pairAddress: string;
     token1: string;
     token2: string;
-    tokenAccount1: string;
-    tokenAccount2: string;
+    tokenAccount1?: string;
+    tokenAccount2?: string;
+    lpMint?: string;
 
     liquidity: {
         token1: {
@@ -41,6 +42,7 @@ export const TokenPairSchema = new mongoose.Schema<ITokenPair>({
     token2: { type: String },
     tokenAccount1: { type: String },
     tokenAccount2: { type: String },
+    lpMint: { type: String },
     
     liquidity: {
         token1: {

@@ -54,6 +54,8 @@ import { RaydiumManager } from "./solana/RaydiumManager";
 import { JitoManager } from "./solana/JitoManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { SwapDex } from "../entities/payments/Swap";
+import { LpMint } from "../entities/tokens/LpMint";
+import { Raydium } from "@raydium-io/raydium-sdk-v2";
 
 export class MigrationManager {
 
@@ -235,6 +237,16 @@ export class MigrationManager {
         //     console.log('!mike', 'countUsers', countUsers);
         // }
 
+        // const poolInfo: any = await RaydiumManager.getAmmPoolInfo(Chain.SOLANA, 'HVNwzt7Pxfu76KHCMQPTLuTCLTm6WnQ1esLv4eizseSv');
+        // console.log('!mike', 'poolInfo', JSON.stringify(poolInfo));
+        // console.log('!mike', 'baseDecimal:', poolInfo?.baseDecimal.toString(), 'quoteDecimal:', poolInfo?.quoteDecimal.toString());
+        // if (poolInfo){
+        //     for (const key in poolInfo) {
+        //         const element = poolInfo[key];
+        //         console.log('!mike',  key, '=', element.toString());
+        //     }
+        // }
+
         // await SolanaManager.getRecentBlockhash(Chain.SOLANA);
         // const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
         // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
@@ -347,6 +359,7 @@ export class MigrationManager {
         await TokenPair.syncIndexes();
         await TokenSwap.syncIndexes();
         await UserTraderProfile.syncIndexes();
+        await LpMint.syncIndexes();
     }
 
     static async processTx(chain: Chain, signature: string) {

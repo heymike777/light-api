@@ -35,6 +35,7 @@ import { BotReferralProgramHelper } from "./helpers/BotReferralProgramHelper";
 import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
 import { BotSettingsHelper } from "./helpers/BotSettingsHelper";
 import { BotHelpHelper } from "./helpers/BotHelpHelper";
+import { SwapDex } from "../../entities/payments/Swap";
 
 export class BotManager {
     botUsername: string;
@@ -410,17 +411,17 @@ export class BotManager {
 
         message += '\n';
         message += `<code>${token.address}</code>`;
-        message += '\n';
         const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
-        message += `<a href="${reflink}">Share token with your Reflink</a>`
+        //message += `\n<a href="${reflink}">Share token with your Reflink</a>` //TODO: uncomment
 
         const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
-        let tokenBalance: TokenBalance | undefined = undefined;
         if (traderProfile && traderProfile.wallet?.publicKey){
             const walletAddress = traderProfile.wallet.publicKey;
             solBalance = await SolanaManager.getWalletSolBalance(connection, walletAddress);
-            tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
+            const tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
+
+            const lpTokenBalance = await TraderProfilesManager.fetchTokenLpMintBalance(Chain.SOLANA, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
 
             message += '\n\n';
             message += `Balance: ${solBalance?.uiAmount || 0} SOL`;
@@ -488,7 +489,7 @@ export class BotManager {
 
     static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
         const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
-        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
+        const { values, assets, lpAssets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
@@ -504,19 +505,35 @@ export class BotManager {
             }
         }
 
-        if (assets.length == 0){
+        if (assets.length == 0 && lpAssets.length == 0){
             message += `\n\nNo assets on this wallet`;
         }
         else {
-            message += `\n\nAssets:`;
-            for (const asset of assets) {
-                message += `\n${asset.symbol}: ${asset.uiAmount}`;
-                if (asset.priceInfo){
-                    message += ` ($${asset.priceInfo.totalPrice})`;
-                }
+            if (assets.length > 0){
+                message += `\n\nAssets:`;
+                for (const asset of assets) {
+                    message += `\n${asset.symbol}: ${asset.uiAmount}`;
+                    if (asset.priceInfo){
+                        message += ` ($${asset.priceInfo.totalPrice})`;
+                    }
 
-                if (asset.address != kSolAddress){
-                    message += ` <a href="${ExplorerManager.getTokenReflink(asset.address, undefined, botUsername)}">[Sell]</a>`;
+                    if (asset.address != kSolAddress){
+                        message += ` <a href="${ExplorerManager.getTokenReflink(asset.address, undefined, botUsername)}">[Sell]</a>`;
+                    }
+                }
+            }
+
+            if (lpAssets.length > 0){
+                message += `\n\nLP Assets:`;
+                for (const asset of lpAssets) {
+                    message += `\n${asset.symbol}: ${asset.uiAmount}`;
+                    if (asset.priceInfo){
+                        message += ` ($${asset.priceInfo.totalPrice})`;
+                    }
+
+                    if (asset.address != kSolAddress){
+                        message += ` <a href="${ExplorerManager.getTokenReflink(asset.address, undefined, botUsername)}">[Sell]</a>`;
+                    }
                 }
             }
         }

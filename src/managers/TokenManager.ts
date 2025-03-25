@@ -8,12 +8,16 @@ import { MetaplexManager } from "./MetaplexManager";
 import { kSolAddress, kUsdcAddress, kUsdtAddress } from "../services/solana/Constants";
 import { BN } from "bn.js";
 import { SolScanManager } from "../services/solana/SolScanManager";
-import { newConnection, newConnectionByChain } from "../services/solana/lib/solana";
+import { newConnectionByChain } from "../services/solana/lib/solana";
 import { ITokenPair, TokenPair } from "../entities/tokens/TokenPair";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import * as web3 from "@solana/web3.js";
 import { LogManager } from "./LogManager";
 import { RedisManager } from "./db/RedisManager";
+import { LpMint } from "../entities/tokens/LpMint";
+import { SwapDex } from "../entities/payments/Swap";
+import * as spl from "@solana/spl-token";
+import { RaydiumManager } from "../services/solana/RaydiumManager";
 
 export interface TokenTag {
     id: string;
@@ -175,6 +179,18 @@ export class TokenManager {
 
     static async getTokens(chain: Chain, mints: string[]): Promise<ITokenModel[]> {
         const tokens = await RedisManager.getTokens(chain, mints);
+
+        const remainingMints = mints.filter(mint => !tokens.find(token => token.address === mint));
+        if (remainingMints.length > 0){
+            for (const mint of remainingMints) {
+                const token = await this.fetchDigitalAsset(chain, mint);
+                if (token){
+                    tokens.push(token);
+                }
+            }
+        }
+
+
         return tokens.map(token => tokenToTokenModel(token));
     }
 
@@ -285,33 +301,68 @@ export class TokenManager {
             let pair: ITokenPair | undefined = pairs.find((pair) => pair.pairAddress === market.poolId);
 
             if (!pair){
-                pair = new TokenPair();
-                pair.chain = Chain.SOLANA;
-                pair.pairAddress = market.poolId;
-                pair.token1 = market.token1;
-                pair.token2 = market.token2;
-                pair.tokenAccount1 = market.tokenAccount1;
-                pair.tokenAccount2 = market.tokenAccount2;
-                pair.programId = market.programId;
-                pair.createdAt = new Date();
+                pair = await this.createTokenPair(Chain.SOLANA, market.poolId, market.token1, market.token2, market.tokenAccount1, market.tokenAccount2, market.programId);
+            }
+
+            if (!pair){
+                continue;
             }
 
             await this.updateTokenPairLiquidity(pair);
 
             tokenPairs.push(pair);
-            try {
-                pair.save();
-            }
-            catch (error){
-                LogManager.error('!catched', 'TokenManager', 'fetchTokenPairs', 'save', error);
-            }
         }
 
         return tokenPairs;
     }
 
+    static async createTokenPair(chain: Chain, pairAddress: string, token1: string, token2: string, tokenAccount1: string | undefined, tokenAccount2: string | undefined, programId: string | undefined, lpMint?: string): Promise<ITokenPair | undefined> {
+        const connection = newConnectionByChain(chain);
+        const info = await connection.getParsedAccountInfo(new web3.PublicKey(pairAddress));
+        console.log('info:', JSON.stringify(info));
+
+        const existing = await TokenPair.findOne({ pairAddress });
+        if (existing){
+            return existing;
+        }
+
+        if (!tokenAccount1 || !tokenAccount2){
+            const poolInfo: any = await RaydiumManager.getAmmPoolInfo(Chain.SOLANA, pairAddress);
+            if (poolInfo){
+                tokenAccount1 = token1 == poolInfo.baseMint ? poolInfo.baseVault : poolInfo.quoteVault
+                tokenAccount2 = token2 == poolInfo.baseMint ? poolInfo.baseVault : poolInfo.quoteVault
+            }
+        }
+
+        try {
+            const pair = new TokenPair();
+            pair.chain = chain;
+            pair.pairAddress = pairAddress;
+            pair.token1 = token1;
+            pair.token2 = token2;
+            pair.tokenAccount1 = tokenAccount1;
+            pair.tokenAccount2 = tokenAccount2;
+            pair.lpMint = lpMint;
+            pair.programId = programId;
+            pair.createdAt = new Date();
+            await pair.save();
+            
+            // await this.updateTokenPairLiquidity(pair);
+
+            return pair;
+        }
+        catch (error){
+            LogManager.error('!catched', 'TokenManager', 'createTokenPair', error);
+        }
+        return undefined;
+    }
+
     static async updateTokenPairLiquidity(pair: ITokenPair) {
+        if (!pair.tokenAccount1 || !pair.tokenAccount2){
+            return;
+        }
         const connection = newConnectionByChain(pair.chain);
+        
         const tokenBalance1 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount1));
         const tokenBalance2 = await SolanaManager.getTokenAccountBalance(connection, new web3.PublicKey(pair.tokenAccount2));
 
@@ -331,6 +382,7 @@ export class TokenManager {
         }
 
         pair.updatedAt = new Date();
+        await pair.save();
     }
 
     static async updateTokenPairsLiquidity() {
@@ -341,7 +393,6 @@ export class TokenManager {
 
         for (const pair of pairs) {
             await this.updateTokenPairLiquidity(pair);
-            await pair.save();
         }
     }
 
@@ -435,4 +486,53 @@ export class TokenManager {
         return mint !== kSolAddress && mint !== kUsdcAddress && mint !== kUsdtAddress;
     }
     
+    static async findTokenByLpMint(chain: Chain, lpMintAddress: string): Promise<(ITokenModel & {lpMint: string}) | undefined> {
+        const results = await this.findTokensByLpMints(chain, [lpMintAddress]);
+        return (results && results.length > 0) ? results[0] : undefined;
+    }
+
+    static async findTokensByLpMints(chain: Chain, lpMintAddresses: string[]): Promise<(ITokenModel & {lpMint: string})[]> {
+        const lpMints = await LpMint.find({ chain, lpMint: { $in: lpMintAddresses } });
+        if (!lpMints || lpMints.length === 0){
+            return [];
+        }
+
+        const tokenAddresses = lpMints.map(lpMint => lpMint.token1 == kSolAddress ? lpMint.token2 : lpMint.token1);
+        console.log('!!!mike', 'tokenAddresses', tokenAddresses);
+        const tokens = await this.getTokens(chain, tokenAddresses);
+        const results: (ITokenModel & {lpMint: string})[] = [];
+        for (const token of tokens) {
+            const lpMint = lpMints.find(lpMint => lpMint.token1 == token.address || lpMint.token2 == token.address);
+            console.log('!!!mike', token.address, token.symbol, lpMint);
+            if (lpMint){
+                results.push({ ...token, lpMint: lpMint.lpMint });
+            }
+            else {
+                LogManager.error('!catched', 'TokenManager', 'findTokensByLpMints', 'lpMint not found', token.address);
+            }
+        }
+        return results;
+    }
+
+    static async saveLpMint(chain: Chain, dex: SwapDex, lpMintAddress: string, pairAddress: string, token1: string, token2: string) {
+        try {
+            const existing = await LpMint.findOne({ lpMint: lpMintAddress });
+            if (existing){
+                return;
+            }
+
+            const lpMint = new LpMint();
+            lpMint.chain = chain;
+            lpMint.dex = dex;
+            lpMint.lpMint = lpMintAddress;
+            lpMint.pairAddress = pairAddress;
+            lpMint.token1 = token1;
+            lpMint.token2 = token2;
+            lpMint.createdAt = new Date();
+            await lpMint.save();    
+        }
+        catch (error){
+            LogManager.error('!catched', 'TokenManager', 'saveLpMint', error);
+        }
+    }
 }
