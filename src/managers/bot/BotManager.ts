@@ -444,6 +444,16 @@ export class BotManager {
                 const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
 
                 message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} SOL = $${Helpers.numberFormatter(usdValue, 2)}`;
+
+                let btnIndex = 0;
+                for (const amount of sellAmounts) {
+                    if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
+
+                    buttons.push({ id: `sell_lp|${token.chain}|${token.address}|${amount}`, text: `Sell (LP) ${amount}%` });
+                    btnIndex++;                    
+                }
+                if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
+                buttons.push({ id: `sell_lp|${token.chain}|${token.address}|X`, text: `Sell (LP) X%` });
             }
 
         }
