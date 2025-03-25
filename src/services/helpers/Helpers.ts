@@ -252,8 +252,14 @@ export class Helpers {
     };
 
     static bnDivBnWithDecimals(num1: BN, num2: BN, precision: number = 6): number {
-        const res = num1.mul(new BN(10 ** precision)).div(num2);
-        return res.toNumber() / 10 ** precision;
+        try {
+            const res = num1.mul(new BN(10 ** precision)).div(num2);
+            return res.toNumber() / 10 ** precision;    
+        }
+        catch (err){
+            LogManager.error('bnDivBnWithDecimals:', err);
+            return 0;
+        }
     }
 
 }

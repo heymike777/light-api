@@ -20,6 +20,7 @@ import { ISwap, StatusType, Swap, SwapType } from "../../entities/payments/Swap"
 import { TokenManager } from "../../managers/TokenManager";
 import { GetProgramAccountsFilter } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
+import { Helpers } from "../helpers/Helpers";
 
 const VALID_PROGRAM_ID = new Set([
     AMM_V4.toBase58(),
@@ -435,9 +436,9 @@ export class RaydiumManager {
         const baseIn = inputMint === poolInfo.mintA.address
         const [mintA, mintB] = baseIn ? [poolInfo.mintA, poolInfo.mintB] : [poolInfo.mintB, poolInfo.mintA]
 
-        const { div, mod } = inputAmount.divmod(new BN(10 ** mintA.decimals));
-
-        const amount = `${div}.${mod.toString()}`;
+        // const { div, mod } = inputAmount.divmod(new BN(10 ** mintA.decimals));
+        // const amount = `${div}.${mod.toString()}`;
+        const amount = '' + Helpers.bnDivBnWithDecimals(inputAmount, new BN(10 ** mintA.decimals), 9);
         console.log('addLiquidity', 'amount:', amount, 'slippage:', slippage);
 
         const r = this.raydium.liquidity.computePairAmount({

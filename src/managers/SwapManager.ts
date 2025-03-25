@@ -431,8 +431,10 @@ export class SwapManager {
         if (token){
             const bnAmount = new BN(swap.amountIn);
             const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(10**9) : new BN(10 ** (token.decimals || 0))
-            const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
-            const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
+            // const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
+            // const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
+
+            const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, 9);
 
             const actionString = swap.type == SwapType.BUY 
                 ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} SOL` 

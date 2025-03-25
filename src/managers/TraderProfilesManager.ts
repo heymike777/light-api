@@ -332,18 +332,21 @@ export class TraderProfilesManager {
             }
         }
 
-        const lpReserveDecimals = lpTokenBalance?.decimals || 0;
+        // const lpReserveDecimals = lpTokenBalance?.decimals || 0;
 
         // WORKING VERSION, but using uiAmounts
         // const numerator = lpTokenBalance.uiAmount  * pair.liquidity.token1.uiAmount * (10 ** lpReserveDecimals)
         // const denominator = lpReserve.toNumber();
         // const myTokenAmount1 = numerator / denominator;
+        // const myTokenAmount2 = myTokenAmount1 * pair.liquidity.token2.uiAmount / pair.liquidity.token1.uiAmount;
 
-        const numerator = new BN(lpTokenBalance.amount).mul(new BN(pair.liquidity.token1.amount));
-        const denominator = lpReserve.mul(new BN(10 ** pair.liquidity.token1.decimals));
-        const myTokenAmount1 = Helpers.bnDivBnWithDecimals(numerator, denominator, 6);
+        const numerator1 = new BN(lpTokenBalance.amount).mul(new BN(pair.liquidity.token1.amount));
+        const denominator1 = lpReserve.mul(new BN(10 ** pair.liquidity.token1.decimals));
+        const myTokenAmount1 = Helpers.bnDivBnWithDecimals(numerator1, denominator1, 6);
 
-        const myTokenAmount2 = myTokenAmount1 * pair.liquidity.token2.uiAmount / pair.liquidity.token1.uiAmount;
+        const numerator2 = numerator1.mul(new BN(pair.liquidity.token2.amount)).mul(new BN(10 ** pair.liquidity.token1.decimals));
+        const denominator2 = denominator1.mul(new BN(pair.liquidity.token1.amount)).mul(new BN(10 ** pair.liquidity.token2.decimals));
+        const myTokenAmount2 = Helpers.bnDivBnWithDecimals(numerator2, denominator2, 6);
 
         const balances = [
             {
