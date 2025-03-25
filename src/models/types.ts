@@ -52,6 +52,7 @@ export type PortfolioAsset = Asset & {
     tags?: { [key: string]: boolean };
     tagsList?: TokenTag[];
     isTradable?: boolean;
+    lpAmounts?: { mint: string, uiAmount: number }[];
 }
 
 export enum Currency {

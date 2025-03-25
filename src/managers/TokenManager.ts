@@ -120,43 +120,58 @@ export class TokenManager {
     }
 
     static async getToken(chain: Chain, address: string): Promise<ITokenModel | undefined> {
-        let token = await RedisManager.getToken(chain, address);
-        if (!token){
-            token = await this.fetchDigitalAsset(chain, address);
+        const tokens = await this.getTokens(chain, [address]);
+        if (!tokens || tokens.length == 0){
+            return undefined;
+        }
+        return tokens[0];
+        // let token = await RedisManager.getToken(chain, address);
+        // if (!token){
+        //     token = await this.fetchDigitalAsset(chain, address);
+        // }
+
+        // LogManager.log('TokenManager', 'getToken1', 'address:', address, 'token:', token);
+        // if (token){
+        //     if (!token.price || !token.priceUpdatedAt || (Date.now() - token.priceUpdatedAt) > 1000 * 60){
+        //         const prices = await JupiterManager.getPrices([address]);
+        //         if (prices && prices.length > 0){
+        //             token.price = prices[0].price;
+        //             token.priceUpdatedAt = Date.now();
+        //         }
+        //         LogManager.log('TokenManager', 'getToken', 'JUP prices', prices);
+        //     }
+
+        //     if (token.price!=undefined && token.supply!=undefined && token.decimals!=undefined){
+        //         token.marketCap = TokenManager.calculateMarketCap(token);
+
+        //         if (!this.excludedTokens.includes(token.address) && !token.nft){
+        //             token.liquidity = await this.getUsdLiquidityForToken(token);
+        //         }
+        //     }
+
+        //     await RedisManager.saveToken(token);
+        // }
+        // LogManager.log('TokenManager', 'getToken2', 'address:', address, 'token:', token);
+
+        // return tokenToTokenModel(token);
+    }
+
+    static async getTokens(chain: Chain, mints: string[]): Promise<ITokenModel[]> {
+        const tokens = await RedisManager.getTokens(chain, mints);
+
+        const remainingMints = mints.filter(mint => !tokens.find(token => token.address === mint));
+        if (remainingMints.length > 0){
+            for (const mint of remainingMints) {
+                const token = await this.fetchDigitalAsset(chain, mint);
+                if (token){
+                    tokens.push(token);
+                }
+            }
         }
 
-        LogManager.log('TokenManager', 'getToken1', 'address:', address, 'token:', token);
-        if (token){
-            if (!token.infoUpdatedAt || Date.now() - token.infoUpdatedAt > 1000 * 60 * 5){
-                // const info = await SolScanManager.fetchTokenInfo(address);
-                // if (info){
-                //     let isInfoUpdated = false;
-                //     if (info.supply != undefined){
-                //         token.supply = info.supply;
-                //         isInfoUpdated = true;
-                //     }
-                //     if (info.price != undefined){
-                //         token.price = info.price;
-                //         isInfoUpdated = true;
-                //         token.priceUpdatedAt = Date.now();
-                //     }
-                //     if (info.volume != undefined && info.volume['24h'] != undefined){
-                //         token.volume = info.volume;
-                //         isInfoUpdated = true;
-                //     }
-                //     if (info.priceChange != undefined && info.priceChange['24h'] != undefined){
-                //         token.priceChange = info.priceChange;
-                //         isInfoUpdated = true;
-                //     }
-
-                //     if (isInfoUpdated){
-                //         token.infoUpdatedAt = Date.now();
-                //     }
-                // }
-            }
-
+        for (const token of tokens) {
             if (!token.price || !token.priceUpdatedAt || (Date.now() - token.priceUpdatedAt) > 1000 * 60){
-                const prices = await JupiterManager.getPrices([address]);
+                const prices = await JupiterManager.getPrices([token.address]);
                 if (prices && prices.length > 0){
                     token.price = prices[0].price;
                     token.priceUpdatedAt = Date.now();
@@ -171,23 +186,8 @@ export class TokenManager {
                     token.liquidity = await this.getUsdLiquidityForToken(token);
                 }
             }
-        }
-        LogManager.log('TokenManager', 'getToken2', 'address:', address, 'token:', token);
 
-        return tokenToTokenModel(token);
-    }
-
-    static async getTokens(chain: Chain, mints: string[]): Promise<ITokenModel[]> {
-        const tokens = await RedisManager.getTokens(chain, mints);
-
-        const remainingMints = mints.filter(mint => !tokens.find(token => token.address === mint));
-        if (remainingMints.length > 0){
-            for (const mint of remainingMints) {
-                const token = await this.fetchDigitalAsset(chain, mint);
-                if (token){
-                    tokens.push(token);
-                }
-            }
+            await RedisManager.saveToken(token);
         }
 
 

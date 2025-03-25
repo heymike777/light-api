@@ -65,7 +65,7 @@ UserTransactionSchema.methods.toJSON = function () {
         title: this.title,
         description: this.description,
         parsedTx: this.parsedTx,
-        tokens: this.tokens,
+        tokens: this.tokens.filter((t: IToken) => t.symbol),
         changedWallets: this.changedWallets,
         createdAt: this.createdAt,
     };

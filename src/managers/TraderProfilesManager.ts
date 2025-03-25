@@ -211,18 +211,47 @@ export class TraderProfilesManager {
 
                     console.log(`lpTokens LP TOKEN (${token.symbol}): ${lpMintAddress}, supply: ${lpMintSupply}, balance: ${lpMintBalance}, decimals: ${lpMintDecimals}`);
 
-                    const amount = 100000; //TODO: calc amount of LP tokens
+
+                    const lpBalances = await TraderProfilesManager.fetchTokenLpMintBalance(Chain.SOLANA, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
+                    let lpAmounts: {mint: string, uiAmount: number}[] | undefined = undefined;
+                    let amount = 0;
                     const decimals = token.decimals || lpToken.decimals || 0;
-                    const priceInfo = { //TODO: calc price info
-                        pricePerToken: 0,
-                        totalPrice: 1234, 
+                    const priceInfo = {
+                        pricePerToken: token.price || 0,
+                        totalPrice: 0, 
                     };
+
+
+                    if (lpBalances && lpBalances.balances.length > 0){
+                        const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
+                        const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
+                        const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
+                        totalPrice += usdValue;
+                        amount = tokenBalance?.uiAmount || 0;
+
+                        lpAmounts = [
+                            {
+                                mint: token.address,
+                                uiAmount: tokenBalance?.uiAmount || 0,
+                            },
+                            {
+                                mint: kSolAddress,
+                                uiAmount: solBalance?.uiAmount || 0,
+                            }
+                        ];
+
+                        priceInfo.totalPrice = usdValue;
+                    }
+                    else {
+                        LogManager.log(`!message for ${token.symbol}`, 'lpBalances not found');
+                    }
 
                     const pAsset: PortfolioAsset = {
                         address: token.address,
 
                         amount: amount,
                         uiAmount: amount / (10 ** decimals),
+                        lpAmounts: lpAmounts,
 
                         decimals: decimals,
                         symbol: token.symbol || 'UNKNOWN',
@@ -278,6 +307,7 @@ export class TraderProfilesManager {
 
     static async fetchTokenLpMintBalance(chain: Chain, dex: SwapDex, mint: string, walletAddress: string) {
         const lpMint = await LpMint.findOne({ chain, dex, $or: [{ token1: mint }, { token2: mint }] });
+        console.log('!fetchTokenLpMintBalance lpMint:', lpMint);
         if (!lpMint){
             return;
         }
@@ -291,6 +321,7 @@ export class TraderProfilesManager {
         // console.log(`fetchTokenLpMintBalance LP TOKEN (${lpMintAddress}): ${tokenBalance.uiAmount}`);
 
         const pair = await TokenPair.findOne({ chain, pairAddress: lpMint.pairAddress });
+        console.log('!fetchTokenLpMintBalance pair:', pair);
         if (!pair){
             return;
         }

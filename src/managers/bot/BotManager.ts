@@ -547,9 +547,16 @@ export class BotManager {
             if (lpAssets.length > 0){
                 message += `\n\nLP Assets:`;
                 for (const asset of lpAssets) {
-                    message += `\n${asset.symbol}: ${asset.uiAmount}`;
-                    if (asset.priceInfo){
-                        message += ` ($${asset.priceInfo.totalPrice})`;
+                    const solBalance = asset.lpAmounts?.find(a => a.mint == kSolAddress)?.uiAmount || 0;
+                    const tokenBalance = asset.lpAmounts?.find(a => a.mint == asset.address)?.uiAmount || 0;
+
+                    const solBalanceString = Helpers.prettyNumberFromString('' + solBalance, 3);
+                    const tokenBalanceString = Helpers.prettyNumberFromString('' + tokenBalance, 3);
+
+                    message += `\n${asset.symbol} LP: ${tokenBalanceString} ${asset.symbol} + ${solBalanceString} SOL`;
+
+                    if (asset.priceInfo?.totalPrice){
+                        message += ` = $${Helpers.numberFormatter(asset.priceInfo.totalPrice, 2)}`;
                     }
 
                     if (asset.address != kSolAddress){

@@ -254,7 +254,7 @@ export class MigrationManager {
         //     console.error('!mike', 'traderProfile not found');
         //     return;
         // }        
-        // const { signature, swap } = await SwapManager.initiateBuy(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 0.005, true);
+        // const { signature, swap } = await SwapManager.initiateBuy(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kChillGuy, 0.005, true);
         // console.log('signature:', signature, 'swap:', swap);
 
         // TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
