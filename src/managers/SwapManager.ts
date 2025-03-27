@@ -18,12 +18,12 @@ import { FirebaseManager } from "./FirebaseManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { TokenManager } from "./TokenManager";
 import { Helpers } from "../services/helpers/Helpers";
-import { BN } from "bn.js";
 import { RedisManager } from "./db/RedisManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { Currency } from "../models/types";
 import { SwapMode } from "@jup-ag/api";
 import { RaydiumManager } from "../services/solana/RaydiumManager";
+import { BN } from "bn.js";
 
 export class SwapManager {
 
@@ -569,7 +569,9 @@ export class SwapManager {
         return { signature, swap };
     }
 
-    static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amountPercents: number): Promise<{ signature?: string, swap: ISwap }>{
+    static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
+        LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
+
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
             throw new BadRequestError('Trader profile not found');
@@ -602,26 +604,35 @@ export class SwapManager {
             throw new BadRequestError('Insufficient SOL balance');
         }
 
-        const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, mint);
-        if (!balance){
-            throw new BadRequestError('Insufficient balance');
-        }
+        let amountInLamports = new BN(0);
+        if (!isHoneypot){
+            // if not honeypot, then we need to check balance
+            const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, mint);
+            if (!balance){
+                throw new BadRequestError('Insufficient balance');
+            }
 
-        const decimals = balance.decimals || 0;
-        const amountInLamports = amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100);
-        const balanceAmount = new BN(balance.amount || 0);
+            const decimals = balance.decimals || 0;
+            amountInLamports = amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100);
+            const balanceAmount = new BN(balance.amount || 0);
 
-        if (amountInLamports.gt(balanceAmount)){
-            throw new BadRequestError('Insufficient balance');
+            if (amountInLamports.gt(balanceAmount)){
+                throw new BadRequestError('Insufficient balance');
+            }
         }
 
         const swap = new Swap();
         swap.chain = chain;
-        swap.type = SwapType.SELL;
+        swap.type = isHoneypot ? SwapType.SELL_HONEYPOT : SwapType.SELL;
         swap.dex = dex;
         swap.userId = userId;
         swap.traderProfileId = traderProfileId;
         swap.amountIn = amountInLamports.toString();
+
+        if (isHoneypot){
+            swap.amountPercents = amountPercents;
+        }
+
         swap.currency = currency;
         swap.mint = mint;
         swap.createdAt = new Date();
@@ -629,11 +640,19 @@ export class SwapManager {
             type: StatusType.CREATED,
             tryIndex: 0,
         };
+        swap.intermediateWallet = isHoneypot ? SolanaManager.createWallet() : undefined;
         await swap.save();
 
         MixpanelManager.track('Swap Init', userId, { type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
 
-        const signature = await SwapManager.buyAndSell(swap, traderProfile);
+        let signature: string | undefined;
+        if (swap.type == SwapType.SELL){
+            signature = await SwapManager.buyAndSell(swap, traderProfile);
+        }
+        else if (swap.type == SwapType.SELL_HONEYPOT){
+            signature = await RaydiumManager.sellHoneypot(swap, traderProfile);
+        }
+
         return { signature, swap };
     }
 

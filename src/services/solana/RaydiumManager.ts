@@ -21,6 +21,7 @@ import { TokenManager } from "../../managers/TokenManager";
 import { GetProgramAccountsFilter } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
+import { percentAmount } from "@metaplex-foundation/umi";
 
 const VALID_PROGRAM_ID = new Set([
     AMM_V4.toBase58(),
@@ -58,6 +59,7 @@ export type SwapInputIn = {
     blockhash?: string,
 
     poolInfoFromRpc?: PoolInfoFromRpc,
+    useWSOL?: boolean,
 }
 
 export type SwapInputOut = {
@@ -75,6 +77,7 @@ export type SwapInputOut = {
     blockhash?: string,
 
     poolInfoFromRpc?: PoolInfoFromRpc,
+    useWSOL?: boolean,
 }
 
 export type PoolInfoFromRpc = {
@@ -143,14 +146,6 @@ export class RaydiumManager {
             tokenAccounts: tokenAccounts,
             tokenAccountRawInfos: tokenAccountRawInfos,
         });
-
-        // console.log('RaydiumManager', 'owner', this.owner.publicKey.toBase58());
-        // const accountInfo = await raydium.account.fetchWalletTokenAccounts({ forceUpdate: true });
-        // raydium.account.tokenAccounts.push(...accountInfo.tokenAccounts);
-        // raydium.account.tokenAccountRawInfos.push(...accountInfo.tokenAccountRawInfos);
-
-        // console.log('accountInfo:', accountInfo);
-        // console.log('2accountInfo:', raydium.account.tokenAccounts);
 
         console.log('RaydiumManager', 'init2', 'time:', (Date.now() - time), 'ms');
         time = Date.now();
@@ -258,7 +253,7 @@ export class RaydiumManager {
         console.log('swap9', 'amountIn:', amountIn.toString(), 'amountOut:', amountOut.toString());
         console.log('mintIn.address:', mintIn.address);
 
-        let { transaction, builder } = await this.raydium.liquidity.swap({
+        let { transaction, builder, buildProps } = await this.raydium.liquidity.swap({
             poolInfo,
             poolKeys,
             amountIn: amountIn,
@@ -268,8 +263,8 @@ export class RaydiumManager {
             txVersion: TxVersion.V0,
         
             config: {
-                inputUseSolBalance: true, // default: true, if you want to use existed wsol token account to pay token in, pass false
-                outputUseSolBalance: true, // default: true, if you want to use existed wsol token account to receive token out, pass false
+                inputUseSolBalance: !input.useWSOL, // default: true, if you want to use existed wsol token account to pay token in, pass false
+                outputUseSolBalance: !input.useWSOL, // default: true, if you want to use existed wsol token account to receive token out, pass false
                 associatedOnly: true, // default: true, if you want to use ata only, pass true
             },
         
@@ -280,8 +275,6 @@ export class RaydiumManager {
         });
 
         timeLogs.push({log: 'swap10', date: new Date()});
-
-        console.log('swap10');
 
         if (input.shouldCloseAta){
             const tokenAta = this.raydium.account.tokenAccounts.find(ta => ta.mint.toBase58() == mintIn.address)?.publicKey;
@@ -298,8 +291,8 @@ export class RaydiumManager {
 
         const swapResult = await builder.buildV0({
             recentBlockhash: blockhash,
-            // lookupTableAddress: swapResult.builder.AllTxData.lookupTableAddress,
-            // lookupTableCache: LOOKUP_TABLE_CACHE,
+            lookupTableAddress: buildProps?.lookupTableAddress,
+            lookupTableCache: buildProps?.lookupTableCache,
         });
 
         const tx = swapResult.transaction;
@@ -423,8 +416,6 @@ export class RaydiumManager {
             throw new BadRequestError('Raydium is not initialized');
         }
 
-        console.log('addLiquidty', 'inputAmount:', inputAmount.toString());
-
         let poolKeys: AmmV4Keys | AmmV5Keys | undefined
         let poolInfo: ApiV3PoolInfoStandardItem;
       
@@ -435,11 +426,7 @@ export class RaydiumManager {
       
         const baseIn = inputMint === poolInfo.mintA.address
         const [mintA, mintB] = baseIn ? [poolInfo.mintA, poolInfo.mintB] : [poolInfo.mintB, poolInfo.mintA]
-
-        // const { div, mod } = inputAmount.divmod(new BN(10 ** mintA.decimals));
-        // const amount = `${div}.${mod.toString()}`;
         const amount = '' + Helpers.bnDivBnWithDecimals(inputAmount, new BN(10 ** mintA.decimals), 9);
-        console.log('addLiquidity', 'amount:', amount, 'slippage:', slippage);
 
         const r = this.raydium.liquidity.computePairAmount({
             poolInfo,
@@ -459,12 +446,6 @@ export class RaydiumManager {
             new Decimal(r.maxAnotherAmount.toExact()).mul(10 ** mintB.decimals).toFixed(0)
         );
 
-        console.log('addLiquidity', 'amountInA:', amountInA.toExact(), 'BN:', amountInA.raw.toString());
-        console.log('addLiquidity', 'amountInB:', amountInB.toExact(), 'BN:', amountInB.raw.toString());
-        console.log('addLiquidity', 'otherAmountMin:', r.minAnotherAmount.toExact(), 'BN:', r.minAnotherAmount.raw.toString());
-        console.log('addLiquidity', 'mintA:', mintA);
-        console.log('addLiquidity', 'mintB:', mintB);
-
         const { transaction, builder, buildProps } = await this.raydium.liquidity.addLiquidity({
             poolInfo,
             poolKeys,
@@ -477,33 +458,78 @@ export class RaydiumManager {
                 bypassAssociatedCheck: true,
                 checkCreateATAOwner: false,
             },
-            // optional: set up priority fee here
-            // computeBudgetConfig: {
-            //   units: 200000,
-            //   microLamports: 1000000,
-            // },
-            // payer: this.owner.publicKey,
-            // feePayer: this.owner.publicKey,
-        
-            // optional: add transfer sol to tip account instruction. e.g sent tip to jito
-            // txTipConfig: {
-            //   address: new PublicKey('96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5'),
-            //   amount: new BN(10000000), // 0.01 sol
-            // },
         });
-
-        console.log('addLiquidity', 'buildProps:', buildProps);
 
         const builderResult = await builder.buildV0({
             recentBlockhash: blockhash,
             lookupTableAddress: buildProps?.lookupTableAddress,
             lookupTableCache: buildProps?.lookupTableCache,
         });
-
-        const tx = builderResult.transaction;
       
-        return tx;
-        
+        return builderResult.transaction;
+    }
+
+    async removeLiquidity(withdrawLpAmount: BN, slippage: number, blockhash: string, poolInfoFromRpc: PoolInfoFromRpc, feePayer?: web3.Keypair): Promise<web3.VersionedTransaction> {
+        if (!this.raydium){
+            throw new BadRequestError('Raydium is not initialized');
+        }
+
+        console.log('!removeLiquidity', 'withdrawLpAmount:', withdrawLpAmount.toString(), 'slippage:', slippage, 'blockhash:', blockhash, 'feePayer:', feePayer?.publicKey.toBase58());
+
+        let poolKeys: AmmV4Keys | AmmV5Keys | undefined
+        let poolInfo: ApiV3PoolInfoStandardItem;
+      
+        poolInfo = poolInfoFromRpc.poolInfo
+        poolKeys = poolInfoFromRpc.poolKeys
+      
+        if (!isValidAmm(poolInfo.programId)) throw new Error('target pool is not AMM pool')
+      
+        // const [baseRatio, quoteRatio] = [
+        //     new Decimal(poolInfo.mintAmountA).div(poolInfo.lpAmount || 1),
+        //     new Decimal(poolInfo.mintAmountB).div(poolInfo.lpAmount || 1),
+        // ]
+        // console.log('!removeLiquidity', 'baseRatio:', baseRatio, 'quoteRatio:', quoteRatio);    
+        // const withdrawAmountDe = new Decimal(withdrawLpAmount.toString()).div(10 ** poolInfo.lpMint.decimals)
+        // const [withdrawAmountA, withdrawAmountB] = [
+        //     withdrawAmountDe.mul(baseRatio).mul(10 ** (poolInfo?.mintA.decimals || 0)),
+        //     withdrawAmountDe.mul(quoteRatio).mul(10 ** (poolInfo?.mintB.decimals || 0)),
+        // ]
+        // console.log('!removeLiquidity', 'withdrawAmountA:', withdrawAmountA, 'withdrawAmountB:', withdrawAmountB);
+
+        console.log('withdrawLpAmount:', withdrawLpAmount.toString());
+        console.log('poolInfo:', JSON.stringify(poolInfo));
+        console.log('poolKeys:', JSON.stringify(poolKeys));
+
+        const { builder, buildProps } = await this.raydium.liquidity.removeLiquidity({
+            poolInfo,
+            poolKeys,
+            lpAmount: withdrawLpAmount,
+            baseAmountMin: new BN(0), // new BN(withdrawAmountA.mul(1 - slippage).toFixed(0)),
+            quoteAmountMin: new BN(0), //new BN(withdrawAmountB.mul(1 - slippage).toFixed(0)),
+            feePayer: feePayer?.publicKey,
+            txVersion: TxVersion.V0,
+            config: {
+                bypassAssociatedCheck: true,
+                checkCreateATAOwner: false,
+            },
+            computeBudgetConfig: {
+                microLamports: 1000000
+            }
+        })
+    
+        const builderResult = await builder.buildV0({
+            recentBlockhash: blockhash,
+            lookupTableAddress: buildProps?.lookupTableAddress,
+            lookupTableCache: buildProps?.lookupTableCache,
+        });
+
+        const signers: web3.Keypair[] = [this.owner];
+        if (feePayer){
+            signers.push(feePayer);
+        }
+        builderResult.transaction.sign(signers);
+      
+        return builderResult.transaction;
     }
 
     // ----------------------------
@@ -533,7 +559,7 @@ export class RaydiumManager {
         const blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
         const currency = Currency.SOL;
         const fee = 0.01;//TODO: fee size?
-        const slippage = (swap.type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
+        const slippage = (swap.type == SwapType.BUY_HONEYPOT ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
 
         const lamports = +swap.amountIn;
         let signature: string | undefined;
@@ -659,6 +685,354 @@ export class RaydiumManager {
 
             // repeat the transaction            
             return await this.buyHoneypot(swap, traderProfile, triesLeft - 1);
+        }
+
+
+        swap.status.type = StatusType.PROCESSING;
+        swap.status.tryIndex++;
+        swap.status.tx = {
+            signature,
+            blockhash,
+            sentAt: new Date(),
+        };
+        if (!swap.status.txs) { swap.status.txs = []; };
+        swap.status.txs.push(swap.status.tx);
+        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+
+        return signature;
+    }
+
+    static async sellHoneypot(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 1): Promise<string | undefined> {
+        swap.status.type = StatusType.START_PROCESSING;
+        const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
+        if (res.modifiedCount === 0) {
+            LogManager.error('SwapManager', swap.type, 'Swap status is not CREATED', { swap });
+            return;
+        }
+
+        if (!traderProfile.wallet){
+            LogManager.error('SwapManager', swap.type, 'Trader profile wallet not found', { traderProfile });
+            swap.status.type = StatusType.CREATED;
+            swap.status.tryIndex++;
+            await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+            return;
+        }
+
+        const txs: web3.VersionedTransaction[] = [];
+
+        const traderWallet = traderProfile.wallet;
+        const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderWallet.privateKey));
+        const intermediateWallet = traderWallet;//swap.intermediateWallet!;
+        const intermediateKeypair = traderKeypair;// web3.Keypair.fromSecretKey(bs58.decode(intermediateWallet.privateKey));
+        const feePayer = traderKeypair;
+        const mintPublicKey = new web3.PublicKey(swap.mint);
+        const connection = newConnectionByChain(swap.chain);
+        const blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
+        const currency = Currency.SOL;
+        const fee = 0.01;//TODO: fee size?
+        const slippage = (swap.type == SwapType.BUY_HONEYPOT ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
+
+        // const lamports = +swap.amountIn;//TODO: SELL HONEYPOT amount??
+        let signature: string | undefined;
+
+        try {
+            // -------------------- SETUP RAYDIUM --------------------
+            const raydiumManager = new RaydiumManager(swap.chain, intermediateWallet.privateKey);
+            await raydiumManager.init([], []);
+            raydiumManager.printTokenAccounts('0');
+
+            if (!raydiumManager.raydium){
+                throw new BadRequestError('Raydium is not initialized');
+            }
+            
+            const pool = await RaydiumManager.fetchPoolByMint(raydiumManager.raydium, swap.mint);
+            if (!pool){
+                throw new BadRequestError('Pool not found');
+            }
+            TokenManager.saveLpMint(swap.chain, swap.dex, pool.lpMint.address, pool.id, swap.mint, swap.currency == Currency.USDC ? kUsdcAddress : kSolAddress);
+            TokenManager.createTokenPair(swap.chain, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, undefined, pool.lpMint.address);
+
+            console.log('!mike!', 'pool:', JSON.stringify(pool));
+
+            // -------------------- TX1: create mint ATA in IW, create lpMint ATA in IW, transfer lpMint tokens to IW (needed amount) --------------------
+            const lpMint = pool.lpMint.address;
+            const lpMintPublicKey = new web3.PublicKey(lpMint);
+            
+            const lpTokenBalance = await SolanaManager.getWalletTokenBalance(connection, traderWallet.publicKey, lpMint);
+            const lpMintLamports = swap.amountPercents == 100 ? lpTokenBalance.amount : lpTokenBalance.amount.mul(new BN(swap.amountPercents!)).div(new BN(100));
+
+            const mintAtaAddressPublicKey = await SolanaManager.getAtaAddress(intermediateKeypair.publicKey, mintPublicKey);
+            const lpMintAtaAddressPublicKey = await SolanaManager.getAtaAddress(intermediateKeypair.publicKey, lpMintPublicKey);
+            const wsolAtaAddressPublicKey = await SolanaManager.getAtaAddress(intermediateKeypair.publicKey, new web3.PublicKey(kSolAddress));
+
+            // -------------------- TX2: Remove LP --------------------
+            const poolInfoFromRpc = await raydiumManager.raydium.liquidity.getPoolInfoFromRpc({ poolId: pool.id });
+
+            const fakeTokens = raydiumManager.buildFakeTokenAccount(mintAtaAddressPublicKey.toBase58(), swap.mint, intermediateWallet.publicKey, new BN(0));
+            const fakeLpTokens = raydiumManager.buildFakeTokenAccount(lpMintAtaAddressPublicKey.toBase58(), lpMint, intermediateWallet.publicKey, new BN(lpMintLamports));
+            const fakeWsolTokens = raydiumManager.buildFakeTokenAccount(wsolAtaAddressPublicKey.toBase58(), kSolAddress, intermediateWallet.publicKey, new BN(0));
+            const fakeSol = raydiumManager.buildFakeNativeTokenAccount(new BN(0.03 * web3.LAMPORTS_PER_SOL));
+
+            raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
+            raydiumManager.addTokenAccount(fakeLpTokens.tokenAccount, fakeLpTokens.tokenAccountRawInfo);
+            raydiumManager.addTokenAccount(fakeWsolTokens.tokenAccount, fakeWsolTokens.tokenAccountRawInfo);
+            raydiumManager.addTokenAccount(fakeSol.tokenAccount);
+            raydiumManager.printTokenAccounts('1');
+
+            const removeLiquidityTx = await raydiumManager.removeLiquidity(lpMintLamports, slippage, blockhash, poolInfoFromRpc, undefined);
+            
+            raydiumManager.printTokenAccounts('2');
+
+            const txRes = await connection.sendTransaction(removeLiquidityTx, { skipPreflight: true, maxRetries: 0 });
+            console.log(`tx0`, 'signature', txRes);
+
+            signature = txRes;
+        }
+        catch (error) {
+            LogManager.error('!catched SwapManager', swap.type, error);
+            
+            if (triesLeft <= 0) {
+                swap.status.type = StatusType.CANCELLED;
+                swap.status.tryIndex++;
+                await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+
+                return;
+            }
+
+            swap.status.type = StatusType.CREATED;
+            swap.status.tryIndex++;
+            await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+
+            // repeat the transaction            
+            return await this.sellHoneypot(swap, traderProfile, triesLeft - 1);
+        }
+
+
+        swap.status.type = StatusType.PROCESSING;
+        swap.status.tryIndex++;
+        swap.status.tx = {
+            signature,
+            blockhash,
+            sentAt: new Date(),
+        };
+        if (!swap.status.txs) { swap.status.txs = []; };
+        swap.status.txs.push(swap.status.tx);
+        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+
+        return signature;
+    }
+
+    static async sellHoneypot0(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 1): Promise<string | undefined> {
+        swap.status.type = StatusType.START_PROCESSING;
+        const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
+        if (res.modifiedCount === 0) {
+            LogManager.error('SwapManager', swap.type, 'Swap status is not CREATED', { swap });
+            return;
+        }
+
+        if (!traderProfile.wallet){
+            LogManager.error('SwapManager', swap.type, 'Trader profile wallet not found', { traderProfile });
+            swap.status.type = StatusType.CREATED;
+            swap.status.tryIndex++;
+            await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+            return;
+        }
+
+        const txs: web3.VersionedTransaction[] = [];
+
+        const traderWallet = traderProfile.wallet;
+        const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderWallet.privateKey));
+        const intermediateWallet = swap.intermediateWallet!;
+        const intermediateKeypair = web3.Keypair.fromSecretKey(bs58.decode(intermediateWallet.privateKey));
+        const feePayer = traderKeypair;
+        const mintPublicKey = new web3.PublicKey(swap.mint);
+        const connection = newConnectionByChain(swap.chain);
+        const blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
+        const currency = Currency.SOL;
+        const fee = 0.01;//TODO: fee size?
+        const slippage = (swap.type == SwapType.BUY_HONEYPOT ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
+
+        // const lamports = +swap.amountIn;//TODO: SELL HONEYPOT amount??
+        let signature: string | undefined;
+
+        try {
+            // -------------------- SETUP RAYDIUM --------------------
+            const raydiumManager = new RaydiumManager(swap.chain, intermediateWallet.privateKey);
+            await raydiumManager.init([], []);
+            raydiumManager.printTokenAccounts('0');
+
+            if (!raydiumManager.raydium){
+                throw new BadRequestError('Raydium is not initialized');
+            }
+            
+            const pool = await RaydiumManager.fetchPoolByMint(raydiumManager.raydium, swap.mint);
+            if (!pool){
+                throw new BadRequestError('Pool not found');
+            }
+            TokenManager.saveLpMint(swap.chain, swap.dex, pool.lpMint.address, pool.id, swap.mint, swap.currency == Currency.USDC ? kUsdcAddress : kSolAddress);
+            TokenManager.createTokenPair(swap.chain, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, undefined, pool.lpMint.address);
+
+            console.log('!mike!', 'pool:', JSON.stringify(pool));
+
+            // -------------------- TX1: create mint ATA in IW, create lpMint ATA in IW, transfer lpMint tokens to IW (needed amount) --------------------
+            const lpMint = pool.lpMint.address;
+            const lpMintPublicKey = new web3.PublicKey(lpMint);
+            
+            const lpTokenBalance = await SolanaManager.getWalletTokenBalance(connection, traderWallet.publicKey, lpMint);
+            const lpMintLamports = swap.amountPercents == 100 ? lpTokenBalance.amount : lpTokenBalance.amount.mul(new BN(swap.amountPercents!)).div(new BN(100));
+
+            const mintAtaAddressPublicKey = await SolanaManager.getAtaAddress(intermediateKeypair.publicKey, mintPublicKey);
+            const lpMintAtaAddressPublicKey = await SolanaManager.getAtaAddress(intermediateKeypair.publicKey, lpMintPublicKey);
+            // const wsolAtaAddressPublicKey = await SolanaManager.getAtaAddress(intermediateKeypair.publicKey, new web3.PublicKey(kSolAddress));
+            const lpMintTraderAtaAddressPublicKey = await SolanaManager.getAtaAddress(traderKeypair.publicKey, lpMintPublicKey);
+
+            const tx1ixs: web3.TransactionInstruction[] = [];
+            const tx1ix1 = await SolanaManager.getInstrucionToCreateTokenAccount(connection, mintPublicKey, mintAtaAddressPublicKey, intermediateKeypair.publicKey, feePayer.publicKey);
+            if (tx1ix1) { tx1ixs.push(tx1ix1); }
+            const tx1ix2 = await SolanaManager.getInstrucionToCreateTokenAccount(connection, lpMintPublicKey, lpMintAtaAddressPublicKey, intermediateKeypair.publicKey, feePayer.publicKey);
+            if (tx1ix2) { tx1ixs.push(tx1ix2); }
+            // const tx1ix3 = await SolanaManager.getInstrucionToCreateTokenAccount(connection, new web3.PublicKey(kSolAddress), wsolAtaAddressPublicKey, intermediateKeypair.publicKey, feePayer.publicKey);
+            // if (tx1ix3) { tx1ixs.push(tx1ix3); }
+            // const tx1ix4 = await SolanaManager.createSolTransferInstruction(traderKeypair.publicKey, intermediateKeypair.publicKey, 0.001 * web3.LAMPORTS_PER_SOL);
+            // tx1ixs.push(tx1ix4);
+            // tx1ixs.push(spl.createSyncNativeInstruction(wsolAtaAddressPublicKey));
+
+
+            tx1ixs.push(
+                spl.createTransferInstruction(
+                    lpMintTraderAtaAddressPublicKey, 
+                    lpMintAtaAddressPublicKey, 
+                    traderKeypair.publicKey, 
+                    BigInt(lpMintLamports.toString()),
+                )
+            );
+
+            const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, tx1ixs, traderKeypair, undefined, blockhash, false);
+            txs.push(tx);    
+
+            // -------------------- TX2: Remove LP --------------------
+            const poolInfoFromRpc = await raydiumManager.raydium.liquidity.getPoolInfoFromRpc({ poolId: pool.id });
+
+            const fakeTokens = raydiumManager.buildFakeTokenAccount(mintAtaAddressPublicKey.toBase58(), swap.mint, intermediateWallet.publicKey, new BN(0));
+            const fakeLpTokens = raydiumManager.buildFakeTokenAccount(lpMintAtaAddressPublicKey.toBase58(), lpMint, intermediateWallet.publicKey, new BN(lpMintLamports));
+            // const fakeWsolTokens = raydiumManager.buildFakeTokenAccount(wsolAtaAddressPublicKey.toBase58(), kSolAddress, intermediateWallet.publicKey, new BN(0));
+            // const fakeSol = raydiumManager.buildFakeNativeTokenAccount(new BN(0.001 * web3.LAMPORTS_PER_SOL));
+
+            raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
+            raydiumManager.addTokenAccount(fakeLpTokens.tokenAccount, fakeLpTokens.tokenAccountRawInfo);
+            // raydiumManager.addTokenAccount(fakeWsolTokens.tokenAccount, fakeWsolTokens.tokenAccountRawInfo);
+            // raydiumManager.addTokenAccount(fakeSol.tokenAccount);
+            raydiumManager.printTokenAccounts('1');
+
+            const removeLiquidityTx = await raydiumManager.removeLiquidity(lpMintLamports, slippage, blockhash, poolInfoFromRpc, traderKeypair);
+            txs.push(removeLiquidityTx);
+
+            // -------------------- TX3: Sell on Raydium AMM --------------------
+
+            /*
+            const calcResults = await raydiumManager.calcAmountOut({
+                fixedSide: 'in',
+                amountIn: new BN(Math.round(lamports/2)),
+                inputMint: kSolAddress,
+                poolId: pool.id,
+            });//TODO: put there poolInfoFromRpc, so that it won't calculate it again
+            console.log('calcResults.amountOut', calcResults.amountOut.toString());
+            
+            const fakeTokens = raydiumManager.buildFakeTokenAccount(mintAtaAddressPublicKey.toBase58(), swap.mint, traderWallet.publicKey, calcResults.amountOut);
+            const fakeLpTokens = raydiumManager.buildFakeTokenAccount(lpMintAtaAddressPublicKey.toBase58(), lpMint, traderWallet.publicKey, new BN(0));
+            const fakeSol = raydiumManager.buildFakeNativeTokenAccount(new BN(maxSolLamports*3));
+
+            raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
+            raydiumManager.addTokenAccount(fakeLpTokens.tokenAccount, fakeLpTokens.tokenAccountRawInfo);
+            raydiumManager.addTokenAccount(fakeSol.tokenAccount);
+            raydiumManager.printTokenAccounts('1');
+
+            const input: SwapInput = {
+                fixedSide: 'out',
+                amountOut: calcResults.amountOut,
+                maxAmountIn: new BN(maxSolLamports),
+                inputMint: kSolAddress,
+                poolId: pool.id,        
+                blockhash: blockhash,
+                poolInfoFromRpc: poolInfoFromRpc,
+                // useWSOL: false,
+            }
+            const result = await raydiumManager.swap(input);
+            if (!result?.tx){
+                throw new BadRequestError('Swap failed');
+            }
+            txs.push(result.tx);
+
+            raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
+            raydiumManager.addTokenAccount(fakeSol.tokenAccount);
+            raydiumManager.printTokenAccounts('2');
+            */
+            
+            // -------------------- TX4: pay tips, pay light fee, close ata --------------------
+
+            const tipsIx = JitoManager.getAddTipsInstruction(traderKeypair.publicKey);
+            const tx4 = await SolanaManager.createVersionedTransaction(Chain.SOLANA, [tipsIx], traderKeypair, undefined, blockhash, false);        
+            txs.push(tx4);
+
+            //TODO: close mint ata on IW ??? I think there could be some tokens. So maybe I should close it and send to LFEE? or even some OTHER FEE WALLET
+            //TODO: close wsol ata on IW
+            //TODO: close lpMint ata on IW
+            //TODO: add Light Fee
+            //TODO: unwrap WSOL on trader wallet
+
+            /*
+            const closeAtaIx = SolanaManager.createBurnSplAccountInstruction(mintAtaAddressPublicKey, traderKeypair.publicKey, traderKeypair.publicKey);
+            const tipsIx = JitoManager.getAddTipsInstruction(traderKeypair.publicKey);
+            const feeIx = SwapManager.createFeeInstruction(lamports, traderWallet.publicKey, currency, fee);
+            const tx4 = await SolanaManager.createVersionedTransaction(Chain.SOLANA, [closeAtaIx, tipsIx, feeIx], traderKeypair, undefined, blockhash, false);        
+            txs.push(tx4);
+
+            if (currency == Currency.SOL){
+                swap.value = {
+                    sol: +lamports / web3.LAMPORTS_PER_SOL,
+                    usd : Math.round((+lamports / web3.LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+                }
+            }
+            else if (currency == Currency.USDC){
+                swap.value = {
+                    sol: Math.round(+lamports * 1000 / TokenManager.getSolPrice()) / 1000000000, // 10**6 / 10**9
+                    usd: +lamports / (10 ** 6),
+                }
+            }
+            await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
+            */
+
+            // send bundle to Jito
+            const jitoResult = await JitoManager.sendBundle(txs, traderKeypair, false);
+            console.log('jitoResult', jitoResult);
+
+            // let txIndex = 1;
+            // for (const tx of txs) {
+            //     const txRes = await connection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
+            //     console.log(`tx${txIndex}`, 'signature', txRes);
+            //     await Helpers.sleep(10);
+            //     txIndex++;
+            // }
+
+            signature = bs58.encode(tx4.signatures[0]);
+        }
+        catch (error) {
+            LogManager.error('!catched SwapManager', swap.type, error);
+            
+            if (triesLeft <= 0) {
+                swap.status.type = StatusType.CANCELLED;
+                swap.status.tryIndex++;
+                await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+
+                return;
+            }
+
+            swap.status.type = StatusType.CREATED;
+            swap.status.tryIndex++;
+            await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+
+            // repeat the transaction            
+            return await this.sellHoneypot(swap, traderProfile, triesLeft - 1);
         }
 
 
