@@ -113,6 +113,9 @@ export class BotBuyHelper extends BotHelper {
 
             // let msg = `🟢 Bought <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}.`
             let msg = `🟡 Transaction sent. Waiting for confirmation.`
+            if (swap.intermediateWallet){
+                msg += `\n\nIntermediate wallet:\n<code>${swap.intermediateWallet.publicKey}</code> (Tap to copy)`;
+            }
             if (signature){
                 msg += '\n\n';
                 msg += `<a href="${ExplorerManager.getUrlToTransaction(chain, signature)}">Explorer</a>`;

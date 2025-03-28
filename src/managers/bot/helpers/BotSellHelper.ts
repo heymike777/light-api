@@ -125,7 +125,10 @@ export class BotSellHelper extends BotHelper {
             const { signature, swap } = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amountPercent, isHoneypot);
 
             // let msg = `🟢 Sold <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.`
-            let msg = `🟡 Transaction sent. Waiting for confirmation.`
+            let msg = `🟡 Transaction sent. Waiting for confirmation.`;
+            if (swap.intermediateWallet){
+                msg += `\n\nIntermediate wallet:\n<code>${swap.intermediateWallet.publicKey}</code> (Tap to copy)`;
+            }
             if (signature){
                 msg += '\n\n';
                 msg += `<a href="${ExplorerManager.getUrlToTransaction(chain, signature)}">Explorer</a>`;

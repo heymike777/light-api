@@ -446,20 +446,22 @@ export class BotManager {
                 const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
                 const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
 
-                const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
-                const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
+                if (solBalance?.uiAmount || tokenBalance?.uiAmount){
+                    const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
+                    const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
 
-                message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} SOL = $${Helpers.numberFormatter(usdValue, 2)}`;
+                    message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} SOL = $${Helpers.numberFormatter(usdValue, 2)}`;
 
-                let btnIndex = 0;
-                for (const amount of sellAmounts) {
+                    let btnIndex = 0;
+                    for (const amount of sellAmounts) {
+                        if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
+
+                        buttons.push({ id: `sell_lp|${token.chain}|${token.address}|${amount}`, text: `Sell (LP) ${amount}%` });
+                        btnIndex++;                    
+                    }
                     if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
-
-                    buttons.push({ id: `sell_lp|${token.chain}|${token.address}|${amount}`, text: `Sell (LP) ${amount}%` });
-                    btnIndex++;                    
+                    buttons.push({ id: `sell_lp|${token.chain}|${token.address}|X`, text: `Sell (LP) X%` });
                 }
-                if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
-                buttons.push({ id: `sell_lp|${token.chain}|${token.address}|X`, text: `Sell (LP) X%` });
             }
         }
 
