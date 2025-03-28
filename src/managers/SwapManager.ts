@@ -498,7 +498,13 @@ export class SwapManager {
     }
 
     static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
-        LogManager.log('initiateBuy', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
+        LogManager.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
+        const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
+        if (!isFreezeAuthorityRevoked){
+            dex = SwapDex.RAYDIUM_AMM;
+            isHoneypot = true;
+        }
+        LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){

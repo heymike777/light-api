@@ -1,7 +1,7 @@
 import { Context } from "grammy";
 import { UserManager } from "../../UserManager";
 import { BotHelper, Message } from "./BotHelper";
-import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
+import { IUser, TelegramWaitingType } from "../../../entities/users/User";
 import { BotManager } from "../BotManager";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
 import { Currency } from "../../../models/types";
@@ -20,7 +20,7 @@ export class BotSellHelper extends BotHelper {
             text: 'sell?'
         };
 
-        super('sell', replyMessage);
+        super('sell', replyMessage, ['sell_lp']);
     }
 
     async commandReceived(ctx: Context, user: IUser) {
@@ -28,6 +28,8 @@ export class BotSellHelper extends BotHelper {
 
         const buttonId = ctx.update?.callback_query?.data;
         const botUsername = BotManager.getBotUsername(ctx);
+
+        console.log('BotSellHelper', 'commandReceived', buttonId);
 
         if (ctx?.update?.message?.text == '/sell' || buttonId == 'sell'){
             const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
@@ -46,8 +48,9 @@ export class BotSellHelper extends BotHelper {
             });    
 
         }
-        else if (buttonId && buttonId.startsWith('sell|')){
+        else if (buttonId && (buttonId.startsWith('sell|') || buttonId.startsWith('sell_lp|'))){
             const parts = buttonId.split('|');
+            const isHoneypot = buttonId.startsWith('sell_lp|');    
             if (parts.length == 4){
                 const chain = parts[1] as Chain;
                 const mint = parts[2];
@@ -60,22 +63,15 @@ export class BotSellHelper extends BotHelper {
 
                 const currency = traderProfile.currency || Currency.SOL;
 
-                if (parts[3] == 'refresh'){
-                    const token = await TokenManager.getToken(chain, mint);
-                    if (token){
-                        const botUsername = BotManager.getBotUsername(ctx);
-                        const { message, markup } = await BotManager.buildSellMessage(); //token, user, traderProfile, botUsername
-                        await BotManager.editMessage(ctx, message, markup);
-                    }
-                }
-                else if (parts[3] == 'x' || parts[3] == 'X') {
-                    await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.SELL_AMOUNT, data: { chain, mint, traderProfileId: traderProfile?.id, currency }, helper: this.kCommand });
+                if (parts[3] == 'x' || parts[3] == 'X') {
+                    const waitingFor = isHoneypot ? TelegramWaitingType.SELL_LP_AMOUNT : TelegramWaitingType.SELL_AMOUNT;
+                    await UserManager.updateTelegramState(user.id, { waitingFor, data: { chain, mint, traderProfileId: traderProfile?.id, currency }, helper: this.kCommand });
                     await BotManager.reply(ctx, `Enter % to sell (e.g. "50%" or "50")`);
                 }
                 else {
                     const amount = parseFloat(parts[3]);
                     if (amount > 0){
-                        await this.sell(ctx, user, chain, mint, amount, currency, traderProfile.id);
+                        await this.sell(ctx, user, chain, mint, amount, currency, traderProfile.id, isHoneypot);
                     }
                 }
             }
@@ -90,7 +86,8 @@ export class BotSellHelper extends BotHelper {
 
         super.messageReceived(message, ctx, user);
 
-        if (user.telegramState?.waitingFor == TelegramWaitingType.SELL_AMOUNT){
+        if (user.telegramState?.waitingFor == TelegramWaitingType.SELL_AMOUNT || user.telegramState?.waitingFor == TelegramWaitingType.SELL_LP_AMOUNT){
+            const isHoneypot = user.telegramState?.waitingFor == TelegramWaitingType.SELL_LP_AMOUNT;
             const amountString = message.text.trim().replaceAll(',', '.').replace('%', '');
             const amount = parseFloat(amountString);
             if (isNaN(amount) || amount <= 0 || amount > 100){
@@ -103,7 +100,7 @@ export class BotSellHelper extends BotHelper {
             const currency: Currency = user.telegramState.data.currency;
             const traderProfileId: string = user.telegramState.data.traderProfileId;
 
-            await this.sell(ctx, user, chain, mint, amount, currency, traderProfileId);
+            await this.sell(ctx, user, chain, mint, amount, currency, traderProfileId, isHoneypot);
 
             await UserManager.updateTelegramState(user.id, undefined);
             return true;
@@ -112,7 +109,8 @@ export class BotSellHelper extends BotHelper {
         return false;
     }
 
-    async sell(ctx: Context, user: IUser, chain: Chain, mint: string, amountPercent: number, currency: Currency, traderProfileId: string) {
+    async sell(ctx: Context, user: IUser, chain: Chain, mint: string, amountPercent: number, currency: Currency, traderProfileId: string, isHoneypot: boolean) {
+        console.log('sell', 'isHoneypot:', isHoneypot, 'amountPercent:', amountPercent);
         let tokenName: string | undefined = mint;
         try {
             const token = await TokenManager.getToken(chain, mint);
@@ -124,7 +122,7 @@ export class BotSellHelper extends BotHelper {
         const message = await BotManager.reply(ctx, `Selling ${amountPercent}% of <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.\n\nPlease, wait...`);      
 
         try {
-            const { signature, swap } = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amountPercent);
+            const { signature, swap } = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amountPercent, isHoneypot);
 
             // let msg = `🟢 Sold <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.`
             let msg = `🟡 Transaction sent. Waiting for confirmation.`

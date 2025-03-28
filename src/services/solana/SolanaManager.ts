@@ -413,7 +413,7 @@ export class SolanaManager {
     }
 
     static async getPriorityFeeInstructions(): Promise<web3.TransactionInstruction[]> {
-        const feeEstimate = await HeliusManager.getRecentPrioritizationFees();
+        const feeEstimate = 1000000;// await HeliusManager.getRecentPrioritizationFees();
         return [
             web3.ComputeBudgetProgram.setComputeUnitPrice({
                 microLamports: feeEstimate,
@@ -654,6 +654,20 @@ export class SolanaManager {
         return undefined;
     }
 
+    static async getTokenMint(chain: Chain, mint: string): Promise<spl.Mint | undefined> {
+        const connection = newConnectionByChain(chain);
+        const mintPublicKey = new web3.PublicKey(mint);
+        const mintInfo = await spl.getMint(connection, mintPublicKey);
+        return mintInfo;
+    }
+
+    static async getFreezeAuthorityRevoked(chain: Chain, mint: string): Promise<boolean> {
+        const mintInfo = await this.getTokenMint(chain, mint);
+        if (mintInfo && mintInfo.freezeAuthority == null) {
+            return true;
+        }
+        return false;
+    }
 
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;

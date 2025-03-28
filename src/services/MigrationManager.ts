@@ -67,6 +67,7 @@ export class MigrationManager {
     static async migrate() {
         if (process.env.SERVER_NAME != 'heynova0' && process.env.SERVER_NAME != 'light0'){
             SystemNotificationsManager.sendSystemMessage('Server started');
+            TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
         }
         LogManager.forceLog('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
@@ -247,18 +248,18 @@ export class MigrationManager {
         //     }
         // }
 
+
         // await SolanaManager.getRecentBlockhash(Chain.SOLANA);
         // const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
         // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
         // if (!traderProfile){
         //     console.error('!mike', 'traderProfile not found');
         //     return;
-        // }        
+        // }
         // const { signature, swap } = await SwapManager.initiateBuy(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kChillGuy, 0.005, true);
         // console.log('signature:', signature, 'swap:', swap);
-
-        // TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
-
+        // const { signature, swap } = await SwapManager.initiateSell(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 10, true);
+        // console.log('signature:', signature, 'swap:', swap);
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
         

@@ -386,6 +386,7 @@ export class BotManager {
         const currency = traderProfile?.currency || Currency.SOL;
         const buyAmounts: number[] = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
         const sellAmounts: number[] = traderProfile?.sellAmounts || [50, 100];
+        const mintInfo = await SolanaManager.getTokenMint(token.chain, token.address);
 
         const buttons: InlineButton[] = [
             { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
@@ -414,6 +415,11 @@ export class BotManager {
         const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
         //message += `\n<a href="${reflink}">Share token with your Reflink</a>` //TODO: uncomment
 
+        const isHoneypot = !mintInfo || mintInfo.freezeAuthority;
+        message += `\n\n⚙️ Security:`;
+        message += `\n├ Mint Authority: ${!mintInfo ? 'Unknown 🟠' : mintInfo.mintAuthority ? `Yes 🔴` : 'No 🟢'}`;
+        message += `\n└ Freeze Authority: ${!mintInfo ? 'Unknown 🟠' : mintInfo.freezeAuthority ? `Yes 🔴` : 'No 🟢'}`;
+        
         const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
         if (traderProfile && traderProfile.wallet?.publicKey){
@@ -455,7 +461,6 @@ export class BotManager {
                 if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
                 buttons.push({ id: `sell_lp|${token.chain}|${token.address}|X`, text: `Sell (LP) X%` });
             }
-
         }
 
         const metricsMessage = BotManager.buildTokenMetricsMessage(token);
@@ -502,10 +507,6 @@ export class BotManager {
         }
 
         return tokensMessage;
-    }
-
-    static async buildSellMessage(): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
-        return { message: 'test sell message' };
     }
 
     static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
