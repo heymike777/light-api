@@ -13,7 +13,7 @@ import { Keypair } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
 import { Interface } from "helius-sdk";
-import { kSolAddress } from "./Constants";
+import { kRaydiumAuthority, kSolAddress } from "./Constants";
 import BN from "bn.js";
 
 export interface CreateTransactionResponse {
@@ -29,10 +29,17 @@ export interface TokenBalance {
 }
 
 export type SendThrough = {
-    priority?: Priority;
+    priority?: Priority,
     useJito?: boolean,
     useHelius?: boolean,
     useTriton?: boolean,
+}
+
+export interface LPToken {
+    lpMint: string,
+    amount: BN,
+    decimals: number,
+    supply: BN,
 }
 
 export interface Asset {
@@ -197,9 +204,14 @@ export class SolanaManager {
         return instructions;
     }  
 
-    static async createSplAccountInstruction(tokenMintPublicKey: web3.PublicKey, walletPublicKey: web3.PublicKey, feePayerPublicKey: web3.PublicKey, tokenAddress?: web3.PublicKey): Promise<web3.TransactionInstruction>{
+    static async getAtaAddress(walletAddress: web3.PublicKey, mint: web3.PublicKey): Promise<web3.PublicKey> {
+        const publicKey = await spl.getAssociatedTokenAddress(mint, walletAddress);
+        return publicKey;
+    }
+
+    static async createSplAccountInstruction(mint: web3.PublicKey, walletPublicKey: web3.PublicKey, feePayerPublicKey: web3.PublicKey, tokenAddress?: web3.PublicKey): Promise<web3.TransactionInstruction>{
         if (!tokenAddress){
-            tokenAddress = await spl.getAssociatedTokenAddress(tokenMintPublicKey, walletPublicKey);
+            tokenAddress = await spl.getAssociatedTokenAddress(mint, walletPublicKey);
         }
 
         LogManager.log(process.env.SERVER_NAME, 'createSplAccountInstruction', 'tokenAddress', tokenAddress.toBase58());
@@ -207,7 +219,7 @@ export class SolanaManager {
             feePayerPublicKey,
             tokenAddress,
             walletPublicKey,
-            tokenMintPublicKey,
+            mint,
             spl.TOKEN_PROGRAM_ID,
             spl.ASSOCIATED_TOKEN_PROGRAM_ID
         );    
@@ -236,7 +248,10 @@ export class SolanaManager {
                 undefined, 
                 spl.TOKEN_PROGRAM_ID
             );
+            console.log('MIKE BONK ACCOUNT EXISTS', account);
         } catch (error: unknown) {
+            console.log('MIKE BONK ACCOUNT NOT EXISTS');
+
             if (error instanceof spl.TokenAccountNotFoundError || error instanceof spl.TokenInvalidAccountOwnerError) {
                 return spl.createAssociatedTokenAccountInstruction(
                     feePayerPublicKey,
@@ -398,7 +413,7 @@ export class SolanaManager {
     }
 
     static async getPriorityFeeInstructions(): Promise<web3.TransactionInstruction[]> {
-        const feeEstimate = await HeliusManager.getRecentPrioritizationFees();
+        const feeEstimate = 1000000;// await HeliusManager.getRecentPrioritizationFees();
         return [
             web3.ComputeBudgetProgram.setComputeUnitPrice({
                 microLamports: feeEstimate,
@@ -524,7 +539,7 @@ export class SolanaManager {
         return results;
     };
 
-    static async getAssetsByOwner(walletAddress: string): Promise<Asset[]> {
+    static async getAssetsByOwner(walletAddress: string): Promise<{ assets: Asset[], lpTokens: LPToken[] }> {
         const heliusData = await HeliusManager.getAssetsByOwner(walletAddress, {
             showNativeBalance: true,
             showFungible: true,
@@ -538,6 +553,8 @@ export class SolanaManager {
         });
         const heliusAssets = heliusData.items;
         const nativeBalance = heliusData.nativeBalance;
+
+        console.log('heliusData:', JSON.stringify(heliusData));
 
         const assets: Asset[] = [];
 
@@ -558,7 +575,17 @@ export class SolanaManager {
             assets.push(asset);
         }
 
+        const lpTokens: LPToken[] = [];
         for (const heliusAsset of heliusAssets) {
+            if (heliusAsset.token_info?.mint_authority == kRaydiumAuthority && heliusAsset.token_info.balance && heliusAsset.token_info.balance > 0){
+                lpTokens.push({
+                    lpMint: heliusAsset.id,
+                    amount: new BN(heliusAsset.token_info.balance),
+                    decimals: heliusAsset.token_info.decimals || 0,
+                    supply: new BN(heliusAsset.token_info.supply || 0),
+                });
+            }
+
             if (heliusAsset.interface != Interface.FUNGIBLE_TOKEN && heliusAsset.interface != Interface.FUNGIBLE_ASSET) { continue; }
             if (!heliusAsset.token_info || !heliusAsset.token_info?.symbol) { continue; }
             if (heliusAsset.compression?.compressed) { continue; }
@@ -584,7 +611,7 @@ export class SolanaManager {
                 logo: logo,
                 supply: (heliusAsset.token_info?.supply || 0) / 10**decimals,
                 priceInfo: heliusAsset.token_info?.price_info ? { pricePerToken, totalPrice } : undefined,
-                // mintAuthority: heliusAsset.authorities?.,
+                // mintAuthority: heliusAsset.token_info?.mint_authority,
                 // freezeAuthority: heliusAsset.freezeAuthority,
             };
 
@@ -602,8 +629,44 @@ export class SolanaManager {
         // sort by priceInfo.totalPrice
         assets.sort((a, b) => (b.priceInfo?.totalPrice || 0) - (a.priceInfo?.totalPrice || 0));
 
-        LogManager.log('!assets:', JSON.stringify(assets));
-        return assets;
+        return { assets, lpTokens };
+    }
+
+    static createBurnSplAccountInstruction(tokenAta: web3.PublicKey, destination: web3.PublicKey, authority: web3.PublicKey): web3.TransactionInstruction {
+        return spl.createCloseAccountInstruction(
+            tokenAta,
+            destination,
+            authority,
+        );    
+    }  
+
+    static async getTokenSupply(connection: web3.Connection, mint: string): Promise<web3.TokenAmount | undefined> {
+        try {
+            const mintPublicKey = new web3.PublicKey(mint);
+            const supplyInfo = await connection.getTokenSupply(mintPublicKey);
+            console.log('supplyInfo:', supplyInfo);
+            return supplyInfo?.value;
+        }
+        catch (err){
+            LogManager.error('getTokenSupply', err);
+        }
+
+        return undefined;
+    }
+
+    static async getTokenMint(chain: Chain, mint: string): Promise<spl.Mint | undefined> {
+        const connection = newConnectionByChain(chain);
+        const mintPublicKey = new web3.PublicKey(mint);
+        const mintInfo = await spl.getMint(connection, mintPublicKey);
+        return mintInfo;
+    }
+
+    static async getFreezeAuthorityRevoked(chain: Chain, mint: string): Promise<boolean> {
+        const mintInfo = await this.getTokenMint(chain, mint);
+        if (mintInfo && mintInfo.freezeAuthority == null) {
+            return true;
+        }
+        return false;
     }
 
     // ---------------------

@@ -4,15 +4,8 @@ import { validateAuth } from "../../middlewares/ValidateAuth";
 import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { validateRequest } from "../../middlewares/ValidateRequest";
 import { body } from "express-validator";
-import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
-import { BadRequestError } from "../../errors/BadRequestError";
 import { SwapManager } from "../../managers/SwapManager";
-import { StatusType, Swap, SwapDex, SwapType } from "../../entities/payments/Swap";
-import { SolanaManager } from "../../services/solana/SolanaManager";
-import { newConnection } from "../../services/solana/lib/solana";
-import { kSolAddress } from "../../services/solana/Constants";
-import { BN } from "bn.js";
-import { Currency } from "../../models/types";
+import { SwapDex } from "../../entities/payments/Swap";
 import { Chain } from "../../services/solana/types";
 
 const router = express.Router();

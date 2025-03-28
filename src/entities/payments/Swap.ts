@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Currency } from '../../models/types';
-import { Chain } from '../../services/solana/types';
+import { Chain, WalletModel } from '../../services/solana/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -9,6 +9,8 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export enum SwapType {
     BUY = 'buy',
     SELL = 'sell',
+    BUY_HONEYPOT = 'buy_honeypot',
+    SELL_HONEYPOT = 'sell_honeypot',
 }
 
 export enum StatusType {
@@ -29,6 +31,7 @@ export interface SentTx {
 
 export enum SwapDex {
     JUPITER = 'jupiter',
+    RAYDIUM_AMM = 'raydium_amm',
 }
 
 export interface ISwap extends mongoose.Document {
@@ -40,10 +43,12 @@ export interface ISwap extends mongoose.Document {
     currency: Currency;
     mint: string;
     amountIn: string; // lamports
+    amountPercents?: number;
     value?: {
         sol: number;
         usd: number;
-    } 
+    }
+    intermediateWallet?: WalletModel;
     
     status: {
         type: StatusType;
@@ -65,6 +70,9 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     currency: { type: String },
     mint: { type: String },
     amountIn: { type: String },
+    amountPercents: { type: Number },
+    value: { type: Mixed },
+    intermediateWallet: { type: Mixed },
     status: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },

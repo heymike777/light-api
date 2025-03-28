@@ -451,9 +451,11 @@ export class WalletManager {
                         const preBalance = new BN(preTokenBalance?.uiTokenAmount.amount || 0);
                         const postBalance = new BN(postTokenBalance?.uiTokenAmount.amount || 0);
                         const balanceDiff = postBalance.sub(preBalance);
-                        const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals ||postTokenBalance?.uiTokenAmount.decimals || 0);
-                        const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
-                        const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
+                        const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals || postTokenBalance?.uiTokenAmount.decimals || 0);
+                        // const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
+                        // const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
+                        const balanceChange = Helpers.bnDivBnWithDecimals(balanceDiff, new BN(lamportsPerToken), 9);
+                        
 
                         tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
                     }

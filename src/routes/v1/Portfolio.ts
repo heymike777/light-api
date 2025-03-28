@@ -4,14 +4,8 @@ import { validateAuth } from "../../middlewares/ValidateAuth";
 import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { body } from "express-validator";
 import { validateRequest } from "../../middlewares/ValidateRequest";
-import { Helpers } from "../../services/helpers/Helpers";
 import { SwapManager } from "../../managers/SwapManager";
-import { BadRequestError } from "../../errors/BadRequestError";
-import { TokenManager } from "../../managers/TokenManager";
-import { SolanaManager } from "../../services/solana/SolanaManager";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
-import { PortfolioAsset } from "../../models/types";
-import { kSolAddress } from "../../services/solana/Constants";
 import { Chain } from "../../services/solana/types";
 
 const router = express.Router();
@@ -38,11 +32,6 @@ router.get(
         const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
 
         const { values, assets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
-
-        // for (const asset of assets) {
-        //     asset.amount = asset.uiAmount;
-        //     asset.uiAmount = 0;
-        // }
 
         res.status(200).send({ warning, traderProfiles, traderProfile, values, assets });
     }

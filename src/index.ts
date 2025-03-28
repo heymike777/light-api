@@ -38,6 +38,7 @@ import { portfolioRouter } from './routes/v1/Portfolio';
 import { WalletGeneratorManager } from './managers/WalletGeneratorManager';
 import { Chain } from './services/solana/types';
 import { SvmManager } from './managers/svm/SvmManager';
+import { JitoManager } from './services/solana/JitoManager';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -104,12 +105,12 @@ const start = async () => {
 
 const onExpressStarted = async () => {
     CronManager.setupCron();
+    await TokenManager.fetchSolPriceFromRedis();
 
     if (EnvManager.isTelegramProcess) {
         setupBot();
     }
     if (EnvManager.isMainProcess) {
-        await TokenManager.fetchSolPriceFromRedis();
         initSolscanLabels();
     }
     if (EnvManager.isWalletGeneratorProcess) {
@@ -135,7 +136,11 @@ const onExpressStarted = async () => {
 
     // await TokenManager.updateTokensPrices();
     // JitoWebsocketManager.getInstance();
-    // await JitoManager.initSearcherClient();
+
+    console.log('INIT_JITO_SEARCHER', process.env.INIT_JITO_SEARCHER);
+    if (process.env.INIT_JITO_SEARCHER == 'true'){
+        await JitoManager.initSearcherClient();
+    }
 
     await MigrationManager.migrate();
 }

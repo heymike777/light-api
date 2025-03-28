@@ -35,6 +35,7 @@ import { BotReferralProgramHelper } from "./helpers/BotReferralProgramHelper";
 import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
 import { BotSettingsHelper } from "./helpers/BotSettingsHelper";
 import { BotHelpHelper } from "./helpers/BotHelpHelper";
+import { SwapDex } from "../../entities/payments/Swap";
 
 export class BotManager {
     botUsername: string;
@@ -385,6 +386,7 @@ export class BotManager {
         const currency = traderProfile?.currency || Currency.SOL;
         const buyAmounts: number[] = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
         const sellAmounts: number[] = traderProfile?.sellAmounts || [50, 100];
+        const mintInfo = await SolanaManager.getTokenMint(token.chain, token.address);
 
         const buttons: InlineButton[] = [
             { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
@@ -410,17 +412,20 @@ export class BotManager {
 
         message += '\n';
         message += `<code>${token.address}</code>`;
-        message += '\n';
         const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
-        message += `<a href="${reflink}">Share token with your Reflink</a>`
+        //message += `\n<a href="${reflink}">Share token with your Reflink</a>` //TODO: uncomment
 
+        const isHoneypot = !mintInfo || mintInfo.freezeAuthority;
+        message += `\n\n⚙️ Security:`;
+        message += `\n├ Mint Authority: ${!mintInfo ? 'Unknown 🟠' : mintInfo.mintAuthority ? `Yes 🔴` : 'No 🟢'}`;
+        message += `\n└ Freeze Authority: ${!mintInfo ? 'Unknown 🟠' : mintInfo.freezeAuthority ? `Yes 🔴` : 'No 🟢'}`;
+        
         const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
-        let tokenBalance: TokenBalance | undefined = undefined;
         if (traderProfile && traderProfile.wallet?.publicKey){
             const walletAddress = traderProfile.wallet.publicKey;
             solBalance = await SolanaManager.getWalletSolBalance(connection, walletAddress);
-            tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
+            const tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
 
             message += '\n\n';
             message += `Balance: ${solBalance?.uiAmount || 0} SOL`;
@@ -434,6 +439,28 @@ export class BotManager {
                 buttons.push({ id: `sell|${token.chain}|${token.address}|X`, text: `Sell X%` });
             }
             message += ` — <b>${traderProfile.title}</b> ✏️`;
+
+            const lpBalances = await TraderProfilesManager.fetchTokenLpMintBalance(Chain.SOLANA, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
+            if (lpBalances && lpBalances.balances.length > 0){
+                const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
+                const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
+                const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
+
+                const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
+                const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
+
+                message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} SOL = $${Helpers.numberFormatter(usdValue, 2)}`;
+
+                let btnIndex = 0;
+                for (const amount of sellAmounts) {
+                    if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
+
+                    buttons.push({ id: `sell_lp|${token.chain}|${token.address}|${amount}`, text: `Sell (LP) ${amount}%` });
+                    btnIndex++;                    
+                }
+                if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
+                buttons.push({ id: `sell_lp|${token.chain}|${token.address}|X`, text: `Sell (LP) X%` });
+            }
         }
 
         const metricsMessage = BotManager.buildTokenMetricsMessage(token);
@@ -482,13 +509,9 @@ export class BotManager {
         return tokensMessage;
     }
 
-    static async buildSellMessage(): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
-        return { message: 'test sell message' };
-    }
-
     static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
         const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
-        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
+        const { values, assets, lpAssets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
@@ -504,19 +527,42 @@ export class BotManager {
             }
         }
 
-        if (assets.length == 0){
+        if (assets.length == 0 && lpAssets.length == 0){
             message += `\n\nNo assets on this wallet`;
         }
         else {
-            message += `\n\nAssets:`;
-            for (const asset of assets) {
-                message += `\n${asset.symbol}: ${asset.uiAmount}`;
-                if (asset.priceInfo){
-                    message += ` ($${asset.priceInfo.totalPrice})`;
-                }
+            if (assets.length > 0){
+                message += `\n\nAssets:`;
+                for (const asset of assets) {
+                    message += `\n${asset.symbol}: ${asset.uiAmount}`;
+                    if (asset.priceInfo){
+                        message += ` ($${asset.priceInfo.totalPrice})`;
+                    }
 
-                if (asset.address != kSolAddress){
-                    message += ` <a href="${ExplorerManager.getTokenReflink(asset.address, undefined, botUsername)}">[Sell]</a>`;
+                    if (asset.address != kSolAddress){
+                        message += ` <a href="${ExplorerManager.getTokenReflink(asset.address, undefined, botUsername)}">[Sell]</a>`;
+                    }
+                }
+            }
+
+            if (lpAssets.length > 0){
+                message += `\n\nLP Assets:`;
+                for (const asset of lpAssets) {
+                    const solBalance = asset.lpAmounts?.find(a => a.mint == kSolAddress)?.uiAmount || 0;
+                    const tokenBalance = asset.lpAmounts?.find(a => a.mint == asset.address)?.uiAmount || 0;
+
+                    const solBalanceString = Helpers.prettyNumberFromString('' + solBalance, 3);
+                    const tokenBalanceString = Helpers.prettyNumberFromString('' + tokenBalance, 3);
+
+                    message += `\n${asset.symbol} LP: ${tokenBalanceString} ${asset.symbol} + ${solBalanceString} SOL`;
+
+                    if (asset.priceInfo?.totalPrice){
+                        message += ` = $${Helpers.numberFormatter(asset.priceInfo.totalPrice, 2)}`;
+                    }
+
+                    if (asset.address != kSolAddress){
+                        message += ` <a href="${ExplorerManager.getTokenReflink(asset.address, undefined, botUsername)}">[Sell]</a>`;
+                    }
                 }
             }
         }

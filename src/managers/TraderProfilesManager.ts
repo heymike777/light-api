@@ -1,4 +1,8 @@
+import { BN } from "bn.js";
+import { SwapDex } from "../entities/payments/Swap";
 import { PreWallet } from "../entities/PreWallet";
+import { LpMint } from "../entities/tokens/LpMint";
+import { TokenPair } from "../entities/tokens/TokenPair";
 import { IUserTraderProfile, UserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser } from "../entities/users/User";
 import { Wallet } from "../entities/Wallet";
@@ -7,6 +11,7 @@ import { PremiumError } from "../errors/PremiumError";
 import { PortfolioAsset } from "../models/types";
 import { Helpers } from "../services/helpers/Helpers";
 import { kSolAddress } from "../services/solana/Constants";
+import { newConnectionByChain } from "../services/solana/lib/solana";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import { Chain, Priority, WalletModel } from "../services/solana/types";
 import { LogManager } from "./LogManager";
@@ -15,6 +20,7 @@ import { SwapManager } from "./SwapManager";
 import { TokenManager } from "./TokenManager";
 import { WalletManager } from "./WalletManager";
 import fs from 'fs';
+import { RaydiumManager } from "../services/solana/RaydiumManager";
 
 export class TraderProfilesManager {
 
@@ -139,9 +145,9 @@ export class TraderProfilesManager {
         }
     }
 
-    static async getPortfolio(chain: Chain, traderProfile?: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
+    static async getPortfolio(chain: Chain, traderProfile?: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], lpAssets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
         if (!traderProfile){
-            return { values: undefined, assets: [], warning: undefined };
+            return { values: undefined, assets: [], lpAssets: [], warning: undefined };
         }
 
         const values: {
@@ -154,6 +160,7 @@ export class TraderProfilesManager {
         };
 
         const assets: PortfolioAsset[] = [];
+        const lpAssets: PortfolioAsset[] = [];
         if (traderProfile){
             let walletAddress = traderProfile.wallet?.publicKey;
             if (!walletAddress){
@@ -161,8 +168,9 @@ export class TraderProfilesManager {
                 throw new BadRequestError('Wallet not found');
             }
 
-            // walletAddress = '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL';//TODO: remove test wallet
-            const tmpAssets = await SolanaManager.getAssetsByOwner(walletAddress);
+            const assetsData = await SolanaManager.getAssetsByOwner(walletAddress);
+            const tmpAssets = assetsData.assets;
+            const lpTokens = assetsData.lpTokens;
 
             const mints = tmpAssets.map(a => a.address);
             const tokens = await TokenManager.getTokens(chain, mints);
@@ -183,6 +191,91 @@ export class TraderProfilesManager {
                 assets.push(pAsset);
 
                 totalPrice += pAsset.priceInfo?.totalPrice || 0;
+            }
+
+            // for each lpToken in lpTokens, build lpAsset. Find info about token by lpMint, and calculate $ value of LP
+            console.log('mmm', 'lpTokens:', lpTokens);
+            if (lpTokens.length > 0){
+                const lpMints = lpTokens.map(a => a.lpMint);
+                const tokens = await TokenManager.findTokensByLpMints(chain, lpMints);
+
+                for (const token of tokens) {
+                    const lpToken = lpTokens.find(a => a.lpMint == token.lpMint);
+                    if (!lpToken){
+                        continue;
+                    }
+                    const lpMintAddress = token.lpMint;
+                    const lpMintSupply = lpToken.supply;
+                    const lpMintBalance = lpToken.amount;
+                    const lpMintDecimals = lpToken.decimals;
+
+                    console.log(`lpTokens LP TOKEN (${token.symbol}): ${lpMintAddress}, supply: ${lpMintSupply}, balance: ${lpMintBalance}, decimals: ${lpMintDecimals}`);
+
+
+                    const lpBalances = await TraderProfilesManager.fetchTokenLpMintBalance(Chain.SOLANA, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
+                    let lpAmounts: {mint: string, uiAmount: number}[] | undefined = undefined;
+                    let amount = 0;
+                    const decimals = token.decimals || lpToken.decimals || 0;
+                    const priceInfo = {
+                        pricePerToken: token.price || 0,
+                        totalPrice: 0, 
+                    };
+
+
+                    if (lpBalances && lpBalances.balances.length > 0){
+                        const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
+                        const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
+                        const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
+                        totalPrice += usdValue;
+                        amount = tokenBalance?.uiAmount || 0;
+
+                        lpAmounts = [
+                            {
+                                mint: token.address,
+                                uiAmount: tokenBalance?.uiAmount || 0,
+                            },
+                            {
+                                mint: kSolAddress,
+                                uiAmount: solBalance?.uiAmount || 0,
+                            }
+                        ];
+
+                        priceInfo.totalPrice = usdValue;
+                    }
+                    else {
+                        LogManager.log(`!message for ${token.symbol}`, 'lpBalances not found');
+                    }
+
+                    const pAsset: PortfolioAsset = {
+                        address: token.address,
+
+                        amount: amount,
+                        uiAmount: amount / (10 ** decimals),
+                        lpAmounts: lpAmounts,
+
+                        decimals: decimals,
+                        symbol: token.symbol || 'UNKNOWN',
+
+                        name: token.name,
+                        description: token.description,
+                        logo: token.logo,
+                        supply: +(token.supply || 0),
+
+                        priceInfo: priceInfo,
+                    };
+
+
+                    pAsset.isVerified = token?.isVerified || false;
+                    pAsset.isTradable = TokenManager.isTokenTradable(token?.address);
+                    pAsset.tags = token?.tags || undefined;
+                    pAsset.tagsList = token?.tagsList || [];
+    
+                    // const rand = Helpers.getRandomInt(1, 3);
+                    // pAsset.pnl = rand == 1 ? 1234 : (rand == 2 ? -1234 : undefined);
+                    lpAssets.push(pAsset);
+                }
+
+                //TODO: xxx
             }
 
             values.totalPrice = Math.round(totalPrice * 100) / 100;
@@ -209,7 +302,66 @@ export class TraderProfilesManager {
             }
         }
 
-        return { values, assets, warning };
+        return { values, assets, lpAssets, warning };
+    }
+
+    static async fetchTokenLpMintBalance(chain: Chain, dex: SwapDex, mint: string, walletAddress: string) {
+        const lpMint = await LpMint.findOne({ chain, dex, $or: [{ token1: mint }, { token2: mint }] });
+        if (!lpMint){
+            return;
+        }
+
+        //TODO: this method could be optimized. I think I can replace 
+        //getWalletTokenBalance + updateTokenPairLiquidity + getAmmPoolInfo with one call getMultipleParsedAccount
+
+        const lpMintAddress = lpMint.lpMint;
+        const connection = newConnectionByChain(chain);
+        const lpTokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, lpMintAddress);
+
+        const pair = await TokenPair.findOne({ chain, pairAddress: lpMint.pairAddress });
+        if (!pair){
+            return;
+        }
+
+        await TokenManager.updateTokenPairLiquidity(pair);
+        let lpReserve = new BN(0);
+        if (dex == SwapDex.RAYDIUM_AMM){
+            const poolInfo = await RaydiumManager.getAmmPoolInfo(Chain.SOLANA, lpMint.pairAddress);
+            if (poolInfo){
+                lpReserve = poolInfo.lpReserve;
+            }
+        }
+
+        // const lpReserveDecimals = lpTokenBalance?.decimals || 0;
+
+        // WORKING VERSION, but using uiAmounts
+        // const numerator = lpTokenBalance.uiAmount  * pair.liquidity.token1.uiAmount * (10 ** lpReserveDecimals)
+        // const denominator = lpReserve.toNumber();
+        // const myTokenAmount1 = numerator / denominator;
+        // const myTokenAmount2 = myTokenAmount1 * pair.liquidity.token2.uiAmount / pair.liquidity.token1.uiAmount;
+
+        const numerator1 = new BN(lpTokenBalance.amount).mul(new BN(pair.liquidity.token1.amount));
+        const denominator1 = lpReserve.mul(new BN(10 ** pair.liquidity.token1.decimals));
+        const myTokenAmount1 = Helpers.bnDivBnWithDecimals(numerator1, denominator1, 6);
+
+        const numerator2 = numerator1.mul(new BN(pair.liquidity.token2.amount)).mul(new BN(10 ** pair.liquidity.token1.decimals));
+        const denominator2 = denominator1.mul(new BN(pair.liquidity.token1.amount)).mul(new BN(10 ** pair.liquidity.token2.decimals));
+        const myTokenAmount2 = Helpers.bnDivBnWithDecimals(numerator2, denominator2, 6);
+
+        const balances = [
+            {
+                mint: pair.token1,
+                uiAmount: myTokenAmount1,
+            },
+            {
+                mint: pair.token2,
+                uiAmount: myTokenAmount2,
+            },
+        ];
+
+        return {
+            balances
+        }
     }
 
 }

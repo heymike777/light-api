@@ -40,7 +40,6 @@ import { SolScanManager } from "./solana/SolScanManager";
 import { LogManager } from "../managers/LogManager";
 import { UserTraderProfile } from "../entities/users/TraderProfile";
 import { SwapManager } from "../managers/SwapManager";
-import { Swap } from "../entities/payments/Swap";
 import * as web3 from '@solana/web3.js';
 import { YellowstoneManager } from "./solana/geyser/YellowstoneManager";
 import { TxParser } from "./solana/geyser/TxParser";
@@ -51,16 +50,24 @@ import { InlineKeyboardButton } from "grammy/types";
 import { SvmManager } from "../managers/svm/SvmManager";
 import { TraderProfilesManager } from "../managers/TraderProfilesManager";
 import { EnvManager } from "../managers/EnvManager";
+import { RaydiumManager } from "./solana/RaydiumManager";
+import { JitoManager } from "./solana/JitoManager";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { SwapDex } from "../entities/payments/Swap";
+import { LpMint } from "../entities/tokens/LpMint";
+import { Raydium } from "@raydium-io/raydium-sdk-v2";
 
 export class MigrationManager {
 
     static kBonk = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
     static kPyth = 'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3';
+    static kChillGuy = 'Df6yfrKC8kZE3KNkrHERKzAetSxbrWeniQfyJY4Jpump';
     static kMikeUserId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
     static async migrate() {
         if (process.env.SERVER_NAME != 'heynova0' && process.env.SERVER_NAME != 'light0'){
             SystemNotificationsManager.sendSystemMessage('Server started');
+            TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
         }
         LogManager.forceLog('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
@@ -231,9 +238,31 @@ export class MigrationManager {
         //     console.log('!mike', 'countUsers', countUsers);
         // }
 
+        // const poolInfo: any = await RaydiumManager.getAmmPoolInfo(Chain.SOLANA, 'HVNwzt7Pxfu76KHCMQPTLuTCLTm6WnQ1esLv4eizseSv');
+        // console.log('!mike', 'poolInfo', JSON.stringify(poolInfo));
+        // console.log('!mike', 'baseDecimal:', poolInfo?.baseDecimal.toString(), 'quoteDecimal:', poolInfo?.quoteDecimal.toString());
+        // if (poolInfo){
+        //     for (const key in poolInfo) {
+        //         const element = poolInfo[key];
+        //         console.log('!mike',  key, '=', element.toString());
+        //     }
+        // }
 
+
+        // await SolanaManager.getRecentBlockhash(Chain.SOLANA);
+        // const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
+        // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
+        // if (!traderProfile){
+        //     console.error('!mike', 'traderProfile not found');
+        //     return;
+        // }
+        // const { signature, swap } = await SwapManager.initiateBuy(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kChillGuy, 0.005, true);
+        // console.log('signature:', signature, 'swap:', swap);
+        // const { signature, swap } = await SwapManager.initiateSell(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 10, true);
+        // console.log('signature:', signature, 'swap:', swap);
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
+        
     }
 
     static async testGeyserTx() {
@@ -334,6 +363,7 @@ export class MigrationManager {
         await TokenPair.syncIndexes();
         await TokenSwap.syncIndexes();
         await UserTraderProfile.syncIndexes();
+        await LpMint.syncIndexes();
     }
 
     static async processTx(chain: Chain, signature: string) {
