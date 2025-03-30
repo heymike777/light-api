@@ -36,6 +36,7 @@ import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
 import { BotSettingsHelper } from "./helpers/BotSettingsHelper";
 import { BotHelpHelper } from "./helpers/BotHelpHelper";
 import { SwapDex } from "../../entities/payments/Swap";
+import { BotNoneHelper } from "./helpers/BotNoneCommand";
 
 export class BotManager {
     botUsername: string;
@@ -55,6 +56,7 @@ export class BotManager {
         new BotUpgradeHelper(),
         new BotSettingsHelper(),
         new BotHelpHelper(),
+        new BotNoneHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 
