@@ -254,7 +254,25 @@ export class Helpers {
     static bnDivBnWithDecimals(num1: BN, num2: BN, precision: number = 6): number {
         try {
             const res = num1.mul(new BN(10 ** precision)).div(num2);
-            return res.toNumber() / 10 ** precision;    
+            // last precision digits
+            const { div, mod } = res.divmod(new BN(10 ** precision));
+            let result = div.toString();
+            if (!mod.eqn(0)){
+                result += '.';
+                let modStr = mod.toString();
+                const modStrLen = modStr.length;
+                const zeros = precision - modStrLen;
+                for (let i = 0; i < zeros; i++) {
+                    result += '0';
+                }
+                // remove trailing zeros from modStr, since it's already after the decimal point
+                while (modStr.length>0 && modStr[modStr.length - 1] == '0'){
+                    modStr = modStr.substring(0, modStr.length - 1);
+                }
+                result += modStr;
+            }
+            return parseFloat(result);
+            // return res.toNumber() / 10 ** precision;    
         }
         catch (err){
             LogManager.error('bnDivBnWithDecimals:', err);
