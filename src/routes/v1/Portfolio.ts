@@ -7,6 +7,7 @@ import { validateRequest } from "../../middlewares/ValidateRequest";
 import { SwapManager } from "../../managers/SwapManager";
 import { TraderProfilesManager } from "../../managers/TraderProfilesManager";
 import { Chain } from "../../services/solana/types";
+import { ChainManager } from "../../managers/chains/ChainManager";
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.get(
 
         const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
 
-        const { values, assets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
+        const { values, assets, warning } = await ChainManager.getPortfolio(chain, traderProfile);
 
         res.status(200).send({ warning, traderProfiles, traderProfile, values, assets });
     }

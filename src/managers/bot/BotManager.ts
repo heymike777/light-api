@@ -37,6 +37,7 @@ import { BotSettingsHelper } from "./helpers/BotSettingsHelper";
 import { BotHelpHelper } from "./helpers/BotHelpHelper";
 import { SwapDex } from "../../entities/payments/Swap";
 import { BotNoneHelper } from "./helpers/BotNoneCommand";
+import { ChainManager } from "../chains/ChainManager";
 
 export class BotManager {
     botUsername: string;
@@ -513,11 +514,14 @@ export class BotManager {
         return tokensMessage;
     }
 
-    static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
-        const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
-        const { values, assets, lpAssets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
+    static async buildPortfolioMessage(user: IUser, traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
+        const chain = user.defaultChain || Chain.SOLANA;
+        const { values, assets, lpAssets, warning } = await ChainManager.getPortfolio(chain, traderProfile);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
+        if (chain != Chain.SOLANA){
+            message += ` - ${ChainManager.getChainTitle(chain)}`;
+        }
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
 
         if (warning){

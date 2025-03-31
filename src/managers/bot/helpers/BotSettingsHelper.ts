@@ -71,7 +71,6 @@ export class BotSettingsHelper extends BotHelper {
             { id: Chain.SONIC, title: 'Sonic SVM' },
         ];
 
-
         for (const item of chains) {
             const isSelected = user.defaultChain == item.id || (!user.defaultChain && item.id == Chain.SOLANA);
             const prefix = isSelected ? '🟢 ' : '';
