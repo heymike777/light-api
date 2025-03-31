@@ -5,10 +5,9 @@ import { TokenManager } from "./TokenManager";
 
 export class SearchManager {
 
-    static async search(query: string, userId: string): Promise<ITokenModel[]> {
+    static async search(chain: Chain, query: string, userId: string): Promise<ITokenModel[]> {
         let mint: string | undefined = undefined;
         let pairId: string | undefined = undefined;
-        const chain = Chain.SOLANA;
 
         // check if query is a valid token mint address
         const isValidPublicKey = SolanaManager.isValidPublicKey(query);

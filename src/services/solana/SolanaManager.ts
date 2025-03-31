@@ -354,7 +354,7 @@ export class SolanaManager {
         try {
             const mainWalletPublicKey = new web3.PublicKey(walletAddress);
             const balance = await web3Conn.getBalance(mainWalletPublicKey);
-            return {amount: new BN(balance), uiAmount: Math.round(100 * balance / web3.LAMPORTS_PER_SOL) / 100, decimals: 9};
+            return {amount: new BN(balance), uiAmount: Math.round(1000 * balance / web3.LAMPORTS_PER_SOL) / 1000, decimals: 9};
         }
         catch (err){
             LogManager.error('getWalletSolBalance', err);
@@ -663,7 +663,7 @@ export class SolanaManager {
             return mintInfo;    
         }
         catch (err){
-            LogManager.error('getTokenMint', err);
+            LogManager.error('getTokenMint', 'chain:', chain, 'err:', err);
         }
         return undefined;
     }
