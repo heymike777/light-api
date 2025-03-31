@@ -15,6 +15,7 @@ import { LogManager } from "../../managers/LogManager";
 import { Interface } from "helius-sdk";
 import { kRaydiumAuthority, kSolAddress } from "./Constants";
 import BN from "bn.js";
+import { MetaplexManager } from "../../managers/MetaplexManager";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -655,10 +656,16 @@ export class SolanaManager {
     }
 
     static async getTokenMint(chain: Chain, mint: string): Promise<spl.Mint | undefined> {
-        const connection = newConnectionByChain(chain);
-        const mintPublicKey = new web3.PublicKey(mint);
-        const mintInfo = await spl.getMint(connection, mintPublicKey);
-        return mintInfo;
+        try {
+            const connection = newConnectionByChain(chain);
+            const mintPublicKey = new web3.PublicKey(mint);
+            const mintInfo = await spl.getMint(connection, mintPublicKey);
+            return mintInfo;    
+        }
+        catch (err){
+            LogManager.error('getTokenMint', err);
+        }
+        return undefined;
     }
 
     static async getFreezeAuthorityRevoked(chain: Chain, mint: string): Promise<boolean> {
@@ -667,6 +674,57 @@ export class SolanaManager {
             return true;
         }
         return false;
+    }
+
+    static async getWalletTokensBalances(chain: Chain, walletAddress: string): Promise<{mint: string, symbol?: string, name?: string, balance: TokenBalance}[]>{
+        try {
+            const web3Conn = newConnectionByChain(chain);
+            const programId = spl.TOKEN_2022_PROGRAM_ID; // That was made for Sonic SVM. For Solana Mainnet we need to use spl.TOKEN_PROGRAM_ID + spl.TOKEN_2022_PROGRAM_ID
+
+            // console.log(new Date(), process.env.SERVER_NAME, 'getWalletTokenBalance', 'walletAddress', walletAddress, 'tokenAddress', tokenAddress);
+            const mainWalletPublicKey = new web3.PublicKey(walletAddress);
+            const accounts = await web3Conn.getParsedTokenAccountsByOwner(mainWalletPublicKey, { programId });
+
+            const mints = accounts.value.map((element) => element.account.data.parsed.info.mint);
+            const assets = await MetaplexManager.fetchAllDigitalAssets(chain, mints);
+
+            const balances: {mint: string, symbol?: string, name?: string, balance: TokenBalance}[] = [];
+            for (const element of accounts.value) {
+                if (
+                    element.account.data.parsed.info.mint && 
+                    element.account.data.parsed.info.tokenAmount.amount && 
+                    element.account.data.parsed.info.tokenAmount.uiAmount &&
+                    element.account.data.parsed.info.tokenAmount.decimals &&
+                    element.pubkey
+                ){
+                    const mint = element.account.data.parsed.info.mint;
+                    const asset = assets.find((asset) => asset.mint.publicKey == mint);
+                    const symbol = asset ? asset.metadata.symbol : undefined;
+                    const name = asset ? asset.metadata.name : undefined;
+
+                    console.log('!mike', 'mint:', mint, 'symbol:', symbol, 'asset:', asset);
+
+                    balances.push({
+                        mint: mint,
+                        symbol: symbol,
+                        name: name,
+                        balance: {
+                            amount: new BN(element.account.data.parsed.info.tokenAmount.amount), 
+                            uiAmount: +(element.account.data.parsed.info.tokenAmount.uiAmount),
+                            decimals: element.account.data.parsed.info.tokenAmount.decimals,
+                            ataPubKey: element.pubkey    
+                        },
+                    });
+                }
+            }
+
+            return balances;
+        }
+        catch (err){
+            // console.error('getWalletTokenBalance', err);
+        }
+
+        return [];
     }
 
     // ---------------------

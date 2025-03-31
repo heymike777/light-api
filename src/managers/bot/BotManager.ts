@@ -528,7 +528,7 @@ export class BotManager {
             message += `\n\n⚠️ ${warning.message}`;
         }
 
-        if (values){
+        if (chain==Chain.SOLANA &&  values){
             message += `\n\nTotal value: $${values.totalPrice}`;
             if (values.pnl){
                 message += `\nP&L: $${values.pnl}`;
