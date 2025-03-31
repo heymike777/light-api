@@ -37,6 +37,7 @@ import { BotSettingsHelper } from "./helpers/BotSettingsHelper";
 import { BotHelpHelper } from "./helpers/BotHelpHelper";
 import { SwapDex } from "../../entities/payments/Swap";
 import { BotNoneHelper } from "./helpers/BotNoneCommand";
+import { ChainManager } from "../chains/ChainManager";
 
 export class BotManager {
     botUsername: string;
@@ -179,7 +180,7 @@ export class BotManager {
     }
 
     static async tryToSendTokenInfo(ctx: Context, query: string, user: IUser){
-        const tokens = await SearchManager.search(query, user.id);
+        const tokens = await SearchManager.search(user.defaultChain || Chain.SOLANA, query, user.id);
         if (tokens.length > 0){
             const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
             const botUsername = BotManager.getBotUsername(ctx);
@@ -412,15 +413,20 @@ export class BotManager {
             message += ` ᐧ <a href="${bubblemapsUrl}">🫧</a>`;
         }
 
+        if (token.chain != Chain.SOLANA){
+            message += ` — 🔗 ${ChainManager.getChainTitle(token.chain)}`;
+        }
+
         message += '\n';
         message += `<code>${token.address}</code>`;
         const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
         //message += `\n<a href="${reflink}">Share token with your Reflink</a>` //TODO: uncomment
 
-        const isHoneypot = !mintInfo || mintInfo.freezeAuthority;
-        message += `\n\n⚙️ Security:`;
-        message += `\n├ Mint Authority: ${!mintInfo ? 'Unknown 🟠' : mintInfo.mintAuthority ? `Yes 🔴` : 'No 🟢'}`;
-        message += `\n└ Freeze Authority: ${!mintInfo ? 'Unknown 🟠' : mintInfo.freezeAuthority ? `Yes 🔴` : 'No 🟢'}`;
+        if (mintInfo){
+            message += `\n\n⚙️ Security:`;
+            message += `\n├ Mint Authority: ${mintInfo.mintAuthority ? `Yes 🔴` : 'No 🟢'}`;
+            message += `\n└ Freeze Authority: ${mintInfo.freezeAuthority ? `Yes 🔴` : 'No 🟢'}`;    
+        }
         
         const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
@@ -475,7 +481,7 @@ export class BotManager {
 
         if (traderProfile && traderProfile.wallet?.publicKey){
             if (!solBalance || solBalance.uiAmount < 0.01){
-                message += '\n🔴 Send some SOL to your trading wallet to ape into memes and cover gas fee.';                
+                message += '\n\n🔴 Send some SOL to your trading wallet to ape into memes and cover gas fee.';                
             }
         }
 
@@ -513,18 +519,21 @@ export class BotManager {
         return tokensMessage;
     }
 
-    static async buildPortfolioMessage(traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
-        const chain = Chain.SOLANA; //TODO: fetch portfolio for other chains
-        const { values, assets, lpAssets, warning } = await TraderProfilesManager.getPortfolio(chain, traderProfile);
+    static async buildPortfolioMessage(user: IUser, traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
+        const chain = user.defaultChain || Chain.SOLANA;
+        const { values, assets, lpAssets, warning } = await ChainManager.getPortfolio(chain, traderProfile);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
+        if (chain != Chain.SOLANA){
+            message += ` — 🔗 ${ChainManager.getChainTitle(chain)}`;
+        }
         message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
 
         if (warning){
             message += `\n\n⚠️ ${warning.message}`;
         }
 
-        if (values){
+        if (chain==Chain.SOLANA &&  values){
             message += `\n\nTotal value: $${values.totalPrice}`;
             if (values.pnl){
                 message += `\nP&L: $${values.pnl}`;

@@ -92,7 +92,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 return;
             }
 
-            const { message } = await BotManager.buildPortfolioMessage(traderProfile, botUsername);
+            const { message } = await BotManager.buildPortfolioMessage(user, traderProfile, botUsername);
 
             if (isRefresh){
                 const markup = BotManager.buildInlineKeyboard([

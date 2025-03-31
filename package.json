@@ -21,6 +21,7 @@
     "@bonfida/spl-name-service": "^3.0.9",
     "@coral-xyz/anchor": "^0.30.1",
     "@grammyjs/auto-retry": "^2.0.2",
+    "@heymike/sega-sdk": "^0.1.0-alpha",
     "@jup-ag/api": "github:heymike777/jupiter-quote-api-node",
     "@metaplex-foundation/digital-asset-standard-api": "^1.0.6",
     "@metaplex-foundation/mpl-bubblegum": "^4.3.1",

@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose';
 import { ISubscription, SubscriptionTier } from '../payments/Subscription';
 import { SwapManager } from '../../managers/SwapManager';
 import { IUserTraderProfile } from './TraderProfile';
+import { Chain } from '../../services/solana/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -53,6 +54,7 @@ export interface IUser extends mongoose.Document {
     engine?: string;
     telegramState?: TelegramState;
 
+    defaultChain?: Chain;
     defaultBot?: string;
     bots?: {[key: string]: 'default' | 'active' | 'blocked'};
 
@@ -89,6 +91,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
         helper: { type: String },
     },
 
+    defaultChain: { type: String },
     defaultBot: { type: String },
     bots: { type: Mixed },
 
@@ -116,6 +119,7 @@ UserSchema.methods.toJSON = function () {
         usedGiftCardsCount: this.usedGiftCardsCount,
         engine: this.engine || SwapManager.kDefaultEngineId,
         traderProfiles: this.traderProfiles,
+        defaultChain: this.defaultChain,
     };
 };
 

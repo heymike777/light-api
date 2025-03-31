@@ -5,6 +5,8 @@ import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { validateRequest } from "../../middlewares/ValidateRequest";
 import { body } from "express-validator";
 import { SearchManager } from "../../managers/SearchManager";
+import { UserManager } from "../../managers/UserManager";
+import { Chain } from "../../services/solana/types";
 
 const router = express.Router();
 
@@ -21,9 +23,13 @@ router.post(
         if (!userId){
             throw new NotAuthorizedError();
         }
+        const user = await UserManager.getUserById(userId);
+        if (!user){
+            throw new NotAuthorizedError();
+        }
 
         const query = '' + req.body.query;
-        const tokens = await SearchManager.search(query, userId);
+        const tokens = await SearchManager.search(user.defaultChain || Chain.SOLANA, query, userId);
 
         res.status(200).send({ query, tokens });
     }

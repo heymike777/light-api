@@ -38,7 +38,7 @@ export class BotSellHelper extends BotHelper {
                 return;
             }
 
-            const { message } = await BotManager.buildPortfolioMessage(traderProfile, botUsername);
+            const { message } = await BotManager.buildPortfolioMessage(user, traderProfile, botUsername);
 
             await BotManager.reply(ctx, message, {
                 parse_mode: 'HTML',
