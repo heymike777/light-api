@@ -97,8 +97,6 @@ export class MigrationManager {
         //     await SwapManager.sendSwapErrorToUser(swap);
         // }
 
-        // await this.testToken(this.kPyth);
-
         // await TokenManager.fetchDigitalAsset(this.kBonk);
 
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
@@ -337,17 +335,6 @@ export class MigrationManager {
 
             LogManager.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'userId', user.id, 'engineId', engine.id, engine.title, 'trader profile created');
         }
-    }
-
-    static async testToken(mint: string){
-        const pairs = await TokenPair.find({ $or: [{ token1: mint }, { token2: mint }] });
-        LogManager.log('testToken', mint, 'pairs', pairs.length);
-        const token = await Token.findOne({ address: mint });
-        if (!token){
-            throw new Error('Token not found');
-        }
-        let liquidity = await TokenManager.getUsdLiquidityForToken(token);
-        LogManager.log('testToken', mint, `Liquidity: $${liquidity}`);
     }
 
     static async syncIndexes(){

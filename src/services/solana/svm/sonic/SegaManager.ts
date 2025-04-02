@@ -9,6 +9,9 @@ import { kSolAddress } from '../../Constants';
 import { SolanaManager } from '../../SolanaManager';
 import { Currency } from '../../../../models/types';
 import { newConnectionByChain } from '../../lib/solana';
+import { TokenManager } from '../../../../managers/TokenManager';
+import { kProgram } from '../../../../managers/constants/ProgramConstants';
+import { TokenPair } from '../../../../entities/tokens/TokenPair';
 
 export class SegaManager {
 
@@ -98,17 +101,22 @@ export class SegaManager {
         });
 
         const tx = result.transaction;
-
-        console.log('SEGA tx:', tx);
-        console.log('SEGA addressTableLookups:', tx.message.addressTableLookups);
-
-        // const txData = await result.execute({ skipPreflight: true, sendAndConfirm: true });
-        // console.log('txData:', txData);
-
         return { swapAmountInLamports, tx, blockhash };
     }
 
     static async fetchPoolForMints(mintA: string, mintB: string): Promise<{poolId: string} | undefined> {
+        const existing = await TokenPair.findOne({
+            chain: Chain.SONIC,
+            $or: [
+                { token1: mintA, token2: mintB },
+                { token1: mintB, token2: mintA },
+            ]
+        });
+        if (existing) {
+            console.log('Pool already exists in DB:', existing);
+            return { poolId: existing.pairAddress };
+        }
+
         let page = 1;
         const pageSize = 100;
         while (page < 10){
@@ -125,6 +133,8 @@ export class SegaManager {
                 console.log('mintA:', mintA, 'mintB:', mintB);
                 for (const pool of pools) {
                     if ((pool.mintA.address == mintA && pool.mintB.address == mintB) || (pool.mintA.address == mintB && pool.mintB.address == mintA)) {
+                        await TokenManager.createTokenPair(Chain.SONIC, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, kProgram.SEGA, pool.lpMint.address);
+                        
                         return { poolId: pool.id };
                     }
                 }

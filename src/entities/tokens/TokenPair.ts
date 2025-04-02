@@ -65,8 +65,12 @@ export const TokenPairSchema = new mongoose.Schema<ITokenPair>({
 TokenPairSchema.index({ chain: 1, pairAddress: 1 }, { unique: true });
 TokenPairSchema.index({ token1: 1 });
 TokenPairSchema.index({ token2: 1 });
+TokenPairSchema.index({ chain: 1, token1: 1 });
+TokenPairSchema.index({ chain: 1, token2: 1 });
+TokenPairSchema.index({ chain: 1, token1: 1, token2: 1 });
 TokenPairSchema.index({ updatedAt: 1 });
 TokenPairSchema.index({ pairAddress: 1 });
+TokenPairSchema.index({ chain: 1 });
 
 TokenPairSchema.pre('save', function (next) {
     this.updatedAt = new Date();
