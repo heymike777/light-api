@@ -24,6 +24,7 @@ import { Currency } from "../models/types";
 import { SwapMode } from "@jup-ag/api";
 import { RaydiumManager } from "../services/solana/RaydiumManager";
 import { BN } from "bn.js";
+import { SegaManager } from "../services/solana/svm/sonic/SegaManager";
 
 export class SwapManager {
 
@@ -120,7 +121,7 @@ export class SwapManager {
     //     return this.buyAndSell(swap.type, swap, traderProfile, triesLeft);
     // }
 
-    static async buyAndSell(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 3): Promise<string | undefined> {
+    static async buyAndSell(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 1): Promise<string | undefined> {
         LogManager.log('buyAndSell', 'type:', swap.type, 'triesLeft', triesLeft, 'swap:', swap, 'traderProfile:', traderProfile);
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
@@ -153,37 +154,53 @@ export class SwapManager {
             const slippage = (swap.type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
             LogManager.log('SwapManager', 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
 
-            const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, SwapMode.ExactIn);
-            if (!quote) {
-                swap.status.type = StatusType.CREATED;
-                swap.status.tryIndex++;
-                await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });    
-                return;
+            let instructions: web3.TransactionInstruction[] = [];
+            let swapAmountInLamports: string = '0';
+            let addressLookupTableAccounts: web3.AddressLookupTableAccount[] | undefined = undefined;
+            let tx: web3.VersionedTransaction | undefined = undefined;
+
+            if (swap.dex == SwapDex.JUPITER){
+                const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, SwapMode.ExactIn);
+                if (!quote) {
+                    swap.status.type = StatusType.CREATED;
+                    swap.status.tryIndex++;
+                    await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });    
+                    return;
+                }
+
+                const priorityFee = traderProfile.priorityFee || Priority.MEDIUM;
+
+                const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, priorityFee, {
+                    includeOtherInstruction: true,
+                    includeSwapInstruction: true,
+                    includeComputeBudgetInstructions: true,
+                    includeCleanupInstruction: true,
+                    includeSetupInstructions: true,
+                });
+
+                instructions = swapData.instructions;
+                const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
+                addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
+
+                LogManager.log('SwapManager', 'swapData', swapData);
+
+                swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
+
+                // add 1% fee instruction to tx
+                instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, traderProfile.wallet.publicKey, currency));
+
+                blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
+                tx = await SolanaManager.createVersionedTransaction(swap.chain, instructions, keypair, addressLookupTableAccounts, blockhash, false)
+    
             }
+            else if (swap.dex == SwapDex.SEGA){
+                const segaResults = await SegaManager.swap(traderProfile, inputMint, outputMint, new BN(amount), slippage);
+                swapAmountInLamports = segaResults.swapAmountInLamports.toString();
+                tx = segaResults.tx;
+                blockhash = segaResults.blockhash;
 
-            LogManager.log('SwapManager', 'quote', quote);
-
-            // const prioritizationFeeLamports = await HeliusManager.getRecentPrioritizationFees();
-            const priorityFee = traderProfile.priorityFee || Priority.MEDIUM;
-
-            const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, priorityFee, {
-                includeOtherInstruction: true,
-                includeSwapInstruction: true,
-                includeComputeBudgetInstructions: true,
-                includeCleanupInstruction: true,
-                includeSetupInstructions: true,
-            });
-
-            const instructions = swapData.instructions;
-            const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
-            const addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
-
-            LogManager.log('SwapManager', 'swapData', swapData);
-
-            const swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
-
-            // add 1% fee instruction to tx
-            instructions.push(this.createFeeInstruction(+swapAmountInLamports, traderProfile.wallet.publicKey, currency));
+                // throw new BadRequestError('Sega swap not implemented yet');
+            }
 
             if (currency == Currency.SOL){
                 swap.value = {
@@ -199,16 +216,15 @@ export class SwapManager {
             }
             await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
             
-            LogManager.log('SwapManager', 'instructions.length =', instructions.length);
-
-            blockhash = (await SolanaManager.getRecentBlockhash(Chain.SOLANA)).blockhash;
-            const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, instructions, keypair, addressLookupTableAccounts, blockhash, false)
+            if (!tx){
+                throw new BadRequestError('Transaction not found');
+            }
 
             signature = await stakedConnection.sendTransaction(tx, { skipPreflight: true, maxRetries: 0 });
             LogManager.log('SwapManager', 'signature', signature);
         }
-        catch (error) {
-            LogManager.error('!catched SwapManager', swap.type, error);
+        catch (error: any) {
+            LogManager.error('!catched SwapManager', swap.type, error);       
             
             if (triesLeft <= 0) {
                 swap.status.type = StatusType.CANCELLED;
@@ -230,7 +246,7 @@ export class SwapManager {
         swap.status.tryIndex++;
         swap.status.tx = {
             signature,
-            blockhash,
+            blockhash: blockhash || '',
             sentAt: new Date(),
         };
         if (!swap.status.txs) { swap.status.txs = []; };
@@ -240,7 +256,7 @@ export class SwapManager {
         return signature;
     }
 
-    static createFeeInstruction(swapAmountInLamports: number, walletAddress: string, currency = Currency.SOL, fee = 0.01): web3.TransactionInstruction {
+    static createFeeInstruction(chain: Chain, swapAmountInLamports: number, walletAddress: string, currency = Currency.SOL, fee = 0.01): web3.TransactionInstruction {
         if (currency == Currency.USDC){
             const usdcTokenAta = process.env.FEE_USDC_TOKEN_ADDRESS;
             if (!usdcTokenAta) {
@@ -267,8 +283,8 @@ export class SwapManager {
         }
     }
 
-    static async receivedConfirmationForSignature(signature: string) {
-        const swap = await Swap.findOne({ "status.tx.signature": signature });
+    static async receivedConfirmationForSignature(chain: Chain, signature: string) {
+        const swap = await Swap.findOne({ chain: chain, "status.tx.signature": signature });
         if (!swap) {
             // LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
             return;
@@ -487,6 +503,7 @@ export class SwapManager {
         const usdValue = swap.value?.usd || 0;
 
         MixpanelManager.track(`Swap`, swap.userId, { 
+            chain: swap.chain, 
             type: swap.type,
             traderProfileId: swap.traderProfileId,
             dex: swap.dex,
@@ -498,13 +515,15 @@ export class SwapManager {
     }
 
     static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
-        LogManager.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
-        const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
-        if (!isFreezeAuthorityRevoked){
-            dex = SwapDex.RAYDIUM_AMM;
-            isHoneypot = true;
+        console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
+        if (chain == Chain.SOLANA){
+            const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
+            if (!isFreezeAuthorityRevoked){
+                dex = SwapDex.RAYDIUM_AMM;
+                isHoneypot = true;
+            }
+            LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
         }
-        LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
@@ -529,12 +548,16 @@ export class SwapManager {
             throw new BadRequestError('Honeypot is supported only for SOL');
         }
 
+        if (chain != Chain.SOLANA && currency != Currency.SOL){
+            throw new BadRequestError('Only SOL is supported for this chain');
+        }
+
         const connection = newConnectionByChain(chain);
 
         const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
         const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
         if (!balance || balance.uiAmount < minSolRequired){
-            throw new BadRequestError(`Insufficient SOL balance. balance: ${balance?.uiAmount || 0}, required: ${minSolRequired}`);
+            throw new BadRequestError(`Insufficient SOL balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
         }
 
         if (currency == Currency.USDC){
@@ -563,7 +586,7 @@ export class SwapManager {
         };
         await swap.save();
 
-        MixpanelManager.track('Swap Init', userId, { type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
+        MixpanelManager.track('Swap Init', userId, { chain: chain, type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
 
         let signature: string | undefined;
         if (swap.type == SwapType.BUY){
@@ -649,7 +672,7 @@ export class SwapManager {
         swap.intermediateWallet = isHoneypot ? SolanaManager.createWallet() : undefined;
         await swap.save();
 
-        MixpanelManager.track('Swap Init', userId, { type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
+        MixpanelManager.track('Swap Init', userId, { chain: chain, type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
 
         let signature: string | undefined;
         if (swap.type == SwapType.SELL){

@@ -104,12 +104,16 @@ export class BotBuyHelper extends BotHelper {
             if (token?.symbol){
                 tokenName = token.symbol;
             }
-        } catch (error: any) {}
+        } catch (error: any) {
+            LogManager.error('Error getting token', error);
+        }
 
         const message = await BotManager.reply(ctx, `Buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}.\n\nPlease, wait...`);      
 
         try {
-            const { signature, swap } = await SwapManager.initiateBuy(chain, SwapDex.JUPITER, traderProfileId, mint, amount);
+            const dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+
+            const { signature, swap } = await SwapManager.initiateBuy(chain, dex, traderProfileId, mint, amount);
 
             // let msg = `🟢 Bought <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}.`
             let msg = `🟡 Transaction sent. Waiting for confirmation.`
