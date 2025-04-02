@@ -169,6 +169,9 @@ export class MigrationManager {
         // await this.processTx(Chain.SONIC, '4g4KAqWS4jNYhSgWWVu8CnG5Si9YUASWVY4GaMYGNHcYtkjeFVLr7NgbuoF6f73FqqNera6iCg3x4yiApVkxFBMW'); // SWAP on SEGA
         // await this.processTx(Chain.SONIC, '24ER3mdG69QTAFoUuVyrQSyDLLYw1JeNtRPzQikorEqgjbaqDniFyfMZE7nCynsC77Bo1wAuuJ7o4J6fshbZg7bf'); // ADD LIQUIDITY on SEGA
         // await this.processTx(Chain.SONIC, '66mhhqK9UzBWtqriYNTRqUnBw1BYopKDK8ZwSgrhTemTBBws4GLhj6AHHZP94xru7KKgenUHQUPYsJHXiKjpRms'); // REMOVE LIQUIDITY on SEGA
+        // await this.processTx(Chain.SONIC, 'ZbT3Zo1qifBN8mQD9M2cJdL7uYAoDuixPzbPkXfUd5UmneyFdmCaK48XCL5mUbYGmVw1UYy9jD8t6tf2ftFfY5R'); // SWAP on SEGA
+    
+
 
         // TITAN DEX
         // await this.processTx(Chain.SOLANA, '55FqEG5gr7bKADuH6oy539qbDwyfBVdNSif3c57pXE8kX6Tkz3KC1g9cvkKAjJa9HsAkXDuUGoTxaG8akhRfdYPu'); // swap
