@@ -32,6 +32,7 @@ export interface SentTx {
 export enum SwapDex {
     JUPITER = 'jupiter',
     RAYDIUM_AMM = 'raydium_amm',
+    SEGA = 'sega',
 }
 
 export interface ISwap extends mongoose.Document {
@@ -80,7 +81,7 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
 });
 
 SwapSchema.index({ userId: 1 });
-SwapSchema.index({ "status.tx.signature": 1 });
+SwapSchema.index({ chain: 1, "status.tx.signature": 1 });
 SwapSchema.index({ _id: 1, "status.type": 1 });
 
 SwapSchema.pre('save', function (next) {

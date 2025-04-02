@@ -654,7 +654,7 @@ export class RaydiumManager {
             // -------------------- TX4: pay tips, pay light fee, close ata --------------------
             const closeAtaIx = SolanaManager.createBurnSplAccountInstruction(mintAtaAddressPublicKey, traderKeypair.publicKey, traderKeypair.publicKey);
             const tipsIx = JitoManager.getAddTipsInstruction(traderKeypair.publicKey);
-            const feeIx = SwapManager.createFeeInstruction(lamports, traderWallet.publicKey, currency, fee);
+            const feeIx = SwapManager.createFeeInstruction(Chain.SOLANA, lamports, traderWallet.publicKey, currency, fee);
             const tx4 = await SolanaManager.createVersionedTransaction(Chain.SOLANA, [closeAtaIx, tipsIx, feeIx], traderKeypair, undefined, blockhash, false);        
             txs.push(tx4);
 

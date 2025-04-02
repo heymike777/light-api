@@ -390,13 +390,16 @@ export const kPrograms: { [key: string]: {
         name: 'SEGA',
         knownInstructions: [
             // { 'any': {title: 'UNDEFINED', priority: 1} },
-            { 'SwapBaseInput': {title: 'SWAP', priority: 1} },
-            { 'SwapBaseOutput': {title: 'SWAP', priority: 1} },
-            { 'Deposit': {title: 'ADD LIQUIDITY', priority: 2} },
-            { 'Withdraw': {title: 'REMOVE LIQUIDITY', priority: 2} },
+            { 'swap_base_input': {title: 'SWAP', priority: 1} },
+            { 'swap_base_output': {title: 'SWAP', priority: 1} },
+            { 'deposit': {title: 'ADD LIQUIDITY', priority: 2} },
+            { 'withdraw': {title: 'REMOVE LIQUIDITY', priority: 2} },
         ],
-        skip: false,
-        searchLogs: true,
+        skip: false,    
+        customIdl: {
+            path: 'src/idls/sega.json',
+            type: 'anchorV1',
+        },
     },
     [kProgram.TITAN_DEX]: {
         name: 'TITAN',

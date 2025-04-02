@@ -97,8 +97,6 @@ export class MigrationManager {
         //     await SwapManager.sendSwapErrorToUser(swap);
         // }
 
-        // await this.testToken(this.kPyth);
-
         // await TokenManager.fetchDigitalAsset(this.kBonk);
 
         // await SubscriptionManager.updateUserSubscription('66fe7b5989633c0aa6dad946');
@@ -169,6 +167,9 @@ export class MigrationManager {
         // await this.processTx(Chain.SONIC, '4g4KAqWS4jNYhSgWWVu8CnG5Si9YUASWVY4GaMYGNHcYtkjeFVLr7NgbuoF6f73FqqNera6iCg3x4yiApVkxFBMW'); // SWAP on SEGA
         // await this.processTx(Chain.SONIC, '24ER3mdG69QTAFoUuVyrQSyDLLYw1JeNtRPzQikorEqgjbaqDniFyfMZE7nCynsC77Bo1wAuuJ7o4J6fshbZg7bf'); // ADD LIQUIDITY on SEGA
         // await this.processTx(Chain.SONIC, '66mhhqK9UzBWtqriYNTRqUnBw1BYopKDK8ZwSgrhTemTBBws4GLhj6AHHZP94xru7KKgenUHQUPYsJHXiKjpRms'); // REMOVE LIQUIDITY on SEGA
+        // await this.processTx(Chain.SONIC, 'ZbT3Zo1qifBN8mQD9M2cJdL7uYAoDuixPzbPkXfUd5UmneyFdmCaK48XCL5mUbYGmVw1UYy9jD8t6tf2ftFfY5R'); // SWAP on SEGA
+    
+
 
         // TITAN DEX
         // await this.processTx(Chain.SOLANA, '55FqEG5gr7bKADuH6oy539qbDwyfBVdNSif3c57pXE8kX6Tkz3KC1g9cvkKAjJa9HsAkXDuUGoTxaG8akhRfdYPu'); // swap
@@ -334,17 +335,6 @@ export class MigrationManager {
 
             LogManager.log('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'userId', user.id, 'engineId', engine.id, engine.title, 'trader profile created');
         }
-    }
-
-    static async testToken(mint: string){
-        const pairs = await TokenPair.find({ $or: [{ token1: mint }, { token2: mint }] });
-        LogManager.log('testToken', mint, 'pairs', pairs.length);
-        const token = await Token.findOne({ address: mint });
-        if (!token){
-            throw new Error('Token not found');
-        }
-        let liquidity = await TokenManager.getUsdLiquidityForToken(token);
-        LogManager.log('testToken', mint, `Liquidity: $${liquidity}`);
     }
 
     static async syncIndexes(){

@@ -252,6 +252,11 @@ export class Helpers {
     };
 
     static bnDivBnWithDecimals(num1: BN, num2: BN, precision: number = 6): number {
+        const lessThanZero = num1.lt(num2);
+        if (lessThanZero){
+            num1 = num1.mul(new BN(-1));
+        }
+
         try {
             const res = num1.mul(new BN(10 ** precision)).div(num2);
             // last precision digits
@@ -271,8 +276,11 @@ export class Helpers {
                 }
                 result += modStr;
             }
-            return parseFloat(result);
-            // return res.toNumber() / 10 ** precision;    
+            let resultFloat = parseFloat(result);
+            if (lessThanZero){
+                resultFloat = -resultFloat;
+            }
+            return resultFloat;
         }
         catch (err){
             LogManager.error('bnDivBnWithDecimals:', err);

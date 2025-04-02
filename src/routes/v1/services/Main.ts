@@ -37,7 +37,7 @@ router.post(
                 WalletManager.processWalletTransaction(chain, parsedTransactionWithMeta, geyserId);
             }
 
-            SwapManager.receivedConfirmationForSignature(signature);
+            SwapManager.receivedConfirmationForSignature(chain, signature);
             success = true;
         } catch (error) {
             console.error('Error in received-tx', error);

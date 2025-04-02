@@ -967,6 +967,41 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.SEGA){
+                // console.log('!!!SEGA', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (['swap_base_input', 'swap_base_ouput'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress && tx){
+                        const market: ParsedSwapMarket = {
+                            address: accounts?.[3]?.toBase58() || '',
+                            pool1: accounts?.[6]?.toBase58() || '',
+                            pool1VaultAuthority: accounts?.[1]?.toBase58() || '',
+                            pool2: accounts?.[7]?.toBase58() || '',
+                            pool2VaultAuthority: accounts?.[1]?.toBase58() || '',
+                        }
+                        swap = this.getParsedSwapFromTxByMarket(tx, market, true);
+                        description = this.getSwapDescription(chain, swap, walletAddress, 'Sega'); // Sega CPMM    
+                    }    
+                }
+                else if (['deposit'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> added liquidity on Sega`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['withdraw'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> removed liquidity on Sega`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
             }
             else if (programId == kProgram.TITAN_DEX){
                 const walletAddress = accounts?.[0]?.toBase58();
@@ -1055,10 +1090,6 @@ export class ProgramManager {
         // filter zero balance changes
         tokenBalanceChanges = tokenBalanceChanges.filter((change) => !change.amount.eqn(0));
 
-        // for (const tmp of tokenBalanceChanges) {
-        //     console.log('!balanceChange:', tmp.address, tmp.amount.toNumber() / (10 ** tmp.decimals), 'market:', market);
-        // }
-
         const positive = tokenBalanceChanges.filter((change) => change.amount.gt(new BN(0)));
         const negative = tokenBalanceChanges.filter((change) => change.amount.lt(new BN(0)));
 
@@ -1086,112 +1117,6 @@ export class ProgramManager {
 
         return swap;
     }
-
-    // static getParsedSwapFromTx(tx: web3.ParsedTransactionWithMeta, walletAddress: string): ParsedSwap | undefined {
-    //     let swap: ParsedSwap | undefined = undefined;
-
-    //     const publicKey = new PublicKey(walletAddress);
-    //     const accountIndex = tx.transaction.message.accountKeys.findIndex((accountKey: web3.ParsedMessageAccount) => accountKey.pubkey.equals(publicKey));
-    //     const nativeBalanceChange = (tx.meta?.postBalances[accountIndex] || 0) - (tx.meta?.preBalances[accountIndex] || 0);
-
-    //     let tokenBalanceChanges: {
-    //         address: string;
-    //         amount: BN;
-    //         decimals: number;
-    //     }[] = [];
-
-    //     for (const tokenBalance of tx.meta?.postTokenBalances || []) {
-    //         if (tokenBalance.owner == walletAddress){
-    //             const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
-
-    //             if (existing){
-    //                 existing.amount = existing.amount.add(new BN(tokenBalance.uiTokenAmount.amount));
-    //             }
-    //             else {
-    //                 tokenBalanceChanges.push({
-    //                     address: tokenBalance.mint,
-    //                     amount: new BN(tokenBalance.uiTokenAmount.amount),
-    //                     decimals: tokenBalance.uiTokenAmount.decimals,
-    //                 });
-    //             }
-    //         }
-    //     }
-
-    //     for (const tokenBalance of tx.meta?.preTokenBalances || []) {
-    //         if (tokenBalance.owner == walletAddress){
-    //             const existing = tokenBalanceChanges.find((change) => change.address == tokenBalance.mint);
-
-    //             if (existing){
-    //                 existing.amount = existing.amount.sub(new BN(tokenBalance.uiTokenAmount.amount));
-    //             }
-    //             else {
-    //                 tokenBalanceChanges.push({
-    //                     address: tokenBalance.mint,
-    //                     amount: new BN(tokenBalance.uiTokenAmount.amount).muln(-1),
-    //                     decimals: tokenBalance.uiTokenAmount.decimals,
-    //                 });
-    //             }
-    //         }
-    //     }
-
-    //     const wsolBalanceChange = tokenBalanceChanges.find((change) => change.address == kSolAddress);
-    //     if (wsolBalanceChange){
-    //         // It means that swap was made through WSOL. 
-    //         // And amounts will be correct (not including gas fee, priority fee, etc). 
-    //         // So this is perfect.
-    //     }
-    //     else {
-    //         // Add wsol balance change = native SOL balance change. 
-    //         // It will include gas fee, priority fee, etc. 
-    //         // So not the most accurate values. But we can ignore it for now.
-
-    //         const countPositive = tokenBalanceChanges.filter((change) => change.amount.gt(new BN(0))).length;
-    //         const countNegative = tokenBalanceChanges.filter((change) => change.amount.lt(new BN(0))).length;
-
-    //         if (countPositive == 1 && countNegative == 1 && nativeBalanceChange <= 0 && nativeBalanceChange >= -1000000){
-    //             // native balance change is just gas fee. don't add it
-    //         }
-    //         else {
-    //             tokenBalanceChanges.push({
-    //                 address: kSolAddress,
-    //                 amount: new BN(nativeBalanceChange),
-    //                 decimals: 9,
-    //             });
-    //         }
-    //     }
-
-    //     // filter zero balance changes
-    //     tokenBalanceChanges = tokenBalanceChanges.filter((change) => !change.amount.eqn(0));
-
-    //     for (const tmp of tokenBalanceChanges) {
-    //         console.log('!balanceChange:', tmp.address, tmp.amount.toNumber() / (10 ** tmp.decimals));
-    //     }
-
-    //     const positive = tokenBalanceChanges.filter((change) => change.amount.gt(new BN(0)));
-    //     const negative = tokenBalanceChanges.filter((change) => change.amount.lt(new BN(0)));
-
-    //     if (positive.length != 1 || negative.length != 1){
-    //         LogManager.error('!unexpected positive or negative length:', positive.length, negative.length, 'signature:', tx.transaction.signatures[0]);
-    //         return undefined;
-    //     }
-
-    //     swap = {
-    //         signature: tx?.transaction.signatures?.[0],
-    //         from: {
-    //             mint: negative[0].address,
-    //             amount: negative[0].amount.muln(-1).toString(),
-    //             decimals: negative[0].decimals,
-    //         },
-    //         to: {
-    //             mint: positive[0].address,
-    //             amount: positive[0].amount.toString(),
-    //             decimals: positive[0].decimals,
-    //         }
-    //     }
-
-    //     return swap;
-    // }
-
 
     static async findIx(instructions: Ix[] | undefined, programId: string, name: string): Promise<{ix: Ix, ixData: ParsedIxData} | undefined> {
         if (!instructions){

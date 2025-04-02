@@ -197,7 +197,7 @@ export class TokenManager {
     static async getTokensByPair(chain: Chain, pairAddress: string): Promise<ITokenModel[]> {
         const tokens: ITokenModel[] = [];
 
-        const pair = await TokenPair.findOne({ pairAddress, chain });
+        const pair = await TokenPair.findOne({ chain, pairAddress });
         if (pair){
             if (pair.token1 != kSolAddress && pair.token1 != kUsdcAddress && pair.token1 != kUsdtAddress){
                 const token = await this.getToken(pair.chain, pair.token1);
@@ -226,9 +226,9 @@ export class TokenManager {
             return 0;
         }
 
-        let pairs = await TokenManager.getAllTokenPairs(token.address);
+        let pairs = await TokenManager.getAllTokenPairs(token.chain, token.address);
         if (!pairs || pairs.length === 0){
-            pairs = await TokenManager.fetchTokenPairs(token.address);
+            pairs = await TokenManager.fetchTokenPairs(token.chain, token.address);
         }
         let liquidity = { sol: 0, token: 0 };
         for (const pair of pairs){
@@ -288,20 +288,20 @@ export class TokenManager {
         return undefined;
     }
 
-    static async fetchTokenPairs(mint: string): Promise<ITokenPair[]> {
+    static async fetchTokenPairs(chain: Chain, mint: string): Promise<ITokenPair[]> {
         const markets = await SolScanManager.fetchTokenMarkets(mint);
         if (!markets || markets.length === 0){
             return [];
         }
 
         const poolIds = markets.map((market) => market.poolId);
-        const pairs = await TokenPair.find({ pairAddress: { $in: poolIds } });
+        const pairs = await TokenPair.find({ chain, pairAddress: { $in: poolIds } });
         const tokenPairs: ITokenPair[] = [];
         for (const market of markets) {
             let pair: ITokenPair | undefined = pairs.find((pair) => pair.pairAddress === market.poolId);
 
             if (!pair){
-                pair = await this.createTokenPair(Chain.SOLANA, market.poolId, market.token1, market.token2, market.tokenAccount1, market.tokenAccount2, market.programId);
+                pair = await this.createTokenPair(chain, market.poolId, market.token1, market.token2, market.tokenAccount1, market.tokenAccount2, market.programId);
             }
 
             if (!pair){
@@ -321,7 +321,7 @@ export class TokenManager {
         const info = await connection.getParsedAccountInfo(new web3.PublicKey(pairAddress));
         console.log('info:', JSON.stringify(info));
 
-        const existing = await TokenPair.findOne({ pairAddress });
+        const existing = await TokenPair.findOne({ chain, pairAddress });
         if (existing){
             return existing;
         }
@@ -401,7 +401,7 @@ export class TokenManager {
     }
 
     static async updateTokenPairsLiquidity() {
-        const pairs = await TokenPair.find({}).sort({ updatedAt: 1 }).limit(100);
+        const pairs = await TokenPair.find({ chain: Chain.SOLANA }).sort({ updatedAt: 1 }).limit(100);
         if (!pairs || pairs.length === 0){
             return;
         }
@@ -411,9 +411,9 @@ export class TokenManager {
         }
     }
 
-    static async getAllTokenPairs(mint: string): Promise<ITokenPair[]> {
+    static async getAllTokenPairs(chain: Chain, mint: string): Promise<ITokenPair[]> {
         //TODO: can get it from RAM
-        const pairs = await TokenPair.find({ $or: [{ token1: mint }, { token2: mint }] });
+        const pairs = await TokenPair.find({ chain, $or: [{ token1: mint }, { token2: mint }] });
         return pairs;
     }
 
