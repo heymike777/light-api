@@ -514,7 +514,9 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
+    static async initiateBuy(chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
+        let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+
         console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
         if (chain == Chain.SOLANA){
             const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
@@ -598,7 +600,8 @@ export class SwapManager {
         return { signature, swap };
     }
 
-    static async initiateSell(chain: Chain, dex: SwapDex, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
+    static async initiateSell(chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
+        let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
         LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);

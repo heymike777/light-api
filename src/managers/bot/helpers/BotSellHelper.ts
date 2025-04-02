@@ -110,7 +110,7 @@ export class BotSellHelper extends BotHelper {
     }
 
     async sell(ctx: Context, user: IUser, chain: Chain, mint: string, amountPercent: number, currency: Currency, traderProfileId: string, isHoneypot: boolean) {
-        console.log('sell', 'isHoneypot:', isHoneypot, 'amountPercent:', amountPercent);
+        console.log('sell', 'isHoneypot:', isHoneypot, 'amountPercent:', amountPercent, 'chain:', chain, 'mint:', mint, 'currency:', currency, 'traderProfileId:', traderProfileId);
         let tokenName: string | undefined = mint;
         try {
             const token = await TokenManager.getToken(chain, mint);
@@ -121,8 +121,8 @@ export class BotSellHelper extends BotHelper {
 
         const message = await BotManager.reply(ctx, `Selling ${amountPercent}% of <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.\n\nPlease, wait...`);      
 
-        try {
-            const { signature, swap } = await SwapManager.initiateSell(chain, SwapDex.JUPITER, traderProfileId, mint, amountPercent, isHoneypot);
+        try {            
+            const { signature, swap } = await SwapManager.initiateSell(chain, traderProfileId, mint, amountPercent, isHoneypot);
 
             // let msg = `🟢 Sold <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.`
             let msg = `🟡 Transaction sent. Waiting for confirmation.`;
