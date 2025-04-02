@@ -967,6 +967,41 @@ export class ProgramManager {
                 }
             }
             else if (programId == kProgram.SEGA){
+                // console.log('!!!SEGA', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (['swap_base_input', 'swap_base_ouput'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress && tx){
+                        const market: ParsedSwapMarket = {
+                            address: accounts?.[3]?.toBase58() || '',
+                            pool1: accounts?.[6]?.toBase58() || '',
+                            pool1VaultAuthority: accounts?.[1]?.toBase58() || '',
+                            pool2: accounts?.[7]?.toBase58() || '',
+                            pool2VaultAuthority: accounts?.[1]?.toBase58() || '',
+                        }
+                        swap = this.getParsedSwapFromTxByMarket(tx, market, true);
+                        description = this.getSwapDescription(chain, swap, walletAddress, 'Sega'); // Sega CPMM    
+                    }    
+                }
+                else if (['deposit'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> added liquidity on Sega`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['withdraw'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> removed liquidity on Sega`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
             }
             else if (programId == kProgram.TITAN_DEX){
                 const walletAddress = accounts?.[0]?.toBase58();

@@ -198,8 +198,6 @@ export class SwapManager {
                 swapAmountInLamports = segaResults.swapAmountInLamports.toString();
                 tx = segaResults.tx;
                 blockhash = segaResults.blockhash;
-
-                // throw new BadRequestError('Sega swap not implemented yet');
             }
 
             if (currency == Currency.SOL){
