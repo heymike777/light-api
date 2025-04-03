@@ -1019,6 +1019,61 @@ export class ProgramManager {
                     }
                 }    
             }
+            else if (programId == kProgram.KAMINO_LIMIT_ORDER){
+                console.log('!!!KAMINO_LIMIT_ORDER', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
+                if (['createOrder'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    const mint1 = accounts?.[4]?.toBase58() || '';
+                    const mint2 = accounts?.[5]?.toBase58() || '';
+
+                    const bnAmount1 = new BN(ixParsed.data.inputAmount);
+                    const decimals1 = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == mint1)?.uiTokenAmount.decimals || tx?.meta?.postTokenBalances?.find((balance) => balance.mint == mint1)?.uiTokenAmount.decimals;
+                    const uiAmount1 = Helpers.bnToUiAmount(bnAmount1, decimals1 || 0);
+
+                    // const bnAmount2 = new BN(ixParsed.data.outputAmount);
+                    // const decimals2 = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == mint2)?.uiTokenAmount.decimals || tx?.meta?.postTokenBalances?.find((balance) => balance.mint == mint2)?.uiTokenAmount.decimals;
+                    // const uiAmount2 = Helpers.bnToUiAmount(bnAmount2, decimals2 || 0);
+
+                    if (walletAddress){
+                        const addresses = [walletAddress, mint1, mint2];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> placed a limit order to swap ${uiAmount1} <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> to <a href="${ExplorerManager.getUrlToAddress(chain, addresses[2])}">{address2}</a> on Kamino`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['closeOrderAndClaimTip'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress){
+                        const addresses = [walletAddress];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> canceled a limit order on Kamino`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+                else if (['takeOrder'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    const mint1 = accounts?.[5]?.toBase58() || '';
+                    const mint2 = accounts?.[6]?.toBase58() || '';
+
+                    // const bnAmount1 = new BN(ixParsed.data.inputAmount);
+                    // const decimals1 = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == mint1)?.uiTokenAmount.decimals || tx?.meta?.postTokenBalances?.find((balance) => balance.mint == mint1)?.uiTokenAmount.decimals;
+                    // const uiAmount1 = Helpers.bnToUiAmount(bnAmount1, decimals1 || 0);
+
+                    // const bnAmount2 = new BN(ixParsed.data.outputAmount);
+                    // const decimals2 = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == mint2)?.uiTokenAmount.decimals || tx?.meta?.postTokenBalances?.find((balance) => balance.mint == mint2)?.uiTokenAmount.decimals;
+                    // const uiAmount2 = Helpers.bnToUiAmount(bnAmount2, decimals2 || 0);
+
+                    if (walletAddress){
+                        const addresses = [walletAddress, mint1, mint2];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> filled a limit order to swap <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> to <a href="${ExplorerManager.getUrlToAddress(chain, addresses[2])}">{address2}</a> on Kamino`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
+            }
 
         }
         catch (error){

@@ -35,6 +35,7 @@ export enum kProgram {
     GO_FUND_MEME = 'GFMioXjhuDWMEBtuaoaDPJFPEnL2yDHCWKoVPhj1MeA7',
 
     TITAN_DEX = 'T1TANpTeScyeqVzzgNViGDNrkQ6qHz9KrSBS4aNXvGT',
+    KAMINO_LIMIT_ORDER = 'LiMoM9rMhrdYrfzUCxQppvxCSG1FcrUK9G8uLq4A1GF',
 
     // SONIC SVM
     SONIC_STAKING = 'g3yMgSB3Q7gNjMfSoCm1PiJihqHdNJeUuPHvRyf45qY',
@@ -405,6 +406,18 @@ export const kPrograms: { [key: string]: {
         name: 'TITAN',
         knownInstructions: [
             { 'any': {title: 'SWAP', priority: 1} },
+        ],
+        skip: false,
+        searchLogs: false,
+    },
+    [kProgram.KAMINO_LIMIT_ORDER]: {
+        name: 'KAMINO',
+        knownInstructions: [
+            { 'createOrder': {title: 'LIMIT ORDER', priority: 2} },
+            { 'closeOrderAndClaimTip': {title: 'CANCELED LIMIT ORDER', priority: 2} },
+            { 'takeOrder': {title: 'FILLED LIMIT ORDER', priority: 2} },
+            // { 'flashTakeOrderStart': {title: 'START FILLING LIMIT ORDER', priority: 2} },
+            // { 'flashTakeOrderEnd': {title: 'END FILLING LIMIT ORDER', priority: 2} },
         ],
         skip: false,
         searchLogs: false,
