@@ -20,7 +20,7 @@ export class SegaManager {
             throw new Error('Wallet not found');
         }
 
-        console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
+        // console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
         // Initialize connection and SDK
         const network = Network.SonicMainnet;
@@ -47,7 +47,7 @@ export class SegaManager {
             throw new Error('Pool not found');
         }
         const poolId = pool.poolId;
-        console.log('poolId:', poolId);
+        // console.log('poolId:', poolId);
 
         // Get pool information
         const data = await sega.cpmm.getPoolInfoFromRpc(poolId);
@@ -70,10 +70,10 @@ export class SegaManager {
         );
 
         const swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : swapResult.destinationAmountSwapped.toNumber();
-        console.log(`Swap amount in lamports: ${swapAmountInLamports}`);
+        // console.log(`Swap amount in lamports: ${swapAmountInLamports}`);
 
         // Create and execute swap transaction
-        console.log('Creating swap transaction...', 'slippage:', slippage);
+        // console.log('Creating swap transaction...', 'slippage:', slippage);
         const { builder, buildProps } = await sega.cpmm.swap({
             poolInfo,
             poolKeys,
@@ -91,7 +91,7 @@ export class SegaManager {
             endInstructions: [feeIx],
         });
 
-        console.log('buildProps:', buildProps);
+        // console.log('buildProps:', buildProps);
 
         const blockhash = (await SolanaManager.getRecentBlockhash(Chain.SONIC)).blockhash;
         const result = await builder.buildV0({
@@ -113,7 +113,7 @@ export class SegaManager {
             ]
         });
         if (existing) {
-            console.log('Pool already exists in DB:', existing);
+            // console.log('Pool already exists in DB:', existing);
             return { poolId: existing.pairAddress };
         }
 
@@ -130,7 +130,7 @@ export class SegaManager {
             if (data && data.data && data.data.data) {
                 const pools = data.data.data;
                 // console.log('Page:', page, 'Pools:', pools);
-                console.log('mintA:', mintA, 'mintB:', mintB);
+                // console.log('mintA:', mintA, 'mintB:', mintB);
                 for (const pool of pools) {
                     if ((pool.mintA.address == mintA && pool.mintB.address == mintB) || (pool.mintA.address == mintB && pool.mintB.address == mintA)) {
                         await TokenManager.createTokenPair(Chain.SONIC, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, kProgram.SEGA, pool.lpMint.address);
