@@ -18,6 +18,7 @@ import { LpMint } from "../entities/tokens/LpMint";
 import { SwapDex } from "../entities/payments/Swap";
 import * as spl from "@solana/spl-token";
 import { RaydiumManager } from "../services/solana/RaydiumManager";
+import { MicroserviceManager } from "./MicroserviceManager";
 
 export interface TokenTag {
     id: string;
@@ -171,7 +172,8 @@ export class TokenManager {
 
         for (const token of tokens) {
             if (!token.price || !token.priceUpdatedAt || (Date.now() - token.priceUpdatedAt) > 1000 * 60){
-                const prices = await JupiterManager.getPrices([token.address]);
+                // const prices = await JupiterManager.getPrices([token.address]);
+                const prices = await MicroserviceManager.getTokensPrices(chain, [token.address]);
                 if (prices && prices.length > 0){
                     token.price = prices[0].price;
                     token.priceUpdatedAt = Date.now();
@@ -449,7 +451,8 @@ export class TokenManager {
 
 
         if (token){
-            const prices = await JupiterManager.getPrices([mint]);
+            // const prices = await JupiterManager.getPrices([mint]);
+            const prices = await MicroserviceManager.getTokensPrices(chain, [mint]);
             if (prices && prices.length > 0){
                 token.price = prices[0].price;
                 console.log('updateTokenPrice', mint, 'newPrice:', token.price);

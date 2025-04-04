@@ -37,7 +37,9 @@ router.post(
             console.error('Error in service/telegram/send-message', error);
         }
 
-        res.status(200).send({ success, mints, prices });
+        console.log('get-tokens-prices', 'success:', success, 'prices:', prices);
+
+        res.status(200).send({ success, prices });
     }
 );
 
