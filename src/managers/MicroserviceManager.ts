@@ -101,7 +101,7 @@ export class MicroserviceManager {
         }
     }
 
-    static async getTokensPrices(chain: Chain, mints: string[]): Promise<{mint: string, price: number}[]> {
+    static async getTokensPrices(chain: Chain, mints: string[]): Promise<{address: string, price: number}[]> {
         try {
             const { data } = await axios({
                 url: `http://127.0.0.1:3350/api/v1/service/prices/tokensPrices`,

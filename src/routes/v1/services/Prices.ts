@@ -3,6 +3,7 @@ import { body, header } from "express-validator";
 import { validateRequest } from "../../../middlewares/ValidateRequest";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
 import { Chain } from "../../../services/solana/types";
+import { JupiterManager } from "../../../managers/JupiterManager";
 
 const router = express.Router();
 
@@ -20,9 +21,16 @@ router.post(
 
         console.log('get-tokens-prices', chain, mints);
 
-        const prices: {mint: string, price: number}[] = [];
-
+        const prices: {address: string, price: number}[] = [];
         try {
+            if (mints.length > 0) {
+                //TODO: check which prices I have in RAM
+                if (chain == Chain.SOLANA){
+                    const tmpPrices = await JupiterManager.getPrices(mints);
+                    prices.push(...tmpPrices);
+                }
+
+            }            
             success = true;
 
         } catch (error) {
