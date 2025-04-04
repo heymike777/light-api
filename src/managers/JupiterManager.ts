@@ -46,12 +46,26 @@ export class JupiterManager {
                 if (data) {
                     console.log('JupiterManager', 'getPrices', 'data:', data, 'keys:', Object.keys(data));
 
-                    return Object.keys(data).map(key => {
-                        return {
-                            address: key,
-                            price: +data[key].price,
-                        };
-                    });
+                    const prices: {address: string, price: number}[] = [];
+                    for (const key in data) {
+                        if (data[key] && data[key].price){
+                            const price = +data[key].price;
+                            if (price > 0){
+                                prices.push({
+                                    address: key,
+                                    price: price,
+                                });
+                            }
+                        }
+                    }
+                    return prices;
+
+                    // return Object.keys(data).map(key => {
+                    //     return {
+                    //         address: key,
+                    //         price: +data[key].price,
+                    //     };
+                    // });
                 }
             }
         }
