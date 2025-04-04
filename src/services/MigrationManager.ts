@@ -56,6 +56,7 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { SwapDex } from "../entities/payments/Swap";
 import { LpMint } from "../entities/tokens/LpMint";
 import { Raydium } from "@raydium-io/raydium-sdk-v2";
+import { MicroserviceManager } from "../managers/MicroserviceManager";
 
 export class MigrationManager {
 
@@ -267,6 +268,9 @@ export class MigrationManager {
         // console.log('signature:', signature, 'swap:', swap);
         // const { signature, swap } = await SwapManager.initiateSell(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 10, true);
         // console.log('signature:', signature, 'swap:', swap);
+
+        const pricesResults = await MicroserviceManager.getTokensPrices(Chain.SOLANA, [this.kBonk, this.kChillGuy, kSolAddress]);
+        console.log('!mike', 'pricesResults', pricesResults);
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

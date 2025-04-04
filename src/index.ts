@@ -39,6 +39,7 @@ import { WalletGeneratorManager } from './managers/WalletGeneratorManager';
 import { Chain } from './services/solana/types';
 import { SvmManager } from './managers/svm/SvmManager';
 import { JitoManager } from './services/solana/JitoManager';
+import { pricesServiceRouter } from './routes/v1/services/Prices';
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -82,6 +83,9 @@ if (EnvManager.isGeyserProcess) {
 }
 if (EnvManager.isTelegramProcess) {
     app.use(telegramServiceRouter);
+}
+if (EnvManager.isPricesProcess) {
+    app.use(pricesServiceRouter);
 }
 
 app.all('*', async () => {

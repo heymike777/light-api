@@ -84,6 +84,17 @@ module.exports = {
                 PORT: 3345,
             },
         },
+        {
+            name   : "light-prices",
+            script : "build/index.js",
+            node_args: "--max-old-space-size=8192",
+            min_uptime: "5s",
+            env: {
+                IS_PRICES_PROCESS: "true",
+                SERVER_NAME: "light-prices",
+                PORT: 3350,
+            },
+        },
 
     ]
 }
