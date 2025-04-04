@@ -454,7 +454,9 @@ export class SwapManager {
             // const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
 
             const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, 9);
-
+            console.log('bnAmount:', bnAmount.toString());
+            console.log('bnDecimalsAmount:', bnDecimalsAmount.toString());
+            console.log('amountIn:', amountIn);
             const actionString = swap.type == SwapType.BUY 
                 ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} SOL` 
                 : `sell ${Helpers.prettyNumberFromString(amountIn, 6)} ${token.symbol}`;

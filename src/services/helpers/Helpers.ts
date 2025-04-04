@@ -36,6 +36,7 @@ export class Helpers {
     }
 
     static prettyNumberFromString(str: string, roundDecimals?: number): string {
+        console.log('prettyNumberFromString:', str, 'roundDecimals:', roundDecimals);
         let n = +str;
         if (roundDecimals != undefined){
             const tmp = 10 ** roundDecimals;
