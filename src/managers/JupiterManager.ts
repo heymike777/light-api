@@ -43,8 +43,9 @@ export class JupiterManager {
             const response = await axios.get(url);
             if (response.status === 200) {
                 const data = response.data?.data;
-                console.log('JupiterManager', 'getPrices', 'response:', response.data);
                 if (data) {
+                    console.log('JupiterManager', 'getPrices', 'data:', data, 'keys:', Object.keys(data));
+
                     return Object.keys(data).map(key => {
                         return {
                             address: key,
