@@ -116,12 +116,12 @@ export class MicroserviceManager {
                 }
             });
 
-            LogManager.log('MicroserviceManager', 'getTokensPrices', data);
+            console.log('MicroserviceManager', 'getTokensPrices', data);
 
             return data.prices;
         }
         catch (e: any){
-            LogManager.error('MicroserviceManager', 'getTokensPrices', 'error', e?.response?.data?.message);
+            // LogManager.error('MicroserviceManager', 'getTokensPrices', 'error', e?.response?.data?.message);
         }
 
         return [];
