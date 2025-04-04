@@ -27,8 +27,7 @@ export class TokenPriceManager {
             LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
         }
 
-
-        return [];
+        return prices;
     }
 
 }
