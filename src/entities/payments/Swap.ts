@@ -58,6 +58,21 @@ export interface ISwap extends mongoose.Document {
         txs?: SentTx[];    
     }
 
+    referralRewards?: {
+        fee: {
+            sol?: number;
+            usdc?: number;
+            usd: number;
+        },
+        users: {
+            [userId: string]: {
+                sol?: number;
+                usdc?: number;
+                usd: number;
+            }
+        }
+    }
+
     updatedAt?: Date;
     createdAt: Date;
 }

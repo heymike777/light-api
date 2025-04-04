@@ -47,7 +47,11 @@ export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
     telegramOld?: TelegramUser;
-    referralCode?: string;
+    parent?: {
+        userId: string;
+        referralCode: string;
+        createdAt: Date;
+    }
     lastIpAddress?: string;
     isAdmin?: boolean;
     usedGiftCardsCount?: number;
@@ -80,7 +84,11 @@ export const UserSchema = new mongoose.Schema<IUser>({
         is_premium: { type: Boolean }
     },
     telegramOld: { type: Mixed },
-    referralCode: { type: String },
+    parent: {
+        userId: { type: String },
+        referralCode: { type: String },
+        createdAt: { type: Date }
+    },
     lastIpAddress: { type: String },
     isAdmin: { type: Boolean },
     usedGiftCardsCount: { type: Number },

@@ -1,6 +1,6 @@
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
-import { kSolAddress, kUsdcAddress } from "../services/solana/Constants";
+import { kSolAddress, kUsdcAddress, kUsdcMintDecimals } from "../services/solana/Constants";
 import { Chain, Engine, Priority } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { BadRequestError } from "../errors/BadRequestError";
@@ -25,6 +25,7 @@ import { SwapMode } from "@jup-ag/api";
 import { RaydiumManager } from "../services/solana/RaydiumManager";
 import { BN } from "bn.js";
 import { SegaManager } from "../services/solana/svm/sonic/SegaManager";
+import { ParsedTransactionWithMeta } from "@solana/web3.js";
 
 export class SwapManager {
 
@@ -281,7 +282,7 @@ export class SwapManager {
         }
     }
 
-    static async receivedConfirmationForSignature(chain: Chain, signature: string) {
+    static async receivedConfirmationForSignature(chain: Chain, signature: string, parsedTransactionWithMeta?: ParsedTransactionWithMeta) {
         const swap = await Swap.findOne({ chain: chain, "status.tx.signature": signature });
         if (!swap) {
             // LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
@@ -291,6 +292,8 @@ export class SwapManager {
         const now = new Date();
 
         //TODO: set into SWAP how many SOL & Tokens I spent / reveived. I need it for P&L calculations
+
+
 
         swap.status.type = StatusType.COMPLETED;
         if (swap.status.tx && swap.status.tx.signature == signature) {
@@ -306,6 +309,7 @@ export class SwapManager {
         }
 
         await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+        await this.saveReferralRewards(swap, signature, parsedTransactionWithMeta);
         this.trackSwapInMixpanel(swap);
     }
 
@@ -315,6 +319,8 @@ export class SwapManager {
         if (!swaps || swaps.length === 0) {
             return;
         }
+
+        console.log('!checkPendingSwaps', 'swaps.length:', swaps.length);
 
         const chainValues = Object.values(Chain); 
         for (const chain of chainValues) {
@@ -328,7 +334,8 @@ export class SwapManager {
 
             const connection = newConnectionByChain(chain);
             const signatureStatuses = await connection.getSignatureStatuses(signatures);
-    
+            console.log('!checkPendingSwaps', 'signatures.length:', signatures.length);
+
             for (let index = 0; index < signatures.length; index++) {
                 const signature = signatures[index];
                 const signatureStatus = signatureStatuses.value[index];
@@ -362,12 +369,14 @@ export class SwapManager {
                         swap.status.type = StatusType.COMPLETED;
                         swap.status.tx!.confirmedAt = new Date();
                         await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
+                        await this.saveReferralRewards(swap, signature);
                         this.trackSwapInMixpanel(swap);
                     }
                 }
             }
     
             // fetch blockhashes statusses
+            console.log('!checkPendingSwaps', 'blockhashes:', blockhashes);
             for (const chain in blockhashes) {
                 if (Object.prototype.hasOwnProperty.call(blockhashes, chain)) {
                     const chainBlockhashes = blockhashes[chain];
@@ -686,5 +695,92 @@ export class SwapManager {
         return { signature, swap };
     }
 
+    static async saveReferralRewards(swap: ISwap, signature: string, tx?: ParsedTransactionWithMeta) {
+        if (!tx) {
+            const connection = newConnectionByChain(swap.chain);
+            const txInfo = await connection.getParsedTransaction(signature, { commitment: 'confirmed' });
+            if (txInfo) {
+                tx = txInfo;
+            }
+        }   
+
+        if (!tx) {
+            LogManager.error('SwapManager', 'saveReferralRewards', 'Transaction not found', { swap, signature });
+            MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: transaction not found', signature });
+            return;
+        }
+
+        // calc how much SOL / USDC fee wallet got
+        const feeWalletAddress = process.env.FEE_SOL_WALLET_ADDRESS;
+        if (!feeWalletAddress) {
+            LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet address not found');
+            MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: fee wallet address not found' });
+            return;
+        }
+        const feeWalletPublicKey = new web3.PublicKey(feeWalletAddress);
+        if (swap.currency == Currency.SOL){
+            const feeAccountIndex = tx.transaction.message.accountKeys.findIndex((key) => key.pubkey.equals(feeWalletPublicKey));
+            if (feeAccountIndex === -1) {
+                LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet not found in transaction', { swap });
+                MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: fee wallet not found in transaction' });
+                return;
+            }
+            const feeLamports = (tx.meta?.postBalances[feeAccountIndex] || 0) - (tx.meta?.preBalances[feeAccountIndex] || 0);
+
+            console.log('saveReferralRewards', signature, 'feeLamports', feeLamports, 'lamports (SOL)');
+            if (feeLamports <= 0){
+                LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet balance not changed', { swap });
+                MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: fee wallet balance not changed' });
+                return;
+            }
+
+            const feeSol = feeLamports / LAMPORTS_PER_SOL;
+            const feeUsd = Math.round(feeSol * TokenManager.getSolPrice() * 100000) / 100000;
+            swap.referralRewards = {
+                fee: {
+                    sol: feeLamports,
+                    usd: feeUsd,
+                },
+                users: {},
+            };
+        }
+        else if (swap.currency == Currency.USDC){
+            const preTokenBalance = tx.meta?.preTokenBalances?.find((balance) => balance.owner === feeWalletAddress);
+            const postTokenBalance = tx.meta?.postTokenBalances?.find((balance) => balance.owner === feeWalletAddress);
+
+            if (!preTokenBalance || !postTokenBalance) {
+                LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet not found in transaction', { swap });
+                MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: fee wallet not found in transaction' });
+                return;
+            }
+            const feeLamports = +postTokenBalance.uiTokenAmount.amount - +preTokenBalance.uiTokenAmount.amount;
+            console.log('saveReferralRewards', signature, 'feeLamports', feeLamports, 'lamports (USDC)');
+            const feeUsdc = feeLamports / (10 ** kUsdcMintDecimals);
+
+            swap.referralRewards = {
+                fee: {
+                    usdc: feeUsdc,
+                    usd: feeUsdc,
+                },
+                users: {},
+            };
+        }
+        else {
+            LogManager.error('SwapManager', 'saveReferralRewards', 'Currency not supported', { swap });
+            MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: currency not supported' });
+            return;
+        }
+
+        //TODO: split fee between users
+        const user = await UserManager.getUserById(swap.userId);
+        if (!user) {
+            LogManager.error('SwapManager', 'saveReferralRewards', 'User not found', { swap });
+            MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: user not found' });
+            return;
+        }
+
+
+
+    }
 
 }

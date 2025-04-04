@@ -48,7 +48,8 @@ export class MixpanelManager {
                 $name: name,
                 $email: user.email,
                 $created: (user.createdAt!).toISOString(),
-                referral_code: user.referralCode,
+                parentUserId: user.parent?.userId,
+                parentReferralCode: user.parent?.referralCode,
             }
 
             this.mixpanel.people.set(user.id, properties, { $ip: ipAddress });

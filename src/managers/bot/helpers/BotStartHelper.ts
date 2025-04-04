@@ -12,6 +12,7 @@ import { PremiumError } from "../../../errors/PremiumError";
 import { IWallet } from "../../../entities/Wallet";
 import { LegacyContentInstance } from "twilio/lib/rest/content/v1/legacyContent";
 import { Helpers } from "../../../services/helpers/Helpers";
+import { ReferralsManager } from "../../ReferralsManager";
 
 export class BotStartHelper extends BotHelper {
 
@@ -81,20 +82,8 @@ export class BotStartHelper extends BotHelper {
         const userTelegramId = ctx.update.message?.from.id;
         LogManager.log('BotStartHelper', 'start', 'userTelegramId:', userTelegramId, 'referralCode:', referralCode);
 
-        if (!user.referralCode && referralCode){
-            user.referralCode = referralCode;
-
-            await User.updateOne({ _id: user._id }, {
-                $set: {
-                    referralCode: user.referralCode,
-                }
-            });
-
-            await UserRefClaim.create({
-                userId: user.id,
-                referralCode: referralCode,
-                claimedAt: new Date()
-            });
+        if (referralCode){
+            await ReferralsManager.claimRefCode(user, referralCode, false);
         }
 
         user.bots = user.bots || {};

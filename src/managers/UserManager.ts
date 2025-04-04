@@ -214,7 +214,7 @@ export class UserManager {
         }
 
         toUser.telegram = toUser.telegram?.id ? toUser.telegram : fromUser.telegram;
-        toUser.referralCode = !toUser.referralCode ? fromUser.referralCode : toUser.referralCode;
+        toUser.parent = !toUser.parent ? fromUser.parent : toUser.parent;
         toUser.email = toUser.email || fromUser.email;
         toUser.bots = toUser.bots || fromUser.bots;
         toUser.defaultBot = toUser.defaultBot || fromUser.defaultBot;
@@ -223,7 +223,11 @@ export class UserManager {
             $set: {
                 telegramOld: fromUser.telegram,
                 email: fromUser.email ? `DELETED: ${fromUser.email}` : undefined,
-                referralCode: fromUser.referralCode ? `DELETED: ${fromUser.referralCode}` : undefined,
+                parent: fromUser.parent ? {
+                    userId: 'DELETED: ' + fromUser.parent.userId,
+                    referralCode: 'DELETED: ' + fromUser.parent.referralCode,
+                    createdAt: fromUser.parent.createdAt,
+                } : undefined,
             },
             $unset: {
                 telegram: 1,
@@ -233,7 +237,7 @@ export class UserManager {
         await User.updateOne({ _id: toUserId }, {
             $set: {
                 telegram: toUser.telegram,
-                referralCode: toUser.referralCode,
+                parent: toUser.parent,
                 email: toUser.email,
                 bots: toUser.bots,
                 defaultBot: toUser.defaultBot,

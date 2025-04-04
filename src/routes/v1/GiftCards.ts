@@ -15,6 +15,7 @@ import { MixpanelManager } from "../../managers/MixpanelManager";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
 import { UserRefClaim } from "../../entities/users/UserRefClaim";
 import { GiftCardsManager } from "../../managers/GiftCardsManager";
+import { ReferralsManager } from "../../managers/ReferralsManager";
 
 const router = express.Router();
 
@@ -135,14 +136,7 @@ router.post(
         await SubscriptionManager.createSubscription(userId, tier, SubscriptionPlatform.GIFT_CARD, expiresAt, now);
 
         if (giftCard.referralCode){
-            await UserRefClaim.create({
-                userId: user.id,
-                referralCode: giftCard.referralCode,
-                claimedAt: new Date()
-            });
-
-            user.referralCode = giftCard.referralCode;
-            await user.save();
+            await ReferralsManager.claimRefCode(user, giftCard.referralCode, false);
         }
 
         user.usedGiftCardsCount = (user.usedGiftCardsCount || 0) + 1;

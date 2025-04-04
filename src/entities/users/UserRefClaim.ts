@@ -7,12 +7,14 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export interface IUserRefClaim extends mongoose.Document {
     userId: string;
     referralCode: string;
+    parentUserId: string;
     createdAt: Date;
 }
 
 export const UserRefClaimSchema = new mongoose.Schema<IUserRefClaim>({
     userId: { type: String },
     referralCode: { type: String },
+    parentUserId: { type: String },
     createdAt: { type: Date, default: new Date() }
 });
 
