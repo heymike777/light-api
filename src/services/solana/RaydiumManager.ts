@@ -712,7 +712,7 @@ export class RaydiumManager {
         return signature;
     }
 
-    static async sellHoneypot(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 1): Promise<string | undefined> {
+    static async sellHoneypot(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 3): Promise<string | undefined> {
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {

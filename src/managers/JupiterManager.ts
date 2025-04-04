@@ -28,7 +28,7 @@ export class JupiterManager {
     static quoteApi = createJupiterApiClient(this.config);
 
     static async getPrices(mints: string[]): Promise<{address: string, price: number}[]> {      
-        if (!EnvManager.isPricesProcess || 1==1){
+        if (!EnvManager.isPricesProcess){
             return [];
         }
         
