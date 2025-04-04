@@ -315,7 +315,7 @@ export class SwapManager {
 
     static async checkPendingSwaps() {
         const swaps = await Swap.find({ "status.type": StatusType.PROCESSING });
-        LogManager.log('SwapManager', 'checkPendingSwaps', 'Pending swaps:', swaps.length);
+        console.log('SwapManager', 'checkPendingSwaps', 'Pending swaps:', swaps.length);
         if (!swaps || swaps.length === 0) {
             return;
         }
@@ -377,29 +377,24 @@ export class SwapManager {
     
             // fetch blockhashes statusses
             console.log('!checkPendingSwaps', 'blockhashes:', blockhashes);
-            for (const chain in blockhashes) {
-                if (Object.prototype.hasOwnProperty.call(blockhashes, chain)) {
-                    const chainBlockhashes = blockhashes[chain];
-                    for (const blockhash of chainBlockhashes) {
-                        const isValid = await SolanaManager.isBlockhashValid(blockhash, chain as Chain);
-                        if (isValid) {
-                            continue;
-                        }
-                        else if (isValid == false){
-                            // then set status from PENDING to CREATED 
-                            for (const swap of swaps) {
-                                if (swap.chain == chain &&  swap.status.tx?.blockhash == blockhash && swap.status.type == StatusType.PROCESSING) {
-                                    swap.status.type = StatusType.CREATED;
-                                    swap.status.tryIndex++;
-                                    await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.PROCESSING }, { $set: { status: swap.status } });
-                                }
-                            }
-                        }
-                        else if (isValid == undefined){
-                            LogManager.error('SwapManager', 'checkPendingSwaps', 'Blockhash is undefined', { blockhash });
-                            // is this the same as isValid == false ??
+            for (const blockhash in blockhashes) {
+                const isValid = await SolanaManager.isBlockhashValid(blockhash, chain);
+                if (isValid) {
+                    continue;
+                }
+                else if (isValid == false){
+                    // then set status from PENDING to CREATED 
+                    for (const swap of swaps) {
+                        if (swap.chain == chain &&  swap.status.tx?.blockhash == blockhash && swap.status.type == StatusType.PROCESSING) {
+                            swap.status.type = StatusType.CREATED;
+                            swap.status.tryIndex++;
+                            await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.PROCESSING }, { $set: { status: swap.status } });
                         }
                     }
+                }
+                else if (isValid == undefined){
+                    LogManager.error('SwapManager', 'checkPendingSwaps', 'Blockhash is undefined', { blockhash });
+                    // is this the same as isValid == false ??
                 }
             }
         }
