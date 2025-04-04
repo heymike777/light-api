@@ -315,12 +315,10 @@ export class SwapManager {
 
     static async checkPendingSwaps() {
         const swaps = await Swap.find({ "status.type": StatusType.PROCESSING });
-        console.log('SwapManager', 'checkPendingSwaps', 'Pending swaps:', swaps.length);
+        // console.log('SwapManager', 'checkPendingSwaps', 'Pending swaps:', swaps.length);
         if (!swaps || swaps.length === 0) {
             return;
         }
-
-        console.log('!checkPendingSwaps', 'swaps.length:', swaps.length);
 
         const chainValues = Object.values(Chain); 
         for (const chain of chainValues) {
@@ -334,7 +332,6 @@ export class SwapManager {
 
             const connection = newConnectionByChain(chain);
             const signatureStatuses = await connection.getSignatureStatuses(signatures);
-            console.log('!checkPendingSwaps', 'signatures.length:', signatures.length);
 
             for (let index = 0; index < signatures.length; index++) {
                 const signature = signatures[index];
@@ -376,10 +373,8 @@ export class SwapManager {
             }
     
             // fetch blockhashes statusses
-            console.log('!checkPendingSwaps', 'blockhashes:', blockhashes);
             for (const blockhash of blockhashes) {
                 const isValid = await SolanaManager.isBlockhashValid(blockhash, chain);
-                console.log('!checkPendingSwaps', 'chain:', chain, 'blockhash:', blockhash, 'isValid:', isValid);
                 if (isValid) {
                     continue;
                 }
@@ -454,9 +449,6 @@ export class SwapManager {
             // const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
 
             const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, 9);
-            console.log('bnAmount:', bnAmount.toString());
-            console.log('bnDecimalsAmount:', bnDecimalsAmount.toString());
-            console.log('amountIn:', amountIn);
             const actionString = swap.type == SwapType.BUY 
                 ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} SOL` 
                 : `sell ${Helpers.prettyNumberFromString(amountIn, 6)} ${token.symbol}`;
@@ -522,7 +514,7 @@ export class SwapManager {
     static async initiateBuy(chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
 
-        console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
+        // console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
         if (chain == Chain.SOLANA){
             const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
             if (!isFreezeAuthorityRevoked){

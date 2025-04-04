@@ -269,7 +269,6 @@ export class MigrationManager {
         // console.log('signature:', signature, 'swap:', swap);
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
-        
     }
 
     static async testGeyserTx() {

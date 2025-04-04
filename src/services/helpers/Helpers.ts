@@ -36,7 +36,6 @@ export class Helpers {
     }
 
     static prettyNumberFromString(str: string, roundDecimals?: number): string {
-        console.log('prettyNumberFromString:', str, 'roundDecimals:', roundDecimals);
         let n = +str;
         if (roundDecimals != undefined){
             const tmp = 10 ** roundDecimals;
@@ -253,7 +252,7 @@ export class Helpers {
     };
 
     static bnDivBnWithDecimals(num1: BN, num2: BN, precision: number = 6): number {
-        const lessThanZero = num1.lt(num2);
+        const lessThanZero = num1.lt(new BN(0));
         if (lessThanZero){
             num1 = num1.mul(new BN(-1));
         }
