@@ -4,6 +4,8 @@ import { validateRequest } from "../../../middlewares/ValidateRequest";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
 import { Chain } from "../../../services/solana/types";
 import { JupiterManager } from "../../../managers/JupiterManager";
+import { kSolAddress } from "../../../services/solana/Constants";
+import { TokenPriceManager } from "../../../managers/TokenPriceManager";
 
 const router = express.Router();
 
@@ -17,29 +19,11 @@ router.post(
     async (req: Request, res: Response) => {
         const chain = req.body.chain ? req.body.chain as Chain : Chain.SOLANA;
         const mints: string[] = req.body.mints;
-        let success = false;
+        const prices = await TokenPriceManager.getTokensPrices(chain, mints);
 
-        // console.log('get-tokens-prices', chain, mints);
+        console.log('get-tokens-prices', 'chain:', chain, 'mints.length:', mints.length, 'prices:', prices, 'mints:', mints);
 
-        const prices: {address: string, price: number}[] = [];
-        try {
-            if (mints.length > 0) {
-                //TODO: check which prices I have in RAM
-                if (chain == Chain.SOLANA){
-                    const tmpPrices = await JupiterManager.getPrices(mints);
-                    prices.push(...tmpPrices);
-                }
-
-            }            
-            success = true;
-
-        } catch (error) {
-            console.error('Error in service/prices/tokensPrices', error);
-        }
-
-        console.log('get-tokens-prices', 'chain:', chain, 'success:', success, 'mints.length:', mints.length, 'prices:', prices, 'mints:', mints);
-
-        res.status(200).send({ success, prices });
+        res.status(200).send({ success: true, prices });
     }
 );
 
