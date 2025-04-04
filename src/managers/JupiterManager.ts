@@ -4,6 +4,7 @@ import * as web3 from '@solana/web3.js';
 import { LogManager } from "./LogManager";
 import { Priority } from "../services/solana/types";
 import { EnvManager } from "./EnvManager";
+import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export interface JupQuotes {
     inAmount: string,
@@ -52,8 +53,9 @@ export class JupiterManager {
                 }
             }
         }
-        catch (error) {
+        catch (error: any) {
             LogManager.error('JupiterManager', 'getPrices', error);
+            SystemNotificationsManager.sendSystemMessage('JupiterManager getPrices error:' + error.message);
         }
 
         return [];
@@ -87,8 +89,9 @@ export class JupiterManager {
                 quoteResponse: quotes
             };
         }
-        catch (e: any) {
-            LogManager.error('getQuote error:', e);
+        catch (error: any) {
+            LogManager.error('getQuote error:', error);
+            SystemNotificationsManager.sendSystemMessage('JupiterManager getQuote error:' + error.message);
         }
 
         return undefined;

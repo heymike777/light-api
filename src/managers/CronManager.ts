@@ -9,6 +9,7 @@ import { RedisManager } from './db/RedisManager';
 import { EnvManager } from './EnvManager';
 import { kSolAddress } from '../services/solana/Constants';
 import { Chain } from '../services/solana/types';
+import { TokenPriceManager } from './TokenPriceManager';
 
 export class CronManager {
 
@@ -19,6 +20,12 @@ export class CronManager {
                     YellowstoneManager.cleanupProcessedSignatures();
                 }
                 //TODO: need to cleanup for SONIC as well?
+            });
+        }
+
+        if (EnvManager.isPricesProcess){
+            cron.schedule('* * * * *', () => {
+                TokenPriceManager.cleanOldCache();
             });
         }
 

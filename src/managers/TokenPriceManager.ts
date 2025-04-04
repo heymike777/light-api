@@ -1,8 +1,12 @@
+import axios from "axios";
 import { kSolAddress } from "../services/solana/Constants";
 import { Chain } from "../services/solana/types";
 import { LogManager } from "./LogManager";
+import { JupiterManager } from "./JupiterManager";
 
 export class TokenPriceManager {
+
+    static cache: { [key: string]: { address: string, price: number, date: Date }[] } = {}; // key == chain
 
     static async getTokensPrices(chain: Chain, mints: string[]): Promise<{address: string, price: number}[]>{
         if (mints.length === 0) {
@@ -11,20 +15,126 @@ export class TokenPriceManager {
 
         const prices: {address: string, price: number}[] = [];
         try {
-            //TODO: check which prices I have in RAM
+            const cachedPrices = await this.getPricesFromCache(chain, mints);
+            if (cachedPrices.length > 0){
+                prices.push(...cachedPrices);
+            }
+            mints = mints.filter(mint => !cachedPrices.map(price => price.address).includes(mint));
+
             if (chain == Chain.SOLANA){
-                //TODO: fetch from Raydium API first
-                //TODO: fetch from Jupiter API second
-
-                if (mints.includes(kSolAddress)){
-                    prices.push({address: kSolAddress, price: 123});
+                // fetch from Raydium API first
+                if (mints.length > 0){
+                    const tmpPrices = await this.getPricesFromRaydium(mints);
+                    if (tmpPrices.length > 0){
+                        prices.push(...tmpPrices);
+                    }
+                    mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
                 }
-
-                // const tmpPrices = await JupiterManager.getPrices(mints);
-                // prices.push(...tmpPrices);
+                    
+                // fetch from Jupiter API second
+                if (mints.length > 0){
+                    const tmpPrices = await this.getPricesFromJupiter(mints);
+                    if (tmpPrices.length > 0){
+                        prices.push(...tmpPrices);
+                    }
+                    mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
+                }
             }
         } catch (error) {
             LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
+        }
+
+        return prices;
+    }
+
+    static async cleanOldCache(){
+        // remove all prices older than 1 minute
+        const now = new Date();
+        for (const chain in this.cache) {
+            this.cache[chain] = this.cache[chain].filter(price => price.date.getTime() > now.getTime() - 1 * 60 * 1000);
+        }
+    }
+
+    static async getPricesFromCache(chain: Chain, mints: string[]): Promise<{address: string, price: number}[]>{
+        if (this.cache[chain]){
+            const prices = this.cache[chain].filter(price => mints.includes(price.address));
+            console.log('TokenPriceManager', 'getPricesFromCache', `found ${prices.length} prices`);
+            return prices;
+        }
+        console.log('TokenPriceManager', 'getPricesFromCache', `found 0 prices`);
+        return [];
+    }
+
+    static async savePricesToCache(chain: Chain, prices: {address: string, price: number}[]){
+        if (!this.cache[chain]){
+            this.cache[chain] = [];
+        }
+        for (const price of prices) {
+            const index = this.cache[chain].findIndex(p => p.address == price.address);
+            if (index > -1){
+                this.cache[chain][index].price = price.price;
+                this.cache[chain][index].date = new Date();
+            }
+            else {
+                this.cache[chain].push({
+                    address: price.address,
+                    price: price.price,
+                    date: new Date(),
+                });
+            }
+        }
+    }
+
+    static async getPricesFromRaydium(mints: string[]): Promise<{address: string, price: number}[]>{
+        const prices: {address: string, price: number}[] = [];
+        try {
+            const url = `https://api-v3.raydium.io/mint/price?mints=${mints.join(',')}`;
+            const response = await axios.get(url);
+            if (response.status === 200) {
+                const data = response?.data?.data;
+                if (data) {
+                    for (const key in data) {
+                        if (data[key]){
+                            const price = +data[key];
+                            if (price > 0){
+                                prices.push({
+                                    address: key,
+                                    price: price,
+                                });
+                            }
+                        }
+                    }
+
+                }
+            }
+        } catch (error) {
+            LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+        }
+
+        console.log('TokenPriceManager', 'getPricesFromRaydium', `found ${prices.length} prices`);
+
+        if (prices.length > 0){
+            await this.savePricesToCache(Chain.SOLANA, prices);
+        }
+
+        return prices;
+    }
+
+    static async getPricesFromJupiter(mints: string[]): Promise<{address: string, price: number}[]>{
+        const prices: {address: string, price: number}[] = [];
+        try {
+            const tmpPrices = await JupiterManager.getPrices(mints);
+            if (tmpPrices.length > 0){
+                prices.push(...tmpPrices);
+            }
+        } catch (error) {
+            LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+        }
+
+        console.log('TokenPriceManager', 'getPricesFromJupiter', `found ${prices.length} prices`);
+
+        if (prices.length > 0){
+            await this.savePricesToCache(Chain.SOLANA, prices);
         }
 
         return prices;
