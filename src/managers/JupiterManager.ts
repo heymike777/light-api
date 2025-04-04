@@ -3,6 +3,7 @@ import { ConfigurationParameters, Instruction, QuoteResponse, ResponseError, Swa
 import * as web3 from '@solana/web3.js';
 import { LogManager } from "./LogManager";
 import { Priority } from "../services/solana/types";
+import { EnvManager } from "./EnvManager";
 
 export interface JupQuotes {
     inAmount: string,
@@ -25,7 +26,11 @@ export class JupiterManager {
     };
     static quoteApi = createJupiterApiClient(this.config);
 
-    static async getPrices(mints: string[]): Promise<{address: string, price: number}[]> {        
+    static async getPrices(mints: string[]): Promise<{address: string, price: number}[]> {      
+        if (!EnvManager.isPricesProcess){
+            return [];
+        }
+        
         if (mints.length === 0) {
             return [];
         }
@@ -48,7 +53,7 @@ export class JupiterManager {
             }
         }
         catch (error) {
-            // LogManager.error('JupiterManager', 'getPrices', error);
+            LogManager.error('JupiterManager', 'getPrices', error);
         }
 
         return [];

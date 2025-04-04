@@ -19,7 +19,7 @@ router.post(
         const mints: string[] = req.body.mints;
         let success = false;
 
-        console.log('get-tokens-prices', chain, mints);
+        // console.log('get-tokens-prices', chain, mints);
 
         const prices: {address: string, price: number}[] = [];
         try {
@@ -34,10 +34,10 @@ router.post(
             success = true;
 
         } catch (error) {
-            console.error('Error in service/telegram/send-message', error);
+            console.error('Error in service/prices/tokensPrices', error);
         }
 
-        console.log('get-tokens-prices', 'success:', success, 'prices:', prices);
+        console.log('get-tokens-prices', 'chain:', chain, 'success:', success, 'mints.length:', mints.length, 'prices:', prices, 'mints:', mints);
 
         res.status(200).send({ success, prices });
     }
