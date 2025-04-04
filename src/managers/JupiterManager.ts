@@ -30,6 +30,8 @@ export class JupiterManager {
             return [];
         }
 
+        console.log('JupiterManager', 'getPrices', mints.join(','));
+
         try {
             const url = `https://api.jup.ag/price/v2?ids=${mints.join(',')}`;
             const response = await axios.get(url);
@@ -54,6 +56,7 @@ export class JupiterManager {
 
     static async getQuote(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: SwapMode = SwapMode.ExactIn): Promise<JupQuotes | undefined> {
         try {
+            console.log('JupiterManager', 'getQuote', inputMint, '->', outputMint);
             const maxAutoSlippageBps = Math.round(slippage * 100);
             LogManager.forceLog('maxAutoSlippageBps:', maxAutoSlippageBps);
             
@@ -87,6 +90,7 @@ export class JupiterManager {
     }
 
     static async swapInstructions(quoteResponse: QuoteResponse, walletAddress: string, priorityFee: Priority, include?: JupSwapInstructionsInclude): Promise<{instructions: web3.TransactionInstruction[], addressLookupTableAddresses: string[]}> {
+        console.log('JupiterManager', 'swapInstructions');
         let priorityLevel: 'medium' | 'high' | 'veryHigh' | undefined = undefined;
         let prioritizationFeeMaxLamports = 10000000; // 0.01 SOL
         if (priorityFee == Priority.MEDIUM) { priorityLevel = 'medium'; }
