@@ -379,6 +379,7 @@ export class SwapManager {
             console.log('!checkPendingSwaps', 'blockhashes:', blockhashes);
             for (const blockhash in blockhashes) {
                 const isValid = await SolanaManager.isBlockhashValid(blockhash, chain);
+                console.log('!checkPendingSwaps', 'chain:', chain, 'blockhash:', blockhash, 'isValid:', isValid);
                 if (isValid) {
                     continue;
                 }
