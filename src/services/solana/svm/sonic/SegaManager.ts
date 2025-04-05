@@ -12,13 +12,15 @@ import { newConnectionByChain } from '../../lib/solana';
 import { TokenManager } from '../../../../managers/TokenManager';
 import { kProgram } from '../../../../managers/constants/ProgramConstants';
 import { TokenPair } from '../../../../entities/tokens/TokenPair';
+import { IUser } from '../../../../entities/users/User';
 
 export class SegaManager {
 
-    static async swap(traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
+    static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         if (!traderProfile.wallet) {
             throw new Error('Wallet not found');
         }
+        const fee = SwapManager.getFeeSize(user);
 
         // console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
@@ -86,7 +88,7 @@ export class SegaManager {
         });
 
         // add 1% fee instruction to tx
-        const feeIx = SwapManager.createFeeInstruction(Chain.SONIC, +swapAmountInLamports, traderProfile.wallet.publicKey, currency);
+        const feeIx = SwapManager.createFeeInstruction(Chain.SONIC, +swapAmountInLamports, traderProfile.wallet.publicKey, currency, fee);
         builder.addInstruction({
             endInstructions: [feeIx],
         });

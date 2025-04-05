@@ -3,6 +3,7 @@ import { kSolAddress } from "../services/solana/Constants";
 import { Chain } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { JupiterManager } from "./JupiterManager";
+import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export class TokenPriceManager {
 
@@ -107,8 +108,9 @@ export class TokenPriceManager {
 
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+            SystemNotificationsManager.sendSystemMessage('TokenPriceManager.getPricesFromRaydium error:' + error.message);
         }
 
         console.log('TokenPriceManager', 'getPricesFromRaydium', `found ${prices.length} prices`);

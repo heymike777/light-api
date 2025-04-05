@@ -265,9 +265,9 @@ export class MigrationManager {
         //     console.error('!mike', 'traderProfile not found');
         //     return;
         // }
-        // const { signature, swap } = await SwapManager.initiateBuy(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kChillGuy, 0.005, true);
+        // const { signature, swap } = await SwapManager.initiateBuy(user, Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kChillGuy, 0.005, true);
         // console.log('signature:', signature, 'swap:', swap);
-        // const { signature, swap } = await SwapManager.initiateSell(Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 10, true);
+        // const { signature, swap } = await SwapManager.initiateSell(user, Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kBonk, 10, true);
         // console.log('signature:', signature, 'swap:', swap);
 
         // const prices = await TokenPriceManager.getTokensPrices(Chain.SOLANA, [this.kBonk, this.kChillGuy, kSolAddress]);
@@ -376,6 +376,10 @@ export class MigrationManager {
 
         const wallets = await Wallet.find({ userId: userId, status: {$in: [WalletStatus.ACTIVE, WalletStatus.TRADER]} });
         const user = await UserManager.getUserById(userId, true);
+        if (!user){
+            console.error('!mike', 'user not found', userId);
+            return;
+        }
         const chats = [{user, wallets}];
         // LogManager.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
         const tx = await SolanaManager.getParsedTransaction(connection, signature);

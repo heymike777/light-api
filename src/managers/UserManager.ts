@@ -18,7 +18,7 @@ export class UserManager {
     static cacheEnabled = false;
     static cachedUsers: {user: IUser, createdAt: Date}[] = [];
 
-    static async getUserById(id: string, forceCleanCache = false): Promise<IUser> {
+    static async getUserById(id: string, forceCleanCache = false): Promise<IUser | undefined> {
         if (!forceCleanCache && this.cacheEnabled){
             const cachedUser = this.cachedUsers.find(cachedUser => cachedUser.user.id == id);
             if (cachedUser){
@@ -40,8 +40,10 @@ export class UserManager {
             return user;
         }
         else {
-            throw new Error('User not found');
+            // throw new Error('User not found');
         }
+
+        return undefined;
     }
 
     static async removeUserFromCache(id: string){

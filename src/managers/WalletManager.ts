@@ -236,7 +236,9 @@ export class WalletManager {
                 }
                 else {
                     const user = await UserManager.getUserById(wallet.userId);
-                    chats.push({user: user, wallets: [wallet]});
+                    if (user){
+                        chats.push({user: user, wallets: [wallet]});
+                    }
                 }
             }
 

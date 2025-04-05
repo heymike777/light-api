@@ -170,6 +170,9 @@ router.post(
 
         const ipAddress = Helpers.getIpAddress(req);
         const user = await UserManager.getUserById(userId, true);
+        if (!user){
+            throw new NotAuthorizedError();
+        }
         if (ipAddress && user.lastIpAddress != ipAddress){
             user.lastIpAddress = ipAddress;
             user.save();

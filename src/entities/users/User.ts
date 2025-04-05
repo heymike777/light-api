@@ -29,6 +29,7 @@ export enum TelegramWaitingType {
     BUY_AMOUNT = 'buy_amount',
     SELL_AMOUNT = 'SELL_amount',
     SELL_LP_AMOUNT = 'SELL_LP_amount',
+    ADD_REFCODE = 'add_refcode',
 
 }
 
@@ -47,6 +48,7 @@ export interface IUser extends mongoose.Document {
     email?: string;
     telegram?: TelegramUser;
     telegramOld?: TelegramUser;
+    referralCode?: string;
     parent?: {
         userId: string;
         referralCode: string;
@@ -61,6 +63,8 @@ export interface IUser extends mongoose.Document {
     defaultChain?: Chain;
     defaultBot?: string;
     bots?: {[key: string]: 'default' | 'active' | 'blocked'};
+
+    isAmbassador?: boolean;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -84,6 +88,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
         is_premium: { type: Boolean }
     },
     telegramOld: { type: Mixed },
+    referralCode: { type: String },
     parent: {
         userId: { type: String },
         referralCode: { type: String },
@@ -102,6 +107,8 @@ export const UserSchema = new mongoose.Schema<IUser>({
     defaultChain: { type: String },
     defaultBot: { type: String },
     bots: { type: Mixed },
+    
+    isAmbassador: { type: Boolean },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }

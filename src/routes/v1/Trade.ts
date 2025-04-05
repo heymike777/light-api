@@ -7,6 +7,7 @@ import { body } from "express-validator";
 import { SwapManager } from "../../managers/SwapManager";
 import { SwapDex } from "../../entities/payments/Swap";
 import { Chain } from "../../services/solana/types";
+import { UserManager } from "../../managers/UserManager";
 
 const router = express.Router();
 
@@ -28,7 +29,11 @@ router.post(
 
         const { traderProfileId, amount, mint } = req.body;
         const chain = Chain.SOLANA; //TODO: get chain - by mint? or front should send it?
-        const { signature, swap } = await SwapManager.initiateBuy(chain, traderProfileId, mint, amount);
+        const user = await UserManager.getUserById(userId);
+        if (!user){
+            throw new NotAuthorizedError();
+        }
+        const { signature, swap } = await SwapManager.initiateBuy(user, chain, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }
@@ -52,7 +57,11 @@ router.post(
 
         const { traderProfileId, amount, mint } = req.body;
         const chain = Chain.SOLANA; //TODO: get chain - by mint? or front should send it?
-        const { signature, swap } = await SwapManager.initiateSell(chain, traderProfileId, mint, amount);
+        const user = await UserManager.getUserById(userId);
+        if (!user){
+            throw new NotAuthorizedError();
+        }
+        const { signature, swap } = await SwapManager.initiateSell(user, chain, traderProfileId, mint, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }

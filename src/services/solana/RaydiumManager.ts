@@ -22,6 +22,7 @@ import { GetProgramAccountsFilter } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
 import { percentAmount } from "@metaplex-foundation/umi";
+import { IUser } from "../../entities/users/User";
 
 const VALID_PROGRAM_ID = new Set([
     AMM_V4.toBase58(),
@@ -544,7 +545,7 @@ export class RaydiumManager {
 
     // ----------------------------
 
-    static async buyHoneypot(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 3): Promise<string | undefined> {
+    static async buyHoneypot(user: IUser, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 3): Promise<string | undefined> {
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {
@@ -568,7 +569,7 @@ export class RaydiumManager {
         const connection = newConnectionByChain(swap.chain);
         const blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
         const currency = Currency.SOL;
-        const fee = 0.01;//TODO: fee size?
+        const fee = SwapManager.getFeeSize(user);
         const slippage = (swap.type == SwapType.BUY_HONEYPOT ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
 
         const lamports = +swap.amountIn;
@@ -694,7 +695,7 @@ export class RaydiumManager {
             await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
 
             // repeat the transaction            
-            return await this.buyHoneypot(swap, traderProfile, triesLeft - 1);
+            return await this.buyHoneypot(user, swap, traderProfile, triesLeft - 1);
         }
 
 
@@ -712,7 +713,7 @@ export class RaydiumManager {
         return signature;
     }
 
-    static async sellHoneypot(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 3): Promise<string | undefined> {
+    static async sellHoneypot(user: IUser, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft = 3): Promise<string | undefined> {
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
         if (res.modifiedCount === 0) {
@@ -739,7 +740,7 @@ export class RaydiumManager {
         const connection = newConnectionByChain(swap.chain);
         const blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
         const currency = Currency.SOL;
-        const fee = 0.01;//TODO: fee size?
+        const fee = SwapManager.getFeeSize(user);
         const slippage = (swap.type == SwapType.BUY_HONEYPOT ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
 
         let signature: string | undefined;
@@ -854,7 +855,7 @@ export class RaydiumManager {
             /*
             const closeAtaIx = SolanaManager.createBurnSplAccountInstruction(mintAtaAddressPublicKey, traderKeypair.publicKey, traderKeypair.publicKey);
             const tipsIx = JitoManager.getAddTipsInstruction(traderKeypair.publicKey);
-            const feeIx = SwapManager.createFeeInstruction(lamports, traderWallet.publicKey, currency, fee);
+            const feeIx = SwapManager.createFeeInstruction(Chain.SOLANA, lamports, traderWallet.publicKey, currency, fee);
             const tx4 = await SolanaManager.createVersionedTransaction(Chain.SOLANA, [closeAtaIx, tipsIx, feeIx], traderKeypair, undefined, blockhash, false);        
             txs.push(tx4);
 
@@ -894,7 +895,7 @@ export class RaydiumManager {
             await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
 
             // repeat the transaction            
-            return await this.sellHoneypot(swap, traderProfile, triesLeft - 1);
+            return await this.sellHoneypot(user, swap, traderProfile, triesLeft - 1);
         }
 
 

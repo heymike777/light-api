@@ -122,7 +122,7 @@ export class BotSellHelper extends BotHelper {
         const message = await BotManager.reply(ctx, `Selling ${amountPercent}% of <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.\n\nPlease, wait...`);      
 
         try {            
-            const { signature, swap } = await SwapManager.initiateSell(chain, traderProfileId, mint, amountPercent, isHoneypot);
+            const { signature, swap } = await SwapManager.initiateSell(user, chain, traderProfileId, mint, amountPercent, isHoneypot);
 
             // let msg = `🟢 Sold <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.`
             let msg = `🟡 Transaction sent. Waiting for confirmation.`;

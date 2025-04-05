@@ -64,6 +64,18 @@ export class BotSettingsHelper extends BotHelper {
         buttons.push({ id: `delete_message`, text: '✕ Close' });
         buttons.push({ id: 'row', text: '' });
 
+        const extraButtons: InlineButton[] = [];
+        if (user.isAmbassador){
+            extraButtons.push({ id: `ambassador`, text: '👑 Ambassador' });            
+        }
+        if (user.isAdmin){
+            extraButtons.push({ id: `admin`, text: '🛡️ Admin' });
+        }
+        if (extraButtons.length > 0){
+            extraButtons.push({ id: 'row', text: '' });
+        }
+        buttons.push(...extraButtons);
+
         buttons.push({ id: `none`, text: '-- Chain --' });
         buttons.push({ id: 'row', text: '' });
         const chains = [

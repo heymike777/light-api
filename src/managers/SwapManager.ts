@@ -26,6 +26,7 @@ import { RaydiumManager } from "../services/solana/RaydiumManager";
 import { BN } from "bn.js";
 import { SegaManager } from "../services/solana/svm/sonic/SegaManager";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
+import { IUser } from "../entities/users/User";
 
 export class SwapManager {
 
@@ -122,7 +123,12 @@ export class SwapManager {
     //     return this.buyAndSell(swap.type, swap, traderProfile, triesLeft);
     // }
 
-    static async buyAndSell(swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 1): Promise<string | undefined> {
+    static async buyAndSell(user: IUser | undefined, swap: ISwap, traderProfile: IUserTraderProfile, triesLeft: number = 1): Promise<string | undefined> {
+        if (!user) {
+            LogManager.error('SwapManager', swap.type, 'User not found', { swap });
+            return;
+        }
+
         LogManager.log('buyAndSell', 'type:', swap.type, 'triesLeft', triesLeft, 'swap:', swap, 'traderProfile:', traderProfile);
         swap.status.type = StatusType.START_PROCESSING;
         const res = await Swap.updateOne({ _id: swap._id, "status.type": StatusType.CREATED }, { $set: { status: swap.status } });
@@ -188,14 +194,15 @@ export class SwapManager {
                 swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
 
                 // add 1% fee instruction to tx
-                instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, traderProfile.wallet.publicKey, currency));
+                const fee = SwapManager.getFeeSize(user);
+                instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, traderProfile.wallet.publicKey, currency, fee));
 
                 blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
                 tx = await SolanaManager.createVersionedTransaction(swap.chain, instructions, keypair, addressLookupTableAccounts, blockhash, false)
     
             }
             else if (swap.dex == SwapDex.SEGA){
-                const segaResults = await SegaManager.swap(traderProfile, inputMint, outputMint, new BN(amount), slippage);
+                const segaResults = await SegaManager.swap(user, traderProfile, inputMint, outputMint, new BN(amount), slippage);
                 swapAmountInLamports = segaResults.swapAmountInLamports.toString();
                 tx = segaResults.tx;
                 blockhash = segaResults.blockhash;
@@ -238,7 +245,7 @@ export class SwapManager {
             await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
 
             // repeat the transaction            
-            return await this.buyAndSell(swap, traderProfile, triesLeft - 1);
+            return await this.buyAndSell(user, swap, traderProfile, triesLeft - 1);
         }
 
         swap.status.type = StatusType.PROCESSING;
@@ -416,11 +423,13 @@ export class SwapManager {
 
             const traderProfile = await TraderProfilesManager.findById(swap.traderProfileId);
             if (traderProfile) {
+                const user = await UserManager.getUserById(swap.userId);
+
                 if (swap.type === SwapType.BUY) {
-                    await this.buyAndSell(swap, traderProfile);
+                    await this.buyAndSell(user, swap, traderProfile);
                 }
                 else if (swap.type === SwapType.SELL) {
-                    await this.buyAndSell(swap, traderProfile);
+                    await this.buyAndSell(user, swap, traderProfile);
                 }
                 else if (swap.type === SwapType.BUY_HONEYPOT) {
                     //TODO: retry buy honeypot
@@ -511,7 +520,7 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
+    static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
 
         // console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
@@ -589,15 +598,15 @@ export class SwapManager {
 
         let signature: string | undefined;
         if (swap.type == SwapType.BUY){
-            signature = await SwapManager.buyAndSell(swap, traderProfile);
+            signature = await SwapManager.buyAndSell(user, swap, traderProfile);
         }
         else if (swap.type == SwapType.BUY_HONEYPOT){
-            signature = await RaydiumManager.buyHoneypot(swap, traderProfile);
+            signature = await RaydiumManager.buyHoneypot(user, swap, traderProfile);
         }
         return { signature, swap };
     }
 
-    static async initiateSell(chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
+    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
         LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
 
@@ -676,10 +685,10 @@ export class SwapManager {
 
         let signature: string | undefined;
         if (swap.type == SwapType.SELL){
-            signature = await SwapManager.buyAndSell(swap, traderProfile);
+            signature = await SwapManager.buyAndSell(user, swap, traderProfile);
         }
         else if (swap.type == SwapType.SELL_HONEYPOT){
-            signature = await RaydiumManager.sellHoneypot(swap, traderProfile);
+            signature = await RaydiumManager.sellHoneypot(user, swap, traderProfile);
         }
 
         return { signature, swap };
@@ -768,9 +777,10 @@ export class SwapManager {
             MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: user not found' });
             return;
         }
+    }
 
-
-
+    static getFeeSize(user: IUser): number {
+        return user.parent ? 0.009 : 0.01;
     }
 
 }

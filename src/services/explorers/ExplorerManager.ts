@@ -47,7 +47,15 @@ export class ExplorerManager {
             return `https://t.me/${bot}?start=r-${refcode}-ca-${mint}`;
         }
         
-        return `https://t.me/${bot}?start=sell-${mint}`;
+        return `https://t.me/${bot}?start=ca-${mint}`;
+    }
+
+    static getReflink(refcode?: string, bot = 'lightdotapp_bot'): string {
+        if (refcode) {
+            return `https://t.me/${bot}?start=r-${refcode}`;
+        }
+        
+        return `https://t.me/${bot}`;
     }
 
     
