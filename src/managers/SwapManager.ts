@@ -27,6 +27,7 @@ import { BN } from "bn.js";
 import { SegaManager } from "../services/solana/svm/sonic/SegaManager";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { IUser } from "../entities/users/User";
+import { SubscriptionTier } from "../entities/payments/Subscription";
 
 export class SwapManager {
 
@@ -770,13 +771,50 @@ export class SwapManager {
             return;
         }
 
-        //TODO: split fee between users
+        // split fee between users
         const user = await UserManager.getUserById(swap.userId);
         if (!user) {
             LogManager.error('SwapManager', 'saveReferralRewards', 'User not found', { swap });
             MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: user not found' });
             return;
         }
+
+        const percents = [25, 4, 3, 2, 1];
+        let tempUser = user;
+        for (let index = 0; index < percents.length; index++) {
+            let percent = percents[index];
+
+            let parent: IUser | undefined = undefined;
+            if (tempUser.parent){
+                parent = await UserManager.getUserById(tempUser.parent.userId);
+            }
+            if (!parent) { break; }
+
+            if (index == 0 && parent.subscription){
+                //if user has premium, then add 5 for SILVER, 10 for GOLD, 15 for PLATINUM
+                if (parent.subscription.tier == SubscriptionTier.SILVER){
+                    percent += 5;
+                }
+                else if (parent.subscription.tier == SubscriptionTier.GOLD){
+                    percent += 10;
+                }
+                else if (parent.subscription.tier == SubscriptionTier.PLATINUM){
+                    percent += 15;
+                }
+            }
+
+            const totalFee = swap.referralRewards.fee;
+            swap.referralRewards.users[parent.id] = {
+                sol: totalFee.sol ? Math.floor(totalFee.sol * percent / 100) : undefined,
+                usdc: totalFee.usdc ? Math.floor(totalFee.usdc * percent / 100) : undefined,
+                usd: totalFee.usd * percent / 100,
+            };
+
+            tempUser = parent;
+        }
+
+        // save swap
+        await Swap.updateOne({ _id: swap._id }, { $set: { referralRewards: swap.referralRewards } });
     }
 
     static getFeeSize(user: IUser): number {
