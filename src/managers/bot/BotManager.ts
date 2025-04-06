@@ -418,8 +418,10 @@ export class BotManager {
 
         message += '\n';
         message += `<code>${token.address}</code>`;
-        const reflink = ExplorerManager.getTokenReflink(token.address, 'default', botUsername); //TODO: set user's refcode instead of default
-        //message += `\n<a href="${reflink}">Share token with your Reflink</a>` //TODO: uncomment
+        if (user.referralCode){
+            const reflink = ExplorerManager.getTokenReflink(token.address, user.referralCode, botUsername);
+            message += `\n<a href="${reflink}">Share token with your Reflink</a>`;    
+        }
 
         if (mintInfo){
             message += `\n\n⚙️ Security:`;

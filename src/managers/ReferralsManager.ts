@@ -1,9 +1,10 @@
 import { IUser, User } from "../entities/users/User";
-import { UserRefClaim } from "../entities/users/UserRefClaim";
-import { UserRefCode } from "../entities/users/UserRefCode";
+import { UserRefClaim } from "../entities/referrals/UserRefClaim";
+import { UserRefCode } from "../entities/referrals/UserRefCode";
 import { Helpers } from "../services/helpers/Helpers";
 import { LogManager } from "./LogManager";
 import { UserManager } from "./UserManager";
+import { RefStats, UserRefStats } from "../entities/referrals/UserRefStats";
 
 export class ReferralsManager {
 
@@ -150,5 +151,8 @@ export class ReferralsManager {
         return true;
     }
 
-
+    static async fetchUserRefStats(userId: string): Promise<RefStats | undefined> {
+        const userRefStats = await UserRefStats.findOne({ userId: userId });
+        return userRefStats?.stats;
+    }
 }

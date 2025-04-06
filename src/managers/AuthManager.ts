@@ -13,6 +13,7 @@ import { StringSchemaDefinition } from 'mongoose';
 import { TraderProfilesManager } from './TraderProfilesManager';
 import { SwapManager } from './SwapManager';
 import { Priority } from '../services/solana/types';
+import { ReferralsManager } from './ReferralsManager';
 
 export enum VerificationService {
     TWILIO = 'TWILIO',
@@ -157,6 +158,7 @@ export class AuthManager {
         await user.save();
 
         await TraderProfilesManager.createTraderProfile(user, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
+        await ReferralsManager.createReferralCode(user, true);
 
         MixpanelManager.updateProfile(user, undefined);
     

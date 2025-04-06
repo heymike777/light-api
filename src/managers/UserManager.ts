@@ -8,6 +8,7 @@ import { BadRequestError } from "../errors/BadRequestError";
 import { Priority } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
+import { ReferralsManager } from "./ReferralsManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SwapManager } from "./SwapManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
@@ -86,6 +87,7 @@ export class UserManager {
             });
 
             await TraderProfilesManager.createTraderProfile(newUser, SwapManager.kNativeEngineId, 'Wallet 1', Priority.MEDIUM);
+            await ReferralsManager.createReferralCode(newUser, true);
 
             MixpanelManager.updateProfile(newUser, undefined);
 

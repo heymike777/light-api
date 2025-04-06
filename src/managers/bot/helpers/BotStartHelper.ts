@@ -1,6 +1,6 @@
 import { Context } from "grammy";
 import { IUser, User, UserBotStatus } from "../../../entities/users/User";
-import { UserRefClaim } from "../../../entities/users/UserRefClaim";
+import { UserRefClaim } from "../../../entities/referrals/UserRefClaim";
 import { LogManager } from "../../LogManager";
 import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
@@ -151,9 +151,10 @@ export class BotStartHelper extends BotHelper {
             {id: 'my_wallets', text: '👀 My wallets'},
             {id: 'row', text: ''},
             {id: 'trader_profiles', text: '💰 Trader profiles'},
+            {id: 'portfolio', text: '👛 Portfolio'},
             {id: 'row', text: ''},
             {id: 'connect_email', text: '✉️ Connect email'},
-            {id: 'referral_program', text: '🎁 Referrals'},
+            {id: 'referral_program', text: '👥 Refer friends'},
             {id: 'row', text: ''},
             {id: 'upgrade', text: '👑 Upgrade'},
             {id: 'settings', text: '⚙️ Settings'},

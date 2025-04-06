@@ -13,7 +13,7 @@ import { GiftCard } from "../../entities/giftCards/GiftCard";
 import { GiftCardClaim } from "../../entities/giftCards/GiftCardClaim";
 import { MixpanelManager } from "../../managers/MixpanelManager";
 import { SubscriptionManager } from "../../managers/SubscriptionManager";
-import { UserRefClaim } from "../../entities/users/UserRefClaim";
+import { UserRefClaim } from "../../entities/referrals/UserRefClaim";
 import { GiftCardsManager } from "../../managers/GiftCardsManager";
 import { ReferralsManager } from "../../managers/ReferralsManager";
 
