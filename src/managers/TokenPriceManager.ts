@@ -4,6 +4,7 @@ import { Chain } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { JupiterManager } from "./JupiterManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
+import { HeliusManager } from "../services/solana/HeliusManager";
 
 export class TokenPriceManager {
 
@@ -23,7 +24,7 @@ export class TokenPriceManager {
             mints = mints.filter(mint => !cachedPrices.map(price => price.address).includes(mint));
 
             if (chain == Chain.SOLANA){
-                // fetch from Raydium API first
+                // fetch from Raydium
                 if (mints.length > 0){
                     const tmpPrices = await this.getPricesFromRaydium(mints);
                     if (tmpPrices.length > 0){
@@ -31,8 +32,17 @@ export class TokenPriceManager {
                     }
                     mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
                 }
-                    
-                // fetch from Jupiter API second
+                   
+                // fetch from Helius
+                if (mints.length > 0){
+                    const tmpPrices = await this.getPricesFromHelius(mints);
+                    if (tmpPrices.length > 0){
+                        prices.push(...tmpPrices);
+                    }
+                    mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
+                }
+
+                // fetch from Jupiter
                 if (mints.length > 0){
                     const tmpPrices = await this.getPricesFromJupiter(mints);
                     if (tmpPrices.length > 0){
@@ -134,6 +144,26 @@ export class TokenPriceManager {
         }
 
         console.log('TokenPriceManager', 'getPricesFromJupiter', `found ${prices.length} prices`);
+
+        if (prices.length > 0){
+            await this.savePricesToCache(Chain.SOLANA, prices);
+        }
+
+        return prices;
+    }
+
+    static async getPricesFromHelius(mints: string[]): Promise<{address: string, price: number}[]>{
+        const prices: {address: string, price: number}[] = [];
+        try {
+            const tmpPrices = await HeliusManager.getTokensPrices(Chain.SOLANA, mints);
+            if (tmpPrices.length > 0){
+                prices.push(...tmpPrices);
+            }
+        } catch (error) {
+            LogManager.error('Error in TokenPriceManager.getPricesFromHelius', error);
+        }
+
+        console.log('TokenPriceManager', 'getPricesFromHelius', `found ${prices.length} prices`);
 
         if (prices.length > 0){
             await this.savePricesToCache(Chain.SOLANA, prices);

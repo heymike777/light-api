@@ -1,10 +1,11 @@
 import { AddressLookupTableAccount, Keypair, TransactionInstruction } from '@solana/web3.js';
 import { DAS, EnrichedTransaction, Helius, MintApiRequest, SmartTransactionContext } from "helius-sdk";
 import { HeliusAsset, HeliusAssetDisplayOptions, MintApiResult } from './HeliusTypes';
-import { Asset, AssetType } from './types';
+import { Asset, AssetType, Chain } from './types';
 import { kRaydiumAuthority } from './Constants';
 import axios from 'axios';
 import { LogManager } from '../../managers/LogManager';
+import { SystemNotificationsManager } from '../../managers/SytemNotificationsManager';
 
 export interface TokenHolder {
     owner: string;
@@ -295,6 +296,46 @@ export class HeliusManager {
         holders.sort((a, b) => b.uiAmount - a.uiAmount);
 
         return holders
+    }
+
+    static async getTokensPrices(chain: Chain, mints: string[]): Promise<{address: string, price: number}[]> {
+        LogManager.log('HeliusManager', 'getTokensPrices', chain, mints);
+        if (chain != Chain.SOLANA){ return []; }
+        if (mints.length == 0){ return []; }
+
+        const prices: {address: string, price: number}[] = [];
+
+        try {
+            this.initHelius();
+
+            const response = await this.helius.rpc.getAssetBatch({
+                ids: mints,
+                displayOptions: {
+                    showUnverifiedCollections: false,
+                    showCollectionMetadata: false,
+                    showFungible: true,
+                    showInscription: true,
+                }
+            })
+
+            for (const asset of response) {
+                const price_info = asset.token_info?.price_info;
+                if (price_info){
+                    prices.push({
+                        address: asset.id,
+                        price: price_info.price_per_token,
+                    });
+                }
+            }
+
+        }
+        catch (e: any){
+            const errorMessage = e?.response?.data?.message || e?.message || 'Unknown error';
+            LogManager.error('HeliusManager', 'getTokensPrices', 'error', errorMessage);
+            SystemNotificationsManager.sendSystemMessage('HeliusManager.getTokensPrices error: ' + errorMessage);
+        }
+
+        return prices;
     }
 
 }

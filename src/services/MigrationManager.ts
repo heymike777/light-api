@@ -273,6 +273,9 @@ export class MigrationManager {
         // const prices = await TokenPriceManager.getTokensPrices(Chain.SOLANA, [this.kBonk, this.kChillGuy, kSolAddress]);
         // console.log('!mike', 'prices', prices);
 
+        // const prices = await HeliusManager.getTokensPrices(Chain.SOLANA, [this.kBonk, this.kChillGuy, kSolAddress]);
+        // console.log('!mike', 'prices', prices);
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
