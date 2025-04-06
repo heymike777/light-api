@@ -436,8 +436,6 @@ export class RaydiumManager {
             slippage: new Percent(slippage, 100), 
         })
 
-        this.printTokenAccounts('3');
-
         const amountInA = new TokenAmount(
             toToken(mintA),
             inputAmount,
@@ -581,7 +579,6 @@ export class RaydiumManager {
 
             const raydiumManager = new RaydiumManager(swap.chain, traderWallet.privateKey);
             await raydiumManager.init([], []);
-            raydiumManager.printTokenAccounts('0');
 
             const pool = await RaydiumManager.fetchPoolByMint(raydiumManager.raydium, swap.mint);
             if (!pool){
@@ -626,7 +623,6 @@ export class RaydiumManager {
             raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
             raydiumManager.addTokenAccount(fakeLpTokens.tokenAccount, fakeLpTokens.tokenAccountRawInfo);
             raydiumManager.addTokenAccount(fakeSol.tokenAccount);
-            raydiumManager.printTokenAccounts('1');
 
             const poolInfoFromRpc = calcResults.poolInfoFromRpc;
             const input: SwapInput = {
@@ -646,7 +642,6 @@ export class RaydiumManager {
 
             raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
             raydiumManager.addTokenAccount(fakeSol.tokenAccount);
-            raydiumManager.printTokenAccounts('2');
 
             // -------------------- TX3: Add tokens & SOL to LP --------------------
             const addLiquidityTx = await raydiumManager.addLiquidity(swap.mint, calcResults.amountOut, slippage, blockhash, poolInfoFromRpc);
@@ -749,7 +744,6 @@ export class RaydiumManager {
             // -------------------- SETUP RAYDIUM --------------------
             const raydiumManager = new RaydiumManager(swap.chain, intermediateWallet.privateKey);
             await raydiumManager.init([], []);
-            raydiumManager.printTokenAccounts('0');
 
             if (!raydiumManager.raydium){
                 throw new BadRequestError('Raydium is not initialized');
@@ -762,7 +756,7 @@ export class RaydiumManager {
             TokenManager.saveLpMint(swap.chain, swap.dex, pool.lpMint.address, pool.id, swap.mint, swap.currency == Currency.USDC ? kUsdcAddress : kSolAddress);
             TokenManager.createTokenPair(swap.chain, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, undefined, pool.lpMint.address);
 
-            console.log('!mike!', 'pool:', JSON.stringify(pool));
+            // console.log('!mike!', 'pool:', JSON.stringify(pool));
 
             // -------------------- TX1: create mint ATA in IW, create lpMint ATA in IW, transfer lpMint tokens to IW (needed amount) --------------------
             const lpMint = pool.lpMint.address;
@@ -809,17 +803,15 @@ export class RaydiumManager {
 
             raydiumManager.addTokenAccount(fakeTokens.tokenAccount, fakeTokens.tokenAccountRawInfo);
             raydiumManager.addTokenAccount(fakeLpTokens.tokenAccount, fakeLpTokens.tokenAccountRawInfo);
-            raydiumManager.printTokenAccounts('1');
 
             const removeLiquidity = await raydiumManager.removeLiquidity(lpMintLamports, slippage, blockhash, poolInfoFromRpc, traderKeypair);
             txs.push(removeLiquidity.tx);
 
             // -------------------- TX3: Sell on Raydium AMM --------------------
-            console.log('!mike!', 'baseAmountMin:', removeLiquidity.baseAmountMin.toString(), pool.mintA.address);
-            console.log('!mike!', 'quoteAmountMin:', removeLiquidity.quoteAmountMin.toString(), pool.mintB.address);
+            // console.log('!mike!', 'baseAmountMin:', removeLiquidity.baseAmountMin.toString(), pool.mintA.address);
+            // console.log('!mike!', 'quoteAmountMin:', removeLiquidity.quoteAmountMin.toString(), pool.mintB.address);
             const lamportsToSell = pool.mintA.address == swap.mint ? removeLiquidity.baseAmountMin : removeLiquidity.quoteAmountMin;
 
-            raydiumManager.printTokenAccounts('2');
 
             const input: SwapInput = {
                 fixedSide: 'in',
@@ -835,10 +827,7 @@ export class RaydiumManager {
             if (!result?.tx){
                 throw new BadRequestError('Swap failed');
             }
-            txs.push(result.tx);
-
-            raydiumManager.printTokenAccounts('2');
-            
+            txs.push(result.tx);            
             
             // -------------------- TX4: pay tips, pay light fee, close ata --------------------
 
@@ -875,7 +864,7 @@ export class RaydiumManager {
             */
 
             const jitoResult = await JitoManager.sendBundle(txs, traderKeypair, false);
-            console.log('jitoResult', jitoResult);
+            // console.log('jitoResult', jitoResult);
 
             signature = bs58.encode(tx4.signatures[0]);
         }
@@ -999,7 +988,7 @@ export class RaydiumManager {
         const pools = data.data
         for (const obj of pools) {
             if (obj.type === "Standard") {
-                console.log(`AMM Pool ID: ${obj.id} POOL: ${JSON.stringify(obj)}`);
+                // console.log(`AMM Pool ID: ${obj.id} POOL: ${JSON.stringify(obj)}`);
                 if (mintB == kSolAddress){
                     MemoryManager.poolByMintAddress[mintA] = obj;
                 }

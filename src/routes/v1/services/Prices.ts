@@ -21,7 +21,7 @@ router.post(
         const mints: string[] = req.body.mints;
         const prices = await TokenPriceManager.getTokensPrices(chain, mints);
 
-        console.log('get-tokens-prices', 'chain:', chain, 'mints.length:', mints.length, 'prices:', prices, 'mints:', mints);
+        // console.log('get-tokens-prices', 'chain:', chain, 'mints.length:', mints.length, 'prices:', prices, 'mints:', mints);
 
         res.status(200).send({ success: true, prices });
     }
