@@ -318,13 +318,15 @@ export class HeliusManager {
                 }
             })
 
-            for (const asset of response) {
-                const price_info = asset.token_info?.price_info;
-                if (price_info){
-                    prices.push({
-                        address: asset.id,
-                        price: price_info.price_per_token,
-                    });
+            if (response && response.length > 0){
+                for (const asset of response) {
+                    const price_info = asset?.token_info?.price_info;
+                    if (price_info){
+                        prices.push({
+                            address: asset.id,
+                            price: price_info.price_per_token,
+                        });
+                    }
                 }
             }
 
