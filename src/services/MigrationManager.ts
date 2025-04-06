@@ -59,6 +59,7 @@ import { Raydium } from "@raydium-io/raydium-sdk-v2";
 import { MicroserviceManager } from "../managers/MicroserviceManager";
 import { TokenPriceManager } from "../managers/TokenPriceManager";
 import { ReferralsManager } from "../managers/ReferralsManager";
+import { UserRefCode } from "../entities/referrals/UserRefCode";
 
 export class MigrationManager {
 
@@ -286,6 +287,10 @@ export class MigrationManager {
 
     static async migrateRefCodes(){
         console.log('migrate ref codes');
+
+        await UserRefCode.deleteMany({});
+        await UserRefClaim.deleteMany({});
+        await User.updateMany({}, { $unset: { referralCode: "" } });
 
         const users = await User.find({ referralCode: { $exists: false } });
         console.log('migrate ref codes', 'users.length:', users.length);
