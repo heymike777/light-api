@@ -43,13 +43,13 @@ export class TokenPriceManager {
                 }
 
                 // fetch from Jupiter
-                if (mints.length > 0){
-                    const tmpPrices = await this.getPricesFromJupiter(mints);
-                    if (tmpPrices.length > 0){
-                        prices.push(...tmpPrices);
-                    }
-                    mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
-                }
+                // if (mints.length > 0){
+                //     const tmpPrices = await this.getPricesFromJupiter(mints);
+                //     if (tmpPrices.length > 0){
+                //         prices.push(...tmpPrices);
+                //     }
+                //     mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
+                // }
             }
         } catch (error) {
             LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
