@@ -44,7 +44,7 @@ export class BotReferralProgramHelper extends BotHelper {
             await BotManager.reply(ctx, 'Enter your refcode');   
         }
         else if (ctx?.update?.message?.text == '/referral_program' || buttonId == 'referral_program'){
-            const { message, buttons } = await this.buildReferralMessage(user);
+            const { message, buttons } = await this.buildReferralMessage(user, ctx);
 
             const markup = BotManager.buildInlineKeyboard(buttons);
             await BotManager.reply(ctx, message, {
@@ -145,6 +145,7 @@ export class BotReferralProgramHelper extends BotHelper {
         const refcodes = await UserRefCode.find({ userId: user.id, active: true });
         const refStats = await ReferralsManager.fetchUserRefStats(user.id);
 
+
         let message = `💰 Invite your friends to save 10% on fees. If you have a premium subscription, you'll get higher rewards from the fees paid by your referrees.\n• FREE users will get 25% share of the fees paid by their referrees\n• SILVER subscribers - 30% fee share\n• GOLD subscriber - 35% fee share\n• PLATINUM subscribers - 40% fee share`;
 
         const usersCountDirect = refStats?.usersCount.direct || 0;
@@ -159,9 +160,9 @@ export class BotReferralProgramHelper extends BotHelper {
         message += `\n\n`;
         message += `Your Referrals (updated every hour)
 • Users referred: ${usersCountDirect+usersCountIndirect} (direct: ${usersCountDirect}, indirect: ${usersCountIndirect})
-• Total rewards: ${Helpers.prettyNumber(rewardsTotalSol / LAMPORTS_PER_SOL, 4)} SOL
-• Total paid: ${Helpers.prettyNumber(rewardsPaidSol / LAMPORTS_PER_SOL, 4)} SOL
-• Total unpaid: ${Helpers.prettyNumber(rewardsUnpaidSol / LAMPORTS_PER_SOL, 4)} SOL`;
+• Total rewards: ${Helpers.prettyNumber(rewardsTotalSol / LAMPORTS_PER_SOL, 6)} SOL
+• Total paid: ${Helpers.prettyNumber(rewardsPaidSol / LAMPORTS_PER_SOL, 6)} SOL
+• Total unpaid: ${Helpers.prettyNumber(rewardsUnpaidSol / LAMPORTS_PER_SOL, 6)} SOL`;
 
         message += `\n\n`;
         message += `Rewards are paid daily and airdropped directly to your main trader profile wallet. <u><b>You must have accrued at least 0.005 SOL in unpaid fees to be eligible for a payout.</b></u>`;

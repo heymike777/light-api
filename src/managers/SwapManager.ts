@@ -28,6 +28,7 @@ import { SegaManager } from "../services/solana/svm/sonic/SegaManager";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { IUser } from "../entities/users/User";
 import { SubscriptionTier } from "../entities/payments/Subscription";
+import { UserRefReward } from "../entities/referrals/UserRefReward";
 
 export class SwapManager {
 
@@ -301,8 +302,6 @@ export class SwapManager {
 
         //TODO: set into SWAP how many SOL & Tokens I spent / reveived. I need it for P&L calculations
 
-
-
         swap.status.type = StatusType.COMPLETED;
         if (swap.status.tx && swap.status.tx.signature == signature) {
             swap.status.tx.confirmedAt = new Date();
@@ -316,9 +315,14 @@ export class SwapManager {
             }
         }
 
-        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
-        await this.saveReferralRewards(swap, signature, parsedTransactionWithMeta);
-        this.trackSwapInMixpanel(swap);
+        const updateResult = await Swap.updateOne({ _id: swap._id, "status.type": {$ne: StatusType.COMPLETED} }, { $set: { status: swap.status } });
+        if (updateResult.modifiedCount > 0){
+            await this.saveReferralRewards(swap, signature, parsedTransactionWithMeta);
+            this.trackSwapInMixpanel(swap);    
+        }
+        else {
+            LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not updated', `modifiedCount = ${updateResult.modifiedCount}`, 'swap:', { swap });
+        }
     }
 
     static async checkPendingSwaps() {
@@ -373,9 +377,11 @@ export class SwapManager {
     
                         swap.status.type = StatusType.COMPLETED;
                         swap.status.tx!.confirmedAt = new Date();
-                        await Swap.updateOne({ _id: swap._id }, { $set: { status: swap.status } });
-                        await this.saveReferralRewards(swap, signature);
-                        this.trackSwapInMixpanel(swap);
+                        const updateResult = await Swap.updateOne({ _id: swap._id, "status.type": {$ne: StatusType.COMPLETED} }, { $set: { status: swap.status } });
+                        if (updateResult.modifiedCount > 0){
+                            await this.saveReferralRewards(swap, signature);
+                            this.trackSwapInMixpanel(swap);    
+                        }
                     }
                 }
             }
@@ -696,9 +702,11 @@ export class SwapManager {
     }
 
     static async saveReferralRewards(swap: ISwap, signature: string, tx?: ParsedTransactionWithMeta) {
+        console.log('saveReferralRewards (1)', signature, swap.id);
+
         if (!tx) {
             const connection = newConnectionByChain(swap.chain);
-            const txInfo = await connection.getParsedTransaction(signature, { commitment: 'confirmed' });
+            const txInfo = await connection.getParsedTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
             if (txInfo) {
                 tx = txInfo;
             }
@@ -727,7 +735,7 @@ export class SwapManager {
             }
             const feeLamports = (tx.meta?.postBalances[feeAccountIndex] || 0) - (tx.meta?.preBalances[feeAccountIndex] || 0);
 
-            console.log('saveReferralRewards', signature, 'feeLamports', feeLamports, 'lamports (SOL)');
+            console.log('saveReferralRewards (2)', signature, 'feeLamports', feeLamports, 'lamports (SOL)');
             if (feeLamports <= 0){
                 LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet balance not changed', { swap });
                 MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: fee wallet balance not changed' });
@@ -754,7 +762,7 @@ export class SwapManager {
                 return;
             }
             const feeLamports = +postTokenBalance.uiTokenAmount.amount - +preTokenBalance.uiTokenAmount.amount;
-            console.log('saveReferralRewards', signature, 'feeLamports', feeLamports, 'lamports (USDC)');
+            console.log('saveReferralRewards (3)', signature, 'feeLamports', feeLamports, 'lamports (USDC)');
             const feeUsdc = feeLamports / (10 ** kUsdcMintDecimals);
 
             swap.referralRewards = {
@@ -783,6 +791,7 @@ export class SwapManager {
         let tempUser = user;
         for (let index = 0; index < percents.length; index++) {
             let percent = percents[index];
+            console.log('saveReferralRewards (split1)', index, 'userId:', tempUser.id, 'percent:', percent);
 
             let parent: IUser | undefined = undefined;
             if (tempUser.parent){
@@ -814,7 +823,24 @@ export class SwapManager {
         }
 
         // save swap
-        await Swap.updateOne({ _id: swap._id }, { $set: { referralRewards: swap.referralRewards } });
+        await Swap.updateOne({ _id: swap.id }, { $set: { referralRewards: swap.referralRewards } });
+
+        if (swap.referralRewards?.users){
+            for (const userId in swap.referralRewards.users) {
+                const element = swap.referralRewards.users[userId];
+
+                const userRefReward = new UserRefReward();
+                userRefReward.userId = userId;
+                userRefReward.swapId = swap.id;
+                userRefReward.chain = swap.chain;
+                userRefReward.currency = swap.currency;
+                userRefReward.amount = (swap.currency == Currency.SOL ? element.sol : element.usdc) || 0;
+                userRefReward.usdAmount = element.usd;
+                userRefReward.createdAt = new Date();
+                await userRefReward.save();
+            }
+        }
+
     }
 
     static getFeeSize(user: IUser): number {

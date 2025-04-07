@@ -10,6 +10,7 @@ import { EnvManager } from './EnvManager';
 import { kSolAddress } from '../services/solana/Constants';
 import { Chain } from '../services/solana/types';
 import { TokenPriceManager } from './TokenPriceManager';
+import { ReferralsManager } from './ReferralsManager';
 
 export class CronManager {
 
@@ -54,11 +55,13 @@ export class CronManager {
                 // once an hour
                 TokenManager.clearOldSwaps();
                 SubscriptionManager.cleanExpiredGiftCardSubscriptions();
+                ReferralsManager.recalcRefStats();
             });
 
             cron.schedule('0 2 * * *', () => {
                 // once a day at 2am UTC
                 SubscriptionManager.fetchAllRevenueCatSubscriptions();
+                ReferralsManager.processRefPayouts();
             });
     
         }
@@ -82,6 +85,8 @@ export class CronManager {
         await SwapManager.checkPendingSwaps();
         await SwapManager.retrySwaps();
     }
+
+    
 
     static async printStats(){
         console.log('!printStats at', new Date().toISOString());

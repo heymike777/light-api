@@ -53,13 +53,15 @@ import { EnvManager } from "../managers/EnvManager";
 import { RaydiumManager } from "./solana/RaydiumManager";
 import { JitoManager } from "./solana/JitoManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { SwapDex } from "../entities/payments/Swap";
+import { StatusType, Swap, SwapDex } from "../entities/payments/Swap";
 import { LpMint } from "../entities/tokens/LpMint";
 import { Raydium } from "@raydium-io/raydium-sdk-v2";
 import { MicroserviceManager } from "../managers/MicroserviceManager";
 import { TokenPriceManager } from "../managers/TokenPriceManager";
 import { ReferralsManager } from "../managers/ReferralsManager";
 import { UserRefCode } from "../entities/referrals/UserRefCode";
+import { UserRefReward } from "../entities/referrals/UserRefReward";
+import { Config } from "../entities/Config";
 
 export class MigrationManager {
 
@@ -282,6 +284,12 @@ export class MigrationManager {
         //     await this.migrateRefCodes();
         // }
 
+        // await Swap.updateOne({ _id: '67f438630154b03dcc3e2981' }, { $set: { 'status.type': StatusType.PROCESSING } });
+        // await SwapManager.receivedConfirmationForSignature(Chain.SOLANA, '3RhN1fz6KpzjmbJeCmZt81k1ZDErsjG9GwRx3a5FVqsq9pjjMewkShsSGWkG6HAmJBgmqjgFiEnqN3AujyrzZRa3');
+
+        // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
+
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
@@ -388,6 +396,9 @@ export class MigrationManager {
         await TokenSwap.syncIndexes();
         await UserTraderProfile.syncIndexes();
         await LpMint.syncIndexes();
+        await UserRefReward.syncIndexes();
+        await UserRefCode.syncIndexes();
+        await Config.syncIndexes();
     }
 
     static async processTx(chain: Chain, signature: string) {

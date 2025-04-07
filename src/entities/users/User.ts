@@ -78,31 +78,15 @@ export interface IUser extends mongoose.Document {
 
 export const UserSchema = new mongoose.Schema<IUser>({
     email: { type: String },
-    telegram: {
-        id: { type: Number },
-        is_bot: { type: Boolean },
-        first_name: { type: String },
-        last_name: { type: String },
-        username: { type: String },
-        language_code: { type: String },
-        is_premium: { type: Boolean }
-    },
+    telegram: { type: Mixed },
     telegramOld: { type: Mixed },
     referralCode: { type: String },
-    parent: {
-        userId: { type: String },
-        referralCode: { type: String },
-        createdAt: { type: Date }
-    },
+    parent: { type: Mixed },
     lastIpAddress: { type: String },
     isAdmin: { type: Boolean },
     usedGiftCardsCount: { type: Number },
     engine: { type: String },
-    telegramState: {
-        waitingFor: { type: String },
-        data: { type: Mixed },
-        helper: { type: String },
-    },
+    telegramState: { type: Mixed },
 
     defaultChain: { type: String },
     defaultBot: { type: String },
@@ -116,6 +100,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
 
 UserSchema.index({ 'telegram.id': 1 });
 UserSchema.index({ 'email': 1 });
+UserSchema.index({ 'parent.userId': 1 });
 
 UserSchema.pre('save', function (next) {
     this.updatedAt = new Date();

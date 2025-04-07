@@ -90,6 +90,7 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     value: { type: Mixed },
     intermediateWallet: { type: Mixed },
     status: { type: Mixed },
+    referralRewards: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
