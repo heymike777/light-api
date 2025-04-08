@@ -52,7 +52,6 @@ export class Helpers {
 
     static numberWithCommas(x: number): string {
         // return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
         const [integerPart, decimalPart] = x.toString().split('.');
         const formattedInteger = Number(integerPart).toLocaleString('en-US');
         return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
