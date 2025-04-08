@@ -231,7 +231,6 @@ export class ReferralsManager {
 
         console.log('refStats:', refStats);
         console.log('rewards:', rewards);
-        // write RefRewards into a new collection. so that we can index it a easily search
 
         // rewards[0] is the total rewards
         if (rewards.length > 0){

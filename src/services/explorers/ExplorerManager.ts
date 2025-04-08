@@ -42,7 +42,7 @@ export class ExplorerManager {
         }
     }
 
-    static getTokenReflink(mint: string, refcode?: string, bot = 'lightdotapp_bot'): string {
+    static getTokenReflink(mint: string, refcode?: string, bot = 'light_sol_bot'): string {
         if (refcode) {
             return `https://t.me/${bot}?start=r-${refcode}-ca-${mint}`;
         }
@@ -50,7 +50,7 @@ export class ExplorerManager {
         return `https://t.me/${bot}?start=ca-${mint}`;
     }
 
-    static getReflink(refcode?: string, bot = 'lightdotapp_bot'): string {
+    static getReflink(refcode?: string, bot = 'light_sol_bot'): string {
         if (refcode) {
             return `https://t.me/${bot}?start=r-${refcode}`;
         }
