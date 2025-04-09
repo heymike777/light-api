@@ -303,8 +303,7 @@ export class MigrationManager {
         // if (EnvManager.isCronProcess){
         //     await this.migrateWallet();
         // }
-
-        await UserTraderProfile.updateMany({ }, { $unset: { 'wallet': '' } });
+        // await UserTraderProfile.updateMany({ }, { $unset: { 'wallet': '' } });
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

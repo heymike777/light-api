@@ -19,7 +19,7 @@ export interface IUserTraderProfile extends mongoose.Document {
 
     // only for Light engine
     
-    wallet?: WalletModel;
+    // wallet?: WalletModel;
     encryptedWallet?: EncryptedWalletModel;
 
     defaultAmount?: number;// in SOL / USDC (for mobile app. telegram bot uses buyAmounts)
@@ -43,7 +43,7 @@ export const UserTraderProfileSchema = new mongoose.Schema<IUserTraderProfile>({
     active: { type: Boolean, default: true },
     priorityFee: { type: String },
 
-    wallet: { type: Mixed },//TODO: remove this
+    // wallet: { type: Mixed },
     encryptedWallet: { type: Mixed },
 
     defaultAmount: { type: Number },
@@ -78,7 +78,7 @@ UserTraderProfileSchema.methods.toJSON = function () {
         title: this.title,
         defaultAmount: this.defaultAmount,
         engine: SwapManager.engines.find(e => e.id === this.engineId),
-        walletAddress: this.wallet?.publicKey || this.encryptedWallet?.publicKey,
+        walletAddress: this.encryptedWallet?.publicKey,
         default: this.default,
         slippage: this.buySlippage,
         buySlippage: this.buySlippage,
@@ -91,15 +91,11 @@ UserTraderProfileSchema.methods.toJSON = function () {
 };
 
 UserTraderProfileSchema.methods.getWallet = function () {
-    if (this.wallet && this.wallet.privateKey) {
-        return this.wallet;
-    }
-    else if (this.encryptedWallet) {
-        this.wallet = {
+   if (this.encryptedWallet) {
+        return {
             publicKey: this.encryptedWallet.publicKey,
             privateKey: EncryptionManager.decryptPrivateKey(this.encryptedWallet.data, this.encryptedWallet.iv, this.encryptedWallet.tag, EnvManager.getWalletEncryptionKey()),
         }
-        return this.wallet;
     }
     return undefined;
 };
