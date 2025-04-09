@@ -63,6 +63,7 @@ import { UserRefCode } from "../entities/referrals/UserRefCode";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { Config } from "../entities/Config";
 import { UserRefPayout } from "../entities/referrals/UserRefPayout";
+import { EncryptionManager } from "../managers/EncryptionManager";
 
 export class MigrationManager {
 
@@ -290,8 +291,34 @@ export class MigrationManager {
 
         // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
 
+        // const encryptionKey = EnvManager.getWalletEncryptionKey();
+        // console.log('encryptionKey:', encryptionKey, 'length:', encryptionKey.length);
+        // const password = 'Hello World! - lalala 🙉';
+        // const data = EncryptionManager.encryptPrivateKey(password, encryptionKey);
+        // console.log('encryptedData:', data);
+
+        // const decryptedData = EncryptionManager.decryptPrivateKey(data.encryptedData, data.iv, data.tag, encryptionKey);
+        // console.log('decryptedData:', decryptedData);
+    
+        if (EnvManager.isCronProcess){
+            await this.migrateWallet();
+        }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
+    }
+
+    static async migrateWallet(){
+        const traderProfiles = await UserTraderProfile.find({ wallet: {$exists: true}, encryptedWallet: {$exists: false} });
+        console.log('migrateWallet', 'traderProfiles.length:', traderProfiles.length);
+
+        for (const traderProfile of traderProfiles) {
+            if (traderProfile.wallet){
+                const encryptedWallet = EncryptionManager.encryptWallet(traderProfile.wallet, EnvManager.getWalletEncryptionKey());
+                await UserTraderProfile.updateOne({ _id: traderProfile._id }, { $set: { encryptedWallet } });
+                console.log('migrateWallet', 'traderProfileId:', traderProfile._id);    
+            }
+        }
+
     }
 
     static async migrateRefCodes(){

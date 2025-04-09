@@ -237,7 +237,9 @@ router.get(
             throw new BadRequestError("Only light engine is supported for export");
         }
 
-        res.status(200).send({ privateKey: traderProfile.wallet?.privateKey });
+        const tpWallet = traderProfile.getWallet();
+
+        res.status(200).send({ privateKey: tpWallet?.privateKey });
     }
 );
 

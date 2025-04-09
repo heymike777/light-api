@@ -21,6 +21,8 @@ import { TokenManager } from "./TokenManager";
 import { WalletManager } from "./WalletManager";
 import fs from 'fs';
 import { RaydiumManager } from "../services/solana/RaydiumManager";
+import { EncryptionManager } from "./EncryptionManager";
+import { EnvManager } from "./EnvManager";
 
 export class TraderProfilesManager {
 
@@ -74,8 +76,8 @@ export class TraderProfilesManager {
 
         let wallet: WalletModel | undefined = importedWallet;
         if (importedWallet) {
-            //TODO: check if the wallet is already used
-            const existing = await UserTraderProfile.findOne({ userId: user.id, "wallet.publicKey": importedWallet.publicKey, active: true });
+            // check if the wallet is already used
+            const existing = await UserTraderProfile.findOne({ userId: user.id, "encryptedWallet.publicKey": importedWallet.publicKey, active: true });
             if (existing){
                 throw new BadRequestError("You already have trader profile with this wallet");
             }
@@ -103,10 +105,11 @@ export class TraderProfilesManager {
         traderProfile.active = true;
         traderProfile.default = (!user.traderProfiles || user.traderProfiles.length == 0); // default=true for the first profile
         traderProfile.wallet = wallet;
+        traderProfile.encryptedWallet = wallet ? EncryptionManager.encryptWallet(wallet, EnvManager.getWalletEncryptionKey()) : undefined;
         await traderProfile.save();
 
-        if (traderProfile.wallet){
-            await WalletManager.addWallet(-1, user, traderProfile.wallet.publicKey, traderProfile.title, ipAddress, traderProfile.id);
+        if (traderProfile.encryptedWallet){
+            await WalletManager.addWallet(-1, user, traderProfile.encryptedWallet.publicKey, traderProfile.title, ipAddress, traderProfile.id);
         }
 
         return traderProfile;
@@ -126,7 +129,7 @@ export class TraderProfilesManager {
         traderProfile.active = false;
         await traderProfile.save();
 
-        if (traderProfile.wallet){
+        if (traderProfile.encryptedWallet){
             const traderProfileWallet = await Wallet.findOne({ traderProfileId: traderProfileId });
             if (traderProfileWallet){
                 await WalletManager.removeWallet(traderProfileWallet, ipAddress);    

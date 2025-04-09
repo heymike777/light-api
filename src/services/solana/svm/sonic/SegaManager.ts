@@ -17,7 +17,8 @@ import { IUser } from '../../../../entities/users/User';
 export class SegaManager {
 
     static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
-        if (!traderProfile.wallet) {
+        const tpWallet = traderProfile.getWallet();
+        if (!tpWallet) {
             throw new Error('Wallet not found');
         }
         const fee = SwapManager.getFeeSize(user);
@@ -30,7 +31,7 @@ export class SegaManager {
         const currency = Currency.SOL;
 
         // Create or import a wallet
-        const wallet = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey))
+        const wallet = web3.Keypair.fromSecretKey(bs58.decode(tpWallet.privateKey))
 
         // Initialize Sega SDK
         const sega = await Sega.load({
@@ -88,7 +89,7 @@ export class SegaManager {
         });
 
         // add 1% fee instruction to tx
-        const feeIx = SwapManager.createFeeInstruction(Chain.SONIC, +swapAmountInLamports, traderProfile.wallet.publicKey, currency, fee);
+        const feeIx = SwapManager.createFeeInstruction(Chain.SONIC, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
         builder.addInstruction({
             endInstructions: [feeIx],
         });

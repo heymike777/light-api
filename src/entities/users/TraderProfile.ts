@@ -1,7 +1,9 @@
 import * as mongoose from 'mongoose';
-import { Priority, WalletModel } from '../../services/solana/types';
+import { EncryptedWalletModel, Priority, WalletModel } from '../../services/solana/types';
 import { SwapManager } from '../../managers/SwapManager';
 import { Currency } from '../../models/types';
+import { EncryptionManager } from '../../managers/EncryptionManager';
+import { EnvManager } from '../../managers/EnvManager';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -16,7 +18,10 @@ export interface IUserTraderProfile extends mongoose.Document {
     priorityFee: Priority;
 
     // only for Light engine
+    
     wallet?: WalletModel;
+    encryptedWallet?: EncryptedWalletModel;
+
     defaultAmount?: number;// in SOL / USDC (for mobile app. telegram bot uses buyAmounts)
     buySlippage?: number;// in percents
     sellSlippage?: number;// in percents
@@ -26,6 +31,8 @@ export interface IUserTraderProfile extends mongoose.Document {
 
     updatedAt?: Date;
     createdAt: Date;
+
+    getWallet(): WalletModel | undefined;
 }
 
 export const UserTraderProfileSchema = new mongoose.Schema<IUserTraderProfile>({
@@ -36,7 +43,9 @@ export const UserTraderProfileSchema = new mongoose.Schema<IUserTraderProfile>({
     active: { type: Boolean, default: true },
     priorityFee: { type: String },
 
-    wallet: { type: Mixed },
+    wallet: { type: Mixed },//TODO: remove this
+    encryptedWallet: { type: Mixed },
+
     defaultAmount: { type: Number },
     buySlippage: { type: Number },
     sellSlippage: { type: Number },
@@ -54,7 +63,8 @@ UserTraderProfileSchema.index({ userId: 1, _id: 1 });
 UserTraderProfileSchema.index({ userId: 1, _id: 1, default: 1 });
 UserTraderProfileSchema.index({ userId: 1 });
 UserTraderProfileSchema.index({ userId: 1, engineId: 1, active: 1 });
-UserTraderProfileSchema.index({ userId: 1, "wallet.publicKey": 1, active: 1 });
+// UserTraderProfileSchema.index({ userId: 1, "wallet.publicKey": 1, active: 1 });
+UserTraderProfileSchema.index({ userId: 1, "encryptedWallet.publicKey": 1, active: 1 });
 
 UserTraderProfileSchema.pre('save', function (next) {
     this.updatedAt = new Date();
@@ -68,7 +78,7 @@ UserTraderProfileSchema.methods.toJSON = function () {
         title: this.title,
         defaultAmount: this.defaultAmount,
         engine: SwapManager.engines.find(e => e.id === this.engineId),
-        walletAddress: this.wallet?.publicKey,
+        walletAddress: this.wallet?.publicKey || this.encryptedWallet?.publicKey,
         default: this.default,
         slippage: this.buySlippage,
         buySlippage: this.buySlippage,
@@ -78,6 +88,20 @@ UserTraderProfileSchema.methods.toJSON = function () {
         sellAmounts: this.sellAmounts,
         priorityFee: this.priorityFee,
     };
+};
+
+UserTraderProfileSchema.methods.getWallet = function () {
+    if (this.wallet && this.wallet.privateKey) {
+        return this.wallet;
+    }
+    else if (this.encryptedWallet) {
+        this.wallet = {
+            publicKey: this.encryptedWallet.publicKey,
+            privateKey: EncryptionManager.decryptPrivateKey(this.encryptedWallet.data, this.encryptedWallet.iv, this.encryptedWallet.tag, EnvManager.getWalletEncryptionKey()),
+        }
+        return this.wallet;
+    }
+    return undefined;
 };
 
 export const UserTraderProfile = mongoose.model<IUserTraderProfile>('users-trader-profiles', UserTraderProfileSchema);

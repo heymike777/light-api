@@ -31,6 +31,13 @@ export interface WalletModel {
   privateKey: string;
 }
 
+export interface EncryptedWalletModel {
+    publicKey: string; 
+    data: string;
+    iv: string;
+    tag: string;
+}
+
 export enum AssetType {
   pNFT = 'pNFT',
   NFT = 'NFT',

@@ -433,8 +433,8 @@ export class BotManager {
         
         const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
-        if (traderProfile && traderProfile.wallet?.publicKey){
-            const walletAddress = traderProfile.wallet.publicKey;
+        if (traderProfile && traderProfile.encryptedWallet?.publicKey){
+            const walletAddress = traderProfile.encryptedWallet.publicKey;
             solBalance = await SolanaManager.getWalletSolBalance(connection, walletAddress);
             const tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
 
@@ -484,7 +484,7 @@ export class BotManager {
             message += metricsMessage;
         }
 
-        if (traderProfile && traderProfile.wallet?.publicKey){
+        if (traderProfile && traderProfile.encryptedWallet?.publicKey){
             if (!solBalance || solBalance.uiAmount < 0.01){
                 message += '\n\n🔴 Send some SOL to your trading wallet to ape into memes and cover gas fee.';                
             }
@@ -532,7 +532,7 @@ export class BotManager {
         if (chain != Chain.SOLANA){
             message += ` — 🔗 ${ChainManager.getChainTitle(chain)}`;
         }
-        message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
+        message += `\n<code>${traderProfile.encryptedWallet?.publicKey}</code> (Tap to copy)`; 
 
         if (warning){
             message += `\n\n⚠️ ${warning.message}`;

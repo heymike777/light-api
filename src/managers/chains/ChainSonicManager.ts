@@ -27,13 +27,13 @@ export class ChainSonicManager {
             totalPrice: number,
             pnl?: number,
         } = {
-            walletAddress: traderProfile?.wallet?.publicKey, 
+            walletAddress: traderProfile?.encryptedWallet?.publicKey, 
             totalPrice: 0, 
         };
 
         const assets: PortfolioAsset[] = [];
         if (traderProfile){
-            let walletAddress = traderProfile.wallet?.publicKey;
+            let walletAddress = traderProfile.encryptedWallet?.publicKey;
             if (!walletAddress){
                 // That's impossible. All "light" trader profiles should have a wallet
                 throw new BadRequestError('Wallet not found');

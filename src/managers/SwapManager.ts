@@ -139,7 +139,8 @@ export class SwapManager {
             return;
         }
 
-        if (!traderProfile.wallet){
+        const tpWallet = traderProfile.getWallet();
+        if (!tpWallet){
             LogManager.error('SwapManager', swap.type, 'Trader profile wallet not found', { traderProfile });
             swap.status.type = StatusType.CREATED;
             swap.status.tryIndex++;
@@ -150,7 +151,7 @@ export class SwapManager {
         const amount = swap.amountIn;
 
         const stakedConnection = newConnectionForLandingTxs(swap.chain);
-        const keypair = web3.Keypair.fromSecretKey(bs58.decode(traderProfile.wallet.privateKey));
+        const keypair = web3.Keypair.fromSecretKey(bs58.decode(tpWallet.privateKey));
         const connection = newConnectionByChain(swap.chain);
         let signature: string | undefined;
         let blockhash: string | undefined;
@@ -179,7 +180,7 @@ export class SwapManager {
 
                 const priorityFee = traderProfile.priorityFee || Priority.MEDIUM;
 
-                const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, traderProfile.wallet.publicKey, priorityFee, {
+                const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, tpWallet.publicKey, priorityFee, {
                     includeOtherInstruction: true,
                     includeSwapInstruction: true,
                     includeComputeBudgetInstructions: true,
@@ -197,7 +198,7 @@ export class SwapManager {
 
                 // add 1% fee instruction to tx
                 const fee = SwapManager.getFeeSize(user);
-                instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, traderProfile.wallet.publicKey, currency, fee));
+                instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, tpWallet.publicKey, currency, fee));
 
                 blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
                 tx = await SolanaManager.createVersionedTransaction(swap.chain, instructions, keypair, addressLookupTableAccounts, blockhash, false)
@@ -551,7 +552,8 @@ export class SwapManager {
             throw new BadRequestError('Only Light engine is supported');
         }
 
-        if (!traderProfile.wallet){
+        const tpWallet = traderProfile.getWallet();
+        if (!tpWallet){
             throw new BadRequestError('Trader profile wallet not found');
         }
 
@@ -569,14 +571,14 @@ export class SwapManager {
 
         const connection = newConnectionByChain(chain);
 
-        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
+        const balance = await SolanaManager.getWalletSolBalance(connection, tpWallet.publicKey);
         const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
         if (!balance || balance.uiAmount < minSolRequired){
             throw new BadRequestError(`Insufficient SOL balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
         }
 
         if (currency == Currency.USDC){
-            const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, kUsdcAddress);
+            const balance = await SolanaManager.getWalletTokenBalance(connection, tpWallet.publicKey, kUsdcAddress);
             if (!balance || balance.uiAmount < amount){
                 throw new BadRequestError('Insufficient USDC balance');
             }    
@@ -626,7 +628,8 @@ export class SwapManager {
             throw new BadRequestError('Only Light engine is supported');
         }
 
-        if (!traderProfile.wallet){
+        const tpWallet = traderProfile.getWallet();
+        if (!tpWallet){
             throw new BadRequestError('Trader profile wallet not found');
         }
 
@@ -643,7 +646,7 @@ export class SwapManager {
 
         const connection = newConnectionByChain(chain);
 
-        const solBalance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet.publicKey);
+        const solBalance = await SolanaManager.getWalletSolBalance(connection, tpWallet.publicKey);
         const minSolRequired = 0.01;
         if (!solBalance || solBalance.uiAmount < minSolRequired){
             throw new BadRequestError('Insufficient SOL balance');
@@ -652,7 +655,7 @@ export class SwapManager {
         let amountInLamports = new BN(0);
         if (!isHoneypot){
             // if not honeypot, then we need to check balance
-            const balance = await SolanaManager.getWalletTokenBalance(connection, traderProfile.wallet.publicKey, mint);
+            const balance = await SolanaManager.getWalletTokenBalance(connection, tpWallet.publicKey, mint);
             if (!balance){
                 throw new BadRequestError('Insufficient balance');
             }

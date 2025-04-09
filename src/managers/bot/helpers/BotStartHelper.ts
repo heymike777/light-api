@@ -165,7 +165,7 @@ export class BotStartHelper extends BotHelper {
             text: '🚀 Light - real-time Solana wallet tracker and Trading Terminal.\n' + 
             '\n' +
 
-            (trader?.wallet ? '<b>Your main trader profile:</b> <code>' + trader.wallet.publicKey + '</code> (Tap to copy)\n\n' : '') +
+            (trader?.encryptedWallet ? '<b>Your main trader profile:</b> <code>' + trader.encryptedWallet.publicKey + '</code> (Tap to copy)\n\n' : '') +
 
             '<b>Commands:</b>\n' +
             '/add_wallet - track a new wallet\n' +

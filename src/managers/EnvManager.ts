@@ -19,4 +19,8 @@ export class EnvManager {
         return process.env.TELEGRAM_BOTS!.split(',');
     }
 
+    static getWalletEncryptionKey(): string {
+        return process.env.WALLET_ENCRYPTION_KEY!;
+    }
+
 }

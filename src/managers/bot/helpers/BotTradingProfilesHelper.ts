@@ -149,7 +149,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
             const chain = Chain.SOLANA; //TODO: get for other chains as well
             const connection = newConnectionByChain(chain);
-            const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet?.publicKey);
+            const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.encryptedWallet?.publicKey);
 
             const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
             const markup = BotManager.buildInlineKeyboard(buttons);
@@ -203,7 +203,8 @@ export class BotTraderProfilesHelper extends BotHelper {
 
             const traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
             if (traderProfile){
-                await BotManager.reply(ctx, `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}\n\nPublic key:\n<code>${traderProfile?.wallet?.publicKey}</code> (Tap to copy)\n\nPrivate key:\n<code>${traderProfile?.wallet?.privateKey}</code> (Tap to copy)\n\nYou can import the private key to any Solana wallet. Don't share it with anyone.`, {
+                const tpWallet = traderProfile.getWallet();
+                await BotManager.reply(ctx, `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}\n\nPublic key:\n<code>${tpWallet?.publicKey}</code> (Tap to copy)\n\nPrivate key:\n<code>${tpWallet?.privateKey}</code> (Tap to copy)\n\nYou can import the private key to any Solana wallet. Don't share it with anyone.`, {
                     parse_mode: 'HTML',
                     reply_markup: BotManager.buildInlineKeyboard([
                         { id: `delete_message`, text: 'Hide' },
@@ -273,7 +274,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
     async buildTraderProfileMessage(traderProfile: IUserTraderProfile, solBalance?: number): Promise<{ message: string, buttons: InlineButton[] }> {
         let message = `<b>${traderProfile.title}</b>` + (traderProfile.default ? ' ⭐️' : '');
-        message += `\n<code>${traderProfile.wallet?.publicKey}</code> (Tap to copy)`; 
+        message += `\n<code>${traderProfile.encryptedWallet?.publicKey}</code> (Tap to copy)`; 
         if (solBalance !== undefined){
             message += `\nBalance: <b>${solBalance} SOL</b>`;
         }
@@ -298,7 +299,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
         const chain = Chain.SOLANA; //TODO: get for other chains as well
         const connection = newConnectionByChain(chain);
-        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.wallet?.publicKey);
+        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.encryptedWallet?.publicKey);
 
         const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
         const markup = BotManager.buildInlineKeyboard(buttons);
@@ -318,7 +319,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
             const chain = Chain.SOLANA; //TODO: get for other chains as well
             const connection = newConnectionByChain(chain);
-            const walletAddresses = traderProfiles.map(tp => tp.wallet?.publicKey).filter(Boolean) as string[];
+            const walletAddresses = traderProfiles.map(tp => tp.encryptedWallet?.publicKey).filter(Boolean) as string[];
             const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
     
             replyMessage.buttons = replyMessage.buttons || [];
@@ -333,7 +334,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
             for (let index = 0; index < traderProfiles.length; index++) {
                 const traderProfile = traderProfiles[index];
-                const solBalance = balances.find(b => b.publicKey == traderProfile.wallet?.publicKey)?.uiAmount || 0;
+                const solBalance = balances.find(b => b.publicKey == traderProfile.encryptedWallet?.publicKey)?.uiAmount || 0;
                 const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, solBalance);   
                 replyMessage.text += `\n\n---\n\n${message}`;
 

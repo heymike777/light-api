@@ -551,7 +551,8 @@ export class RaydiumManager {
             return;
         }
 
-        if (!traderProfile.wallet){
+        const tpWallet = traderProfile.getWallet();
+        if (!tpWallet){
             LogManager.error('SwapManager', swap.type, 'Trader profile wallet not found', { traderProfile });
             swap.status.type = StatusType.CREATED;
             swap.status.tryIndex++;
@@ -561,7 +562,7 @@ export class RaydiumManager {
 
         const txs: web3.VersionedTransaction[] = [];
 
-        const traderWallet = traderProfile.wallet;
+        const traderWallet = tpWallet;
         const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderWallet.privateKey));
         const mintPublicKey = new web3.PublicKey(swap.mint);
         const connection = newConnectionByChain(swap.chain);
@@ -716,7 +717,8 @@ export class RaydiumManager {
             return;
         }
 
-        if (!traderProfile.wallet){
+        const tpWallet = traderProfile.getWallet();
+        if (!tpWallet){
             LogManager.error('SwapManager', swap.type, 'Trader profile wallet not found', { traderProfile });
             swap.status.type = StatusType.CREATED;
             swap.status.tryIndex++;
@@ -726,7 +728,7 @@ export class RaydiumManager {
 
         const txs: web3.VersionedTransaction[] = [];
 
-        const traderWallet = traderProfile.wallet;
+        const traderWallet = tpWallet;
         const traderKeypair = web3.Keypair.fromSecretKey(bs58.decode(traderWallet.privateKey));
         const intermediateWallet = swap.intermediateWallet!;
         const intermediateKeypair = web3.Keypair.fromSecretKey(bs58.decode(intermediateWallet.privateKey));
