@@ -292,11 +292,13 @@ export class MigrationManager {
 
         // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
     
+        // if (EnvManager.isCronProcess){
+        //     await this.migrateWallets();
+        // }
         if (EnvManager.isCronProcess){
-            await this.migrateWallets();
+            await PreWallet.updateMany({ }, { $unset: { 'privateKey': '' } });
         }
-        // await UserTraderProfile.updateMany({ }, { $unset: { 'wallet': '' } });
-
+        
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
