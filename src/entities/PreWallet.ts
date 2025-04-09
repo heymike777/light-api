@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import { EncryptedWalletModel } from '../services/solana/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -7,6 +8,7 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export interface IPreWallet extends mongoose.Document {
     publicKey: string;
     privateKey: string;
+    encryptedWallet: EncryptedWalletModel;
     isUsed: boolean;
     updatedAt?: Date;
     createdAt: Date;
@@ -15,6 +17,7 @@ export interface IPreWallet extends mongoose.Document {
 export const PreWalletSchema = new mongoose.Schema<IPreWallet>({
     publicKey: { type: String },
     privateKey: { type: String },
+    encryptedWallet: { type: Mixed },
     isUsed: { type: Boolean, default: false },
 
     updatedAt: { type: Date, default: new Date() },

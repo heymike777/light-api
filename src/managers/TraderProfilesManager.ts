@@ -85,7 +85,7 @@ export class TraderProfilesManager {
         if (!wallet && engineId == SwapManager.kNativeEngineId){
             const niceWallet = await PreWallet.findOneAndUpdate({ isUsed: false }, { $set: { isUsed: true } });
             if (niceWallet){
-                wallet = { publicKey: niceWallet.publicKey, privateKey: niceWallet.privateKey };
+                wallet = EncryptionManager.decryptWallet(niceWallet.encryptedWallet, EnvManager.getWalletEncryptionKey())
             }
             else {
                 wallet = SolanaManager.createWallet();

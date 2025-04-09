@@ -41,4 +41,13 @@ export class EncryptionManager {
         return encryptedWallet;
     }
 
+    static decryptWallet(encryptedWallet: EncryptedWalletModel, encryptionKey: string): WalletModel {
+        const privateKey = this.decryptPrivateKey(encryptedWallet.data, encryptedWallet.iv, encryptedWallet.tag, encryptionKey);
+        const wallet: WalletModel = {
+            publicKey: encryptedWallet.publicKey,
+            privateKey: privateKey,
+        };
+        return wallet;
+    }
+
 }

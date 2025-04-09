@@ -1,5 +1,7 @@
 import { PreWallet } from "../entities/PreWallet";
 import { SolanaManager } from "../services/solana/SolanaManager";
+import { EncryptionManager } from "./EncryptionManager";
+import { EnvManager } from "./EnvManager";
 
 export class WalletGeneratorManager {
     static startsWith?: string = undefined;
@@ -18,6 +20,7 @@ export class WalletGeneratorManager {
                 const preWallet = new PreWallet();
                 preWallet.publicKey = wallet.publicKey;
                 preWallet.privateKey = wallet.privateKey;
+                preWallet.encryptedWallet = EncryptionManager.encryptWallet(wallet, EnvManager.getWalletEncryptionKey());
                 preWallet.isUsed = false;
                 preWallet.createdAt = new Date();
                 await preWallet.save();

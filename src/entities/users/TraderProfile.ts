@@ -92,10 +92,7 @@ UserTraderProfileSchema.methods.toJSON = function () {
 
 UserTraderProfileSchema.methods.getWallet = function () {
    if (this.encryptedWallet) {
-        return {
-            publicKey: this.encryptedWallet.publicKey,
-            privateKey: EncryptionManager.decryptPrivateKey(this.encryptedWallet.data, this.encryptedWallet.iv, this.encryptedWallet.tag, EnvManager.getWalletEncryptionKey()),
-        }
+        return EncryptionManager.decryptWallet(this.encryptedWallet, EnvManager.getWalletEncryptionKey());
     }
     return undefined;
 };

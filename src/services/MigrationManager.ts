@@ -5,7 +5,7 @@ import { BotManager } from "../managers/bot/BotManager";
 import { ProgramManager } from "../managers/ProgramManager";
 import { ExplorerManager } from "./explorers/ExplorerManager";
 import { HeliusManager } from "./solana/HeliusManager";
-import { Chain, Priority } from "./solana/types";
+import { Chain, Priority, WalletModel } from "./solana/types";
 import { Helpers } from "./helpers/Helpers";
 import { BN } from "bn.js";
 import { SolanaManager } from "./solana/SolanaManager";
@@ -64,6 +64,7 @@ import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { Config } from "../entities/Config";
 import { UserRefPayout } from "../entities/referrals/UserRefPayout";
 import { EncryptionManager } from "../managers/EncryptionManager";
+import { PreWallet } from "../entities/PreWallet";
 
 export class MigrationManager {
 
@@ -290,36 +291,30 @@ export class MigrationManager {
         // await SwapManager.receivedConfirmationForSignature(Chain.SOLANA, '3RhN1fz6KpzjmbJeCmZt81k1ZDErsjG9GwRx3a5FVqsq9pjjMewkShsSGWkG6HAmJBgmqjgFiEnqN3AujyrzZRa3');
 
         // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
-
-        // const encryptionKey = EnvManager.getWalletEncryptionKey();
-        // console.log('encryptionKey:', encryptionKey, 'length:', encryptionKey.length);
-        // const password = 'Hello World! - lalala 🙉';
-        // const data = EncryptionManager.encryptPrivateKey(password, encryptionKey);
-        // console.log('encryptedData:', data);
-
-        // const decryptedData = EncryptionManager.decryptPrivateKey(data.encryptedData, data.iv, data.tag, encryptionKey);
-        // console.log('decryptedData:', decryptedData);
     
-        // if (EnvManager.isCronProcess){
-        //     await this.migrateWallet();
-        // }
+        if (EnvManager.isCronProcess){
+            await this.migrateWallets();
+        }
         // await UserTraderProfile.updateMany({ }, { $unset: { 'wallet': '' } });
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
-    // static async migrateWallet(){
-    //     const traderProfiles = await UserTraderProfile.find({ wallet: {$exists: true}, encryptedWallet: {$exists: false} });
-    //     console.log('migrateWallet', 'traderProfiles.length:', traderProfiles.length);
+    static async migrateWallets(){
+        const preWallets = await PreWallet.find({ encryptedWallet: {$exists: false} });
+        console.log('migrateWallet', 'preWallets.length:', preWallets.length);
 
-    //     for (const traderProfile of traderProfiles) {
-    //         if (traderProfile.wallet){
-    //             const encryptedWallet = EncryptionManager.encryptWallet(traderProfile.wallet, EnvManager.getWalletEncryptionKey());
-    //             await UserTraderProfile.updateOne({ _id: traderProfile._id }, { $set: { encryptedWallet } });
-    //             console.log('migrateWallet', 'traderProfileId:', traderProfile._id);    
-    //         }
-    //     }
-    // }
+        for (const preWallet of preWallets) {
+            const tmp: WalletModel = {
+                publicKey: preWallet.publicKey,
+                privateKey: preWallet.privateKey,
+            };
+
+            const encryptedWallet = EncryptionManager.encryptWallet(tmp, EnvManager.getWalletEncryptionKey());
+            await PreWallet.updateOne({ _id: preWallet._id }, { $set: { encryptedWallet } });
+            console.log('migrateWallet', 'preWallet:', preWallet._id);    
+        }
+    }
 
     static async migrateRefCodes(){
         console.log('migrate ref codes');
