@@ -705,8 +705,7 @@ export class SwapManager {
         console.log('saveReferralRewards (1)', signature, swap.id);
 
         if (!tx) {
-            const connection = newConnectionByChain(swap.chain);
-            const txInfo = await connection.getParsedTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
+            const txInfo = await SolanaManager.getParsedTransaction(swap.chain, signature);
             if (txInfo) {
                 tx = txInfo;
             }

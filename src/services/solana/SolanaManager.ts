@@ -483,19 +483,20 @@ export class SolanaManager {
         return false;
     }
 
-    static async getParsedTransaction(web3Conn: web3.Connection, signature: string, tries: number = 3): Promise<web3.ParsedTransactionWithMeta | undefined>{
-        const txs = await this.getParsedTransactions(web3Conn, [signature], tries);
+    static async getParsedTransaction(chain: Chain, signature: string, tries: number = 3): Promise<web3.ParsedTransactionWithMeta | undefined>{
+        const txs = await this.getParsedTransactions(chain, [signature], tries);
         return txs.length > 0 ? txs[0] : undefined;
     }
 
-    static async getParsedTransactions(web3Conn: web3.Connection, signatures: string[], tries: number = 3): Promise<web3.ParsedTransactionWithMeta[]>{
+    static async getParsedTransactions(chain: Chain, signatures: string[], tries: number = 3): Promise<web3.ParsedTransactionWithMeta[]>{
+        const connection = newConnectionByChain(chain);
         if (signatures.length == 0) return [];
 
         let txs: (web3.ParsedTransactionWithMeta | null)[] = [];
 
         while (txs.length==0 && tries > 0){
             try {
-                txs = await web3Conn.getParsedTransactions(signatures, {commitment: 'confirmed', maxSupportedTransactionVersion: 0});
+                txs = await connection.getParsedTransactions(signatures, {commitment: 'confirmed', maxSupportedTransactionVersion: 0});
             }
             catch (err){}
             tries--;
@@ -505,7 +506,7 @@ export class SolanaManager {
             }
         }
 
-        return txs.filter(tx => tx != null) as web3.ParsedTransactionWithMeta[];
+        return txs.filter(tx => tx != null && !tx.meta?.err) as web3.ParsedTransactionWithMeta[];
     }    
 
     static async getTokenAccountBalance(web3Conn: web3.Connection, tokenAccount: web3.PublicKey): Promise<web3.TokenAmount | undefined>{

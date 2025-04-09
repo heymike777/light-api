@@ -62,6 +62,7 @@ import { ReferralsManager } from "../managers/ReferralsManager";
 import { UserRefCode } from "../entities/referrals/UserRefCode";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { Config } from "../entities/Config";
+import { UserRefPayout } from "../entities/referrals/UserRefPayout";
 
 export class MigrationManager {
 
@@ -398,6 +399,7 @@ export class MigrationManager {
         await LpMint.syncIndexes();
         await UserRefReward.syncIndexes();
         await UserRefCode.syncIndexes();
+        await UserRefPayout.syncIndexes();
         await Config.syncIndexes();
     }
 
@@ -417,7 +419,7 @@ export class MigrationManager {
         }
         const chats = [{user, wallets}];
         // LogManager.log('!!!wallets', wallets.map((wallet) => wallet.walletAddress));
-        const tx = await SolanaManager.getParsedTransaction(connection, signature);
+        const tx = await SolanaManager.getParsedTransaction(chain, signature);
         // LogManager.log('!tx', JSON.stringify(tx));
         if (tx){
             await WalletManager.processTxForChats(chain, signature, tx, chats, 'test');

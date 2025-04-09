@@ -7,6 +7,7 @@ import { SwapManager } from "../../../managers/SwapManager";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
 import { YellowstoneManager } from "../../../services/solana/geyser/YellowstoneManager";
 import { Chain } from "../../../services/solana/types";
+import { ReferralsManager } from "../../../managers/ReferralsManager";
 
 const router = express.Router();
 
@@ -38,6 +39,7 @@ router.post(
             }
 
             SwapManager.receivedConfirmationForSignature(chain, signature, parsedTransactionWithMeta);
+            ReferralsManager.receivedConfirmationForSignature(chain, signature);
             success = true;
         } catch (error) {
             console.error('Error in received-tx', error);

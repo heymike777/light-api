@@ -8,6 +8,11 @@ import { ConfigManager } from "./ConfigManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { Currency } from "../models/types";
+import { Chain } from "../services/solana/types";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { TraderProfilesManager } from "./TraderProfilesManager";
+import { UserRefPayout } from "../entities/referrals/UserRefPayout";
+import { StatusType } from "../entities/payments/Swap";
 
 export class ReferralsManager {
 
@@ -176,7 +181,7 @@ export class ReferralsManager {
         }
     }
 
-    static async recalcUserRefStats(userId: string){
+    static async recalcUserRefStats(userId: string): Promise<RefStats | undefined> {
         let userRefStats = await UserRefStats.findOne({ userId: userId });
         if (!userRefStats){
             userRefStats = new UserRefStats();
@@ -239,11 +244,33 @@ export class ReferralsManager {
             refStats.rewardsTotal.usdc = reward.usdc;
         }
 
-        // refStats.rewardsPaid.sol = reward.sol; // TODO: calculate paid rewards
-        // refStats.rewardsPaid.usdc = reward.usdc; // TODO: calculate paid rewards
+        const payouts = await UserRefPayout.aggregate([
+            { $match: { userId: userId, 'status.type': { $ne: StatusType.CANCELLED } } },
+            { 
+                $group: { 
+                    _id: null, 
+                    sol: { $sum: { $cond: [{ $eq: ['$currency', Currency.SOL] }, '$amount', 0] } }, 
+                    usdc: { $sum: { $cond: [{ $eq: ['$currency', Currency.USDC] }, '$amount', 0] } } 
+                }
+            },
+        ]);
 
+        console.log('payouts:', payouts);
+        // payouts[0] is the total payouts
+        if (payouts.length > 0){
+            const payout = payouts[0];
+            refStats.rewardsPaid.sol = payout.sol;
+            refStats.rewardsPaid.usdc = payout.usdc;
+        }
+        else {
+            LogManager.error('ReferralsManager', 'recalcUserRefStats', 'Aggregation of UserRefPayout for user:', userId, 'went wrong');
+            SystemNotificationsManager.sendSystemMessage('Aggregation of UserRefPayout for user: ' + userId + ' went wrong');
+            return undefined;
+        }
 
         await UserRefStats.updateOne({ userId: userId }, { $set: { stats: refStats } });
+
+        return refStats;
     }
 
     static async processRefPayouts(){
@@ -255,6 +282,99 @@ export class ReferralsManager {
         }
 
         //TODO: process ref payouts if user has more than 0.005 SOL of unpaid referral earnings
+    }
+
+    static async processUserRefPayout(chain: Chain, userId: string){
+        if (chain != Chain.SOLANA){
+            LogManager.error('ReferralsManager', 'processUserRefPayout', 'Chain is not supported', { chain });
+            return;
+        }
+
+        // calc amount to pay
+        const refStats = await this.recalcUserRefStats(userId);
+        if (!refStats){
+            SystemNotificationsManager.sendSystemMessage('ReferralsManager: processUserRefPayout: refStats is undefined for user: ' + userId);
+            return;
+        }
+        const unpaid = refStats.rewardsTotal.sol - refStats.rewardsPaid.sol;
+        console.log('unpaid:', unpaid / LAMPORTS_PER_SOL, 'SOL');
+        if (unpaid < 0.005){
+            console.log('unpaid is less than 0.005 SOL');
+            return;
+        }
+
+        // add to UserRefPayout
+        const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
+        if (!traderProfile){
+            console.log('Trader profile not found for user:', userId);
+            return;
+        }
+        const payout = new UserRefPayout();
+        payout.userId = userId;
+        payout.traderProfileId = traderProfile.id;
+        payout.chain = chain;
+        payout.amount = unpaid;
+        payout.currency = Currency.SOL;
+        payout.createdAt = new Date();
+        payout.status = {
+            type: StatusType.CREATED,
+        };
+        await payout.save();
+        console.log('UserRefPayout created:', payout);
+
+        // calc amount again, if it doesn't exceed the expected amount
+        const refStatsUpdated = await this.recalcUserRefStats(userId);
+        console.log('refStatsUpdated:', refStatsUpdated);
+        if (!refStatsUpdated || refStatsUpdated.rewardsTotal.sol < refStatsUpdated.rewardsPaid.sol){
+            // remove CREATED payout. Don't proceed the payment.
+            await UserRefPayout.updateMany({ userId: userId, 'status.type': StatusType.CREATED }, { $set: { 'status.type': StatusType.CANCELLED } });
+            console.log('Unpaid amount is less than expected. Payout removed.');
+            SystemNotificationsManager.sendSystemMessage('ReferralsManager: processUserRefPayout: refStatsUpdated is wrong for user: ' + userId + '- Canceling the payout.');
+            return;
+        }
+
+        //TODO: pay the user
+
+
+        //TODO: add USDC ref payouts
+    }
+
+    static async receivedConfirmationForSignature(chain: Chain, signature: string) {
+        // const swap = await Swap.findOne({ chain: chain, "status.tx.signature": signature });
+        // if (!swap) {
+        //     // LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
+        //     return;
+        // }
+
+        // const now = new Date();
+
+        // //TODO: set into SWAP how many SOL & Tokens I spent / reveived. I need it for P&L calculations
+
+        // swap.status.type = StatusType.COMPLETED;
+        // if (swap.status.tx && swap.status.tx.signature == signature) {
+        //     swap.status.tx.confirmedAt = new Date();
+        // }
+
+        // if (swap.status.txs){
+        //     for (const tx of swap.status.txs) {
+        //         if (tx.signature == signature) {
+        //             tx.confirmedAt = now;
+        //         }
+        //     }
+        // }
+
+        // const updateResult = await Swap.updateOne({ _id: swap._id, "status.type": {$ne: StatusType.COMPLETED} }, { $set: { status: swap.status } });
+        // if (updateResult.modifiedCount > 0){
+        //     await this.saveReferralRewards(swap, signature, parsedTransactionWithMeta);
+        //     this.trackSwapInMixpanel(swap);    
+        // }
+        // else {
+        //     LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not updated', `modifiedCount = ${updateResult.modifiedCount}`, 'swap:', { swap });
+        // }
+    }
+
+    static async checkPendingRefPayouts() {
+        //TODO: similar to checkPendingSwaps
     }
 
 }

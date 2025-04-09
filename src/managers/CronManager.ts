@@ -38,6 +38,7 @@ export class CronManager {
             cron.schedule('*/10 * * * *', () => {
                 // every 10 minutes
                 RedisManager.migrateAllUsersTransactionsToMongo();
+                ReferralsManager.checkPendingRefPayouts();
             });
 
             cron.schedule('* * * * *', () => {
