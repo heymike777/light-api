@@ -104,7 +104,7 @@ export class TraderProfilesManager {
         traderProfile.priorityFee = priority;
         traderProfile.active = true;
         traderProfile.default = (!user.traderProfiles || user.traderProfiles.length == 0); // default=true for the first profile
-        traderProfile.wallet = wallet;
+        // traderProfile.wallet = wallet;
         traderProfile.encryptedWallet = wallet ? EncryptionManager.encryptWallet(wallet, EnvManager.getWalletEncryptionKey()) : undefined;
         await traderProfile.save();
 
