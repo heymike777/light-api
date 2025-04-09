@@ -145,8 +145,11 @@ export class BotReferralProgramHelper extends BotHelper {
         const refcodes = await UserRefCode.find({ userId: user.id, active: true });
         const refStats = await ReferralsManager.fetchUserRefStats(user.id);
 
+        let message = `💰 `;
 
-        let message = `💰 Invite your friends to save 10% on fees. If you have a premium subscription, you'll get higher rewards from the fees paid by your referrees.\n• FREE users will get 25% share of the fees paid by their referrees\n• SILVER subscribers - 30% fee share\n• GOLD subscriber - 35% fee share\n• PLATINUM subscribers - 40% fee share`;
+        message += user.parent ? `You used someone's refcode and saving 10% on fees.` : `Use someone's refcode to save 10% on fees.`;
+        
+        message += `\n\nIf you have a premium subscription, you'll get higher rewards from the fees paid by your referrees.\n• FREE users will get 25% share of the fees paid by their referrees\n• SILVER subscribers - 30% fee share\n• GOLD subscriber - 35% fee share\n• PLATINUM subscribers - 40% fee share`;
 
         const usersCountDirect = refStats?.usersCount.direct || 0;
         const usersCountIndirect = refStats?.usersCount.indirect || 0;
