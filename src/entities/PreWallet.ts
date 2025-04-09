@@ -7,7 +7,6 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface IPreWallet extends mongoose.Document {
     publicKey: string;
-    privateKey: string;
     encryptedWallet: EncryptedWalletModel;
     isUsed: boolean;
     updatedAt?: Date;
@@ -16,7 +15,6 @@ export interface IPreWallet extends mongoose.Document {
 
 export const PreWalletSchema = new mongoose.Schema<IPreWallet>({
     publicKey: { type: String },
-    privateKey: { type: String },
     encryptedWallet: { type: Mixed },
     isUsed: { type: Boolean, default: false },
 
@@ -31,6 +29,5 @@ PreWalletSchema.pre('save', function (next) {
     this.updatedAt = new Date();
     return next();
 });
-
 
 export const PreWallet = mongoose.model<IPreWallet>('pre-wallets', PreWalletSchema);

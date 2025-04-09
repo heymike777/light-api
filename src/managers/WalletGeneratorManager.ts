@@ -12,14 +12,12 @@ export class WalletGeneratorManager {
 
         while (true) {
             const wallet = SolanaManager.createWallet();
-            // console.log('Wallet generated:', wallet.publicKey);
             if ((!this.startsWith || wallet.publicKey.startsWith(this.startsWith))
                 && (!this.endsWith || wallet.publicKey.endsWith(this.endsWith))
             ) {
 
                 const preWallet = new PreWallet();
                 preWallet.publicKey = wallet.publicKey;
-                preWallet.privateKey = wallet.privateKey;
                 preWallet.encryptedWallet = EncryptionManager.encryptWallet(wallet, EnvManager.getWalletEncryptionKey());
                 preWallet.isUsed = false;
                 preWallet.createdAt = new Date();

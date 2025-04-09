@@ -292,30 +292,8 @@ export class MigrationManager {
 
         // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
     
-        // if (EnvManager.isCronProcess){
-        //     await this.migrateWallets();
-        // }
-        if (EnvManager.isCronProcess){
-            await PreWallet.updateMany({ }, { $unset: { 'privateKey': '' } });
-        }
         
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
-    }
-
-    static async migrateWallets(){
-        const preWallets = await PreWallet.find({ encryptedWallet: {$exists: false} });
-        console.log('migrateWallet', 'preWallets.length:', preWallets.length);
-
-        for (const preWallet of preWallets) {
-            const tmp: WalletModel = {
-                publicKey: preWallet.publicKey,
-                privateKey: preWallet.privateKey,
-            };
-
-            const encryptedWallet = EncryptionManager.encryptWallet(tmp, EnvManager.getWalletEncryptionKey());
-            await PreWallet.updateOne({ _id: preWallet._id }, { $set: { encryptedWallet } });
-            console.log('migrateWallet', 'preWallet:', preWallet._id);    
-        }
     }
 
     static async migrateRefCodes(){
