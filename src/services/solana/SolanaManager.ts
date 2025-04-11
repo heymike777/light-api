@@ -413,8 +413,14 @@ export class SolanaManager {
         return transaction;
     }
 
-    static async getPriorityFeeInstructions(): Promise<web3.TransactionInstruction[]> {
-        const feeEstimate = 1000000;// await HeliusManager.getRecentPrioritizationFees();
+    static async getPriorityFeeInstructions(priority?: Priority): Promise<web3.TransactionInstruction[]> {
+        let feeEstimate = 0;
+        if (priority == Priority.LOW) {
+            feeEstimate = 10000;
+        }
+        else{
+            feeEstimate = 1000000;// await HeliusManager.getRecentPrioritizationFees();
+        }
         return [
             web3.ComputeBudgetProgram.setComputeUnitPrice({
                 microLamports: feeEstimate,

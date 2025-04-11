@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import { Chain } from '../../services/solana/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -9,13 +10,17 @@ export interface RefStats {
         direct: number;
         indirect: number;
     };
-    rewardsTotal: {
-        sol: number;
-        usdc: number;
-    }
-    rewardsPaid: {
-        sol: number;
-        usdc: number;
+    rewards: {
+        [key: string]: { // key = chain
+            rewardsTotal: {
+                sol: number;
+                usdc: number;
+            }
+            rewardsPaid: {
+                sol: number;
+                usdc: number;
+            }        
+        }
     }
 }
 
@@ -32,6 +37,8 @@ export const UserRefStatsSchema = new mongoose.Schema<IUserRefStats>({
 });
 
 UserRefStatsSchema.index({ userId: 1 }, { unique: true });
+UserRefStatsSchema.index({ 'stats.rewards.sol.rewardsTotal.sol': 1 });
+UserRefStatsSchema.index({ 'stats.rewards.sonic.rewardsTotal.sol': 1 });
 
 UserRefStatsSchema.methods.toJSON = function () {
     return {

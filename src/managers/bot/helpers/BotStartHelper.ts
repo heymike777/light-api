@@ -161,20 +161,22 @@ export class BotStartHelper extends BotHelper {
         ];
 
         const replyMessage: Message = {
-            photo: 'https://light.dangervalley.com/static/telegram/start.png',
-            text: '🚀 Light - real-time Solana wallet tracker and Trading Terminal.\n' + 
+            photo: 'https://light.dangervalley.com/static/telegram/start2.png',
+            text: '🚀 Light - trading terminal on Solana.\n' + 
             '\n' +
 
             (trader?.encryptedWallet ? '<b>Your main trader profile:</b> <code>' + trader.encryptedWallet.publicKey + '</code> (Tap to copy)\n\n' : '') +
 
             '<b>Commands:</b>\n' +
-            '/add_wallet - track a new wallet\n' +
+            '/add_wallet - track a new wallet in real-time\n' +
             '/remove_wallet - remove a wallet from tracking\n' +
             '/my_wallets - list of your wallets\n' +
-            '/trader_profiles - list of your trader wallets\n' +
+            '/trader_profiles - your trader wallets\n' +
             '/buy - buy tokens\n' +
             '/sell - sell tokens\n' +
-            '/help - help\n' +
+            // '/settings - configure your settings\n' +
+            '\n' +
+            'We support <b>Solana</b> and <b>Sonic SVM</b>. You can select your network in /settings \n' +
             '\n' +
             '<b>Light mobile app:</b> <a href="https://apps.apple.com/app/id6739495155">AppStore</a> or <a href="https://play.google.com/store/apps/details?id=app.light.bot">Google Play</a>.\n' +
             '\n' +

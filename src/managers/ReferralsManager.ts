@@ -8,11 +8,15 @@ import { ConfigManager } from "./ConfigManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { Currency } from "../models/types";
-import { Chain } from "../services/solana/types";
+import { Chain, Priority } from "../services/solana/types";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 import { UserRefPayout } from "../entities/referrals/UserRefPayout";
 import { StatusType } from "../entities/payments/Swap";
+import { SolanaManager } from "../services/solana/SolanaManager";
+import { web3 } from "@coral-xyz/anchor";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { newConnectionByChain } from "../services/solana/lib/solana";
 
 export class ReferralsManager {
 
@@ -192,14 +196,28 @@ export class ReferralsManager {
                     direct: 0,
                     indirect: 0
                 },
-                rewardsTotal: {
-                    sol: 0,
-                    usdc: 0
-                },
-                rewardsPaid: {
-                    sol: 0,
-                    usdc: 0
-                },
+                rewards: {
+                    'sol': {
+                        rewardsTotal: {
+                            sol: 0,
+                            usdc: 0
+                        },
+                        rewardsPaid: {
+                            sol: 0,
+                            usdc: 0
+                        },
+                    },
+                    'sonic': {
+                        rewardsTotal: {
+                            sol: 0,
+                            usdc: 0
+                        },
+                        rewardsPaid: {
+                            sol: 0,
+                            usdc: 0
+                        },
+                    }
+                }
             };
             await userRefStats.save();
         } 
@@ -221,51 +239,54 @@ export class ReferralsManager {
             }     
         }
 
-        // calculate ref stats - rewardsTotal and rewardsPaid
-        const rewards = await UserRefReward.aggregate([
-            { $match: { userId: userId } },
-            { 
-                $group: { 
-                    _id: null, 
-                    usd: { $sum: '$usdAmount' }, 
-                    sol: { $sum: { $cond: [{ $eq: ['$currency', Currency.SOL] }, '$amount', 0] } }, 
-                    usdc: { $sum: { $cond: [{ $eq: ['$currency', Currency.USDC] }, '$amount', 0] } } 
-                }
-            },
-        ]);
+        const chains = [Chain.SOLANA, Chain.SONIC];
+        for (const chain of chains){
+            // calculate ref stats - rewardsTotal and rewardsPaid
+            const rewards = await UserRefReward.aggregate([
+                { $match: { userId: userId, chain: chain } },
+                { 
+                    $group: { 
+                        _id: null, 
+                        usd: { $sum: '$usdAmount' }, 
+                        sol: { $sum: { $cond: [{ $eq: ['$currency', Currency.SOL] }, '$amount', 0] } }, 
+                        usdc: { $sum: { $cond: [{ $eq: ['$currency', Currency.USDC] }, '$amount', 0] } } 
+                    }
+                },
+            ]);
 
-        console.log('refStats:', refStats);
-        console.log('rewards:', rewards);
+            console.log(chain, 'refStats:', refStats);
+            console.log(chain, 'rewards:', rewards);
 
-        // rewards[0] is the total rewards
-        if (rewards.length > 0){
-            const reward = rewards[0];
-            refStats.rewardsTotal.sol = reward.sol;
-            refStats.rewardsTotal.usdc = reward.usdc;
-        }
+            // rewards[0] is the total rewards
+            if (rewards.length > 0){
+                const reward = rewards[0];
+                refStats.rewards[chain].rewardsTotal.sol = reward.sol;
+                refStats.rewards[chain].rewardsTotal.usdc = reward.usdc;
+            }
 
-        const payouts = await UserRefPayout.aggregate([
-            { $match: { userId: userId, 'status.type': { $ne: StatusType.CANCELLED } } },
-            { 
-                $group: { 
-                    _id: null, 
-                    sol: { $sum: { $cond: [{ $eq: ['$currency', Currency.SOL] }, '$amount', 0] } }, 
-                    usdc: { $sum: { $cond: [{ $eq: ['$currency', Currency.USDC] }, '$amount', 0] } } 
-                }
-            },
-        ]);
+            const payouts = await UserRefPayout.aggregate([
+                { $match: { userId: userId, chain: chain, 'status.type': { $ne: StatusType.CANCELLED } } },
+                { 
+                    $group: { 
+                        _id: null, 
+                        sol: { $sum: { $cond: [{ $eq: ['$currency', Currency.SOL] }, '$amount', 0] } }, 
+                        usdc: { $sum: { $cond: [{ $eq: ['$currency', Currency.USDC] }, '$amount', 0] } } 
+                    }
+                },
+            ]);
 
-        console.log('payouts:', payouts);
-        // payouts[0] is the total payouts
-        if (payouts.length > 0){
-            const payout = payouts[0];
-            refStats.rewardsPaid.sol = payout.sol;
-            refStats.rewardsPaid.usdc = payout.usdc;
-        }
-        else {
-            LogManager.error('ReferralsManager', 'recalcUserRefStats', 'Aggregation of UserRefPayout for user:', userId, 'went wrong');
-            SystemNotificationsManager.sendSystemMessage('Aggregation of UserRefPayout for user: ' + userId + ' went wrong');
-            return undefined;
+            console.log('payouts:', payouts);
+            // payouts[0] is the total payouts
+            if (payouts.length > 0){
+                const payout = payouts[0];
+                refStats.rewards[chain].rewardsPaid.sol = payout.sol;
+                refStats.rewards[chain].rewardsPaid.usdc = payout.usdc;
+            }
+            else {
+                LogManager.error('ReferralsManager', 'recalcUserRefStats', 'Aggregation of UserRefPayout for user:', userId, 'went wrong');
+                SystemNotificationsManager.sendSystemMessage('Aggregation of UserRefPayout for user: ' + userId + ' went wrong');
+                // return undefined;
+            }
         }
 
         await UserRefStats.updateOne({ userId: userId }, { $set: { stats: refStats } });
@@ -281,7 +302,17 @@ export class ReferralsManager {
             return;
         }
 
-        //TODO: process ref payouts if user has more than 0.005 SOL of unpaid referral earnings
+        const minLamports = 0.005 * LAMPORTS_PER_SOL;
+
+        const refStatsSolana = await UserRefStats.find({ 'stats.rewards.sol.rewardsTotal.sol': { $gte: minLamports } });
+        for (const refStat of refStatsSolana) {
+            await this.processUserRefPayout(Chain.SOLANA, refStat.userId);           
+        }
+
+        const refStatsSonic = await UserRefStats.find({ 'stats.rewards.sol.rewardsTotal.sol': { $gte: minLamports } });
+        for (const refStat of refStatsSonic) {
+            await this.processUserRefPayout(Chain.SONIC, refStat.userId);           
+        }
     }
 
     static async processUserRefPayout(chain: Chain, userId: string){
@@ -296,7 +327,7 @@ export class ReferralsManager {
             SystemNotificationsManager.sendSystemMessage('ReferralsManager: processUserRefPayout: refStats is undefined for user: ' + userId);
             return;
         }
-        const unpaid = refStats.rewardsTotal.sol - refStats.rewardsPaid.sol;
+        const unpaid = refStats.rewards[chain].rewardsTotal.sol - refStats.rewards[chain].rewardsPaid.sol;
         console.log('unpaid:', unpaid / LAMPORTS_PER_SOL, 'SOL');
         if (unpaid < 0.005){
             console.log('unpaid is less than 0.005 SOL');
@@ -307,6 +338,10 @@ export class ReferralsManager {
         const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
         if (!traderProfile){
             console.log('Trader profile not found for user:', userId);
+            return;
+        }
+        if (!traderProfile.encryptedWallet?.publicKey){
+            console.log('Trader profile wallet not found for user:', userId);
             return;
         }
         const payout = new UserRefPayout();
@@ -325,7 +360,7 @@ export class ReferralsManager {
         // calc amount again, if it doesn't exceed the expected amount
         const refStatsUpdated = await this.recalcUserRefStats(userId);
         console.log('refStatsUpdated:', refStatsUpdated);
-        if (!refStatsUpdated || refStatsUpdated.rewardsTotal.sol < refStatsUpdated.rewardsPaid.sol){
+        if (!refStatsUpdated || refStatsUpdated.rewards[chain].rewardsTotal.sol < refStatsUpdated.rewards[chain].rewardsPaid.sol){
             // remove CREATED payout. Don't proceed the payment.
             await UserRefPayout.updateMany({ userId: userId, 'status.type': StatusType.CREATED }, { $set: { 'status.type': StatusType.CANCELLED } });
             console.log('Unpaid amount is less than expected. Payout removed.');
@@ -333,8 +368,27 @@ export class ReferralsManager {
             return;
         }
 
-        //TODO: pay the user
+        // pay the user
+        try {
+            const feeKeypair = web3.Keypair.fromSecretKey(bs58.decode(process.env.FEE_SOL_PRIVATE_KEY!));
+            if (payout.currency == Currency.SOL){
+                const ixs: web3.TransactionInstruction[] = [
+                    ...(await SolanaManager.getPriorityFeeInstructions(Priority.LOW)),
+                    await SolanaManager.createSolTransferInstruction(feeKeypair.publicKey, new web3.PublicKey(traderProfile.encryptedWallet?.publicKey), payout.amount),
+                ];
 
+                const tx = await SolanaManager.createVersionedTransaction(chain, ixs, feeKeypair);
+                const connection = newConnectionByChain(chain);
+                const signature = await connection.sendTransaction(tx);
+                console.log('UserRefPayout', 'userId:', userId, 'chain:', chain, 'signature:', signature);
+                await UserRefPayout.updateOne({ _id: payout._id }, { $set: { 'status.type': StatusType.PROCESSING, 'status.tx.signature': signature } });
+            }
+        }
+        catch (error) {
+            console.error('Error while sending user payout transaction:', error);
+            SystemNotificationsManager.sendSystemMessage('ReferralsManager: processUserRefPayout: Error while sending transaction for user: ' + userId + ' - ' + error);
+            return;
+        }
 
         //TODO: add USDC ref payouts
     }

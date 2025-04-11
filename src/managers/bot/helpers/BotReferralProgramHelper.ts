@@ -10,6 +10,7 @@ import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { ReferralsManager } from "../../ReferralsManager";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { Chain } from "../../../services/solana/types";
 
 export class BotReferralProgramHelper extends BotHelper {
 
@@ -153,8 +154,8 @@ export class BotReferralProgramHelper extends BotHelper {
 
         const usersCountDirect = refStats?.usersCount.direct || 0;
         const usersCountIndirect = refStats?.usersCount.indirect || 0;
-        const rewardsTotalSol = refStats?.rewardsTotal.sol || 0;
-        const rewardsPaidSol = refStats?.rewardsPaid.sol || 0;
+        const rewardsTotalSol = (refStats?.rewards[Chain.SOLANA].rewardsTotal.sol || 0) + (refStats?.rewards[Chain.SONIC].rewardsTotal.sol || 0);
+        const rewardsPaidSol = (refStats?.rewards[Chain.SOLANA].rewardsPaid.sol || 0) + (refStats?.rewards[Chain.SONIC].rewardsPaid.sol || 0);
         const rewardsUnpaidSol = rewardsTotalSol - rewardsPaidSol;
         // const rewardsTotalUsdc = refStats?.rewardsTotal.usdc || 0;
         // const rewardsPaidUsdc = refStats?.rewardsPaid.usdc || 0;

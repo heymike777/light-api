@@ -27,5 +27,6 @@ export const UserRefRewardSchema = new mongoose.Schema<IUserRefReward>({
 });
 
 UserRefRewardSchema.index({ userId: 1 });
+UserRefRewardSchema.index({ userId: 1, chain: 1 });
 
 export const UserRefReward = mongoose.model<IUserRefReward>('users-ref-rewards', UserRefRewardSchema);
