@@ -83,6 +83,9 @@ export class ReferralsManager {
 
     static async createReferralCode(user: IUser, shouldSaveToUser = true): Promise<string> {
         let code = user.telegram?.username || Helpers.makeid(8);
+        // replace all - with _
+        code = code.replaceAll('-', '_');
+
         let triesLeft = 50;
         while (true){
             const existing = await UserRefCode.findOne({ code: code, active: true });
@@ -148,8 +151,13 @@ export class ReferralsManager {
         if (code.length > 20){
             return false;
         }
-
+        if (code.includes('-')){
+            return false;
+        }
         if (code.includes(' ')){
+            return false;
+        }
+        if (code.includes('@')){
             return false;
         }
         // refcodes should contains only letters, numbers, '-', '_'

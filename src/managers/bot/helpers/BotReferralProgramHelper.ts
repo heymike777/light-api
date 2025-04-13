@@ -100,6 +100,19 @@ export class BotReferralProgramHelper extends BotHelper {
         if (user.telegramState?.waitingFor == TelegramWaitingType.ADD_REFCODE){
             const refcode = message.text.trim();
 
+            if (refcode.includes(' ')){
+                await BotManager.reply(ctx, '🔴 Refcode cannot contain spaces. Please, try again.');
+                return true;
+            }
+            if (refcode.includes('-')){
+                await BotManager.reply(ctx, '🔴 Refcode cannot contain dashes. Please, try again.');
+                return true;
+            }
+            if (refcode.includes('@')){
+                await BotManager.reply(ctx, '🔴 Refcode cannot contain @. Please, try again.');
+                return true;
+            }
+
             const isValid = await ReferralsManager.isValidReferralCode(refcode);
             if (!isValid){
                 await BotManager.reply(ctx, 'Invalid refcode. Please, try again.');
