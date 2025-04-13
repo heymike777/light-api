@@ -43,8 +43,11 @@ export const UserRefPayoutSchema = new mongoose.Schema<IUserRefPayout>({
 });
 
 UserRefPayoutSchema.index({ userId: 1 });
+UserRefPayoutSchema.index({ 'status.type': 1 });
 UserRefPayoutSchema.index({ userId: 1, 'status.type': 1 });
 UserRefPayoutSchema.index({ userId: 1, chain: 1, 'status.type': 1 });
+UserRefPayoutSchema.index({ chain: 1, 'status.tx.signature': 1 });
+UserRefPayoutSchema.index({ _id: 1, 'status.type': 1 });
 
 UserRefPayoutSchema.pre('save', function (next) {
     this.updatedAt = new Date();

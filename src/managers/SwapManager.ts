@@ -293,7 +293,7 @@ export class SwapManager {
     }
 
     static async receivedConfirmationForSignature(chain: Chain, signature: string, parsedTransactionWithMeta?: ParsedTransactionWithMeta) {
-        const swap = await Swap.findOne({ chain: chain, "status.tx.signature": signature });
+        const swap = await Swap.findOne({ chain: chain, 'status.tx.signature': signature });
         if (!swap) {
             // LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
             return;
@@ -801,15 +801,19 @@ export class SwapManager {
             }
             if (!parent) { break; }
 
-            if (index == 0 && parent.subscription){
-                //if user has premium, then add 5 for SILVER, 10 for GOLD, 15 for PLATINUM
-                if (parent.subscription.tier == SubscriptionTier.SILVER){
+            if (index == 0){
+                // if user is ambassador, then add 15%, so he has 40% total (as platinum user)
+                // if user has premium, then add 5 for SILVER, 10 for GOLD, 15 for PLATINUM
+                if (parent.isAmbassador){
+                    percent += 15;
+                }
+                else if (parent.subscription?.tier == SubscriptionTier.SILVER){
                     percent += 5;
                 }
-                else if (parent.subscription.tier == SubscriptionTier.GOLD){
+                else if (parent.subscription?.tier == SubscriptionTier.GOLD){
                     percent += 10;
                 }
-                else if (parent.subscription.tier == SubscriptionTier.PLATINUM){
+                else if (parent.subscription?.tier == SubscriptionTier.PLATINUM){
                     percent += 15;
                 }
             }

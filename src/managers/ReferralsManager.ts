@@ -394,41 +394,97 @@ export class ReferralsManager {
     }
 
     static async receivedConfirmationForSignature(chain: Chain, signature: string) {
-        // const swap = await Swap.findOne({ chain: chain, "status.tx.signature": signature });
-        // if (!swap) {
-        //     // LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
-        //     return;
-        // }
+        const refPayout = await UserRefPayout.findOne({ chain: chain, 'status.tx.signature': signature });
+        if (!refPayout) {
+            return;
+        }
 
-        // const now = new Date();
+        const now = new Date();
 
-        // //TODO: set into SWAP how many SOL & Tokens I spent / reveived. I need it for P&L calculations
+        refPayout.status.type = StatusType.COMPLETED;
+        if (refPayout.status.tx && refPayout.status.tx.signature == signature) {
+            refPayout.status.tx.confirmedAt = new Date();
+        }
 
-        // swap.status.type = StatusType.COMPLETED;
-        // if (swap.status.tx && swap.status.tx.signature == signature) {
-        //     swap.status.tx.confirmedAt = new Date();
-        // }
-
-        // if (swap.status.txs){
-        //     for (const tx of swap.status.txs) {
-        //         if (tx.signature == signature) {
-        //             tx.confirmedAt = now;
-        //         }
-        //     }
-        // }
-
-        // const updateResult = await Swap.updateOne({ _id: swap._id, "status.type": {$ne: StatusType.COMPLETED} }, { $set: { status: swap.status } });
-        // if (updateResult.modifiedCount > 0){
-        //     await this.saveReferralRewards(swap, signature, parsedTransactionWithMeta);
-        //     this.trackSwapInMixpanel(swap);    
-        // }
-        // else {
-        //     LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not updated', `modifiedCount = ${updateResult.modifiedCount}`, 'swap:', { swap });
-        // }
+        await UserRefPayout.updateOne({ _id: refPayout._id, "status.type": {$ne: StatusType.COMPLETED} }, { $set: { status: refPayout.status } });
     }
 
     static async checkPendingRefPayouts() {
-        //TODO: similar to checkPendingSwaps
+        const refPayouts = await UserRefPayout.find({ "status.type": StatusType.PROCESSING });
+        console.log('ReferralsManager', 'checkPendingRefPayouts', 'Pending ref payouts:', refPayouts.length);
+        if (!refPayouts || refPayouts.length === 0) {
+            return;
+        }
+
+        const chainValues = Object.values(Chain); 
+        for (const chain of chainValues) {
+            const blockhashes: string[] = [];
+
+            const signatures = refPayouts.map(payout => payout.chain == chain && payout.status.tx?.signature).filter(signature => signature) as string[];
+
+            if (signatures.length === 0) {
+                continue;
+            }
+
+            const connection = newConnectionByChain(chain);
+            const signatureStatuses = await connection.getSignatureStatuses(signatures);
+
+            for (let index = 0; index < signatures.length; index++) {
+                const signature = signatures[index];
+                const signatureStatus = signatureStatuses.value[index];
+                const refPayout = refPayouts.find(payout => payout.status.tx?.signature == signature);
+                if (!refPayout) {
+                    LogManager.error('ReferralsManager', 'checkPendingRefPayouts', 'Ref payout not found', { signature });
+                    continue;
+                }
+    
+                if (!signatureStatus) {
+                    if (refPayout.status.tx && refPayout.status.tx.blockhash) {
+                        if (!blockhashes.includes(refPayout.status.tx.blockhash)) {
+                            blockhashes.push(refPayout.status.tx.blockhash);
+                        }
+                    }
+                    continue;
+                }
+                else {
+                    if (signatureStatus.err) {
+                        LogManager.error('ReferralsManager', 'checkPendingRefPayouts', signatureStatus.err);
+                        refPayout.status.type = StatusType.CANCELLED;
+                        await UserRefPayout.updateOne({ _id: refPayout._id }, { $set: { status: refPayout.status } });
+                        continue;
+                    }
+                    else if (signatureStatus.confirmationStatus === 'confirmed' || signatureStatus.confirmationStatus === 'finalized') {
+                        // should I do anything here? I think at this moment ref payout is already confirmed from geyser. 
+                        // maybe I should add this tx to geyser, just in case it's missed?
+    
+                        refPayout.status.type = StatusType.COMPLETED;
+                        refPayout.status.tx!.confirmedAt = new Date();
+                        await UserRefPayout.updateOne({ _id: refPayout._id, 'status.type': {$ne: StatusType.COMPLETED} }, { $set: { status: refPayout.status } });
+                    }
+                }
+            }
+    
+            // fetch blockhashes statusses
+            for (const blockhash of blockhashes) {
+                const isValid = await SolanaManager.isBlockhashValid(blockhash, chain);
+                if (isValid) {
+                    continue;
+                }
+                else if (isValid == false){
+                    // then set status from PENDING to CREATED 
+                    for (const refPayout of refPayouts) {
+                        if (refPayout.chain == chain &&  refPayout.status.tx?.blockhash == blockhash && refPayout.status.type == StatusType.PROCESSING) {
+                            refPayout.status.type = StatusType.CANCELLED;
+                            await UserRefPayout.updateOne({ _id: refPayout._id, 'status.type': StatusType.PROCESSING }, { $set: { status: refPayout.status } });
+                        }
+                    }
+                }
+                else if (isValid == undefined){
+                    LogManager.error('ReferralsManager', 'checkPendingRefPayouts', 'Blockhash is undefined', { blockhash });
+                    // is this the same as isValid == false ??
+                }
+            }
+        }
     }
 
 }
