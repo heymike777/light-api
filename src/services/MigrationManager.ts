@@ -293,6 +293,7 @@ export class MigrationManager {
         // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
     
         if (EnvManager.isCronProcess){
+            await ReferralsManager.recalcRefStats();
             await ReferralsManager.processRefPayouts();
         }
         
