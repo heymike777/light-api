@@ -794,7 +794,7 @@ export class RaydiumManager {
                 })
             );
 
-            const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, tx1ixs, traderKeypair, undefined, blockhash, true);
+            const tx = await SolanaManager.createVersionedTransaction(Chain.SOLANA, tx1ixs, traderKeypair, undefined, blockhash, false);
             txs.push(tx);    
 
             // -------------------- TX2: Remove LP --------------------

@@ -385,7 +385,7 @@ export class ReferralsManager {
                     await SolanaManager.createSolTransferInstruction(feeKeypair.publicKey, new web3.PublicKey(traderProfile.encryptedWallet?.publicKey), payout.amount),
                 ];
 
-                const tx = await SolanaManager.createVersionedTransaction(chain, ixs, feeKeypair);
+                const tx = await SolanaManager.createVersionedTransaction(chain, ixs, feeKeypair, undefined, undefined, false);
                 const connection = newConnectionByChain(chain);
                 const signature = await connection.sendTransaction(tx);
                 console.log('UserRefPayout', 'userId:', userId, 'chain:', chain, 'signature:', signature);

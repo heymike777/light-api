@@ -436,7 +436,7 @@ export class SolanaManager {
         return transaction;
     }
 
-    static async createVersionedTransaction(chain: Chain, instructions: web3.TransactionInstruction[], keypair: web3.Keypair, addressLookupTableAccounts?: web3.AddressLookupTableAccount[], blockhash?: string, addPriorityFee: boolean = true): Promise<web3.VersionedTransaction> {
+    static async createVersionedTransaction(chain: Chain, instructions: web3.TransactionInstruction[], keypair: web3.Keypair, addressLookupTableAccounts?: web3.AddressLookupTableAccount[], blockhash?: string, addPriorityFee: boolean = false): Promise<web3.VersionedTransaction> {
         if (!blockhash) {
             blockhash = (await SolanaManager.getRecentBlockhash(chain)).blockhash;
         }
