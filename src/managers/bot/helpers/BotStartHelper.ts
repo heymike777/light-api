@@ -151,7 +151,7 @@ export class BotStartHelper extends BotHelper {
             {id: 'my_wallets', text: '👀 My wallets'},
             {id: 'row', text: ''},
             {id: 'trader_profiles', text: '💰 Trader profiles'},
-            {id: 'portfolio', text: '👛 Portfolio'},
+            {id: 'portfolio', text: '🎨 Portfolio'},
             {id: 'row', text: ''},
             {id: 'connect_email', text: '✉️ Connect email'},
             {id: 'referral_program', text: '👥 Refer friends'},
