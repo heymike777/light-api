@@ -292,6 +292,9 @@ export class MigrationManager {
 
         // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
     
+        if (EnvManager.isCronProcess){
+            await ReferralsManager.processRefPayouts();
+        }
         
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

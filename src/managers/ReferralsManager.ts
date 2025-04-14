@@ -363,11 +363,11 @@ export class ReferralsManager {
             type: StatusType.CREATED,
         };
         await payout.save();
-        console.log('UserRefPayout created:', payout);
+        // console.log('UserRefPayout created:', payout);
 
         // calc amount again, if it doesn't exceed the expected amount
         const refStatsUpdated = await this.recalcUserRefStats(userId);
-        console.log('refStatsUpdated:', refStatsUpdated);
+        // console.log('refStatsUpdated:', refStatsUpdated);
         if (!refStatsUpdated || refStatsUpdated.rewards[chain].rewardsTotal.sol < refStatsUpdated.rewards[chain].rewardsPaid.sol){
             // remove CREATED payout. Don't proceed the payment.
             await UserRefPayout.updateMany({ userId: userId, 'status.type': StatusType.CREATED }, { $set: { 'status.type': StatusType.CANCELLED } });
