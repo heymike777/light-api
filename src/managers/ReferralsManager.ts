@@ -290,11 +290,11 @@ export class ReferralsManager {
                 refStats.rewards[chain].rewardsPaid.sol = payout.sol;
                 refStats.rewards[chain].rewardsPaid.usdc = payout.usdc;
             }
-            else {
-                LogManager.error('ReferralsManager', 'recalcUserRefStats', 'Aggregation of UserRefPayout for user:', userId, 'went wrong');
-                SystemNotificationsManager.sendSystemMessage('Aggregation of UserRefPayout for user: ' + userId + ' went wrong');
-                // return undefined;
-            }
+            // else {
+            //     LogManager.error('ReferralsManager', 'recalcUserRefStats', 'Aggregation of UserRefPayout for user:', userId, 'went wrong');
+            //     SystemNotificationsManager.sendSystemMessage('Aggregation of UserRefPayout for user: ' + userId + ' went wrong on ' + chain);
+            //     // return undefined;
+            // }
         }
 
         await UserRefStats.updateOne({ userId: userId }, { $set: { stats: refStats } });
