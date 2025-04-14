@@ -203,7 +203,9 @@ export class ReferralsManager {
             LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
             return;
         }
-        
+
+        console.log('Recalculating ref stats for', usersIds.length, 'users:', usersIds);
+
         console.log('Recalculating ref stats for', usersIds.length, 'users:', usersIds);
         for (const userId of usersIds){
             await this.recalcUserRefStats(userId);
@@ -211,6 +213,7 @@ export class ReferralsManager {
     }
 
     static async recalcUserRefStats(userId: string): Promise<RefStats | undefined> {
+
         let userRefStats = await UserRefStats.findOne({ userId: userId });
         if (!userRefStats){
             userRefStats = new UserRefStats();
@@ -279,14 +282,18 @@ export class ReferralsManager {
                 },
             ]);
 
-            console.log(chain, 'refStats:', refStats);
-            console.log(chain, 'rewards:', rewards);
+            console.log(chain, userId, 'refStats:', refStats);
+            console.log(chain, userId, 'rewards:', rewards);
 
             // rewards[0] is the total rewards
             if (rewards.length > 0){
                 const reward = rewards[0];
                 refStats.rewards[chain].rewardsTotal.sol = reward.sol;
                 refStats.rewards[chain].rewardsTotal.usdc = reward.usdc;
+            }
+            else {
+                refStats.rewards[chain].rewardsTotal.sol = 0;
+                refStats.rewards[chain].rewardsTotal.usdc = 0;
             }
 
             const payouts = await UserRefPayout.aggregate([
@@ -300,12 +307,16 @@ export class ReferralsManager {
                 },
             ]);
 
-            console.log('payouts:', payouts);
+            console.log(chain, userId, 'payouts:', payouts);
             // payouts[0] is the total payouts
             if (payouts.length > 0){
                 const payout = payouts[0];
                 refStats.rewards[chain].rewardsPaid.sol = payout.sol;
                 refStats.rewards[chain].rewardsPaid.usdc = payout.usdc;
+            }
+            else {
+                refStats.rewards[chain].rewardsPaid.sol = 0;
+                refStats.rewards[chain].rewardsPaid.usdc = 0;
             }
             // else {
             //     LogManager.error('ReferralsManager', 'recalcUserRefStats', 'Aggregation of UserRefPayout for user:', userId, 'went wrong');
