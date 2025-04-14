@@ -395,6 +395,7 @@ export class ReferralsManager {
         catch (error) {
             console.error('Error while sending user payout transaction:', error);
             SystemNotificationsManager.sendSystemMessage('ReferralsManager: processUserRefPayout: Error while sending transaction for user: ' + userId + ' - ' + error);
+            await UserRefPayout.updateOne({ _id: payout._id }, { $set: { 'status.type': StatusType.CANCELLED } });
             return;
         }
 
