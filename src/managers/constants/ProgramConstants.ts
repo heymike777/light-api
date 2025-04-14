@@ -413,11 +413,11 @@ export const kPrograms: { [key: string]: {
     [kProgram.KAMINO_LIMIT_ORDER]: {
         name: 'KAMINO',
         knownInstructions: [
-            { 'createOrder': {title: 'LIMIT ORDER', priority: 2} },
-            { 'closeOrderAndClaimTip': {title: 'CANCELED LIMIT ORDER', priority: 2} },
-            { 'takeOrder': {title: 'FILLED LIMIT ORDER', priority: 2} },
-            // { 'flashTakeOrderStart': {title: 'START FILLING LIMIT ORDER', priority: 2} },
-            // { 'flashTakeOrderEnd': {title: 'END FILLING LIMIT ORDER', priority: 2} },
+            { 'createOrder': {title: 'LIMIT ORDER', priority: 1} },
+            { 'closeOrderAndClaimTip': {title: 'CANCELED LIMIT ORDER', priority: 1} },
+            { 'takeOrder': {title: 'FILLED LIMIT ORDER', priority: 1} },
+            // { 'flashTakeOrderStart': {title: 'START FILLING LIMIT ORDER', priority: 1} },
+            // { 'flashTakeOrderEnd': {title: 'END FILLING LIMIT ORDER', priority: 1} },
         ],
         skip: false,
         searchLogs: false,
