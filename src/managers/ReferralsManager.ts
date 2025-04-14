@@ -181,7 +181,24 @@ export class ReferralsManager {
 
     static async recalcRefStats(){
         // get unique userId from UserRefReward during last two hours
-        const usersIds = await UserRefReward.distinct('userId', { createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 2) } });
+
+        let usersIds: string[] = [];
+
+        const tmpUsersIds1 = await UserRefReward.distinct('userId', { createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 2) } });
+        if (tmpUsersIds1.length == 0){
+            LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
+            return;
+        }
+        usersIds.push(...tmpUsersIds1);
+
+        const tmpUsersIds2 = await UserRefPayout.distinct('userId', { createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 2) } });
+        if (tmpUsersIds2.length == 0){
+            LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
+            return;
+        }
+        usersIds.push(...tmpUsersIds2);
+        // remove duplicates
+        usersIds = [...new Set(usersIds)];
         if (usersIds.length == 0){
             LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
             return;
