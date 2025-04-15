@@ -161,7 +161,8 @@ export const kKnownAddresses: {[key: string]: {name: string}} = {
     'DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL': {name: `Jitotip 7`},
     '3AVi9Tg9Uo68tJfuvoKvqKNWKkC5wPdSSdeBnizKZ6jT': {name: `Jitotip 8`},
     '43DbAvKxhXh1oSxkJSqGosNw3HpBnmsWiak6tB5wpecN': {name: `Backpack Exchange`},
-    'LFEEa8RzpbWaFgzPXLJQcGGDYLAeaaBAMp6WWCgxJM3': {name: `Light Treasury`}
+    'LFEEa8RzpbWaFgzPXLJQcGGDYLAeaaBAMp6WWCgxJM3': {name: `Light Treasury`},
+    'LFEE8P4pMBPpHzEytWrQHELdNsNM1otnvRzUUoFtX5N': {name: `Light Treasury Dev`},
 }
 
 export const kSolscanAddresses: {[key: string]: {name: string}} = {};
