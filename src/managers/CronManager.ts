@@ -59,8 +59,8 @@ export class CronManager {
                 ReferralsManager.recalcRefStats();
             });
 
-            cron.schedule('0 2 * * *', () => {
-                // once a day at 2am UTC
+            cron.schedule('5 2 * * *', () => {
+                // once a day at 2:05 am UTC
                 SubscriptionManager.fetchAllRevenueCatSubscriptions();
                 ReferralsManager.processRefPayouts();
             });

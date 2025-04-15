@@ -292,10 +292,13 @@ export class MigrationManager {
 
         // await ReferralsManager.recalcUserRefStats(this.kMikeUserId);
     
-        if (EnvManager.isCronProcess){
-            await ReferralsManager.recalcRefStats();
-            await ReferralsManager.processRefPayouts();
-        }
+        // if (EnvManager.isCronProcess){
+        //     await ReferralsManager.recalcRefStats();
+        //     await ReferralsManager.processRefPayouts();
+        // }
+
+        // await ReferralsManager.recalcRefStats(true);
+        // await ReferralsManager.checkIfFeeWalletHasEnoughUnpaidFunds();
         
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

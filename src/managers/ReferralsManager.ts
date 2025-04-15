@@ -17,6 +17,7 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { web3 } from "@coral-xyz/anchor";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnectionByChain } from "../services/solana/lib/solana";
+import { Config } from "../entities/Config";
 
 export class ReferralsManager {
 
@@ -179,34 +180,38 @@ export class ReferralsManager {
         return userRefStats?.stats;
     }
 
-    static async recalcRefStats(){
+    static async recalcRefStats(forceOneMonth = false){
         // get unique userId from UserRefReward during last two hours
 
         let usersIds: string[] = [];
 
-        const tmpUsersIds1 = await UserRefReward.distinct('userId', { createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 2) } });
+        let time = 1000 * 60 * 60 * 2; // two hours
+        if (forceOneMonth){
+            time = 1000 * 60 * 60 * 24 * 30; // one month
+        }
+
+        const tmpUsersIds1 = await UserRefReward.distinct('userId', { createdAt: { $gte: new Date(Date.now() - time) } });
         if (tmpUsersIds1.length == 0){
-            LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
-            return;
+            LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc (UserRefReward)');
+            // return;
         }
         usersIds.push(...tmpUsersIds1);
 
-        const tmpUsersIds2 = await UserRefPayout.distinct('userId', { createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 2) } });
+        const tmpUsersIds2 = await UserRefPayout.distinct('userId', { createdAt: { $gte: new Date(Date.now() - time) } });
         if (tmpUsersIds2.length == 0){
-            LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
-            return;
+            LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc (UserRefPayout)');
+            // return;
         }
         usersIds.push(...tmpUsersIds2);
         // remove duplicates
         usersIds = [...new Set(usersIds)];
+        console.log('Recalculating ref stats for', usersIds.length, 'users:', usersIds);
+
         if (usersIds.length == 0){
             LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
             return;
         }
 
-        console.log('Recalculating ref stats for', usersIds.length, 'users:', usersIds);
-
-        console.log('Recalculating ref stats for', usersIds.length, 'users:', usersIds);
         for (const userId of usersIds){
             await this.recalcUserRefStats(userId);
         }
@@ -334,7 +339,14 @@ export class ReferralsManager {
         const config = await ConfigManager.getConfig();
         if (!config.isRefPayoutsEnabled){
             LogManager.error('Ref payouts are disabled');
-            SystemNotificationsManager.sendSystemMessage('Ref payouts are disabled');
+            SystemNotificationsManager.sendSystemMessage('🔴 Ref payouts are disabled');
+            return;
+        }
+
+        const allGood = await this.checkIfFeeWalletHasEnoughUnpaidFunds();
+        if (!allGood){
+            LogManager.error('ReferralsManager', 'processRefPayouts', 'Fee wallet has not enough funds');
+            SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 Fee wallet has not enough funds to cover all unpaid referral fees');
             return;
         }
 
@@ -349,6 +361,34 @@ export class ReferralsManager {
         for (const refStat of refStatsSonic) {
             await this.processUserRefPayout(Chain.SONIC, refStat.userId);           
         }
+    }
+
+    static async checkIfFeeWalletHasEnoughUnpaidFunds(): Promise<boolean> {
+        const feeWalletPublicKey = new web3.PublicKey(process.env.FEE_SOL_WALLET_ADDRESS!)
+
+
+        const chains = [Chain.SOLANA, Chain.SONIC];
+        for (const chain of chains){
+            const connection = newConnectionByChain(chain);
+            const balance = await connection.getBalance(feeWalletPublicKey);
+            const refStats = await UserRefStats.find();
+            const solUpaid = refStats.reduce((acc, refStat) => {
+                console.log(chain, 'refStat:', refStat);
+                return acc + (refStat.stats.rewards[chain]?.rewardsTotal?.sol || 0) - (refStat.stats.rewards[chain]?.rewardsPaid?.sol || 0);
+            }, 0);
+
+            console.log('checkIfFeeWalletHasEnoughUnpaidFunds', 'chain:', chain, 'balance:', balance, 'solUpaid:', solUpaid);
+
+            if (balance < solUpaid){
+                LogManager.error('ReferralsManager', 'checkIfFeeWalletHasEnoughUnpaidFunds', 'Fee wallet has not enough funds', { chain, balance, solUpaid });
+                SystemNotificationsManager.sendSystemMessage(`🔴🔴🔴 Fee wallet has not enough funds to cover all unpaid referral fees.\nBalance: ${balance}\nUnpaid (SOL): ${solUpaid}`);
+                await ConfigManager.updateConfig({ isRefPayoutsEnabled: false });
+                return false;
+            }
+
+            //TODO: check USDC unpaid
+        }
+        return true;
     }
 
     static async processUserRefPayout(chain: Chain, userId: string){
