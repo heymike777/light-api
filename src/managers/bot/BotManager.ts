@@ -308,6 +308,29 @@ export class BotManager {
         catch (e: any){}
     }
 
+    static async editMessageWithPhoto(ctx: Context, photo: string, text?: string, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
+        try {
+            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
+            if (chatId && messageId && text){
+                const botUsername = BotManager.getBotUsername(ctx);
+                const botManager = await BotManager.getInstance(botUsername);
+                if (botManager){
+                    await botManager.bot.api.editMessageMedia(chatId, messageId, {
+                        type: 'photo',
+                        caption: text,
+                        media: photo,
+                        parse_mode: 'HTML',
+                    }, 
+                    { 
+                        reply_markup: markup 
+                    });
+                }
+            }
+        }
+        catch (e: any){}
+    }
+
     static async editMessageReplyMarkup(ctx: Context, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
             const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;

@@ -45,48 +45,17 @@ export class BotReferralProgramHelper extends BotHelper {
             await BotManager.reply(ctx, 'Enter your refcode');   
         }
         else if (ctx?.update?.message?.text == '/referral_program' || buttonId == 'referral_program'){
-            const { message, buttons } = await this.buildReferralMessage(user, ctx);
+            const { message, buttons, image } = await this.buildReferralMessage(user, ctx);
 
             const markup = BotManager.buildInlineKeyboard(buttons);
-            await BotManager.reply(ctx, message, {
-                reply_markup: markup,
-                parse_mode: 'HTML',
-            });
+            await BotManager.replyWithPhoto(ctx, image, message, markup);
         }
         else if (buttonId && buttonId == 'referral_program|refresh'){
-            const { message, buttons } = await this.buildReferralMessage(user, ctx);
+            const { message, buttons, image } = await this.buildReferralMessage(user, ctx);
+
             const markup = BotManager.buildInlineKeyboard(buttons);
-            await BotManager.editMessage(ctx, message, markup);
+            await BotManager.editMessageWithPhoto(ctx, image, message, markup);
         }
-
-        // else if (buttonId && buttonId == 'trader_profiles|create'){
-        //     const countAll = await UserTraderProfile.countDocuments({ userId: user.id });
-        //     const engineId = SwapManager.kNativeEngineId;
-        //     const title = `Wallet ${countAll+1}`;
-        //     const defaultAmount = 0.25;
-        //     const slippage = 10;
-
-        //     try {
-        //         const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, Priority.MEDIUM, defaultAmount, slippage, undefined);
-
-        //         const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, 0);
-        //         const markup = BotManager.buildInlineKeyboard(buttons);
-        //         await BotManager.reply(ctx, message, {
-        //             reply_markup: markup,
-        //             parse_mode: 'HTML',
-        //         });
-        //     }
-        //     catch (e: any){
-        //         LogManager.error('e:', e);
-        //         if (e.statusCode == 444){
-        //             // premium error
-        //             await BotManager.replyWithPremiumError(ctx, e.message);
-        //         }
-        //         else {
-        //             await BotManager.reply(ctx, e.message);
-        //         }
-        //     }
-        // }
         else {
             await super.commandReceived(ctx, user);
         }
@@ -155,7 +124,7 @@ export class BotReferralProgramHelper extends BotHelper {
         return { message, buttons };
     }
 
-    async buildReferralMessage(user: IUser, ctx?: Context): Promise<{ message: string, buttons: InlineButton[] }> {
+    async buildReferralMessage(user: IUser, ctx?: Context): Promise<{ message: string, buttons: InlineButton[], image: string }> {
         const refcodes = await UserRefCode.find({ userId: user.id, active: true });
         const refStats = await ReferralsManager.fetchUserRefStats(user.id);
 
@@ -184,24 +153,29 @@ export class BotReferralProgramHelper extends BotHelper {
         message += `\n\n`;
         message += `Rewards are paid daily and airdropped directly to your main trader profile wallet. <u><b>You must have accrued at least 0.005 SOL in unpaid fees to be eligible for a payout.</b></u>`;
 
-        message += `\n\n`;
-        message += `We've established a tiered referral system, ensuring that as more individuals come onboard, rewards extend through five different layers of users. This structure not only benefits community growth but also significantly increases the percentage share of fees for everyone.`;
+        // message += `\n\n`;
+        // message += `We've established a tiered referral system, ensuring that as more individuals come onboard, rewards extend through five different layers of users. This structure not only benefits community growth but also significantly increases the percentage share of fees for everyone.`;
 
         message += `\n\n`;
-        message += `Stay tuned for more details on how we'll reward active users and happy trading!`;
+        message += `📚 Full details - <a href="https://docs.light.app/referrals">Click Here</a>!`
 
         message += `\n\n`;
         message += `<u><b>Your Referral Link:</b></u>`;
         if (refcodes.length > 0){
             const botUsername = ctx ? BotManager.getBotUsername(ctx) : undefined;
-            for (const refcode of refcodes){
-                const reflink = ExplorerManager.getReflink(refcode.code, botUsername); 
-                message += `\n<code>${reflink}</code>`;                
-            }
+            const reflink = ExplorerManager.getReflink(user.referralCode, botUsername); 
+            message += `\n<code>${reflink}</code>`;                
+
+            // for (const refcode of refcodes){
+            //     const reflink = ExplorerManager.getReflink(refcode.code, botUsername); 
+            //     message += `\n<code>${reflink}</code>`;                
+            // }
         }
         else {
             message += `\nYou don't have any reflinks yet`;
         }
+
+        console.log('message.length:', message.length);
 
         const buttons: InlineButton[] = [];
         buttons.push({ id: `referral_program|refresh`, text: '↻ Refresh' });
@@ -211,7 +185,9 @@ export class BotReferralProgramHelper extends BotHelper {
         // buttons.push({ id: `referral_program|add_refcode`, text: 'Update reflink' });
         // buttons.push({ id: `referral_program|wallet`, text: 'Rewards wallet' });
 
-        return { message, buttons };
+        const image = 'https://light.dangervalley.com/static/telegram/referral_tree_2.png';
+
+        return { message, buttons, image };
     }
 
 
