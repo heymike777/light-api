@@ -147,7 +147,7 @@ export class BotTraderProfilesHelper extends BotHelper {
                 return;
             }
 
-            const chain = Chain.SOLANA; //TODO: get for other chains as well
+            const chain = user.defaultChain || Chain.SOLANA;
             const connection = newConnectionByChain(chain);
             const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.encryptedWallet?.publicKey);
 
