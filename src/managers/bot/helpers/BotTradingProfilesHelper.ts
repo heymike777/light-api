@@ -222,7 +222,7 @@ export class BotTraderProfilesHelper extends BotHelper {
 
             if (profileId){
                 //TODO: update one profile
-                const replyMessage = await this.buildReplyMessageForUserTraderProfile(user.id, profileId);
+                const replyMessage = await this.buildReplyMessageForUserTraderProfile(user, profileId);
                 if (replyMessage){
                     await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);
                 }
@@ -232,7 +232,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             }
             else {
                 // update all profiles
-                const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user.id);
+                const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user);
                 await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);
             }
         }
@@ -267,7 +267,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             await super.commandReceived(ctx, user, replyMessage);
         }
         else {
-            const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user.id);
+            const replyMessage = await this.buildReplyMessageForUserTraderProfiles(user);
             await super.commandReceived(ctx, user, replyMessage);
         }
     }
@@ -291,13 +291,13 @@ export class BotTraderProfilesHelper extends BotHelper {
         return { message, buttons };
     }
 
-    async buildReplyMessageForUserTraderProfile(userId: string, profileId: string): Promise<Message | undefined> {
-        let traderProfile = await TraderProfilesManager.getUserTraderProfile(userId, profileId);
+    async buildReplyMessageForUserTraderProfile(user: IUser, profileId: string): Promise<Message | undefined> {
+        let traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, profileId);
         if (!traderProfile){
             return undefined;
         }
 
-        const chain = Chain.SOLANA; //TODO: get for other chains as well
+        const chain = user.defaultChain || Chain.SOLANA; 
         const connection = newConnectionByChain(chain);
         const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.encryptedWallet?.publicKey);
 
@@ -307,8 +307,8 @@ export class BotTraderProfilesHelper extends BotHelper {
         return { text: message, markup };
     }
 
-    async buildReplyMessageForUserTraderProfiles(userId: string): Promise<Message> {
-        let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(userId, SwapManager.kNativeEngineId);
+    async buildReplyMessageForUserTraderProfiles(user: IUser): Promise<Message> {
+        let traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
         const replyMessage = this.getReplyMessage();
                     
         if (traderProfiles.length == 0){
@@ -317,7 +317,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         else {
             const defaultProfile = traderProfiles.find(tp => tp.default) || traderProfiles[0];
 
-            const chain = Chain.SOLANA; //TODO: get for other chains as well
+            const chain = user.defaultChain || Chain.SOLANA; //TODO: get for other chains as well
             const connection = newConnectionByChain(chain);
             const walletAddresses = traderProfiles.map(tp => tp.encryptedWallet?.publicKey).filter(Boolean) as string[];
             const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
