@@ -10,6 +10,11 @@ export enum SubscriptionTier {
     PLATINUM = 'platinum',
 }
 
+export enum SubscriptionPeriod {
+    MONTH = 'month',
+    YEAR = 'year',
+}
+
 export enum SubscriptionStatus {
     ACTIVE = 'ACTIVE',
     INACTIVE = 'INACTIVE',
@@ -26,6 +31,7 @@ export interface ISubscription extends mongoose.Document {
     tier: SubscriptionTier;
     status: SubscriptionStatus;
     platform: SubscriptionPlatform;
+    period?: SubscriptionPeriod;
     expiresAt: Date;
     updatedAt?: Date;
     createdAt: Date;
@@ -36,6 +42,7 @@ export const SubscriptionSchema = new mongoose.Schema<ISubscription>({
     tier: { type: String, enum: Object.values(SubscriptionTier) },
     status: { type: String, enum: Object.values(SubscriptionStatus) },
     platform: { type: String, enum: Object.values(SubscriptionPlatform) },
+    period: { type: String, enum: Object.values(SubscriptionPeriod) },
     expiresAt: { type: Date },
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -56,6 +63,7 @@ SubscriptionSchema.methods.toJSON = function () {
     return {
         tier: this.tier,
         platform: this.platform,
+        period: this.period,
         expiresAt: this.expiresAt,
     };
 };

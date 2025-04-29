@@ -1,4 +1,4 @@
-import { ISubscription, Subscription, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
+import { ISubscription, Subscription, SubscriptionPeriod, SubscriptionPlatform, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
 import { IUser, User } from "../entities/users/User";
 import { Wallet, WalletStatus } from "../entities/Wallet";
 import { Helpers } from "../services/helpers/Helpers";
@@ -175,5 +175,15 @@ export class SubscriptionManager {
         
         return 0;
     }
+
+    static getPrices(): { [key: string]: { month: number, year: number } } {
+        return {
+            silver: { month: 15, year: 99 },
+            gold: { month: 49, year: 299 },
+            platinum: { month: 99, year: 499 },
+        };
+    }
+
+    static async buyWithCrypto(user: IUser, tier: SubscriptionTier, period: SubscriptionPeriod) {
 
 }
