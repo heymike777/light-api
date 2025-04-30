@@ -129,13 +129,39 @@ const onExpressStarted = async () => {
             YellowstoneManager.createInstances();
         }
         else if (EnvManager.chain == Chain.SONIC){
-            const sonic = new SvmManager(Chain.SONIC);
-            await sonic.subscribe();
+            const svm = new SvmManager(Chain.SONIC);
+            await svm.subscribe();
         }
         else if (EnvManager.chain == Chain.SONIC_TESTNET){
-            const sonic = new SvmManager(Chain.SONIC_TESTNET);
-            await sonic.subscribe();
+            const svm = new SvmManager(Chain.SONIC_TESTNET);
+            await svm.subscribe();
         }
+        else if (EnvManager.chain == Chain.SOON_MAINNET){
+            const svm = new SvmManager(Chain.SOON_MAINNET);
+            await svm.subscribe();
+        }
+        else if (EnvManager.chain == Chain.SOON_TESTNET){
+            const svm = new SvmManager(Chain.SOON_TESTNET);
+            await svm.subscribe();
+        }
+        else if (EnvManager.chain == Chain.SVMBNB_MAINNET){
+            const svm = new SvmManager(Chain.SVMBNB_MAINNET);
+            await svm.subscribe();
+        }
+        else if (EnvManager.chain == Chain.SVMBNB_TESTNET){
+            const svm = new SvmManager(Chain.SVMBNB_TESTNET);
+            await svm.subscribe();
+        }
+        else if (EnvManager.chain == Chain.SOONBASE_MAINNET){
+            const svm = new SvmManager(Chain.SOONBASE_MAINNET);
+            await svm.subscribe();
+        }
+        else if (EnvManager.chain == Chain.SOONBASE_TESTNET){
+            const svm = new SvmManager(Chain.SOONBASE_TESTNET);
+            await svm.subscribe();
+        }
+
+
     }
 
     // await TokenManager.updateTokensPrices();

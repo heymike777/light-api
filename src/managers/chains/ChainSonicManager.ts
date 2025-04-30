@@ -9,6 +9,8 @@ import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
 import { TokenManager } from "../TokenManager";
 
+//TODO: SVM
+
 export interface SonicAsset {
     mint: string;
     symbol: string;

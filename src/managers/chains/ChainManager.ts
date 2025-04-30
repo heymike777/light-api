@@ -4,6 +4,8 @@ import { Chain } from "../../services/solana/types";
 import { ChainSolanaManager } from "./ChainSolanaManager";
 import { ChainSonicManager } from "./ChainSonicManager";
 
+//TODO: SVM
+
 export class ChainManager {
 
     static getChainTitle(chain: Chain): string {
@@ -14,6 +16,18 @@ export class ChainManager {
                 return 'Sonic SVM';
             case Chain.SONIC_TESTNET:
                 return 'Sonic SVM Testnet';
+            case Chain.SOON_MAINNET:
+                return 'Soon SVM';
+            case Chain.SOON_TESTNET:
+                return 'Soon SVM Testnet';
+            case Chain.SVMBNB_MAINNET:
+                return 'svmBNB';
+            case Chain.SVMBNB_TESTNET:
+                return 'svmBNB Testnet';
+            case Chain.SOONBASE_MAINNET:
+                return 'soonBase';
+            case Chain.SOONBASE_TESTNET:
+                return 'soonBase Testnet';
             default:
                 return 'Solana';
         }

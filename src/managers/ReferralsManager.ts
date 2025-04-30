@@ -19,6 +19,8 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnectionByChain } from "../services/solana/lib/solana";
 import { Config } from "../entities/Config";
 
+//TODO: SVM
+
 export class ReferralsManager {
 
     static async claimRefCode(user: IUser, referralCode: string, throwError: boolean = true) {

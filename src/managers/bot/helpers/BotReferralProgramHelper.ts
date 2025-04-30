@@ -12,6 +12,8 @@ import { Helpers } from "../../../services/helpers/Helpers";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { Chain } from "../../../services/solana/types";
 
+//TODO: SVM
+
 export class BotReferralProgramHelper extends BotHelper {
 
     constructor() {

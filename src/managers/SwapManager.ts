@@ -30,6 +30,8 @@ import { IUser } from "../entities/users/User";
 import { SubscriptionTier } from "../entities/payments/Subscription";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 
+//TODO: SVM
+
 export class SwapManager {
 
     static kDefaultEngineId = 'trojan';

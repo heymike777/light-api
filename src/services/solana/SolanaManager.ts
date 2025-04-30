@@ -683,6 +683,7 @@ export class SolanaManager {
         return false;
     }
 
+    //TODO: SVM
     static async getWalletTokensBalances(chain: Chain, walletAddress: string): Promise<{mint: string, symbol?: string, name?: string, balance: TokenBalance}[]>{
         try {
             const web3Conn = newConnectionByChain(chain);
