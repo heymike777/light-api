@@ -44,7 +44,6 @@ export class SegaManager {
             apiRequestTimeout: 10 * 1000,
             apiCacheTime: 5 * 60 * 1000,
             blockhashCommitment: 'confirmed',
-            
         });
 
         const pool = await this.fetchPoolForMints(inputMint, outputMint);

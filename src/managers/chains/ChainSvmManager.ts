@@ -39,7 +39,7 @@ export class ChainSvmManager {
                 throw new BadRequestError('Wallet not found');
             }
 
-            const assetsData = await this.getAssetsByOwner(walletAddress);
+            const assetsData = await this.getAssetsByOwner(chain, walletAddress);
             let totalPrice = 0;
 
             for (const tmpAsset of assetsData) {
