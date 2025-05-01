@@ -253,6 +253,8 @@ export class ReferralsManager {
                         },
                     }
                 }
+
+                //TODO: calc referral rewards for all chains. notice that for svmBNB it should be BNB, for soonBase it should be Base
             };
             await userRefStats.save();
         } 

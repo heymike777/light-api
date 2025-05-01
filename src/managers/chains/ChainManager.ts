@@ -3,8 +3,7 @@ import { PortfolioAsset } from "../../models/types";
 import { Chain } from "../../services/solana/types";
 import { ChainSolanaManager } from "./ChainSolanaManager";
 import { ChainSonicManager } from "./ChainSonicManager";
-
-//TODO: SVM
+import { ChainSvmManager } from "./ChainSvmManager";
 
 export class ChainManager {
 
@@ -41,8 +40,11 @@ export class ChainManager {
         if (chain == Chain.SOLANA){
             return await ChainSolanaManager.getPortfolio(traderProfile);
         }
-        else if (chain == Chain.SONIC){
+        else if (chain == Chain.SONIC ){
             return await ChainSonicManager.getPortfolio(traderProfile);
+        }
+        else if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
+            return await ChainSvmManager.getPortfolio(chain, traderProfile);
         }
 
         return { values: undefined, assets: [], lpAssets: [], warning: undefined };
