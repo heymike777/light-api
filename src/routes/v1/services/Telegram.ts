@@ -16,6 +16,7 @@ router.post(
     validateRequest,
     async (req: Request, res: Response) => {
         const messageData = '' + req.body.messageData;
+        console.log('Received service/telegram/send-message', 'messageData:', messageData);
         let success = false;
 
         try {

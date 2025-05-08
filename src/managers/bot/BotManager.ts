@@ -616,6 +616,14 @@ export class BotManager {
             return this.defaultBots[userId];
         }
 
+        try {
+            const size = Object.keys(this.defaultBots).length;
+            console.log('getUserDefaultBot', 'this.defaultBots size =', size);
+        }
+        catch (e: any){
+            console.log('getUserDefaultBot', 'this.defaultBots size error', e);
+        }
+
         const user = await UserManager.getUserById(userId);
         if (user && user.defaultBot){
             this.defaultBots[userId] = user.defaultBot;
