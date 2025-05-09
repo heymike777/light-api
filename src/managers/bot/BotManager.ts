@@ -41,6 +41,8 @@ import { ChainManager } from "../chains/ChainManager";
 import { BotAdminHelper } from "./helpers/BotAdminHelper";
 import { limit } from "@grammyjs/ratelimiter";
 import { SystemNotificationsManager } from "../SytemNotificationsManager";
+import { apiThrottler } from "@grammyjs/transformer-throttler";
+import { run } from "@grammyjs/runner";
 
 export class BotManager {
     botUsername: string;
@@ -76,9 +78,6 @@ export class BotManager {
             timeFrame: 2000,
             limit: 3,
         
-            // "MEMORY_STORAGE" is the default mode. Therefore if you want to use Redis, do not pass storageClient at all.
-            // storageClient: redis,
-        
             onLimitExceeded: ctx => {
                 LogManager.error('Rate limit exceeded for user', ctx.from?.id);
                 SystemNotificationsManager.sendSystemMessage(`Rate limit exceeded for user ${ctx.from?.id}`);
@@ -88,6 +87,8 @@ export class BotManager {
             keyGenerator: ctx => { return ctx.from?.id.toString() }
         }));
 
+        const throttler = apiThrottler();
+        this.bot.api.config.use(throttler);
         this.bot.api.config.use(autoRetry());
     
         this.bot.on('message', (ctx: Context) => {
@@ -152,7 +153,10 @@ export class BotManager {
             await ctx.answerCallbackQuery(); // remove loading animation
         });
     
-        this.bot.start();
+        // this.bot.start();
+
+        run(this.bot);
+
         LogManager.log('Bot started!');    
     }
 
