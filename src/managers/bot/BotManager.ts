@@ -25,7 +25,7 @@ import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { Currency } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager";
-import { newConnection, newConnectionByChain } from "../../services/solana/lib/solana";
+import { newConnectionByChain } from "../../services/solana/lib/solana";
 import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
@@ -39,6 +39,8 @@ import { SwapDex } from "../../entities/payments/Swap";
 import { BotNoneHelper } from "./helpers/BotNoneCommand";
 import { ChainManager } from "../chains/ChainManager";
 import { BotAdminHelper } from "./helpers/BotAdminHelper";
+import { limit } from "@grammyjs/ratelimiter";
+import { SystemNotificationsManager } from "../SytemNotificationsManager";
 
 export class BotManager {
     botUsername: string;
@@ -69,6 +71,22 @@ export class BotManager {
         LogManager.log('Starting bot...');
         this.botUsername = botUsername;
         this.bot = new Bot(botToken);
+
+        this.bot.use(limit({
+            timeFrame: 2000,
+            limit: 3,
+        
+            // "MEMORY_STORAGE" is the default mode. Therefore if you want to use Redis, do not pass storageClient at all.
+            // storageClient: redis,
+        
+            onLimitExceeded: ctx => {
+                LogManager.error('Rate limit exceeded for user', ctx.from?.id);
+                SystemNotificationsManager.sendSystemMessage(`Rate limit exceeded for user ${ctx.from?.id}`);
+            },
+        
+            // Note that the key should be a number in string format such as "123456789"
+            keyGenerator: ctx => { return ctx.from?.id.toString() }
+        }));
 
         this.bot.api.config.use(autoRetry());
     
