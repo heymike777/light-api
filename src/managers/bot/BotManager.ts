@@ -80,7 +80,7 @@ export class BotManager {
         
             onLimitExceeded: ctx => {
                 LogManager.error('Rate limit exceeded for user', ctx.from?.id);
-                SystemNotificationsManager.sendSystemMessage(`Rate limit exceeded for user ${ctx.from?.id}`);
+                SystemNotificationsManager.sendSystemMessage(`Rate limit exceeded for user ${ctx.from?.id} (@${ctx.from?.username})`);
             },
         
             // Note that the key should be a number in string format such as "123456789"
