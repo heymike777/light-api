@@ -499,6 +499,7 @@ export class SwapManager {
             let isTelegramSent = false;
             if (user.telegram?.id){
                 BotManager.sendMessage({ 
+                    id: `user_${user.id}_swap_${swap.id}_${Helpers.makeid(12)}`,
                     userId: user.id,
                     chatId: user.telegram?.id, 
                     text: message, 

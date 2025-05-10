@@ -5,6 +5,17 @@ import { BotManager } from "./bot/BotManager";
 export class RabbitManager {
 
     static conn: ChannelModel | undefined = undefined;
+    static cachedMessages: { [key: string]: Date } = {};
+
+    static cleanCache() {
+        const now = new Date();
+        for (const key in this.cachedMessages) {
+            const date = this.cachedMessages[key];
+            if (date && (now.getTime() - date.getTime()) > 1000 * 60 * 5) {
+                delete this.cachedMessages[key];
+            }
+        }
+    }
 
     static async getRabbit(): Promise<ChannelModel | undefined> {
         if (this.conn) return this.conn;
@@ -82,11 +93,14 @@ export class RabbitManager {
         try {
             const payload: SendMessageData = JSON.parse(msg.content.toString());
             console.log("Rabbit - TG message received:", payload);
-
-            /* …do work… */
-            //TODO: check that I haven't this message before
-
-            // await BotManager.sendMessage(payload);
+            
+            if (this.cachedMessages[payload.id]) {
+                console.log("Rabbit - message already processed, skipping", payload.id);
+                ch.ack(msg);
+                return;
+            }
+            this.cachedMessages[payload.id] = new Date();
+            await BotManager.sendMessage(payload);
 
             ch.ack(msg);
         } 
