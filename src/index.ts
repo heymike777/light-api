@@ -110,7 +110,7 @@ const start = async () => {
     await connectToRedis();
 
     if (EnvManager.isTelegramProcess){
-        await RabbitManager.listenToTelegramMessages();
+        RabbitManager.listenToTelegramMessages();
     }
 
     const port = process.env.PORT;
