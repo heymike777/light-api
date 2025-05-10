@@ -40,6 +40,15 @@ import { Chain } from './services/solana/types';
 import { SvmManager } from './managers/svm/SvmManager';
 import { JitoManager } from './services/solana/JitoManager';
 import { pricesServiceRouter } from './routes/v1/services/Prices';
+import { RabbitManager } from './managers/RabbitManager';
+
+// top of index.js
+process.on('unhandledRejection', (err) => {
+  console.error('!UNHANDLED REJECTION:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('!UNCAUGHT EXCEPTION:', err);
+});
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
@@ -99,6 +108,10 @@ const start = async () => {
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
     LogManager.forceLog('Connected to mongo');
     await connectToRedis();
+
+    if (EnvManager.isTelegramProcess){
+        await RabbitManager.listenToTelegramMessages();
+    }
 
     const port = process.env.PORT;
     app.listen(port, () => {

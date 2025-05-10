@@ -43,6 +43,7 @@ import { limit } from "@grammyjs/ratelimiter";
 import { SystemNotificationsManager } from "../SytemNotificationsManager";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { run } from "@grammyjs/runner";
+import { RabbitManager } from "../RabbitManager";
 
 export class BotManager {
     botUsername: string;
@@ -294,6 +295,7 @@ export class BotManager {
             }
         }
         else {
+            await RabbitManager.publishTelegramMessage(data);
             await MicroserviceManager.sendMessageToTelegram(JSON.stringify(data));
         }
     }
