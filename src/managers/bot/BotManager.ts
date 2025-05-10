@@ -296,7 +296,7 @@ export class BotManager {
         }
         else {
             await RabbitManager.publishTelegramMessage(data);
-            // await MicroserviceManager.sendMessageToTelegram(JSON.stringify(data));
+            await MicroserviceManager.sendMessageToTelegram(JSON.stringify(data));
         }
     }
 
