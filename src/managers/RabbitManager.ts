@@ -87,28 +87,34 @@ export class RabbitManager {
 
         await ch.consume(queue, (msg) => {
             if (!msg) return;
-            this.receivedMessage(msg, ch);
+            try {
+                const payload: SendMessageData = JSON.parse(msg.content.toString());
+                this.receivedMessage(payload, msg, ch);
+            }
+            catch (e) {
+                console.error("Rabbit - error parsing message", e);
+                ch.nack(msg, false, false); // dead‑letter instead of requeue
+            }
         });
     }
 
-    static async receivedMessage(msg: ConsumeMessage, ch: Channel){
+    static async receivedMessage(payload: SendMessageData, msg?: ConsumeMessage, ch?: Channel){
         try {
-            const payload: SendMessageData = JSON.parse(msg.content.toString());
-            console.log("Rabbit - TG message received:", payload);
+            if (ch && msg) console.log("Rabbit - TG message received:", payload);
             
             if (this.cachedMessages[payload.id]) {
                 console.log("Rabbit - message already processed, skipping", payload.id);
-                ch.ack(msg);
+                if (ch && msg) ch.nack(msg, false, false);
                 return;
             }
             this.cachedMessages[payload.id] = new Date();
             await BotManager.sendMessage(payload);
 
-            ch.ack(msg);
+            if (ch && msg) ch.ack(msg);
         } 
         catch (e) {
             console.error("bad message, moving to DLQ", e);
-            ch.nack(msg, false, false); // dead‑letter instead of requeue
+            if (ch && msg) ch.nack(msg, false, false); // dead‑letter instead of requeue
         }
     }
 

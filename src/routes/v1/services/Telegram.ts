@@ -4,6 +4,7 @@ import { validateRequest } from "../../../middlewares/ValidateRequest";
 import { kServiceKey } from "../../../managers/MicroserviceManager";
 import { BotManager } from "../../../managers/bot/BotManager";
 import { SendMessageData } from "../../../managers/bot/BotTypes";
+import { RabbitManager } from "../../../managers/RabbitManager";
 
 const router = express.Router();
 
@@ -21,7 +22,8 @@ router.post(
 
         try {
             const message: SendMessageData = JSON.parse(messageData);
-            await BotManager.sendMessage(message);
+            await RabbitManager.receivedMessage(message);
+            // await BotManager.sendMessage(message);
             success = true;
         } catch (error) {
             console.error('Error in service/telegram/send-message', error);
