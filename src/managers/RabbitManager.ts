@@ -27,11 +27,11 @@ export class RabbitManager {
             clientProperties: { connection_name: "telegram‑service" },
         });
 
-        process.once("SIGINT", async () => {
-            console.log("!Rabbit - SIGINT received, closing Rabbit connection");
-            await this.conn?.close();
-            process.exit(0);
-        });
+        // process.once("SIGINT", async () => {
+        //     console.log("!Rabbit - SIGINT received, closing Rabbit connection");
+        //     await this.conn?.close();
+        //     process.exit(0);
+        // });
 
         this.conn.on("error", (err) => {
             console.error("!Rabbit - AMQP connection error", err);
