@@ -70,6 +70,7 @@ export class RabbitManager {
     }
 
     static async listenToTelegramMessages() {
+        console.log("Rabbit - listening to telegram messages");
         const rabbitConnection = await this.getRabbit();
         if (!rabbitConnection){
             return;
