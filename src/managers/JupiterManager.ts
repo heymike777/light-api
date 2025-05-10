@@ -130,7 +130,7 @@ export class JupiterManager {
                 wrapAndUnwrapSol: true,
                 prioritizationFeeLamports: {
                     priorityLevelWithMaxLamports: {
-                        priorityLevel: priorityFee,
+                        priorityLevel: priorityLevel,
                         maxLamports: prioritizationFeeMaxLamports
                     }
                 }
