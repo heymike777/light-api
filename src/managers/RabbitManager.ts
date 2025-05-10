@@ -28,12 +28,13 @@ export class RabbitManager {
         });
 
         process.once("SIGINT", async () => {
+            console.log("!Rabbit - SIGINT received, closing Rabbit connection");
             await this.conn?.close();
             process.exit(0);
         });
 
         this.conn.on("error", (err) => {
-            console.error("AMQP connection error", err);
+            console.error("!Rabbit - AMQP connection error", err);
             this.conn = undefined; // trigger reconnect on next call
         });
 
