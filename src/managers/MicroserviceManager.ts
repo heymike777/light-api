@@ -26,6 +26,7 @@ export class MicroserviceManager {
         }
         catch (e: any){
             LogManager.error('MicroserviceManager', 'geyserResubscribe for solana', 'error', e?.response?.data?.message);
+            SystemNotificationsManager.sendSystemMessage(`🔴 Geyser microservice is not running. Please check the logs.`);
         }
 
         // chain == SONIC
@@ -78,6 +79,7 @@ export class MicroserviceManager {
         }
         catch (e: any){
             LogManager.error('MicroserviceManager', 'receivedTx', 'error', e?.response?.data?.message);
+            SystemNotificationsManager.sendSystemMessage(`🔴 Main microservice is not running. Please check the logs.`);
         }
     }
 
@@ -124,6 +126,7 @@ export class MicroserviceManager {
         }
         catch (e: any){
             // LogManager.error('MicroserviceManager', 'getTokensPrices', 'error', e?.response?.data?.message);
+            SystemNotificationsManager.sendSystemMessage(`🔴 Prices microservice is not running. Please check the logs.`);
         }
 
         return [];

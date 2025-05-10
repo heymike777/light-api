@@ -62,7 +62,29 @@ export class RabbitManager {
         
         await rabbitStreamClient.declareConsumer({ stream: 'light-telegram', offset: Offset.first() }, (message) => {
             console.log(`RabbitMQ: Received message ${message.content.toString()}`)
-        })
+            try {
+                const payload: SendMessageData = JSON.parse(message.content.toString());
+                this.receivedMessage(payload);
+            }
+            catch (e) {
+                console.error("Rabbit - error parsing message", e);
+            }
+        });
+    }
+
+    static async receivedMessage(payload: SendMessageData){
+        try {            
+            if (this.cachedMessages[payload.id]) {
+                console.log("Rabbit - message already processed, skipping", payload.id);
+                return;
+            }
+
+            this.cachedMessages[payload.id] = new Date();
+            await BotManager.sendMessage(payload);
+        } 
+        catch (e) {
+            console.error("RabbitManager receivedMessage error:", e);
+        }
     }
 
     /*
@@ -146,7 +168,6 @@ export class RabbitManager {
             }
         });
     }
-    */
 
     static async receivedMessage(payload: SendMessageData, msg?: ConsumeMessage, ch?: Channel){
         try {
@@ -167,5 +188,6 @@ export class RabbitManager {
             if (ch && msg) ch.nack(msg, false, false); // dead‑letter instead of requeue
         }
     }
+    */
 
 }
