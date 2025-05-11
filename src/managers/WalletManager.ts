@@ -365,7 +365,8 @@ export class WalletManager {
                         if (addedTx){
                             let isTelegramSent = false;
                             if (chat.user.telegram?.id){
-                                BotManager.sendMessage({ 
+                                BotManager.sendMessage({                                     
+                                    id: `user_${chat.user.id}_signature_${signature}_${Helpers.makeid(12)}`,
                                     userId: chat.user.id,
                                     chatId: chat.user.telegram?.id, 
                                     text: info.message, 

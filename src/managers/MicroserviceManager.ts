@@ -2,6 +2,7 @@ import axios from "axios";
 import { LogManager } from "./LogManager";
 import { Chain, kChains } from "../services/solana/types";
 import { EnvManager } from "./EnvManager";
+import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
 export const kServiceKey = 'KjeisSkasfsJK21-sd2lsdksjE3L-13LRKJ';
 
@@ -26,6 +27,7 @@ export class MicroserviceManager {
             }
             catch (e: any){
                 LogManager.error('MicroserviceManager', `geyserResubscribe for ${key}`, 'error', e?.response?.data?.message);
+                SystemNotificationsManager.sendSystemMessage(`🔴 Geyser microservice is not running. Please check the logs.`);
             }
         }
     }
@@ -49,6 +51,7 @@ export class MicroserviceManager {
         }
         catch (e: any){
             LogManager.error('MicroserviceManager', 'receivedTx', 'error', e?.response?.data?.message);
+            SystemNotificationsManager.sendSystemMessage(`🔴 Main microservice is not running. Please check the logs.`);
         }
     }
 
@@ -69,7 +72,8 @@ export class MicroserviceManager {
             LogManager.log('sendMessageToTelegram', data);
         }
         catch (e: any){
-            LogManager.error('MicroserviceManager', 'sendMessageToTelegram', 'error', e?.response?.data?.message);
+            LogManager.error('MicroserviceManager', 'sendMessageToTelegram', 'error', e);
+            SystemNotificationsManager.sendSystemMessage(`🔴 Telegram microservice is not running. Please check the logs.`);
         }
     }
 
@@ -94,6 +98,7 @@ export class MicroserviceManager {
         }
         catch (e: any){
             // LogManager.error('MicroserviceManager', 'getTokensPrices', 'error', e?.response?.data?.message);
+            SystemNotificationsManager.sendSystemMessage(`🔴 Prices microservice is not running. Please check the logs.`);
         }
 
         return [];

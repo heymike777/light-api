@@ -3,6 +3,7 @@ import * as GrammyTypes from "grammy/types";
 export type BotKeyboardMarkup = GrammyTypes.InlineKeyboardMarkup;// | GrammyTypes.ReplyKeyboardMarkup | GrammyTypes.ReplyKeyboardRemove | GrammyTypes.ForceReply;
 
 export interface SendMessageData {
+    id: string;
     userId: string;
     chatId: number;
     text?: string;

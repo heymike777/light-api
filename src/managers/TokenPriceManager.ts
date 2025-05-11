@@ -34,13 +34,13 @@ export class TokenPriceManager {
                 }
                    
                 // fetch from Helius
-                if (mints.length > 0){
-                    const tmpPrices = await this.getPricesFromHelius(mints);
-                    if (tmpPrices.length > 0){
-                        prices.push(...tmpPrices);
-                    }
-                    mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
-                }
+                // if (mints.length > 0){
+                //     const tmpPrices = await this.getPricesFromHelius(mints);
+                //     if (tmpPrices.length > 0){
+                //         prices.push(...tmpPrices);
+                //     }
+                //     mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
+                // }
 
                 // fetch from Jupiter
                 // if (mints.length > 0){

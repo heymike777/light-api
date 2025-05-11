@@ -170,39 +170,43 @@ export class SwapManager {
             let tx: web3.VersionedTransaction | undefined = undefined;
 
             if (swap.dex == SwapDex.JUPITER){
-                const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, SwapMode.ExactIn);
-                if (!quote) {
-                    swap.status.type = StatusType.CREATED;
-                    swap.status.tryIndex++;
-                    await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });    
-                    return;
+                try {
+                    const quote = await JupiterManager.getQuote(inputMint, outputMint, +amount, slippage, SwapMode.ExactIn);
+                    if (!quote) {
+                        swap.status.type = StatusType.CREATED;
+                        swap.status.tryIndex++;
+                        await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });    
+                        return;
+                    }
+
+                    const priorityFee = traderProfile.priorityFee || Priority.MEDIUM;
+
+                    const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, tpWallet.publicKey, priorityFee, {
+                        includeOtherInstruction: true,
+                        includeSwapInstruction: true,
+                        includeComputeBudgetInstructions: true,
+                        includeCleanupInstruction: true,
+                        includeSetupInstructions: true,
+                    });
+
+                    instructions = swapData.instructions;
+                    const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
+                    addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
+
+                    LogManager.log('SwapManager', 'swapData', swapData);
+
+                    swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
+
+                    // add 1% fee instruction to tx
+                    const fee = SwapManager.getFeeSize(user);
+                    instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, tpWallet.publicKey, currency, fee));
+
+                    blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
+                    tx = await SolanaManager.createVersionedTransaction(swap.chain, instructions, keypair, addressLookupTableAccounts, blockhash, false)
                 }
-
-                const priorityFee = traderProfile.priorityFee || Priority.MEDIUM;
-
-                const swapData = await JupiterManager.swapInstructions(quote.quoteResponse, tpWallet.publicKey, priorityFee, {
-                    includeOtherInstruction: true,
-                    includeSwapInstruction: true,
-                    includeComputeBudgetInstructions: true,
-                    includeCleanupInstruction: true,
-                    includeSetupInstructions: true,
-                });
-
-                instructions = swapData.instructions;
-                const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
-                addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
-
-                LogManager.log('SwapManager', 'swapData', swapData);
-
-                swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
-
-                // add 1% fee instruction to tx
-                const fee = SwapManager.getFeeSize(user);
-                instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, tpWallet.publicKey, currency, fee));
-
-                blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
-                tx = await SolanaManager.createVersionedTransaction(swap.chain, instructions, keypair, addressLookupTableAccounts, blockhash, false)
-    
+                catch (error: any) {
+                    SystemNotificationsManager.sendSystemMessage('🔴 JupiterManager error:' + error.message);
+                }
             }
             else if (swap.dex == SwapDex.SEGA){
                 const segaResults = await SegaManager.swap(user, traderProfile, inputMint, outputMint, new BN(amount), slippage);
@@ -499,6 +503,7 @@ export class SwapManager {
             let isTelegramSent = false;
             if (user.telegram?.id){
                 BotManager.sendMessage({ 
+                    id: `user_${user.id}_swap_${swap.id}_${Helpers.makeid(12)}`,
                     userId: user.id,
                     chatId: user.telegram?.id, 
                     text: message, 
