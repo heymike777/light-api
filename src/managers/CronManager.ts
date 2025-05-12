@@ -11,6 +11,7 @@ import { kSolAddress } from '../services/solana/Constants';
 import { Chain } from '../services/solana/types';
 import { TokenPriceManager } from './TokenPriceManager';
 import { ReferralsManager } from './ReferralsManager';
+import { HealthManager } from './HealthManager';
 
 export class CronManager {
 
@@ -78,6 +79,7 @@ export class CronManager {
         if (EnvManager.isTelegramProcess){
             cron.schedule('* * * * *', () => {
                 TokenManager.fetchSolPriceFromRedis();
+                HealthManager.checkTelegramBotHealth();
             });
         }
     }

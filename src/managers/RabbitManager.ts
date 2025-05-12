@@ -2,6 +2,7 @@ import amqp, { Channel, ChannelModel, ConsumeMessage } from "amqplib";
 import { SendMessageData } from "./bot/BotTypes";
 import { BotManager } from "./bot/BotManager";
 import { Client, Offset } from "rabbitmq-stream-js-client";
+import { HealthManager } from "./HealthManager";
 
 export class RabbitManager {
 
@@ -73,6 +74,8 @@ export class RabbitManager {
     }
 
     static async receivedMessage(payload: SendMessageData){
+        HealthManager.telegramMessagesCount++;
+        
         try {            
             if (this.cachedMessages[payload.id]) {
                 console.log("Rabbit - message already processed, skipping", payload.id);
