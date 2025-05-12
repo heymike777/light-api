@@ -109,9 +109,9 @@ const start = async () => {
     LogManager.forceLog('Connected to mongo');
     await connectToRedis();
 
-    if (EnvManager.isTelegramProcess){
-        RabbitManager.listenToTelegramMessages();
-    }
+    // if (EnvManager.isTelegramProcess){
+    //     RabbitManager.listenToTelegramMessages();
+    // }
 
     const port = process.env.PORT;
     app.listen(port, () => {
