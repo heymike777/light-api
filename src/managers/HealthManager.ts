@@ -9,6 +9,7 @@ export class HealthManager {
         }
         else {
             console.log('HealthManager - Telegram bot is healthy, messages count:', this.telegramMessagesCount);
+            SystemNotificationsManager.sendSystemMessage('✅ Health Check: Telegram bot is healthy, messages count: ' + this.telegramMessagesCount);
         }
 
         this.telegramMessagesCount = 0;
