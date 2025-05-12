@@ -112,7 +112,7 @@ export class MigrationManager {
 
         // await this.processTx(Chain.SOLANA, '34iFHNe89qhWKGU5cCpx57Jfu995QyTM1y9v3QW9oUKisisdqLeDRLb6dEbbdCaKKJ7P71t3ojPXaDvFabRCLePv'); // jupiter
 
-        // await this.processTx(Chain.SOLANA, '4RNU9HNaYdPwNCV3cuK1d5oh3zRctwqTphk3kp2m8tpPxWGR1VFaMt41L5EcGDUHbtXHDYVbUgJsQyECCHhBui13'); // pumpfun buy
+        // await this.processTx(Chain.SOLANA, '2ntnSu16GoonNQjAF7Ax1F6fDRVRt8JYiSctq75wp49eztfDnSFv9ktjLnbD7ZDpRpPBnoDWAuWNCReHqVvArtLx'); // pumpfun buy
         // await this.processTx(Chain.SOLANA, 'xxBf1LjTesNATcbuebgcPqgRKBbr6CsZmudBQpwLyvkmpC43XsR8JGymG9H5c7QQtLqj8GawEcGVpUVMCuSMbZK'); // pumpfun sell
         // await this.processTx(Chain.SOLANA, '63iupjmC6HBqoQKiQVkQmyooc6368Vr7wnmvQmqFXL6R8YNTaDDwYYrDv9givmeYme1kqLqFNtdv5tNgpJ1ni99U'); // raydium amm sell
 

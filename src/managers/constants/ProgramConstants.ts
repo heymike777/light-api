@@ -176,7 +176,7 @@ export const kPrograms: { [key: string]: {
         skip: false,
         customIdl: {
             path: 'src/idls/pumpfun.json',
-            type: 'anchor',
+            type: 'anchorV1',
         },
         fee: {
             account: 'CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM',
