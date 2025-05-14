@@ -32,10 +32,17 @@ export class BotMyWalletsHelper extends BotHelper {
             for (let wallet of wallets){
                 response += `${index}. ${wallet.walletAddress} ${wallet.title || ''}\n`;
                 index++;
+
+                if (response.length > 3500){
+                    await BotManager.reply(ctx, response);
+                    response = '';
+                }
             }
         }
 
-        await BotManager.reply(ctx, response);
+        if (response.length > 0){
+            await BotManager.reply(ctx, response);
+        }
     }
 
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
