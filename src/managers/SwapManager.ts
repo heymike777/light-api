@@ -29,6 +29,7 @@ import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { IUser } from "../entities/users/User";
 import { SubscriptionTier } from "../entities/payments/Subscription";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
+import { ReferralsManager } from "./ReferralsManager";
 
 export class SwapManager {
 
@@ -302,6 +303,8 @@ export class SwapManager {
             // LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not found', { signature });
             return;
         }
+
+        ReferralsManager.receivedConfirmationForSignature(chain, signature);
 
         const now = new Date();
 

@@ -57,8 +57,13 @@ export class CronManager {
                 // once an hour
                 TokenManager.clearOldSwaps();
                 SubscriptionManager.cleanExpiredGiftCardSubscriptions();
+            });
+
+            cron.schedule('5 1 * * *', () => {
+                // once a day at 1:05 am UTC
                 ReferralsManager.recalcRefStats();
             });
+
 
             cron.schedule('5 2 * * *', () => {
                 // once a day at 2:05 am UTC

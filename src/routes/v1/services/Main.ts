@@ -39,7 +39,6 @@ router.post(
             }
 
             SwapManager.receivedConfirmationForSignature(chain, signature, parsedTransactionWithMeta);
-            ReferralsManager.receivedConfirmationForSignature(chain, signature);
             success = true;
         } catch (error) {
             console.error('Error in received-tx', error);
