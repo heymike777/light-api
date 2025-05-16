@@ -4,7 +4,7 @@ import { Chain, kChains } from "../services/solana/types";
 import { EnvManager } from "./EnvManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
-export const kServiceKey = 'KjeisSkasfsJK21-sd2lsdksjE3L-13LRKJ';
+export const kServiceKey = process.env.MICROSERVICE_KEY!;
 
 export class MicroserviceManager {
     // static baseUrl = 'http://127.0.0.1:3340/api/v1/service';
