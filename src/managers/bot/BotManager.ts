@@ -44,6 +44,7 @@ import { SystemNotificationsManager } from "../SytemNotificationsManager";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { run } from "@grammyjs/runner";
 import { RabbitManager } from "../RabbitManager";
+import { BotAirdropHelper } from "./helpers/BotAirdropHelper";
 
 export class BotManager {
     botUsername: string;
@@ -65,6 +66,7 @@ export class BotManager {
         new BotHelpHelper(),
         new BotNoneHelper(),
         new BotAdminHelper(),
+        new BotAirdropHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 
