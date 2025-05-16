@@ -14,6 +14,8 @@ import { kProgram } from '../../../../managers/constants/ProgramConstants';
 import { TokenPair } from '../../../../entities/tokens/TokenPair';
 import { IUser } from '../../../../entities/users/User';
 
+//TODO: SVM
+
 export class SegaManager {
 
     static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
@@ -42,7 +44,6 @@ export class SegaManager {
             apiRequestTimeout: 10 * 1000,
             apiCacheTime: 5 * 60 * 1000,
             blockhashCommitment: 'confirmed',
-            
         });
 
         const pool = await this.fetchPoolForMints(inputMint, outputMint);

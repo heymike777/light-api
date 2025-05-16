@@ -6,6 +6,7 @@ import { BotKeyboardMarkup, InlineButton } from "../BotTypes";
 import { Chain } from "../../../services/solana/types";
 import { BotManager } from "../BotManager";
 import { UserManager } from "../../UserManager";
+import { title } from "process";
 
 export class BotSettingsHelper extends BotHelper {
 
@@ -81,9 +82,19 @@ export class BotSettingsHelper extends BotHelper {
         const chains = [
             { id: Chain.SOLANA, title: 'Solana' },
             { id: Chain.SONIC, title: 'Sonic SVM' },
+            { id: 'row', title: '' },
+            { id: Chain.SOON_MAINNET, title: 'SOON SVM' },
+            { id: Chain.SVMBNB_MAINNET, title: 'svmBNB' },
+            { id: Chain.SOONBASE_MAINNET, title: 'soonBase' },
         ];
 
+
         for (const item of chains) {
+            if (item.id == 'row'){
+                buttons.push({ id: 'row', text: '' });
+                continue;
+            }
+            
             const isSelected = user.defaultChain == item.id || (!user.defaultChain && item.id == Chain.SOLANA);
             const prefix = isSelected ? '🟢 ' : '';
             buttons.push({ id: `settings|set_chain|${item.id}`, text: prefix + item.title });

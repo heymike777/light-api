@@ -134,6 +134,7 @@ export class BotReferralProgramHelper extends BotHelper {
         
         message += `\n\nIf you have a premium subscription, you'll get higher rewards from the fees paid by your referrees.\n• FREE users will get 25% share of the fees paid by their referrees\n• SILVER subscribers - 30% fee share\n• GOLD subscriber - 35% fee share\n• PLATINUM subscribers - 40% fee share`;
 
+        //TODO: show referral rewards for all chains. for now it's only Solana and Sonic
         const usersCountDirect = refStats?.usersCount.direct || 0;
         const usersCountIndirect = refStats?.usersCount.indirect || 0;
         const rewardsTotalSol = (refStats?.rewards[Chain.SOLANA].rewardsTotal.sol || 0) + (refStats?.rewards[Chain.SONIC].rewardsTotal.sol || 0);

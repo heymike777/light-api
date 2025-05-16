@@ -537,17 +537,18 @@ export class SwapManager {
     }
 
     static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
+        //TODO: add trading support for other chains 
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
 
         // console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
-        if (chain == Chain.SOLANA){
-            const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
-            if (!isFreezeAuthorityRevoked){
-                dex = SwapDex.RAYDIUM_AMM;
-                isHoneypot = true;
-            }
-            LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
-        }
+        // if (chain == Chain.SOLANA){
+        //     const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
+        //     if (!isFreezeAuthorityRevoked){
+        //         dex = SwapDex.RAYDIUM_AMM;
+        //         isHoneypot = true;
+        //     }
+        //     LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
+        // }
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
@@ -624,6 +625,7 @@ export class SwapManager {
     }
 
     static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
+        //TODO: add trading support for other chains 
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
         LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
 

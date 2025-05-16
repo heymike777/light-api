@@ -41,6 +41,8 @@ export enum kProgram {
     SONIC_STAKING = 'g3yMgSB3Q7gNjMfSoCm1PiJihqHdNJeUuPHvRyf45qY',
     SEGA = 'SegazTQwbYWknDZkJ6j2Kgvm5gw3MrHGKtWstZdoNKZ',
 
+    //TODO: add programs for new svm chains
+
 }
 
 export interface KnownInstruction {

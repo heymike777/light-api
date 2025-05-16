@@ -3,6 +3,7 @@ import { PortfolioAsset } from "../../models/types";
 import { Chain } from "../../services/solana/types";
 import { ChainSolanaManager } from "./ChainSolanaManager";
 import { ChainSonicManager } from "./ChainSonicManager";
+import { ChainSvmManager } from "./ChainSvmManager";
 
 export class ChainManager {
 
@@ -14,6 +15,18 @@ export class ChainManager {
                 return 'Sonic SVM';
             case Chain.SONIC_TESTNET:
                 return 'Sonic SVM Testnet';
+            case Chain.SOON_MAINNET:
+                return 'Soon SVM';
+            case Chain.SOON_TESTNET:
+                return 'Soon SVM Testnet';
+            case Chain.SVMBNB_MAINNET:
+                return 'svmBNB';
+            case Chain.SVMBNB_TESTNET:
+                return 'svmBNB Testnet';
+            case Chain.SOONBASE_MAINNET:
+                return 'soonBase';
+            case Chain.SOONBASE_TESTNET:
+                return 'soonBase Testnet';
             default:
                 return 'Solana';
         }
@@ -27,8 +40,11 @@ export class ChainManager {
         if (chain == Chain.SOLANA){
             return await ChainSolanaManager.getPortfolio(traderProfile);
         }
-        else if (chain == Chain.SONIC){
+        else if (chain == Chain.SONIC ){
             return await ChainSonicManager.getPortfolio(traderProfile);
+        }
+        else if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
+            return await ChainSvmManager.getPortfolio(chain, traderProfile);
         }
 
         return { values: undefined, assets: [], lpAssets: [], warning: undefined };

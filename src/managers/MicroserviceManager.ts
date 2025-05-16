@@ -1,6 +1,6 @@
 import axios from "axios";
 import { LogManager } from "./LogManager";
-import { Chain } from "../services/solana/types";
+import { Chain, kChains } from "../services/solana/types";
 import { EnvManager } from "./EnvManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 
@@ -13,50 +13,22 @@ export class MicroserviceManager {
         // send POST API to /geyser/resubscribe with axios
         console.log('MicroserviceManager geyserResubscribe');
         
-        // chain == SOLANA
-        try {
-            const { data } = await axios({
-                url: `http://127.0.0.1:3340/api/v1/service/geyser/resubscribe`,
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'serviceKey': kServiceKey
-                },
-            });
-        }
-        catch (e: any){
-            LogManager.error('MicroserviceManager', 'geyserResubscribe for solana', 'error', e?.response?.data?.message);
-            SystemNotificationsManager.sendSystemMessage(`🔴 Geyser microservice is not running. Please check the logs.`);
-        }
-
-        // chain == SONIC
-        try {
-            const { data } = await axios({
-                url: `http://127.0.0.1:3344/api/v1/service/geyser/resubscribe`,
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'serviceKey': kServiceKey
-                },
-            });
-        }
-        catch (e: any){
-            LogManager.error('MicroserviceManager', 'geyserResubscribe for sonic', 'error', e?.response?.data?.message);
-        }
-
-        // chain == SONIC_TESTNET
-        try {
-            const { data } = await axios({
-                url: `http://127.0.0.1:3345/api/v1/service/geyser/resubscribe`,
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'serviceKey': kServiceKey
-                },
-            });
-        }
-        catch (e: any){
-            LogManager.error('MicroserviceManager', 'geyserResubscribe for sonic', 'error', e?.response?.data?.message);
+        for (const key in kChains) {
+            const chain = kChains[key];                
+            try {
+                const { data } = await axios({
+                    url: `http://127.0.0.1:${chain.geyserPort}/api/v1/service/geyser/resubscribe`,
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'serviceKey': kServiceKey
+                    },
+                });
+            }
+            catch (e: any){
+                LogManager.error('MicroserviceManager', `geyserResubscribe for ${key}`, 'error', e?.response?.data?.message);
+                SystemNotificationsManager.sendSystemMessage(`🔴 Geyser microservice is not running. Please check the logs.`);
+            }
         }
     }
 

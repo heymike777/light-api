@@ -21,7 +21,6 @@ export class CronManager {
                 if (EnvManager.chain == Chain.SOLANA){
                     YellowstoneManager.cleanupProcessedSignatures();
                 }
-                //TODO: need to cleanup for SONIC as well?
             });
         }
 
