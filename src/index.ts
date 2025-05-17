@@ -44,10 +44,10 @@ import { RabbitManager } from './managers/RabbitManager';
 
 // top of index.js
 process.on('unhandledRejection', (err) => {
-  console.error('!UNHANDLED REJECTION:', err);
+  LogManager.error('!UNHANDLED REJECTION:', err);
 });
 process.on('uncaughtException', (err) => {
-  console.error('!UNCAUGHT EXCEPTION:', err);
+  LogManager.error('!UNCAUGHT EXCEPTION:', err);
 });
 
 const corsOptions: CorsOptions = {

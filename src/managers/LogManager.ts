@@ -19,7 +19,7 @@ export class LogManager {
     });
 
     static log(...args: any[]){
-        this.logger.info(args.map((a: any) => a.toString()).join(' '));
+        this.logger.info(args.map((a: any) => a?.toString()).join(' '));
         if (this.isLogsEnabled){
             try {
                 console.log(new Date(), ...args);
@@ -30,7 +30,7 @@ export class LogManager {
     }
 
     static forceLog(...args: any[]){
-        this.logger.info(args.map((a: any) => a.toString()).join(' '));
+        this.logger.info(args.map((a: any) => a?.toString()).join(' '));
         try {
             console.log(new Date(), ...args);
         }
@@ -39,7 +39,7 @@ export class LogManager {
     }
 
     static error(...args: any[]){
-        this.logger.error(args.map((a: any) => a.toString()).join(' '));
+        this.logger.error(args.map((a: any) => a?.toString()).join(' '));
         if (this.isErrorsEnabled){
             try {
                 console.error(new Date(), ...args);
