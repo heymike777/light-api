@@ -112,7 +112,7 @@ export class RedisManager {
 
             return result === 1;
         } catch (err) {
-            console.error('Error saving user transaction:', err);
+            LogManager.error('Error saving user transaction:', err);
             return false;
         }
     }
@@ -160,7 +160,7 @@ export class RedisManager {
             await redis.client.del(signaturesKey);
             await redis.client.del(transactionsKey);
         } catch (err) {
-            console.error('Error cleaning user transactions:', err);
+            LogManager.error('Error cleaning user transactions:', err);
         }
     }
 
@@ -208,7 +208,7 @@ export class RedisManager {
                         }
                     }
                     catch(e){
-                        console.error('migrateUserTransactionsToMongo', e);
+                        LogManager.error('migrateUserTransactionsToMongo', e);
                     }
                 }
 
@@ -227,7 +227,7 @@ export class RedisManager {
         if (!redis.client.isReady) return false;
 
         if (!token.symbol){
-            console.error('saveToken', 'token.symbol is missing', token);
+            LogManager.error('saveToken', 'token.symbol is missing', token);
             return false;
         }
 

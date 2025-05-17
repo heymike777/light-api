@@ -107,7 +107,7 @@ export class ChainSonicManager {
             return tokens;
         }
         catch (e){
-            console.error('getAssetsByOwner', e);
+            LogManager.error('getAssetsByOwner', e);
             return [];
         }
     }

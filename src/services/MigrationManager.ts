@@ -224,7 +224,7 @@ export class MigrationManager {
         // await this.mongoImport();
 
         // process.on("unhandledRejection", (reason) => {
-        //     console.error('!mike', "Unhandled rejection detected:", reason);
+        //     LogManager.error('!mike', "Unhandled rejection detected:", reason);
         //     // This can kill Node depending on your configuration,
         //     // so you must fix whatever code triggers the unhandled rejection.
         // });
@@ -248,7 +248,7 @@ export class MigrationManager {
         //             }
         //         }
         //         catch (error) {
-        //             console.error('!mike', 'error', error);
+        //             LogManager.error('!mike', 'error', error);
         //         }
         //     }
         //     console.log('!mike', 'countUsers', countUsers);
@@ -269,7 +269,7 @@ export class MigrationManager {
         // const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
         // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
         // if (!traderProfile){
-        //     console.error('!mike', 'traderProfile not found');
+        //     LogManager.error('!mike', 'traderProfile not found');
         //     return;
         // }
         // const { signature, swap } = await SwapManager.initiateBuy(user, Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kChillGuy, 0.005, true);
@@ -372,7 +372,7 @@ export class MigrationManager {
 
             const engine = SwapManager.engines.find((e) => e.id === engineId);
             if (!engine) {
-                console.error('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'engine not found', engineId);
+                LogManager.error('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'engine not found', engineId);
                 continue;
             }
 
@@ -423,7 +423,7 @@ export class MigrationManager {
         const wallets = await Wallet.find({ userId: userId, status: {$in: [WalletStatus.ACTIVE, WalletStatus.TRADER]} });
         const user = await UserManager.getUserById(userId, true);
         if (!user){
-            console.error('!mike', 'user not found', userId);
+            LogManager.error('!mike', 'user not found', userId);
             return;
         }
         const chats = [{user, wallets}];
@@ -474,7 +474,7 @@ export class MigrationManager {
         // export each collection to json file
 
         if (!mongoose.connection.db){
-            console.error('mongoExport: No db connection');
+            LogManager.error('mongoExport: No db connection');
             return;
         }
 
@@ -499,7 +499,7 @@ export class MigrationManager {
         // export each collection to json file
 
         if (!mongoose.connection.db){
-            console.error('mongoImport: No db connection');
+            LogManager.error('mongoImport: No db connection');
             return;
         }
 

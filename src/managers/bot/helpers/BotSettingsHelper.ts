@@ -43,7 +43,7 @@ export class BotSettingsHelper extends BotHelper {
             if (parts.length == 4){                
             }
             else {
-                console.error('Invalid buttonId:', buttonId);
+                LogManager.error('Invalid buttonId:', buttonId);
             }
         }
     }

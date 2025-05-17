@@ -729,7 +729,7 @@ export class SolanaManager {
             return balances;
         }
         catch (err){
-            // console.error('getWalletTokenBalance', err);
+            // LogManager.error('getWalletTokenBalance', err);
         }
 
         return [];
