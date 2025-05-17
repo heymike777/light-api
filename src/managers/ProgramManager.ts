@@ -6,7 +6,7 @@ import * as web3 from "@solana/web3.js";
 import { ExplorerManager } from "../services/explorers/ExplorerManager";
 import { Helpers } from "../services/helpers/Helpers";
 import { KnownInstruction, kProgram, kPrograms, kSkipProgramIds } from "./constants/ProgramConstants";
-import { SPL_ACCOUNT_COMPRESSION_PROGRAM_ID } from "@metaplex-foundation/mpl-bubblegum";
+import { SPL_ACCOUNT_COMPRESSION_PROGRAM_ID } from "@metaplex-foundation/spl-account-compression";
 import { PublicKey } from "@solana/web3.js";
 import { MetaplexManager } from "./MetaplexManager";
 import { WalletManager } from "./WalletManager";
