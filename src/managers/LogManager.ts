@@ -19,7 +19,7 @@ export class LogManager {
     });
 
     static log(...args: any[]){
-        this.logger.info(args.map((a: any) => a?.toString()).join(' '));
+        // this.logger.info(args.map((a: any) => a?.toString()).join(' '));
         if (this.isLogsEnabled){
             try {
                 console.log(new Date(), ...args);
