@@ -1,5 +1,5 @@
 import { createClient, RedisClientType } from "redis";
-import { IUserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
+import { IUserTransaction, UserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
 import { kAddUniqueTransactionLua } from "./RedisScripts";
 import { UserManager } from "../UserManager";
 import { IToken } from "../../entities/tokens/Token";
@@ -200,9 +200,11 @@ export class RedisManager {
                     try{
                         const tx = userTransactionFromJson(txString);
                         if (tx) {
-                            await tx.save();
-
-                            LogManager.log('migrateUserTransactionsToMongo', tx.signature, 'success');
+                            const existing = await UserTransaction.findOne({ userId, signature: tx.signature });
+                            if (!existing){
+                                await tx.save();
+                                LogManager.log('migrateUserTransactionsToMongo', tx.signature, 'success');
+                            }
 
                             redis.client.lRem(key, 0, txString);
                         }
