@@ -1,5 +1,5 @@
 import { SubscribeRequest, SubscribeUpdate } from '@triton-one/yellowstone-grpc';
-import { subscribe, CommitmentLevel, LaserstreamConfig } from 'helius-laserstream';
+import { subscribe, CommitmentLevel } from 'helius-laserstream';
 import { LogManager } from '../../../managers/LogManager';
 import { YellowstoneManager } from './YellowstoneManager';
 

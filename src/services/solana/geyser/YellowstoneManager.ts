@@ -2,15 +2,11 @@ import Client, { SubscribeRequest, CommitmentLevel, txEncode, SubscribeUpdateTra
 import base58 from 'bs58';
 import { Helpers } from '../../helpers/Helpers';
 import { WalletManager } from '../../../managers/WalletManager';
-import { TxParser } from "./TxParser";
-import fs from "fs";
 import { SystemNotificationsManager } from "../../../managers/SytemNotificationsManager";
 import { MixpanelManager } from "../../../managers/MixpanelManager";
 import { LogManager } from "../../../managers/LogManager";
-import { SwapManager } from "../../../managers/SwapManager";
 import { EnvManager } from "../../../managers/EnvManager";
 import { MicroserviceManager } from "../../../managers/MicroserviceManager";
-import { WasmUiTransactionEncoding } from "@triton-one/yellowstone-grpc/dist/types/encoding/yellowstone_grpc_solana_encoding_wasm";
 import { Chain } from "../types";
 
 export enum TxFilter {
@@ -23,6 +19,14 @@ export class YellowstoneManager {
     X_TOKEN: string;
     PING_INTERVAL_MS = 30_000; // 30s
     stream: any;
+
+    static allWalletsPubKeys: string[] = [];
+    static reloadAllWallets(): string[] {
+        const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
+        accountInclude.push('DpVH8xQZ4aapxwZ6KW9nuEUs9zEePa8HQvXny9Ajj93T'); // JUP BUYBACK token account
+        YellowstoneManager.allWalletsPubKeys = accountInclude;
+        return accountInclude;
+    }
 
     constructor(id: string, grpcUrl: string, xToken: string){
         this.id = id;
@@ -82,7 +86,7 @@ export class YellowstoneManager {
     async subscribeToConfirmedTransactions(stream: any){
         LogManager.log(process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`);
 
-        const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
+        const accountInclude = YellowstoneManager.reloadAllWallets();
         LogManager.forceLog(process.env.SERVER_NAME, `YellowstoneManager subscribeToConfirmedTransactions`, accountInclude);
 
         if (accountInclude.length == 0){
@@ -90,8 +94,6 @@ export class YellowstoneManager {
             MixpanelManager.trackError(undefined, { text: 'No wallets to subscribe (grpc)' });
             return;
         }
-
-        accountInclude.push('DpVH8xQZ4aapxwZ6KW9nuEUs9zEePa8HQvXny9Ajj93T'); // JUP BUYBACK token account
 
         const request: SubscribeRequest = {
             "transactions": {
@@ -169,11 +171,27 @@ export class YellowstoneManager {
                 return;
             }
 
+
             const signature = base58.encode(data.signature);
             // console.log('YellowstoneManager receivedTx', signature);
 
             const jsonParsed = txEncode.encode(data, txEncode.encoding.JsonParsed, 255, true);
             const jsonParsedAny: any = jsonParsed;
+
+            // check if this tx contains any tracking wallets
+            const pubkeys = jsonParsed?.transaction?.message?.accountKeys?.map((key: any) => {
+                return key.pubkey;
+            });
+            if (!pubkeys || pubkeys.length == 0){
+                return;
+            }
+            const geyserWallets = YellowstoneManager.allWalletsPubKeys.filter((pubkey) => {
+                return pubkeys.includes(pubkey);
+            });
+            // console.log('YellowstoneManager receivedTx', 'geyserWallets:', geyserWallets);
+            if (geyserWallets.length == 0){
+                return;
+            }
 
             // check if this transaction is already processed by this server
             const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
@@ -195,6 +213,8 @@ export class YellowstoneManager {
         if (!this.instances){
             this.instances = [];
         }
+
+        YellowstoneManager.reloadAllWallets();
 
         if (process.env.SOLANA_GEYSER_RPC_1_NAME && process.env.SOLANA_GEYSER_RPC_1 && process.env.SOLANA_GEYSER_X_TOKEN_1){
             const listener = new YellowstoneManager(process.env.SOLANA_GEYSER_RPC_1_NAME, process.env.SOLANA_GEYSER_RPC_1, process.env.SOLANA_GEYSER_X_TOKEN_1);
@@ -230,6 +250,8 @@ export class YellowstoneManager {
 
     static async resubscribeAll(){
         console.log('YellowstoneManager resubscribeAll', 'isGeyserProcess:', EnvManager.isGeyserProcess);
+        YellowstoneManager.reloadAllWallets();
+
         if (EnvManager.isGeyserProcess && EnvManager.chain == Chain.SOLANA){
             if (!this.instances){
                 return;
