@@ -34,13 +34,9 @@ export class LaserstreamManager {
     }
 
     onData(data: SubscribeUpdate) {
-        LogManager.forceLog('Laserstream onData:', data);
-
         if (data.block?.transactions){
             for (const tx of data.block?.transactions) {
                 if (!tx.isVote && !tx.meta?.err){
-                    console.log('Laserstream transaction:', tx.signature);
-                    
                     YellowstoneManager.receivedTx('laserstream', tx);
                 }
             }
