@@ -165,20 +165,15 @@ export class YellowstoneManager {
 
     static async receivedTx(geyserId: string, data?: SubscribeUpdateTransactionInfo){
         try {
-            if (!data || !data.transaction){
+            if (!data || !data.transaction || data.meta?.err){
                 return;
             }
-
-            const transaction = data.transaction;
-            if (data.meta?.err){ return; }
 
             const signature = base58.encode(data.signature);
             // console.log('YellowstoneManager receivedTx', signature);
 
             const jsonParsed = txEncode.encode(data, txEncode.encoding.JsonParsed, 255, true);
             const jsonParsedAny: any = jsonParsed;
-            // jsonParsedAny.slot = +jsonParsed.slot.toString();
-            // jsonParsedAny.blockTime = jsonParsed.blockTime;
 
             // check if this transaction is already processed by this server
             const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
