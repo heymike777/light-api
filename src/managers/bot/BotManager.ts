@@ -121,16 +121,8 @@ export class BotManager {
                 // handle user blocked bot
                 if (botUsername){
                     const user = await UserManager.getUserByTelegramUser(ctx.myChatMember.from);
-                    if (user){
-                        if (!user.bots){
-                            user.bots = {};
-                        }
-                        user.bots[botUsername] = UserBotStatus.BLOCKED;
-                        await User.updateOne({ _id: user._id }, {
-                            $set: {
-                                bots: user.bots,
-                            }
-                        });
+                    if (user) {
+                        await BotManager.handleUserBlockedBot(user, botUsername);
                     }
                 }
             }
@@ -244,21 +236,36 @@ export class BotManager {
     }
 
     async sendMessage(data: SendMessageData){
-        if (data.imageUrl){
-            await this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
-                caption: data.text,
-                parse_mode: 'HTML', 
-                reply_markup: data.inlineKeyboard,
-            });    
+        try {
+            if (data.imageUrl){
+                await this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
+                    caption: data.text,
+                    parse_mode: 'HTML', 
+                    reply_markup: data.inlineKeyboard,
+                });    
+            }
+            else {
+                await this.bot.api.sendMessage(data.chatId, data.text || '', {
+                    parse_mode: 'HTML', 
+                    link_preview_options: {
+                        is_disabled: true
+                    },
+                    reply_markup: data.inlineKeyboard,
+                });   
+            }
         }
-        else {
-            await this.bot.api.sendMessage(data.chatId, data.text || '', {
-                parse_mode: 'HTML', 
-                link_preview_options: {
-                    is_disabled: true
-                },
-                reply_markup: data.inlineKeyboard,
-            });   
+        catch (e: any){
+            if (e instanceof GrammyError && e.description == 'Forbidden: bot was blocked by the user'){
+                const user = await UserManager.getUserById(data.userId);
+                if (user){
+                    await BotManager.handleUserBlockedBot(user, this.botUsername);
+                }
+            }
+            //TODO: check for other errors. Like photo can't be sent, so send without photo
+            else {
+                LogManager.error('BotManager - error while sending message', e);
+                throw e;
+            }
         }
     }
 
@@ -653,6 +660,20 @@ export class BotManager {
             this.defaultBots[userId] = user.defaultBot;
             return user.defaultBot;
         }
+    }
+
+    static async handleUserBlockedBot(user: IUser, botUsername: string){
+        LogManager.log('handleUserBlockedBot', user.id, botUsername);
+
+        if (!user.bots){
+            user.bots = {};
+        }
+        user.bots[botUsername] = UserBotStatus.BLOCKED;
+        await User.updateOne({ _id: user._id }, {
+            $set: {
+                bots: user.bots,
+            }
+        });
     }
 
 }
