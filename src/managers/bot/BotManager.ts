@@ -261,6 +261,11 @@ export class BotManager {
                     await BotManager.handleUserBlockedBot(user, this.botUsername);
                 }
             }
+            else if (e instanceof GrammyError && e.description == 'Bad Request: wrong type of the web page content' && data.imageUrl){
+                // if photo can't be sent, try to send message without photo. it's better than nothing
+                data.imageUrl = undefined;
+                await this.sendMessage(data);
+            }
             //TODO: check for other errors. Like photo can't be sent, so send without photo
             else {
                 LogManager.error('BotManager - error while sending message', e);
