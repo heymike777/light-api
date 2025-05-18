@@ -1,4 +1,4 @@
-import Client, { SubscribeRequest, CommitmentLevel, txEncode } from "@triton-one/yellowstone-grpc";
+import Client, { SubscribeRequest, CommitmentLevel, txEncode, SubscribeUpdateTransactionInfo, SubscribeUpdate } from "@triton-one/yellowstone-grpc";
 import base58 from 'bs58';
 import { Helpers } from '../../helpers/Helpers';
 import { WalletManager } from '../../../managers/WalletManager';
@@ -55,11 +55,11 @@ export class YellowstoneManager {
             });
         });
     
-        stream.on("data", (data) => {
+        stream.on("data", (data: SubscribeUpdate) => {
             const filter = data.filters[0];
 
             if (filter == TxFilter.ALL_TRANSACTIONS) {
-                this.receivedTx(data, filter);
+                YellowstoneManager.receivedTx(this.id, data.transaction?.transaction);
             } 
             else if (data.pong) {
                 // LogManager.log(process.env.SERVER_NAME, `Processed ping response!`);
@@ -163,15 +163,19 @@ export class YellowstoneManager {
         }, this.PING_INTERVAL_MS);
     }
 
-    async receivedTx(data: any, filter: string){
+    static async receivedTx(geyserId: string, data?: SubscribeUpdateTransactionInfo){
         try {
-            const transaction = data.transaction.transaction;
-            if (transaction.meta.err){ return; }
+            if (!data || !data.transaction){
+                return;
+            }
 
-            const signature = base58.encode(transaction.signature);
+            const transaction = data.transaction;
+            if (data.meta?.err){ return; }
+
+            const signature = base58.encode(data.signature);
             // console.log('YellowstoneManager receivedTx', signature);
 
-            const jsonParsed = txEncode.encode(data.transaction.transaction, txEncode.encoding.JsonParsed, 255, true);
+            const jsonParsed = txEncode.encode(data, txEncode.encoding.JsonParsed, 255, true);
             const jsonParsedAny: any = jsonParsed;
             // jsonParsedAny.slot = +jsonParsed.slot.toString();
             // jsonParsedAny.blockTime = jsonParsed.blockTime;
@@ -182,7 +186,7 @@ export class YellowstoneManager {
                 return;
             }
 
-            MicroserviceManager.receivedTx(this.id, signature, JSON.stringify(jsonParsedAny));
+            MicroserviceManager.receivedTx(geyserId, signature, JSON.stringify(jsonParsedAny));
         }
         catch (e: any){
             LogManager.error(process.env.SERVER_NAME, 'YellowstoneManager receivedTx', 'error', e);

@@ -41,6 +41,7 @@ import { SvmManager } from './managers/svm/SvmManager';
 import { JitoManager } from './services/solana/JitoManager';
 import { pricesServiceRouter } from './routes/v1/services/Prices';
 import { RabbitManager } from './managers/RabbitManager';
+import { LaserstreamManager } from './services/solana/geyser/LaserstreamManager';
 
 // top of index.js
 process.on('unhandledRejection', (err) => {
@@ -139,6 +140,9 @@ const onExpressStarted = async () => {
 
     if (EnvManager.isGeyserProcess){
         if (EnvManager.chain == Chain.SOLANA){
+            const laserstream = new LaserstreamManager();
+            await laserstream.subscribe();
+    
             YellowstoneManager.createInstances();
         }
         else if (EnvManager.chain == Chain.SONIC){
