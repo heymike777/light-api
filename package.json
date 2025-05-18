@@ -55,6 +55,7 @@
     "firebase-admin": "^13.4.0",
     "fs": "0.0.1-security",
     "grammy": "^1.36.1",
+    "helius-laserstream": "^0.0.6",
     "helius-sdk": "^1.5.1",
     "jito-ts": "^4.2.0",
     "jsonwebtoken": "^9.0.2",
