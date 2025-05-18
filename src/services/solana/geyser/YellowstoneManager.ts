@@ -23,7 +23,7 @@ export class YellowstoneManager {
     static allWalletsPubKeys: string[] = [];
     static reloadAllWallets(): string[] {
         const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
-        accountInclude.push('DpVH8xQZ4aapxwZ6KW9nuEUs9zEePa8HQvXny9Ajj93T'); // JUP BUYBACK token account
+        // accountInclude.push('DpVH8xQZ4aapxwZ6KW9nuEUs9zEePa8HQvXny9Ajj93T'); // JUP BUYBACK token account
         YellowstoneManager.allWalletsPubKeys = accountInclude;
         return accountInclude;
     }
@@ -179,9 +179,18 @@ export class YellowstoneManager {
             const jsonParsedAny: any = jsonParsed;
 
             // check if this tx contains any tracking wallets
-            const pubkeys = jsonParsed?.transaction?.message?.accountKeys?.map((key: any) => {
-                return key.pubkey;
-            });
+            const pubkeys = [
+                ...(jsonParsed?.transaction?.message?.accountKeys?.map((key: any) => {
+                    return key.pubkey;
+                }) || []),
+                ...(jsonParsed?.meta?.preTokenBalances?.map((b: any) => {
+                    return b.owner;
+                }) || []),
+                ...(jsonParsed?.meta?.postTokenBalances?.map((b: any) => {
+                    return b.owner;
+                }) || []),
+            ];
+            console.log('YellowstoneManager receivedTx', 'jsonParsed:', JSON.stringify(jsonParsed));
             if (!pubkeys || pubkeys.length == 0){
                 return;
             }
