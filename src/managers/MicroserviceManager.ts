@@ -50,7 +50,7 @@ export class MicroserviceManager {
             });
         }
         catch (e: any){
-            LogManager.error('MicroserviceManager', 'receivedTx', 'error', e?.response?.data?.message);
+            LogManager.error('MicroserviceManager', 'receivedTx', 'error', e);
             SystemNotificationsManager.sendSystemMessage(`🔴 Main microservice is not running. Please check the logs.`);
         }
     }

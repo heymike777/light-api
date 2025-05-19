@@ -39,7 +39,7 @@ export class TokenManager {
     ];
 
     static manualTokens: { [key: string]: { symbol?: string } } = {
-        "sol:bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1": { symbol: "bSOL" },
+        'sol:bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1': { symbol: 'bSOL' },
     }
 
     static excludedTokens: string[] = [
