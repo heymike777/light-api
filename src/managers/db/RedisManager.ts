@@ -8,6 +8,7 @@ import { IWallet } from "../../entities/Wallet";
 import { WalletManager } from "../WalletManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { Chain } from "../../services/solana/types";
+import { TokenManager } from "../TokenManager";
 
 export interface WalletEvent {
     instanceId?: string;
@@ -229,6 +230,11 @@ export class RedisManager {
         if (!redis.client.isReady) return false;
 
         if (!token.symbol){
+            const key = `${token.chain}:${token.address}`;
+            if (TokenManager.manualTokens[key] && TokenManager.manualTokens[key].symbol){
+                token.symbol = TokenManager.manualTokens[key].symbol;
+            }
+
             LogManager.error('saveToken', 'token.symbol is missing', token);
             return false;
         }

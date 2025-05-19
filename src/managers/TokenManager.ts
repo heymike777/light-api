@@ -38,6 +38,10 @@ export class TokenManager {
         { id: 'virtuals', title: 'Virtuals', color: '#57A0A4' },
     ];
 
+    static manualTokens: { [key: string]: { symbol?: string } } = {
+        "sol:bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1": { symbol: "bSOL" },
+    }
+
     static excludedTokens: string[] = [
         kSolAddress,
         kUsdcAddress,
@@ -70,6 +74,13 @@ export class TokenManager {
 
             token.name = digitalAsset.metadata.name;
             token.symbol = digitalAsset.metadata.symbol;
+            if (!token.symbol){
+                const key = `${token.chain}:${token.address}`;
+                if (TokenManager.manualTokens[key] && TokenManager.manualTokens[key].symbol){
+                    token.symbol = TokenManager.manualTokens[key].symbol;
+                }
+            }
+
             token.decimals = digitalAsset.mint.decimals;
             token.supply = digitalAsset.mint.supply.toString();
             
