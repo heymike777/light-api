@@ -234,9 +234,10 @@ export class RedisManager {
             if (TokenManager.manualTokens[key] && TokenManager.manualTokens[key].symbol){
                 token.symbol = TokenManager.manualTokens[key].symbol;
             }
-
-            LogManager.error('saveToken', 'token.symbol is missing', token);
-            return false;
+            else {
+                LogManager.error('saveToken', 'token.symbol is missing', token);
+                return false;
+            }
         }
 
         try {
