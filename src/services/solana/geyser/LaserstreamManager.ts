@@ -37,7 +37,7 @@ export class LaserstreamManager {
         if (data.block?.transactions){
             for (const tx of data.block?.transactions) {
                 if (!tx.isVote && !tx.meta?.err){
-                    // YellowstoneManager.receivedTx('laserstream', tx);
+                    YellowstoneManager.receivedTx('laserstream', tx);
                 }
             }
         }

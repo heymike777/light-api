@@ -202,6 +202,8 @@ export class YellowstoneManager {
                 return;
             }
 
+            return;
+
             // check if this transaction is already processed by this server
             const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
             if (!shouldProcess){
