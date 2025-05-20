@@ -26,7 +26,7 @@ import { SubscriptionManager } from "../managers/SubscriptionManager";
 import { Subscription, SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Subscription";
 import { RevenueCatManager } from "../managers/RevenueCatManager";
 import { UserManager } from "../managers/UserManager";
-import { User } from "../entities/users/User";
+import { User, UserBotStatus } from "../entities/users/User";
 import { UserRefClaim } from "../entities/referrals/UserRefClaim";
 import { Message } from "../entities/Message";
 import { Auth } from "../entities/Auth";
@@ -65,6 +65,7 @@ import { Config } from "../entities/Config";
 import { UserRefPayout } from "../entities/referrals/UserRefPayout";
 import { EncryptionManager } from "../managers/EncryptionManager";
 import { PreWallet } from "../entities/PreWallet";
+import { LaserstreamManager } from "./solana/geyser/LaserstreamManager";
 
 export class MigrationManager {
 
@@ -300,7 +301,45 @@ export class MigrationManager {
         // await ReferralsManager.recalcRefStats(true);
         // await ReferralsManager.checkIfFeeWalletHasEnoughUnpaidFunds();
         
+        // const laserstream = new LaserstreamManager();
+        // await laserstream.subscribe();
+
+        if (EnvManager.isCronProcess){
+            await this.checkUsersWhoHasBlockedBot();
+        }
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
+    }
+
+    static async checkUsersWhoHasBlockedBot(){
+        let countActive = 0;
+        let countInactive = 0;
+
+        const users = await User.find({});
+        for (const user of users) {
+            let isActive = false;
+            if (user.defaultBot && user.bots?.[user.defaultBot] != UserBotStatus.BLOCKED){
+                isActive = true;
+            }
+
+            if (!isActive && user.email){
+                const pushToken = await PushToken.findOne({ userId: user.id });
+                if (pushToken){
+                    isActive = true;
+                }
+            }
+
+            console.log('user', user.id, 'isActive', isActive);
+            if (isActive){
+                countActive++;
+            }
+            else {
+                countInactive++;
+            }
+        }
+
+        console.log('checkUsersWhoHasBlockedBot countActive', countActive);
+        console.log('checkUsersWhoHasBlockedBot countInactive', countInactive);
     }
 
     static async migrateRefCodes(){

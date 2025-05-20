@@ -202,8 +202,6 @@ export class YellowstoneManager {
                 return;
             }
 
-            return;
-
             // check if this transaction is already processed by this server
             const shouldProcess = YellowstoneManager.shouldProcessSignature(signature);
             if (!shouldProcess){
@@ -282,9 +280,9 @@ export class YellowstoneManager {
     static processedSignaturesTimestamps: { [key: string]: number } = {};
 
     static shouldProcessSignature(signature: string){
-        this.processedSignatures[signature] = ++this.processedSignatures[signature] || 1;
+        return true;
 
-        // LogManager.log(`count`, this.processedSignatures[signature]);
+        this.processedSignatures[signature] = ++this.processedSignatures[signature] || 1;
         if (this.processedSignatures[signature] > 1){
             return false;
         }
