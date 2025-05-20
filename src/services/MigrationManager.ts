@@ -314,6 +314,7 @@ export class MigrationManager {
     static async checkUsersWhoHasBlockedBot(){
         let countActive = 0;
         let countInactive = 0;
+        let inactiveUserIds: string[] = [];
 
         const users = await User.find({});
         for (const user of users) {
@@ -329,6 +330,10 @@ export class MigrationManager {
                 }
             }
 
+            if (!isActive){
+                inactiveUserIds.push(user.id);
+            }
+
             console.log('user', user.id, 'isActive', isActive);
             if (isActive){
                 countActive++;
@@ -340,6 +345,10 @@ export class MigrationManager {
 
         console.log('checkUsersWhoHasBlockedBot countActive', countActive);
         console.log('checkUsersWhoHasBlockedBot countInactive', countInactive);
+
+        const wallets = await Wallet.find({ userId: { $in: inactiveUserIds }, status: WalletStatus.ACTIVE });
+        console.log('checkUsersWhoHasBlockedBot wallets', wallets.length);
+
     }
 
     static async migrateRefCodes(){
