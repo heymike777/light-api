@@ -61,6 +61,7 @@ export class CronManager {
             cron.schedule('5 1 * * *', () => {
                 // once a day at 1:05 am UTC
                 ReferralsManager.recalcRefStats();
+                UserManager.checkUsersWhoHasBlockedBot();
             });
 
 

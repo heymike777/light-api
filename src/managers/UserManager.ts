@@ -1,10 +1,11 @@
 import { Subscription, SubscriptionStatus, SubscriptionTier } from "../entities/payments/Subscription";
 import { PushToken } from "../entities/PushToken";
 import { UserTraderProfile } from "../entities/users/TraderProfile";
-import { IUser, TelegramState, TelegramUser, User } from "../entities/users/User";
+import { IUser, TelegramState, TelegramUser, User, UserBotStatus } from "../entities/users/User";
 import { UserTransaction } from "../entities/users/UserTransaction";
-import { Wallet } from "../entities/Wallet";
+import { Wallet, WalletStatus } from "../entities/Wallet";
 import { BadRequestError } from "../errors/BadRequestError";
+import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager";
 import { Priority } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
@@ -274,6 +275,50 @@ export class UserManager {
         await Wallet.deleteMany({ userId: userId });
         await UserTraderProfile.updateMany({ userId: userId }, { $set: { active: false } });
         await UserTransaction.deleteMany({ userId: userId });
+    }
+
+    static async checkUsersWhoHasBlockedBot(){
+        let countActive = 0;
+        let countInactive = 0;
+        let inactiveUserIds: string[] = [];
+        let countPausedWallets = 0;
+
+        const users = await User.find({});
+        for (const user of users) {
+            let isActive = false;
+            if (user.defaultBot && user.bots?.[user.defaultBot] != UserBotStatus.BLOCKED){
+                isActive = true;
+            }
+
+            if (!isActive && user.email){
+                const pushToken = await PushToken.findOne({ userId: user.id });
+                if (pushToken){
+                    isActive = true;
+                }
+            }
+
+            if (!isActive){
+                inactiveUserIds.push(user.id);
+
+                const res = await Wallet.updateMany({ userId: user.id, status: WalletStatus.ACTIVE }, { status: WalletStatus.PAUSED });
+                countPausedWallets += res.modifiedCount;
+            }
+
+            console.log('user', user.id, 'isActive', isActive);
+            if (isActive){
+                countActive++;
+            }
+            else {
+                countInactive++;
+            }
+        }
+
+        console.log('checkUsersWhoHasBlockedBot countActive', countActive);
+        console.log('checkUsersWhoHasBlockedBot countInactive', countInactive);
+
+        if (countPausedWallets > 0){
+            await YellowstoneManager.resubscribeAll();
+        }
     }
 
 

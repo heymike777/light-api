@@ -305,50 +305,10 @@ export class MigrationManager {
         // await laserstream.subscribe();
 
         if (EnvManager.isCronProcess){
-            await this.checkUsersWhoHasBlockedBot();
+            await UserManager.checkUsersWhoHasBlockedBot();
         }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
-    }
-
-    static async checkUsersWhoHasBlockedBot(){
-        let countActive = 0;
-        let countInactive = 0;
-        let inactiveUserIds: string[] = [];
-
-        const users = await User.find({});
-        for (const user of users) {
-            let isActive = false;
-            if (user.defaultBot && user.bots?.[user.defaultBot] != UserBotStatus.BLOCKED){
-                isActive = true;
-            }
-
-            if (!isActive && user.email){
-                const pushToken = await PushToken.findOne({ userId: user.id });
-                if (pushToken){
-                    isActive = true;
-                }
-            }
-
-            if (!isActive){
-                inactiveUserIds.push(user.id);
-            }
-
-            console.log('user', user.id, 'isActive', isActive);
-            if (isActive){
-                countActive++;
-            }
-            else {
-                countInactive++;
-            }
-        }
-
-        console.log('checkUsersWhoHasBlockedBot countActive', countActive);
-        console.log('checkUsersWhoHasBlockedBot countInactive', countInactive);
-
-        const wallets = await Wallet.find({ userId: { $in: inactiveUserIds }, status: WalletStatus.ACTIVE });
-        console.log('checkUsersWhoHasBlockedBot wallets', wallets.length);
-
     }
 
     static async migrateRefCodes(){
