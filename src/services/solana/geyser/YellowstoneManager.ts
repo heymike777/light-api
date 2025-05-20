@@ -20,6 +20,9 @@ export class YellowstoneManager {
     PING_INTERVAL_MS = 30_000; // 30s
     stream: any;
 
+    static walletsStatsStartDate: Date = new Date();
+    static walletsStats: { [key: string]: number } = {};
+
     static allWalletsPubKeys: string[] = [];
     static reloadAllWallets(): string[] {
         const accountInclude: string[] = [...WalletManager.walletsMap.keys()];
@@ -171,7 +174,6 @@ export class YellowstoneManager {
                 return;
             }
 
-
             const signature = base58.encode(data.signature);
             // console.log('YellowstoneManager receivedTx', signature);
 
@@ -190,13 +192,22 @@ export class YellowstoneManager {
                     return b.owner;
                 }) || []),
             ];
-            console.log('YellowstoneManager receivedTx', 'jsonParsed:', JSON.stringify(jsonParsed));
             if (!pubkeys || pubkeys.length == 0){
                 return;
             }
             const geyserWallets = YellowstoneManager.allWalletsPubKeys.filter((pubkey) => {
                 return pubkeys.includes(pubkey);
             });
+
+            for (const pubkey of geyserWallets){
+                if (YellowstoneManager.walletsStats[pubkey]){
+                    YellowstoneManager.walletsStats[pubkey]++;
+                }
+                else {
+                    YellowstoneManager.walletsStats[pubkey] = 1;
+                }
+            }
+            
             // console.log('YellowstoneManager receivedTx', 'geyserWallets:', geyserWallets);
             if (geyserWallets.length == 0){
                 return;

@@ -20,6 +20,17 @@ export class CronManager {
             cron.schedule('* * * * *', () => {
                 if (EnvManager.chain == Chain.SOLANA){
                     YellowstoneManager.cleanupProcessedSignatures();
+
+
+                    const stats: { pubkey: string, count: number, perMinute: number }[] = [];
+                    for (const pubkey in WalletManager.stats) {
+                        const count = WalletManager.stats[pubkey];
+                        const perMinute = Math.floor(count / ((Date.now() - YellowstoneManager.walletsStatsStartDate.getTime()) / 1000 / 60));
+                        stats.push({ pubkey, count, perMinute });
+                    }
+                    
+                    stats.sort((a, b) => b.count - a.count);
+                    console.log('!geyser stats', stats);
                 }
             });
         }
