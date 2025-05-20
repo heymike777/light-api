@@ -52,7 +52,7 @@ export class TokenPriceManager {
                 // }
             }
         } catch (error) {
-            LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
+            // LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
         }
 
         return prices;
@@ -119,7 +119,7 @@ export class TokenPriceManager {
                 }
             }
         } catch (error: any) {
-            LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+            // LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
             SystemNotificationsManager.sendSystemMessage('TokenPriceManager.getPricesFromRaydium error:' + error.message);
         }
 
@@ -140,7 +140,7 @@ export class TokenPriceManager {
                 prices.push(...tmpPrices);
             }
         } catch (error) {
-            LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+            LogManager.error('Error in TokenPriceManager.getPricesFromJupiter', error);
         }
 
         console.log('TokenPriceManager', 'getPricesFromJupiter', `found ${prices.length} prices`);
