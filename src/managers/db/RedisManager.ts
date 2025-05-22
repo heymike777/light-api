@@ -9,6 +9,7 @@ import { WalletManager } from "../WalletManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { Chain } from "../../services/solana/types";
 import { TokenManager } from "../TokenManager";
+import { kSolAddress } from "../../services/solana/Constants";
 
 export interface WalletEvent {
     instanceId?: string;
@@ -302,6 +303,44 @@ export class RedisManager {
         }
 
         return [];
+    }
+
+    static async saveNativeTokenPrice(chain: Chain, price: number): Promise<boolean> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return false;
+        if (!redis.client) return false;
+        if (!redis.client.isReady) return false;
+
+        try {
+            const key = `token_price:${chain}:${kSolAddress}`;
+            const result = await redis.client.set(key, '' + price);
+            return result ? true : false;
+        }
+        catch(e){
+            LogManager.error('saveNativeTokenPrice', chain, price, e);
+        }
+
+        return false;
+    }
+
+    static async getNativeTokenPrice(chain: Chain): Promise<number | undefined> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return undefined;
+        if (!redis.client) return undefined;
+        if (!redis.client.isReady) return undefined;
+
+        try {
+            const key = `token_price:${chain}:${kSolAddress}`;
+            const price = await redis.client.get(key);
+            if (price) {
+                return +price;
+            }
+        }
+        catch(e){
+            LogManager.error('getNativeTokenPrice', e);
+        }
+
+        return undefined;
     }
 
 }

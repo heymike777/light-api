@@ -123,7 +123,7 @@ const start = async () => {
 
 const onExpressStarted = async () => {
     CronManager.setupCron();
-    await TokenManager.fetchSolPriceFromRedis();
+    await TokenManager.fetchNativeTokenPriceFromRedis();
 
     if (EnvManager.isTelegramProcess) {
         setupBot();

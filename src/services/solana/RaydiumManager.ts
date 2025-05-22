@@ -660,12 +660,12 @@ export class RaydiumManager {
             if (currency == Currency.SOL){
                 swap.value = {
                     sol: +lamports / getNativeToken(swap.chain).lamportsPerSol,
-                    usd : Math.round((+lamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getSolPrice() * 100) / 100,
+                    usd : Math.round((+lamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
                 }
             }
             else if (currency == Currency.USDC){
                 swap.value = {
-                    sol: Math.round(+lamports * 1000 / TokenManager.getSolPrice()) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
+                    sol: Math.round(+lamports * 1000 / TokenManager.getNativeTokenPrice(swap.chain)) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
                     usd: +lamports / (10 ** 6),
                 }
             }
@@ -855,12 +855,12 @@ export class RaydiumManager {
             if (currency == Currency.SOL){
                 swap.value = {
                     sol: +lamports / getNativeToken(swap.chain).lamportsPerSol,
-                    usd : Math.round((+lamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getSolPrice() * 100) / 100,
+                    usd : Math.round((+lamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
                 }
             }
             else if (currency == Currency.USDC){
                 swap.value = {
-                    sol: Math.round(+lamports * 1000 / TokenManager.getSolPrice()) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
+                    sol: Math.round(+lamports * 1000 / TokenManager.getNativeTokenPrice(swap.chain)) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
                     usd: +lamports / (10 ** 6),
                 }
             }

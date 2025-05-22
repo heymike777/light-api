@@ -89,7 +89,7 @@ export class ChainSolanaManager {
                     if (lpBalances && lpBalances.balances.length > 0){
                         const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
                         const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
-                        const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
+                        const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getNativeTokenPrice(chain);
                         totalPrice += usdValue;
                         amount = tokenBalance?.uiAmount || 0;
 

@@ -218,12 +218,12 @@ export class SwapManager {
             if (currency == Currency.SOL){
                 swap.value = {
                     sol: +swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol,
-                    usd : Math.round((+swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getSolPrice() * 100) / 100,
+                    usd : Math.round((+swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
                 }
             }
             else if (currency == Currency.USDC){
                 swap.value = {
-                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getSolPrice()) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
+                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getNativeTokenPrice(swap.chain)) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
                     usd: +swapAmountInLamports / (10 ** 6),
                 }
             }
@@ -752,7 +752,7 @@ export class SwapManager {
             }
 
             const feeSol = feeLamports / getNativeToken(swap.chain).lamportsPerSol;
-            const feeUsd = Math.round(feeSol * TokenManager.getSolPrice() * 100000) / 100000;
+            const feeUsd = Math.round(feeSol * TokenManager.getNativeTokenPrice(swap.chain) * 100000) / 100000;
             swap.referralRewards = {
                 fee: {
                     sol: feeLamports,

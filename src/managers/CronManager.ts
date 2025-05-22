@@ -36,6 +36,7 @@ export class CronManager {
         if (EnvManager.isPricesProcess){
             cron.schedule('* * * * *', () => {
                 TokenPriceManager.cleanOldCache();
+                TokenPriceManager.updateNativeTokenPrices();
             });
         }
 
@@ -84,7 +85,7 @@ export class CronManager {
 
         if (EnvManager.isMainProcess){
             cron.schedule('* * * * *', () => {
-                TokenManager.fetchSolPriceFromRedis();
+                TokenManager.fetchNativeTokenPriceFromRedis();
 
                 WalletManager.fetchAllWalletAddresses(false);
             });
@@ -92,7 +93,7 @@ export class CronManager {
 
         if (EnvManager.isTelegramProcess){
             cron.schedule('* * * * *', () => {
-                TokenManager.fetchSolPriceFromRedis();
+                TokenManager.fetchNativeTokenPriceFromRedis();
                 HealthManager.checkTelegramBotHealth();
             });
         }
