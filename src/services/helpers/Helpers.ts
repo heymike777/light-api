@@ -6,7 +6,8 @@ import { Request } from "express";
 import { AppPlatform } from "../../models/types";
 import { LogManager } from "../../managers/LogManager";
 import BN from "bn.js";
-import { kSolAddress } from "../solana/Constants";
+import { getNativeToken, kSolAddress } from "../solana/Constants";
+import { Chain } from "../solana/types";
 
 
 export class Helpers {
@@ -125,7 +126,7 @@ export class Helpers {
         return pageToken;
     }
 
-    static replaceAddressesWithPretty(text: string, addresses: string[] | undefined, wallets: IWallet[], txTokens?: ITokenModel[]): string {
+    static replaceAddressesWithPretty(chain: Chain, text: string, addresses: string[] | undefined, wallets: IWallet[], txTokens?: ITokenModel[]): string {
         if (addresses && addresses.length > 0){
             for (let index = 0; index < addresses.length; index++) {
                 const address = addresses[index];
@@ -149,7 +150,8 @@ export class Helpers {
                     title = txToken.nft ? txToken.nft.title : (txToken.symbol || txToken.name);
                 }
                 else if (address == kSolAddress){
-                    title = 'WSOL';
+                    const kSOL = getNativeToken(chain);
+                    title = kSOL.symbol;
                 }
 
                 if (!title || title==''){

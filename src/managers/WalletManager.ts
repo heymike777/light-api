@@ -645,12 +645,12 @@ export class WalletManager {
 
         if (txDescription){
             let description = txDescription.html;
-            description = Helpers.replaceAddressesWithPretty(description, txDescription.addresses, chat.wallets, tokens);
+            description = Helpers.replaceAddressesWithPretty(chain, description, txDescription.addresses, chat.wallets, tokens);
             message = message.replace('{description}', description);
         }
 
         const plainText = txDescription?.html ? Helpers.htmlToPlainText(txDescription?.html) : undefined;
-        const description = plainText ? Helpers.replaceAddressesWithPretty(plainText, txDescription?.addresses, chat.wallets, tokens) : undefined;
+        const description = plainText ? Helpers.replaceAddressesWithPretty(chain, plainText, txDescription?.addresses, chat.wallets, tokens) : undefined;
 
         LogManager.log('!changedWallets', JSON.stringify(changedWallets));
 
