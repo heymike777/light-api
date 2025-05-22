@@ -538,6 +538,7 @@ export class SwapManager {
     static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
         //TODO: add trading support for other chains 
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+        const kSOL = getNativeToken(chain);
 
         // console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
         // if (chain == Chain.SOLANA){
@@ -570,17 +571,17 @@ export class SwapManager {
         }
 
         if (isHoneypot && currency != Currency.SOL){
-            throw new BadRequestError('Honeypot is supported only for SOL');
+            throw new BadRequestError(`Honeypot is supported only for ${kSOL.symbol}`);
         }
 
         if (chain != Chain.SOLANA && currency != Currency.SOL){
-            throw new BadRequestError('Only SOL is supported for this chain');
+            throw new BadRequestError(`Only ${kSOL.symbol} is supported for this chain`);
         }
 
         const balance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
         const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
         if (!balance || balance.uiAmount < minSolRequired){
-            throw new BadRequestError(`Insufficient SOL balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
+            throw new BadRequestError(`Insufficient ${kSOL.symbol} balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
         }
 
         if (currency == Currency.USDC){
@@ -589,8 +590,6 @@ export class SwapManager {
                 throw new BadRequestError('Insufficient USDC balance');
             }    
         }
-
-        const kSOL = getNativeToken(chain);
 
         const decimals = currency == Currency.SOL ? kSOL.decimals : 6;
         const amountInLamports = amount * (10 ** decimals);
@@ -626,6 +625,7 @@ export class SwapManager {
     static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
         //TODO: add trading support for other chains 
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+        const kSOL = getNativeToken(chain);
         LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
@@ -643,7 +643,7 @@ export class SwapManager {
         }
 
         if (mint == kSolAddress){
-            throw new BadRequestError('Selling SOL is not supported');
+            throw new BadRequestError(`Selling ${kSOL.symbol} is not supported`);
         }
 
         if (amountPercents <= 0 || amountPercents > 100){
@@ -656,7 +656,7 @@ export class SwapManager {
         const solBalance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
         const minSolRequired = 0.01;
         if (!solBalance || solBalance.uiAmount < minSolRequired){
-            throw new BadRequestError('Insufficient SOL balance');
+            throw new BadRequestError(`Insufficient ${kSOL.symbol} balance`);
         }
 
         let amountInLamports = new BN(0);

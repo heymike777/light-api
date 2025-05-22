@@ -22,6 +22,7 @@ export interface SvmAsset {
 export class ChainSvmManager {
 
     static async getPortfolio(chain: Chain, traderProfile: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], lpAssets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
+        const kSOL = getNativeToken(chain);
         const values: {
             walletAddress?: string,
             totalPrice: number,
@@ -68,11 +69,11 @@ export class ChainSvmManager {
             textColor: string,
         } | undefined = undefined;
 
-        const solAsset = assets.find(a => a.address == kSolAddress && a.symbol == 'SOL');
+        const solAsset = assets.find(a => a.address == kSolAddress && a.symbol == kSOL.symbol);
 
         if (!solAsset || solAsset.uiAmount < 0.01){
             warning = {
-                message: 'Send some SOL to your trading wallet to ape into memes and cover gas fee.',
+                message: `Send some ${kSOL.symbol} to your trading wallet to ape into memes and cover gas fee.`,
                 backgroundColor: '#DC3545',
                 textColor: '#FFFFFF',
             }

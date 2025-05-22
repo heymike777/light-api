@@ -422,6 +422,7 @@ export class WalletManager {
         const txPreTokenBalances = parsedTx.preTokenBalances || [];
         const txPostTokenBalances = parsedTx.postTokenBalances || [];
         const tokens: ITokenModel[] = [];
+        const kSOL = getNativeToken(chain);
 
         const changedWallets: ChangedWallet[] = [];
         // LogManager.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
@@ -492,11 +493,11 @@ export class WalletManager {
 
                     const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
                     const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+ totalUsdValue + ')' : '';
-                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, kSolAddress)}">SOL</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
+                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, kSolAddress)}">${kSOL.symbol}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
 
                     walletTokenChanges.push({
                         mint: kSolAddress,
-                        symbol: 'SOL',
+                        symbol: kSOL.symbol,
                         description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`,
                     });
                 }

@@ -377,6 +377,7 @@ export class ReferralsManager {
             const connection = newConnectionByChain(chain);
             const balance = await connection.getBalance(feeWalletPublicKey);
             const refStats = await UserRefStats.find();
+            const kSOL = getNativeToken(chain);
             const solUpaid = refStats.reduce((acc, refStat) => {
                 console.log(chain, 'refStat:', refStat);
                 return acc + (refStat.stats.rewards[chain]?.rewardsTotal?.sol || 0) - (refStat.stats.rewards[chain]?.rewardsPaid?.sol || 0);
@@ -386,7 +387,7 @@ export class ReferralsManager {
 
             if (balance < solUpaid){
                 LogManager.error('ReferralsManager', 'checkIfFeeWalletHasEnoughUnpaidFunds', 'Fee wallet has not enough funds', { chain, balance, solUpaid });
-                SystemNotificationsManager.sendSystemMessage(`🔴🔴🔴 Fee wallet has not enough funds to cover all unpaid referral fees.\nBalance: ${balance}\nUnpaid (SOL): ${solUpaid}`);
+                SystemNotificationsManager.sendSystemMessage(`🔴🔴🔴 Fee wallet has not enough funds to cover all unpaid referral fees.\nBalance: ${balance}\nUnpaid (${kSOL.symbol}): ${solUpaid}`);
                 await ConfigManager.updateConfig({ isRefPayoutsEnabled: false });
                 return false;
             }

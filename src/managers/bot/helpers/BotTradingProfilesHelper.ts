@@ -15,6 +15,7 @@ import { InlineButton, TgMessage } from "../BotTypes";
 import { Chain, Priority } from "../../../services/solana/types";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import * as web3 from '@solana/web3.js';
+import { getNativeToken } from "../../../services/solana/Constants";
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -118,8 +119,8 @@ export class BotTraderProfilesHelper extends BotHelper {
 
             try {
                 const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, Priority.MEDIUM, defaultAmount, slippage, undefined);
-
-                const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, 0);
+                const chain = user.defaultChain || Chain.SOLANA;
+                const { message, buttons } = await this.buildTraderProfileMessage(chain, traderProfile, 0);
                 const markup = BotManager.buildInlineKeyboard(buttons);
                 await BotManager.reply(ctx, message, {
                     reply_markup: markup,
@@ -150,7 +151,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             const chain = user.defaultChain || Chain.SOLANA;
             const balance = await SolanaManager.getWalletSolBalance(chain, traderProfile.encryptedWallet?.publicKey);
 
-            const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
+            const { message, buttons } = await this.buildTraderProfileMessage(chain, traderProfile, balance?.uiAmount);
             const markup = BotManager.buildInlineKeyboard(buttons);
             await BotManager.reply(ctx, message, {
                 reply_markup: markup,
@@ -271,11 +272,12 @@ export class BotTraderProfilesHelper extends BotHelper {
         }
     }
 
-    async buildTraderProfileMessage(traderProfile: IUserTraderProfile, solBalance?: number): Promise<{ message: string, buttons: InlineButton[] }> {
+    async buildTraderProfileMessage(chain: Chain, traderProfile: IUserTraderProfile, solBalance?: number): Promise<{ message: string, buttons: InlineButton[] }> {
+        const kSOL = getNativeToken(chain);
         let message = `<b>${traderProfile.title}</b>` + (traderProfile.default ? ' ⭐️' : '');
         message += `\n<code>${traderProfile.encryptedWallet?.publicKey}</code> (Tap to copy)`; 
         if (solBalance !== undefined){
-            message += `\nBalance: <b>${solBalance} SOL</b>`;
+            message += `\nBalance: <b>${solBalance} ${kSOL.symbol}</b>`;
         }
 
         const buttons: InlineButton[] = [];
@@ -299,7 +301,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         const chain = user.defaultChain || Chain.SOLANA; 
         const balance = await SolanaManager.getWalletSolBalance(chain, traderProfile.encryptedWallet?.publicKey);
 
-        const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
+        const { message, buttons } = await this.buildTraderProfileMessage(chain, traderProfile, balance?.uiAmount);
         const markup = BotManager.buildInlineKeyboard(buttons);
 
         return { text: message, markup };
@@ -332,7 +334,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             for (let index = 0; index < traderProfiles.length; index++) {
                 const traderProfile = traderProfiles[index];
                 const solBalance = balances.find(b => b.publicKey == traderProfile.encryptedWallet?.publicKey)?.uiAmount || 0;
-                const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, solBalance);   
+                const { message, buttons } = await this.buildTraderProfileMessage(chain, traderProfile, solBalance);   
                 replyMessage.text += `\n\n---\n\n${message}`;
 
                 replyMessage.buttons.push({ id: 'row', text: '' });

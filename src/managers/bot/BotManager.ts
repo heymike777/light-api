@@ -28,7 +28,7 @@ import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager
 import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
-import { kSolAddress } from "../../services/solana/Constants";
+import { getNativeToken, kSolAddress } from "../../services/solana/Constants";
 import { Chain } from "../../services/solana/types";
 import { BotReferralProgramHelper } from "./helpers/BotReferralProgramHelper";
 import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
@@ -449,6 +449,7 @@ export class BotManager {
         const buyAmounts: number[] = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
         const sellAmounts: number[] = traderProfile?.sellAmounts || [50, 100];
         const mintInfo = await SolanaManager.getTokenMint(token.chain, token.address);
+        const kSOL = getNativeToken(token.chain);
 
         const buttons: InlineButton[] = [
             { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
@@ -496,7 +497,7 @@ export class BotManager {
             const tokenBalance = await SolanaManager.getWalletTokenBalance(token.chain, walletAddress, token.address);
 
             message += '\n\n';
-            message += `Balance: ${solBalance?.uiAmount || 0} SOL`;
+            message += `Balance: ${solBalance?.uiAmount || 0} ${kSOL.symbol}`;
             if (tokenBalance && tokenBalance.uiAmount>0){
                 message += ` | ${tokenBalance.uiAmount} ${token.symbol}`;
 
@@ -519,7 +520,7 @@ export class BotManager {
                         const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
                         const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
 
-                        message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} SOL = $${Helpers.numberFormatter(usdValue, 2)}`;
+                        message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} ${kSOL.symbol} = $${Helpers.numberFormatter(usdValue, 2)}`;
 
                         let btnIndex = 0;
                         for (const amount of sellAmounts) {
@@ -543,7 +544,7 @@ export class BotManager {
 
         if (traderProfile && traderProfile.encryptedWallet?.publicKey){
             if (!solBalance || solBalance.uiAmount < 0.01){
-                message += '\n\n🔴 Send some SOL to your trading wallet to ape into memes and cover gas fee.';                
+                message += `\n\n🔴 Send some ${kSOL.symbol} to your trading wallet to ape into memes and cover gas fee.`;                
             }
         }
 
@@ -584,6 +585,7 @@ export class BotManager {
     static async buildPortfolioMessage(user: IUser, traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
         const chain = user.defaultChain || Chain.SOLANA;
         const { values, assets, lpAssets, warning } = await ChainManager.getPortfolio(chain, traderProfile);
+        const kSOL = getNativeToken(chain);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
         if (chain != Chain.SOLANA){
@@ -629,7 +631,7 @@ export class BotManager {
                     const solBalanceString = Helpers.prettyNumberFromString('' + solBalance, 3);
                     const tokenBalanceString = Helpers.prettyNumberFromString('' + tokenBalance, 3);
 
-                    message += `\n${asset.symbol} LP: ${tokenBalanceString} ${asset.symbol} + ${solBalanceString} SOL`;
+                    message += `\n${asset.symbol} LP: ${tokenBalanceString} ${asset.symbol} + ${solBalanceString} ${kSOL.symbol}`;
 
                     if (asset.priceInfo?.totalPrice){
                         message += ` = $${Helpers.numberFormatter(asset.priceInfo.totalPrice, 2)}`;
