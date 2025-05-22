@@ -1,6 +1,5 @@
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
-import { kSolAddress, kUsdcAddress, kUsdcMintDecimals } from "../services/solana/Constants";
+import { getNativeToken, kSolAddress, kUsdcAddress, kUsdcMintDecimals } from "../services/solana/Constants";
 import { Chain, Engine, Priority } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { BadRequestError } from "../errors/BadRequestError";
@@ -218,13 +217,13 @@ export class SwapManager {
 
             if (currency == Currency.SOL){
                 swap.value = {
-                    sol: +swapAmountInLamports / LAMPORTS_PER_SOL,
-                    usd : Math.round((+swapAmountInLamports / LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+                    sol: +swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol,
+                    usd : Math.round((+swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getSolPrice() * 100) / 100,
                 }
             }
             else if (currency == Currency.USDC){
                 swap.value = {
-                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getSolPrice()) / 1000000000, // 10**6 / 10**9
+                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getSolPrice()) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
                     usd: +swapAmountInLamports / (10 ** 6),
                 }
             }
@@ -468,13 +467,13 @@ export class SwapManager {
         let internalMessage = `${swap.type} tx`;
         if (token){
             const bnAmount = new BN(swap.amountIn);
-            const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(10**9) : new BN(10 ** (token.decimals || 0))
+            const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(getNativeToken(swap.chain).lamportsPerSol) : new BN(10 ** (token.decimals || 0))
             // const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
             // const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
 
-            const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, 9);
+            const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, getNativeToken(swap.chain).decimals);
             const actionString = swap.type == SwapType.BUY 
-                ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} SOL` 
+                ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} ${getNativeToken(swap.chain).symbol}` 
                 : `sell ${Helpers.prettyNumberFromString(amountIn, 6)} ${token.symbol}`;
             internalMessage = `tx to ${actionString}`
         }
@@ -578,22 +577,22 @@ export class SwapManager {
             throw new BadRequestError('Only SOL is supported for this chain');
         }
 
-        const connection = newConnectionByChain(chain);
-
-        const balance = await SolanaManager.getWalletSolBalance(connection, tpWallet.publicKey);
+        const balance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
         const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
         if (!balance || balance.uiAmount < minSolRequired){
             throw new BadRequestError(`Insufficient SOL balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
         }
 
         if (currency == Currency.USDC){
-            const balance = await SolanaManager.getWalletTokenBalance(connection, tpWallet.publicKey, kUsdcAddress);
+            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, kUsdcAddress);
             if (!balance || balance.uiAmount < amount){
                 throw new BadRequestError('Insufficient USDC balance');
             }    
         }
 
-        const decimals = currency == Currency.SOL ? 9 : 6;
+        const kSOL = getNativeToken(chain);
+
+        const decimals = currency == Currency.SOL ? kSOL.decimals : 6;
         const amountInLamports = amount * (10 ** decimals);
 
         const swap = new Swap();
@@ -654,9 +653,7 @@ export class SwapManager {
         const currency = traderProfile.currency || Currency.SOL;
         const userId = traderProfile.userId;
 
-        const connection = newConnectionByChain(chain);
-
-        const solBalance = await SolanaManager.getWalletSolBalance(connection, tpWallet.publicKey);
+        const solBalance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
         const minSolRequired = 0.01;
         if (!solBalance || solBalance.uiAmount < minSolRequired){
             throw new BadRequestError('Insufficient SOL balance');
@@ -665,7 +662,7 @@ export class SwapManager {
         let amountInLamports = new BN(0);
         if (!isHoneypot){
             // if not honeypot, then we need to check balance
-            const balance = await SolanaManager.getWalletTokenBalance(connection, tpWallet.publicKey, mint);
+            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, mint);
             if (!balance){
                 throw new BadRequestError('Insufficient balance');
             }
@@ -754,7 +751,7 @@ export class SwapManager {
                 return;
             }
 
-            const feeSol = feeLamports / LAMPORTS_PER_SOL;
+            const feeSol = feeLamports / getNativeToken(swap.chain).lamportsPerSol;
             const feeUsd = Math.round(feeSol * TokenManager.getSolPrice() * 100000) / 100000;
             swap.referralRewards = {
                 fee: {

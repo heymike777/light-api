@@ -2,7 +2,7 @@ import BN from "bn.js";
 import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { PortfolioAsset } from "../../models/types";
-import { kSolAddress } from "../../services/solana/Constants";
+import { getNativeToken, kSolAddress } from "../../services/solana/Constants";
 import { newConnectionByChain } from "../../services/solana/lib/solana";
 import { SolanaManager } from "../../services/solana/SolanaManager";
 import { Chain } from "../../services/solana/types";
@@ -83,15 +83,15 @@ export class ChainSonicManager {
 
     static async getAssetsByOwner(walletAddress: string): Promise<SonicAsset[]> {
         try{
-            const web3Conn = newConnectionByChain(this.chain);
-            const solBalance = await SolanaManager.getWalletSolBalance(web3Conn, walletAddress);
+            const solBalance = await SolanaManager.getWalletSolBalance(this.chain, walletAddress);
             const balances = await SolanaManager.getWalletTokensBalances(this.chain, walletAddress);
+            const kSOL = getNativeToken(Chain.SONIC);
             const tokens: SonicAsset[] = [];
             tokens.push({
                 mint: kSolAddress,
-                symbol: 'SOL',
-                name: 'Solana',
-                decimals: 9,
+                symbol: kSOL.symbol,
+                name: kSOL.name,
+                decimals: kSOL.decimals,
                 balance: solBalance?.amount || new BN(0),
             });
             tokens.push(...balances.map((balance) => {

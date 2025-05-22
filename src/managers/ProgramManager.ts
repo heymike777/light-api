@@ -12,7 +12,7 @@ import { MetaplexManager } from "./MetaplexManager";
 import { WalletManager } from "./WalletManager";
 import { getTokenMetadata } from "@solana/spl-token";
 import fs from "fs";
-import { kJupAddress, kSolAddress } from "../services/solana/Constants";
+import { getNativeToken, kJupAddress, kSolAddress } from "../services/solana/Constants";
 import { IWallet } from "../entities/Wallet";
 import BN from "bn.js";
 import { LogManager } from "./LogManager";
@@ -142,13 +142,14 @@ export class ProgramManager {
         let description: TxDescription | undefined;
         let ixTitle: string | undefined = undefined;
         const signature = tx?.transaction.signatures?.[0];
+        const kSOL = getNativeToken(chain);
 
         try {
             if (programId == kProgram.SOLANA){
                 if (ixType == 'transfer' || ixType == 'transferWithSeed'){
                     const addresses = [ixParsed.info.source, ixParsed.info.destination];
                     description = {
-                        html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> transferred <b>${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a>`,
+                        html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> transferred <b>${ixParsed.info.lamports / getNativeToken(chain).lamportsPerSol} SOL</b> to <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a>`,
                         addresses,
                     };
                 }
@@ -157,7 +158,7 @@ export class ProgramManager {
                 if (ixType == 'delegate'){
                     const createAccountIx = previousIxs?.find((ix) => ('parsed' in ix) && ix.programId.toBase58() == kProgram.SOLANA && ix.parsed.type == 'createAccount');
                     const lamports = createAccountIx && ('parsed' in createAccountIx) ? createAccountIx?.parsed.info.lamports : undefined;
-                    const stakeAmountString = lamports ? `${lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
+                    const stakeAmountString = lamports ? `${lamports / getNativeToken(chain).lamportsPerSol} SOL` : 'SOL';
 
                     const addresses = [ixParsed.info.stakeAuthority, ixParsed.info.voteAccount, ixParsed.info.stakeAccount];
                     description = {
@@ -166,7 +167,7 @@ export class ProgramManager {
                     };
                 }
                 else if (ixType == 'withdraw'){
-                    const stakeAmountString = ixParsed.info.lamports ? `${ixParsed.info.lamports / web3.LAMPORTS_PER_SOL} SOL` : 'SOL';
+                    const stakeAmountString = ixParsed.info.lamports ? `${ixParsed.info.lamports / getNativeToken(chain).lamportsPerSol} SOL` : 'SOL';
 
                     const addresses = [ixParsed.info.destination, ixParsed.info.withdrawAuthority, ixParsed.info.stakeAccount];
                     description = {
@@ -254,7 +255,7 @@ export class ProgramManager {
                     }
                     const bondingCurveAddress = accounts?.[3]?.toBase58();
                     const bondingCurve = bondingCurveAddress ? { address: bondingCurveAddress } : undefined;
-                    const solAmountString = swapLamports > 0 ? ` for ${swapLamports / web3.LAMPORTS_PER_SOL} SOL` : '';
+                    const solAmountString = swapLamports > 0 ? ` for ${swapLamports / getNativeToken(chain).lamportsPerSol} SOL` : '';
                     
                     if (ixType == 'buy') {
                         description = {
@@ -266,7 +267,7 @@ export class ProgramManager {
                             from: {
                                 mint: kSolAddress,
                                 amount: '' + swapLamports,
-                                decimals: 9,
+                                decimals: kSOL.decimals,
                             },
                             to: {
                                 mint: tokenMint,
@@ -292,7 +293,7 @@ export class ProgramManager {
                             to: {
                                 mint: kSolAddress,
                                 amount: '' + swapLamports,
-                                decimals: 9,
+                                decimals: kSOL.decimals,
                             },
                             bondingCurve,
                             signature,
@@ -430,7 +431,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[6]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = +ixParsed.data?.config?.startingPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = +ixParsed.data?.config?.startingPrice / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(chain, addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
@@ -444,7 +445,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[5]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / getNativeToken(chain).lamportsPerSol : +ixParsed.data?.maxPrice / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(chain, addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
@@ -458,7 +459,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[6]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / getNativeToken(chain).lamportsPerSol : +ixParsed.data?.maxPrice / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(chain, addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
@@ -472,7 +473,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[4]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / web3.LAMPORTS_PER_SOL : +ixParsed.data?.maxPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.minPrice ? +ixParsed.data?.minPrice / getNativeToken(chain).lamportsPerSol : +ixParsed.data?.maxPrice / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(chain, addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
@@ -485,7 +486,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[2]?.toBase58();
                     if (buyerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, tokenMint];
-                        const solAmount = +ixParsed.data?.price / web3.LAMPORTS_PER_SOL;
+                        const solAmount = +ixParsed.data?.price / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> listed <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
@@ -515,7 +516,7 @@ export class ProgramManager {
                     const tokenMint = sellIx?.ixData?.output?.data?.event?.taker?.['0']?.assetId;
                     if (buyerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, tokenMint];
-                        const solAmount = +ixParsed.data?.maxAmount / web3.LAMPORTS_PER_SOL;
+                        const solAmount = +ixParsed.data?.maxAmount / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Tensor`,
@@ -527,7 +528,7 @@ export class ProgramManager {
                     const buyerWalletAddress = accounts?.[1]?.toBase58();
                     if (buyerWalletAddress){
                         const addresses = [buyerWalletAddress];
-                        const solAmount = +ixParsed.data?.amount / web3.LAMPORTS_PER_SOL;
+                        const solAmount = +ixParsed.data?.amount / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> listed compressed NFT for <b>${solAmount} SOL</b> on Tensor`,
@@ -567,7 +568,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[7]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress && tokenMint){
                         const addresses = [buyerWalletAddress, sellerWalletAddress, tokenMint];
-                        const solAmount = ixParsed.data?.args?.minPaymentAmount / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.args?.minPaymentAmount / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(chain, addresses[2])}">{address2}</a> from <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
@@ -584,7 +585,7 @@ export class ProgramManager {
                     const tokenMint = accounts?.[2]?.toBase58();
                     if (walletAddress && tokenMint){
                         const addresses = [walletAddress, tokenMint];
-                        const solAmount = +ixParsed.data?.buyerPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = +ixParsed.data?.buyerPrice / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
@@ -603,7 +604,7 @@ export class ProgramManager {
                     const sellerWalletAddress = accounts?.[1]?.toBase58();
                     if (buyerWalletAddress && sellerWalletAddress){
                         const addresses = [buyerWalletAddress, sellerWalletAddress];
-                        const solAmount = ixParsed.data?.args?.buyerPrice / web3.LAMPORTS_PER_SOL;
+                        const solAmount = ixParsed.data?.args?.buyerPrice / getNativeToken(chain).lamportsPerSol;
 
                         description = {
                             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> bought NFT from <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> for <b>${solAmount} SOL</b> on Magic Eden`,
@@ -943,7 +944,7 @@ export class ProgramManager {
                     let stakeAmountString: string | undefined = undefined;
                     if (stakingAmountString){
                         const stakingAmount = new BN(stakingAmountString || '0');
-                        stakeAmountString = Helpers.bnToUiAmount(stakingAmount, 9); 
+                        stakeAmountString = Helpers.bnToUiAmount(stakingAmount, kSOL.decimals); 
                     }
 
                     const walletAddress = accounts?.[2]?.toBase58() || 'unknown';

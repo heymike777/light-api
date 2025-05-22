@@ -25,7 +25,6 @@ import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { Currency } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager";
-import { newConnectionByChain } from "../../services/solana/lib/solana";
 import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
@@ -490,12 +489,11 @@ export class BotManager {
             message += `\n└ Freeze Authority: ${mintInfo.freezeAuthority ? `Yes 🔴` : 'No 🟢'}`;    
         }
         
-        const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
         if (traderProfile && traderProfile.encryptedWallet?.publicKey){
             const walletAddress = traderProfile.encryptedWallet.publicKey;
-            solBalance = await SolanaManager.getWalletSolBalance(connection, walletAddress);
-            const tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
+            solBalance = await SolanaManager.getWalletSolBalance(token.chain, walletAddress);
+            const tokenBalance = await SolanaManager.getWalletTokenBalance(token.chain, walletAddress, token.address);
 
             message += '\n\n';
             message += `Balance: ${solBalance?.uiAmount || 0} SOL`;

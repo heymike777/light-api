@@ -148,8 +148,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             }
 
             const chain = user.defaultChain || Chain.SOLANA;
-            const connection = newConnectionByChain(chain);
-            const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.encryptedWallet?.publicKey);
+            const balance = await SolanaManager.getWalletSolBalance(chain, traderProfile.encryptedWallet?.publicKey);
 
             const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
             const markup = BotManager.buildInlineKeyboard(buttons);
@@ -298,8 +297,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         }
 
         const chain = user.defaultChain || Chain.SOLANA; 
-        const connection = newConnectionByChain(chain);
-        const balance = await SolanaManager.getWalletSolBalance(connection, traderProfile.encryptedWallet?.publicKey);
+        const balance = await SolanaManager.getWalletSolBalance(chain, traderProfile.encryptedWallet?.publicKey);
 
         const { message, buttons } = await this.buildTraderProfileMessage(traderProfile, balance?.uiAmount);
         const markup = BotManager.buildInlineKeyboard(buttons);
@@ -318,9 +316,8 @@ export class BotTraderProfilesHelper extends BotHelper {
             const defaultProfile = traderProfiles.find(tp => tp.default) || traderProfiles[0];
 
             const chain = user.defaultChain || Chain.SOLANA; //TODO: get for other chains as well
-            const connection = newConnectionByChain(chain);
             const walletAddresses = traderProfiles.map(tp => tp.encryptedWallet?.publicKey).filter(Boolean) as string[];
-            const balances = await SolanaManager.getWalletsSolBalances(connection, walletAddresses);
+            const balances = await SolanaManager.getWalletsSolBalances(chain, walletAddresses);
     
             replyMessage.buttons = replyMessage.buttons || [];
             replyMessage.text = `You have ${traderProfiles.length} trader profile${ traderProfiles.length==1?'':'s' }.`;

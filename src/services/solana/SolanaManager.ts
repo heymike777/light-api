@@ -13,7 +13,7 @@ import { Keypair } from "@solana/web3.js";
 import { Helpers } from "../helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
 import { Interface } from "helius-sdk";
-import { kRaydiumAuthority, kSolAddress } from "./Constants";
+import { getNativeToken, kRaydiumAuthority, kSolAddress } from "./Constants";
 import BN from "bn.js";
 import { MetaplexManager } from "../../managers/MetaplexManager";
 
@@ -348,13 +348,16 @@ export class SolanaManager {
         return ataAmount;
     }
 
-    static async getWalletSolBalance(web3Conn: web3.Connection, walletAddress?: string): Promise<TokenBalance | undefined>{
+    static async getWalletSolBalance(chain: Chain, walletAddress?: string): Promise<TokenBalance | undefined>{
         if (!walletAddress) return undefined;
+
+        const connection = newConnectionByChain(chain);
+        const kSOL = getNativeToken(chain);
 
         try {
             const mainWalletPublicKey = new web3.PublicKey(walletAddress);
-            const balance = await web3Conn.getBalance(mainWalletPublicKey);
-            return {amount: new BN(balance), uiAmount: Math.round(1000 * balance / web3.LAMPORTS_PER_SOL) / 1000, decimals: 9};
+            const balance = await connection.getBalance(mainWalletPublicKey);
+            return {amount: new BN(balance), uiAmount: Math.round(1000 * balance / kSOL.lamportsPerSol) / 1000, decimals: kSOL.decimals};
         }
         catch (err){
             LogManager.error('getWalletSolBalance', err);
@@ -363,9 +366,12 @@ export class SolanaManager {
         return undefined;
     }
 
-    static async getWalletsSolBalances(web3Conn: web3.Connection, walletAddresses: string[]): Promise<(TokenBalance & {publicKey: string})[]>{
+    static async getWalletsSolBalances(chain: Chain, walletAddresses: string[]): Promise<(TokenBalance & {publicKey: string})[]>{
+        const connection = newConnectionByChain(chain);
+
         const publicKeys = walletAddresses.map(address => new web3.PublicKey(address));
-        const accounts = await web3Conn.getMultipleAccountsInfo(publicKeys);
+        const accounts = await connection.getMultipleAccountsInfo(publicKeys);
+        const kSOL = getNativeToken(chain);
 
         const balances: (TokenBalance & {publicKey: string})[] = [];
         let index = 0;
@@ -373,10 +379,10 @@ export class SolanaManager {
             const publicKey = walletAddresses[index];
 
             if (account) {
-                balances.push({amount: new BN(account.lamports), uiAmount: account.lamports / web3.LAMPORTS_PER_SOL, decimals: 9, publicKey});
+                balances.push({amount: new BN(account.lamports), uiAmount: account.lamports / kSOL.lamportsPerSol, decimals: kSOL.decimals, publicKey});
             }
             else {
-                balances.push({amount: new BN(0), uiAmount: 0, decimals: 9, publicKey});
+                balances.push({amount: new BN(0), uiAmount: 0, decimals: kSOL.decimals, publicKey});
             }
 
             index++;
@@ -385,12 +391,14 @@ export class SolanaManager {
         return balances;
     }
 
-    static async getWalletTokenBalance(web3Conn: web3.Connection, walletAddress: string, tokenAddress: string): Promise<TokenBalance>{
+    static async getWalletTokenBalance(chain: Chain, walletAddress: string, tokenAddress: string): Promise<TokenBalance>{
         try {
+            const connection = newConnectionByChain(chain);
+            
             // LogManager.log(process.env.SERVER_NAME, 'getWalletTokenBalance', 'walletAddress', walletAddress, 'tokenAddress', tokenAddress);
             const mainWalletPublicKey = new web3.PublicKey(walletAddress);
             const tokenPublicKey = new web3.PublicKey(tokenAddress);
-            const tmp = await web3Conn.getParsedTokenAccountsByOwner(mainWalletPublicKey, {mint: tokenPublicKey});
+            const tmp = await connection.getParsedTokenAccountsByOwner(mainWalletPublicKey, {mint: tokenPublicKey});
             // LogManager.log(process.env.SERVER_NAME, 'getWalletTokenBalance', 'tmp', JSON.stringify(tmp));
 
             return {
@@ -547,7 +555,7 @@ export class SolanaManager {
         return results;
     };
 
-    static async getAssetsByOwner(walletAddress: string): Promise<{ assets: Asset[], lpTokens: LPToken[] }> {
+    static async getAssetsByOwner(chain: Chain, walletAddress: string): Promise<{ assets: Asset[], lpTokens: LPToken[] }> {
         const heliusData = await HeliusManager.getAssetsByOwner(walletAddress, {
             showNativeBalance: true,
             showFungible: true,
@@ -565,16 +573,18 @@ export class SolanaManager {
         console.log('heliusData:', JSON.stringify(heliusData));
 
         const assets: Asset[] = [];
+        
+        const kSOL = getNativeToken(chain);
 
         if (nativeBalance){
             const asset: Asset = {
                 address: kSolAddress,
                 amount: nativeBalance.lamports,
-                uiAmount: nativeBalance.lamports / web3.LAMPORTS_PER_SOL,
-                decimals: 9,
-                symbol: 'SOL',
-                name: 'Solana',
-                logo: 'https://light.dangervalley.com/static/sol.png',
+                uiAmount: nativeBalance.lamports / kSOL.lamportsPerSol,
+                decimals: kSOL.decimals,
+                symbol: kSOL.symbol,
+                name: kSOL.name,
+                logo: kSOL.logo,
                 priceInfo: { 
                     pricePerToken: nativeBalance.price_per_sol, 
                     totalPrice: nativeBalance.total_price,

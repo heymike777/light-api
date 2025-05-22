@@ -9,8 +9,8 @@ import { UserRefCode } from "../../../entities/referrals/UserRefCode";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { ReferralsManager } from "../../ReferralsManager";
 import { Helpers } from "../../../services/helpers/Helpers";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { Chain } from "../../../services/solana/types";
+import { getNativeToken } from "../../../services/solana/Constants";
 
 export class BotReferralProgramHelper extends BotHelper {
 
@@ -144,12 +144,14 @@ export class BotReferralProgramHelper extends BotHelper {
         // const rewardsPaidUsdc = refStats?.rewardsPaid.usdc || 0;
         // const rewardsUnpaidUsdc = rewardsTotalUsdc - rewardsPaidUsdc;
 
+        const kSOL = getNativeToken(Chain.SOLANA);
+
         message += `\n\n`;
         message += `Your Referrals (updated every hour)
 • Users referred: ${usersCountDirect+usersCountIndirect} (direct: ${usersCountDirect}, indirect: ${usersCountIndirect})
-• Total rewards: ${Helpers.prettyNumber(rewardsTotalSol / LAMPORTS_PER_SOL, 6)} SOL
-• Total paid: ${Helpers.prettyNumber(rewardsPaidSol / LAMPORTS_PER_SOL, 6)} SOL
-• Total unpaid: ${Helpers.prettyNumber(rewardsUnpaidSol / LAMPORTS_PER_SOL, 6)} SOL`;
+• Total rewards: ${Helpers.prettyNumber(rewardsTotalSol / kSOL.lamportsPerSol, 6)} ${kSOL.symbol}
+• Total paid: ${Helpers.prettyNumber(rewardsPaidSol / kSOL.lamportsPerSol, 6)} ${kSOL.symbol}
+• Total unpaid: ${Helpers.prettyNumber(rewardsUnpaidSol / kSOL.lamportsPerSol, 6)} ${kSOL.symbol}`;
 
         message += `\n\n`;
         message += `Rewards are paid daily and airdropped directly to your main trader profile wallet. <u><b>You must have accrued at least 0.005 SOL in unpaid fees to be eligible for a payout.</b></u>`;

@@ -158,8 +158,7 @@ export class TraderProfilesManager {
         //getWalletTokenBalance + updateTokenPairLiquidity + getAmmPoolInfo with one call getMultipleParsedAccount
 
         const lpMintAddress = lpMint.lpMint;
-        const connection = newConnectionByChain(chain);
-        const lpTokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, lpMintAddress);
+        const lpTokenBalance = await SolanaManager.getWalletTokenBalance(chain, walletAddress, lpMintAddress);
 
         const pair = await TokenPair.findOne({ chain, pairAddress: lpMint.pairAddress });
         if (!pair){

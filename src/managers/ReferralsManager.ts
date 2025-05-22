@@ -9,7 +9,6 @@ import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { Currency } from "../models/types";
 import { Chain, Priority } from "../services/solana/types";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 import { UserRefPayout } from "../entities/referrals/UserRefPayout";
 import { StatusType } from "../entities/payments/Swap";
@@ -17,7 +16,8 @@ import { SolanaManager } from "../services/solana/SolanaManager";
 import { web3 } from "@coral-xyz/anchor";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnectionByChain } from "../services/solana/lib/solana";
-import { Config } from "../entities/Config";
+import { getNativeToken } from "../services/solana/Constants";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 //TODO: SVM
 
@@ -354,6 +354,7 @@ export class ReferralsManager {
             return;
         }
 
+        //TODO: for now it's ok, but in the future let's make if different for each chain
         const minLamports = 0.005 * LAMPORTS_PER_SOL;
 
         const refStatsSolana = await UserRefStats.find({ 'stats.rewards.sol.rewardsTotal.sol': { $gte: minLamports } });
@@ -408,7 +409,7 @@ export class ReferralsManager {
             return;
         }
         const unpaid = refStats.rewards[chain].rewardsTotal.sol - refStats.rewards[chain].rewardsPaid.sol;
-        console.log('unpaid:', unpaid / LAMPORTS_PER_SOL, 'SOL');
+        console.log('unpaid:', unpaid / getNativeToken(chain).lamportsPerSol, getNativeToken(chain).symbol);
         if (unpaid < 0.005){
             console.log('unpaid is less than 0.005 SOL');
             return;
