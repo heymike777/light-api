@@ -83,13 +83,13 @@ export enum Priority {
 export enum Chain {
     SOLANA = 'sol',
     SONIC = 'sonic', // Sonic SVM mainnet
-    SONIC_TESTNET = 'sonic_testnet',
-    SOON_MAINNET = 'soon_mainnet',
-    SOON_TESTNET = 'soon_testnet',
-    SVMBNB_MAINNET = 'svmbnb_mainnet',
-    SVMBNB_TESTNET = 'svmbnb_testnet',
-    SOONBASE_MAINNET = 'soonbase_mainnet',
-    SOONBASE_TESTNET = 'soonbase_testnet',
+    SONIC_TESTNET = 't_sonic',
+    SOON_MAINNET = 'soon',
+    SOON_TESTNET = 't_soon',
+    SVMBNB_MAINNET = 'svmbnb',
+    SVMBNB_TESTNET = 't_svmbnb',
+    SOONBASE_MAINNET = 'soonba',
+    SOONBASE_TESTNET = 't_soonbase',
 }
 
 export const kAllChains = Object.values(Chain) as Chain[];

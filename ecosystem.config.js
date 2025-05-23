@@ -91,7 +91,7 @@ module.exports = {
             min_uptime: "5s",
             env: {
                 IS_GEYSER_PROCESS: "true",
-                CHAIN: 'soon_mainnet',
+                CHAIN: 'soon',
                 SERVER_NAME: "light-geyser-soon-mainnet",
                 PORT: 3346,
             },
@@ -103,7 +103,7 @@ module.exports = {
             min_uptime: "5s",
             env: {
                 IS_GEYSER_PROCESS: "true",
-                CHAIN: 'soon_testnet',
+                CHAIN: 't_soon',
                 SERVER_NAME: "light-geyser-soon-testnet",
                 PORT: 3347,
             },
@@ -115,7 +115,7 @@ module.exports = {
             min_uptime: "5s",
             env: {
                 IS_GEYSER_PROCESS: "true",
-                CHAIN: 'svmbnb_mainnet',
+                CHAIN: 'svmbnb',
                 SERVER_NAME: "light-geyser-svmbnb-mainnet",
                 PORT: 3348,
             },
@@ -127,7 +127,7 @@ module.exports = {
             min_uptime: "5s",
             env: {
                 IS_GEYSER_PROCESS: "true",
-                CHAIN: 'svmbnb_testnet',
+                CHAIN: 't_svmbnb',
                 SERVER_NAME: "light-geyser-svmbnb-testnet",
                 PORT: 3349,
             },
@@ -139,7 +139,7 @@ module.exports = {
             min_uptime: "5s",
             env: {
                 IS_GEYSER_PROCESS: "true",
-                CHAIN: 'soonbase_mainnet',
+                CHAIN: 'soonba',
                 SERVER_NAME: "light-geyser-soonbase-mainnet",
                 PORT: 3351,
             },
@@ -151,7 +151,7 @@ module.exports = {
             min_uptime: "5s",
             env: {
                 IS_GEYSER_PROCESS: "true",
-                CHAIN: 'soonbase_testnet',
+                CHAIN: 't_soonbase',
                 SERVER_NAME: "light-geyser-soonbase-testnet",
                 PORT: 3352,
             },

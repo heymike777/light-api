@@ -75,7 +75,10 @@ export class MigrationManager {
     static kMikeUserId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
     static async migrate() {
-        if (process.env.SERVER_NAME != 'heynova0' && process.env.SERVER_NAME != 'light0'){
+        if (process.env.SERVER_NAME == 'light0'){
+            TokenPriceManager.updateNativeTokenPrices();
+        }
+        else {
             SystemNotificationsManager.sendSystemMessage('Server started');
             TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
         }

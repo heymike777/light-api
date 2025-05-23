@@ -450,16 +450,19 @@ export class BotManager {
         const sellAmounts: number[] = traderProfile?.sellAmounts || [50, 100];
         const mintInfo = await SolanaManager.getTokenMint(token.chain, token.address);
         const kSOL = getNativeToken(token.chain);
+        const currencySymbol = currency == Currency.SOL ? kSOL.symbol : currency;
 
         const buttons: InlineButton[] = [
             { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
             { id: 'row', text: '' },
         ];
 
+
+
         for (const amount of buyAmounts) {
-            buttons.push({ id: `buy|${token.chain}|${token.address}|${amount}`, text: `Buy ${amount} ${currency}` });
+            buttons.push({ id: `buy|${token.chain}|${token.address}|${amount}`, text: `Buy ${amount} ${currencySymbol}` });
         }
-        buttons.push({ id: `buy|${token.chain}|${token.address}|X`, text: `Buy X ${currency}` });
+        buttons.push({ id: `buy|${token.chain}|${token.address}|X`, text: `Buy X ${currencySymbol}` });
 
         let message = `<b>${token.symbol}</b> (${token.name})`;
 
