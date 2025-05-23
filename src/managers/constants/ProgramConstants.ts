@@ -41,7 +41,8 @@ export enum kProgram {
     SONIC_STAKING = 'g3yMgSB3Q7gNjMfSoCm1PiJihqHdNJeUuPHvRyf45qY',
     SEGA = 'SegazTQwbYWknDZkJ6j2Kgvm5gw3MrHGKtWstZdoNKZ',
 
-    //TODO: add programs for new svm chains
+    // SOON, SVMBNB, SOONBASE
+    COBALTX = '6f1b3xyVZbnWMHXBjgW1KPwxmPAgXcRdrvKNn4Nmf1Cn',
 
 }
 
@@ -110,19 +111,6 @@ export const kPrograms: { [key: string]: {
             { 'swapBaseOut': {title: 'SWAP', priority: 2} },
             { 'initialize': {title: 'ADD LIQUIDOTY', priority: 3} },
             { 'initialize2': {title: 'ADD LIQUIDOTY', priority: 3} },
-        ],
-        skip: false,
-    },
-    [kProgram.RAYDIUM_CLMM]: {
-        name: 'RAYDIUM',
-        knownInstructions: [
-            { 'swap': {title: 'SWAP', priority: 2} },
-            { 'swapV2': {title: 'SWAP', priority: 2} },
-            { 'swapRouterBaseIn': {title: 'SWAP', priority: 2} },
-            { 'decreaseLiquidity': {title: 'REMOVE LIQUIDOTY', priority: 3} },
-            { 'decreaseLiquidityV2': {title: 'REMOVE LIQUIDOTY', priority: 3} },
-            { 'increaseLiquidity': {title: 'ADD LIQUIDOTY', priority: 3} },
-            { 'increaseLiquidityV2': {title: 'ADD LIQUIDOTY', priority: 3} },
         ],
         skip: false,
     },
@@ -423,6 +411,36 @@ export const kPrograms: { [key: string]: {
         ],
         skip: false,
         searchLogs: false,
+    },
+    [kProgram.RAYDIUM_CLMM]: {
+        name: 'RAYDIUM',
+        knownInstructions: [
+            { 'swap': {title: 'SWAP', priority: 2} },
+            { 'swapV2': {title: 'SWAP', priority: 2} },
+            { 'swapRouterBaseIn': {title: 'SWAP', priority: 2} },
+            { 'decreaseLiquidity': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'decreaseLiquidityV2': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidity': {title: 'ADD LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidityV2': {title: 'ADD LIQUIDOTY', priority: 3} },
+        ],
+        skip: false,
+    },
+    [kProgram.COBALTX]: {
+        name: 'COBALTX',
+        knownInstructions: [
+            { 'swap': {title: 'SWAP', priority: 2} },
+            { 'swapV2': {title: 'SWAP', priority: 2} },
+            { 'swapRouterBaseIn': {title: 'SWAP', priority: 2} },
+            { 'decreaseLiquidity': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'decreaseLiquidityV2': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidity': {title: 'ADD LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidityV2': {title: 'ADD LIQUIDOTY', priority: 3} },
+        ],
+        skip: false,
+        customIdl: {
+            path: 'src/idls/cobaltx_clmm_idl.json',
+            type: 'anchor',
+        },
     },
 }
 

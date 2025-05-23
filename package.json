@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@bonfida/spl-name-service": "^3.0.10",
+    "@cobaltx/sdk-v2": "^1.0.0",
     "@coral-xyz/anchor": "^0.31.1",
     "@grammyjs/auto-retry": "^2.0.2",
     "@grammyjs/ratelimiter": "^1.2.1",

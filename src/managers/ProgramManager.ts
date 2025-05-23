@@ -132,6 +132,10 @@ export class ProgramManager {
         swap?: ParsedSwap,
         ixTitle?: string,
     }> {
+
+        // console.log('programId:', programId, 'ixParsed:', ixParsed, 'accounts:', accounts);
+
+
         const programHasAnyKnownInstruction = kPrograms[programId]?.knownInstructions.find((knownInstruction) => knownInstruction['any']) != undefined;
         if (!ixParsed && !programHasAnyKnownInstruction){
             return {};
@@ -143,6 +147,8 @@ export class ProgramManager {
         let ixTitle: string | undefined = undefined;
         const signature = tx?.transaction.signatures?.[0];
         const kSOL = getNativeToken(chain);
+
+        // console.log('programId:', programId, 'ixType:', ixType, 'ixParsed:', ixParsed);
 
         try {
             if (programId == kProgram.SOLANA){
@@ -357,6 +363,21 @@ export class ProgramManager {
                         }; 
                     }
                 }
+            }
+            else if (programId == kProgram.RAYDIUM_CLMM || programId == kProgram.COBALTX){
+                if (['swap', 'swapV2'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    if (walletAddress && tx){
+                        const market: ParsedSwapMarket = {
+                            address: accounts?.[2]?.toBase58() || '',
+                            pool1: accounts?.[5]?.toBase58() || '',
+                            pool2: accounts?.[6]?.toBase58() || '',
+                        }
+                        swap = this.getParsedSwapFromTxByMarket(tx, market, true);
+                        const dexName = programId == kProgram.RAYDIUM_CLMM ? 'Raydium CLMM' : 'CobaltX';
+                        description = this.getSwapDescription(chain, swap, walletAddress, dexName);    
+                    }    
+                }                
             }
             else if (programId == kProgram.JUPITER){
                 LogManager.log('!!!JUPITER', 'ixParsed:', ixParsed, 'accounts:', accounts);

@@ -182,9 +182,15 @@ export class MigrationManager {
         // await this.processTx(Chain.SOLANA, ''); // START FILLING ORDER
         // await this.processTx(Chain.SOLANA, ''); // END FILLING ORDER
 
-
         // TITAN DEX
         // await this.processTx(Chain.SOLANA, '55FqEG5gr7bKADuH6oy539qbDwyfBVdNSif3c57pXE8kX6Tkz3KC1g9cvkKAjJa9HsAkXDuUGoTxaG8akhRfdYPu'); // swap
+
+        // RAYDIUM CLMM
+        // await this.processTx(Chain.SOLANA, '3Appnyjw6zUSAF4seJpvvymQQFLu3CazksHMdfNVujQ17kXDkbWgnWvSZYJqPw2cj1KfiUfuGLF1tEPzCHoS4Dzi'); // swapV2
+        // await this.processTx(Chain.SOLANA, '3Ly43U46SPBVkZYf1pAndHD17dL2nPAJUWYGjonBPMnPDAVLKntWQwNocEioQPW8Mm89QUovnnmXLDP4oVEyKbHt'); // swap
+
+        // COBALTX
+        // await this.processTx(Chain.SVMBNB_MAINNET, '2vpxxNevRE5qyU6mwbgx5wAwCedTxPVP2MnG2E8hGz3pzPgDt9z7rBrztXFtZUGuQVHXSxrZqhjN1Dg4tcCuGhtf'); // CobaltX
 
         // const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(Chain.SONIC, [
         //     'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', 
