@@ -3,6 +3,7 @@ import { SendMessageData } from "./bot/BotTypes";
 import { BotManager } from "./bot/BotManager";
 import { Client, Offset } from "rabbitmq-stream-js-client";
 import { HealthManager } from "./HealthManager";
+import { LogManager } from "./LogManager";
 
 export class RabbitManager {
 
@@ -50,7 +51,7 @@ export class RabbitManager {
             await publisher.send(Buffer.from(JSON.stringify(msg)));
         }
         catch (e){
-            console.error('Rabbit - publishTelegramMessage', 'error:', e);
+            LogManager.error('Rabbit - publishTelegramMessage', 'error:', e);
         }
     }
 
@@ -68,7 +69,7 @@ export class RabbitManager {
                 this.receivedMessage(payload);
             }
             catch (e) {
-                console.error("Rabbit - error parsing message", e);
+                LogManager.error("Rabbit - error parsing message", e);
             }
         });
     }
@@ -86,7 +87,7 @@ export class RabbitManager {
             await BotManager.sendMessage(payload);
         } 
         catch (e) {
-            console.error("RabbitManager receivedMessage error:", e);
+            LogManager.error("RabbitManager receivedMessage error:", e);
         }
     }
 
@@ -108,7 +109,7 @@ export class RabbitManager {
         // });
 
         this.conn.on("error", (err) => {
-            console.error("!Rabbit - AMQP connection error", err);
+            LogManager.error("!Rabbit - AMQP connection error", err);
             this.conn = undefined; // trigger reconnect on next call
         });
 
@@ -133,14 +134,14 @@ export class RabbitManager {
                 Buffer.from(JSON.stringify(msg)),
                 { persistent: true },
                 (err) => {
-                    if (err) console.error("broker nacked message", err);
+                    if (err) LogManager.error("broker nacked message", err);
                 }
             );
 
             if (!ok) await new Promise((res) => ch.once("drain", res));
         }
         catch (e){
-            console.error('Rabbit - publishTelegramMessage', 'error:', e);
+            LogManager.error('Rabbit - publishTelegramMessage', 'error:', e);
         }
     }
 
@@ -166,7 +167,7 @@ export class RabbitManager {
                 this.receivedMessage(payload, msg, ch);
             }
             catch (e) {
-                console.error("Rabbit - error parsing message", e);
+                LogManager.error("Rabbit - error parsing message", e);
                 ch.nack(msg, false, false); // dead‑letter instead of requeue
             }
         });
@@ -187,7 +188,7 @@ export class RabbitManager {
             if (ch && msg) ch.ack(msg);
         } 
         catch (e) {
-            console.error("bad message, moving to DLQ", e);
+            LogManager.error("bad message, moving to DLQ", e);
             if (ch && msg) ch.nack(msg, false, false); // dead‑letter instead of requeue
         }
     }

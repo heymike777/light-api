@@ -1,5 +1,5 @@
 import { createClient, RedisClientType } from "redis";
-import { IUserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
+import { IUserTransaction, UserTransaction, userTransactionFromJson } from "../../entities/users/UserTransaction";
 import { kAddUniqueTransactionLua } from "./RedisScripts";
 import { UserManager } from "../UserManager";
 import { IToken } from "../../entities/tokens/Token";
@@ -8,6 +8,8 @@ import { IWallet } from "../../entities/Wallet";
 import { WalletManager } from "../WalletManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { Chain } from "../../services/solana/types";
+import { TokenManager } from "../TokenManager";
+import { kSolAddress } from "../../services/solana/Constants";
 
 export interface WalletEvent {
     instanceId?: string;
@@ -112,7 +114,7 @@ export class RedisManager {
 
             return result === 1;
         } catch (err) {
-            console.error('Error saving user transaction:', err);
+            LogManager.error('Error saving user transaction:', err);
             return false;
         }
     }
@@ -160,7 +162,7 @@ export class RedisManager {
             await redis.client.del(signaturesKey);
             await redis.client.del(transactionsKey);
         } catch (err) {
-            console.error('Error cleaning user transactions:', err);
+            LogManager.error('Error cleaning user transactions:', err);
         }
     }
 
@@ -200,15 +202,17 @@ export class RedisManager {
                     try{
                         const tx = userTransactionFromJson(txString);
                         if (tx) {
-                            await tx.save();
-
-                            LogManager.log('migrateUserTransactionsToMongo', tx.signature, 'success');
+                            const existing = await UserTransaction.findOne({ userId, signature: tx.signature });
+                            if (!existing){
+                                await tx.save();
+                                LogManager.log('migrateUserTransactionsToMongo', tx.signature, 'success');
+                            }
 
                             redis.client.lRem(key, 0, txString);
                         }
                     }
                     catch(e){
-                        console.error('migrateUserTransactionsToMongo', e);
+                        LogManager.error('migrateUserTransactionsToMongo', e);
                     }
                 }
 
@@ -227,8 +231,14 @@ export class RedisManager {
         if (!redis.client.isReady) return false;
 
         if (!token.symbol){
-            console.error('saveToken', 'token.symbol is missing', token);
-            return false;
+            const key = `${token.chain}:${token.address}`;
+            if (TokenManager.manualTokens[key] && TokenManager.manualTokens[key].symbol){
+                token.symbol = TokenManager.manualTokens[key].symbol;
+            }
+            else {
+                LogManager.error('saveToken', 'token.symbol is missing', token);
+                return false;
+            }
         }
 
         try {
@@ -293,6 +303,44 @@ export class RedisManager {
         }
 
         return [];
+    }
+
+    static async saveNativeTokenPrice(chain: Chain, price: number): Promise<boolean> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return false;
+        if (!redis.client) return false;
+        if (!redis.client.isReady) return false;
+
+        try {
+            const key = `token_price:${chain}:${kSolAddress}`;
+            const result = await redis.client.set(key, '' + price);
+            return result ? true : false;
+        }
+        catch(e){
+            LogManager.error('saveNativeTokenPrice', chain, price, e);
+        }
+
+        return false;
+    }
+
+    static async getNativeTokenPrice(chain: Chain): Promise<number | undefined> {
+        const redis = RedisManager.getInstance();
+        if (!redis) return undefined;
+        if (!redis.client) return undefined;
+        if (!redis.client.isReady) return undefined;
+
+        try {
+            const key = `token_price:${chain}:${kSolAddress}`;
+            const price = await redis.client.get(key);
+            if (price) {
+                return +price;
+            }
+        }
+        catch(e){
+            LogManager.error('getNativeTokenPrice', e);
+        }
+
+        return undefined;
     }
 
 }

@@ -8,7 +8,7 @@ import { newConnectionByChain } from "./lib/solana";
 import { LogManager } from "../../managers/LogManager";
 import { SolanaManager } from "./SolanaManager";
 import { BadRequestError } from "../../errors/BadRequestError";
-import { kSolAddress, kUsdcAddress } from "./Constants";
+import { getNativeToken, kSolAddress, kUsdcAddress } from "./Constants";
 import { MemoryManager } from "../../managers/MemoryManager";
 import Decimal from "decimal.js";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
@@ -423,11 +423,13 @@ export class RaydiumManager {
         poolInfo = poolInfoFromRpc.poolInfo
         poolKeys = poolInfoFromRpc.poolKeys
       
-        if (!isValidAmm(poolInfo.programId)) throw new Error('target pool is not AMM pool')
+        if (!isValidAmm(poolInfo.programId)) throw new Error('target pool is not AMM pool');
+
+        const kSOL = getNativeToken(this.chain);
       
         const baseIn = inputMint === poolInfo.mintA.address
         const [mintA, mintB] = baseIn ? [poolInfo.mintA, poolInfo.mintB] : [poolInfo.mintB, poolInfo.mintA]
-        const amount = '' + Helpers.bnDivBnWithDecimals(inputAmount, new BN(10 ** mintA.decimals), 9);
+        const amount = '' + Helpers.bnDivBnWithDecimals(inputAmount, new BN(10 ** mintA.decimals), kSOL.decimals);
 
         const r = this.raydium.liquidity.computePairAmount({
             poolInfo,
@@ -657,13 +659,13 @@ export class RaydiumManager {
 
             if (currency == Currency.SOL){
                 swap.value = {
-                    sol: +lamports / web3.LAMPORTS_PER_SOL,
-                    usd : Math.round((+lamports / web3.LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+                    sol: +lamports / getNativeToken(swap.chain).lamportsPerSol,
+                    usd : Math.round((+lamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
                 }
             }
             else if (currency == Currency.USDC){
                 swap.value = {
-                    sol: Math.round(+lamports * 1000 / TokenManager.getSolPrice()) / 1000000000, // 10**6 / 10**9
+                    sol: Math.round(+lamports * 1000 / TokenManager.getNativeTokenPrice(swap.chain)) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
                     usd: +lamports / (10 ** 6),
                 }
             }
@@ -764,7 +766,7 @@ export class RaydiumManager {
             const lpMint = pool.lpMint.address;
             const lpMintPublicKey = new web3.PublicKey(lpMint);
             
-            const lpTokenBalance = await SolanaManager.getWalletTokenBalance(connection, traderWallet.publicKey, lpMint);
+            const lpTokenBalance = await SolanaManager.getWalletTokenBalance(swap.chain, traderWallet.publicKey, lpMint);
             const lpMintLamports = swap.amountPercents == 100 ? lpTokenBalance.amount : lpTokenBalance.amount.mul(new BN(swap.amountPercents!)).div(new BN(100));
 
             const mintAtaAddressPublicKey = await SolanaManager.getAtaAddress(intermediateKeypair.publicKey, mintPublicKey);
@@ -790,7 +792,7 @@ export class RaydiumManager {
                 web3.SystemProgram.transfer({
                     fromPubkey: traderKeypair.publicKey,
                     toPubkey: intermediateKeypair.publicKey,
-                    lamports: BigInt(0.005 * web3.LAMPORTS_PER_SOL),
+                    lamports: BigInt(0.005 * getNativeToken(swap.chain).lamportsPerSol),
                 })
             );
 
@@ -852,13 +854,13 @@ export class RaydiumManager {
 
             if (currency == Currency.SOL){
                 swap.value = {
-                    sol: +lamports / web3.LAMPORTS_PER_SOL,
-                    usd : Math.round((+lamports / web3.LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+                    sol: +lamports / getNativeToken(swap.chain).lamportsPerSol,
+                    usd : Math.round((+lamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
                 }
             }
             else if (currency == Currency.USDC){
                 swap.value = {
-                    sol: Math.round(+lamports * 1000 / TokenManager.getSolPrice()) / 1000000000, // 10**6 / 10**9
+                    sol: Math.round(+lamports * 1000 / TokenManager.getNativeTokenPrice(swap.chain)) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
                     usd: +lamports / (10 ** 6),
                 }
             }

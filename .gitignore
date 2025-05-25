@@ -13,3 +13,5 @@ apple_webhooks.txt
 .env_ams.production
 wallets.txt
 honeypot_wallets.txt
+logs/error.log
+logs/combined.log

@@ -65,7 +65,7 @@ export class BotBuyHelper extends BotHelper {
                 }
             }
             else {
-                console.error('Invalid buttonId:', buttonId);
+                LogManager.error('Invalid buttonId:', buttonId);
             }
         }
     }

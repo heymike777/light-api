@@ -25,11 +25,10 @@ import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { Currency } from "../../models/types";
 import { ExplorerManager } from "../../services/explorers/ExplorerManager";
 import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager";
-import { newConnectionByChain } from "../../services/solana/lib/solana";
 import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
-import { kSolAddress } from "../../services/solana/Constants";
+import { getNativeToken, kSolAddress } from "../../services/solana/Constants";
 import { Chain } from "../../services/solana/types";
 import { BotReferralProgramHelper } from "./helpers/BotReferralProgramHelper";
 import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
@@ -123,16 +122,8 @@ export class BotManager {
                 // handle user blocked bot
                 if (botUsername){
                     const user = await UserManager.getUserByTelegramUser(ctx.myChatMember.from);
-                    if (user){
-                        if (!user.bots){
-                            user.bots = {};
-                        }
-                        user.bots[botUsername] = UserBotStatus.BLOCKED;
-                        await User.updateOne({ _id: user._id }, {
-                            $set: {
-                                bots: user.bots,
-                            }
-                        });
+                    if (user) {
+                        await BotManager.handleUserBlockedBot(user, botUsername);
                     }
                 }
             }
@@ -246,21 +237,41 @@ export class BotManager {
     }
 
     async sendMessage(data: SendMessageData){
-        if (data.imageUrl){
-            await this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
-                caption: data.text,
-                parse_mode: 'HTML', 
-                reply_markup: data.inlineKeyboard,
-            });    
+        try {
+            if (data.imageUrl){
+                await this.bot.api.sendPhoto(data.chatId, data.imageUrl, {
+                    caption: data.text,
+                    parse_mode: 'HTML', 
+                    reply_markup: data.inlineKeyboard,
+                });    
+            }
+            else {
+                await this.bot.api.sendMessage(data.chatId, data.text || '', {
+                    parse_mode: 'HTML', 
+                    link_preview_options: {
+                        is_disabled: true
+                    },
+                    reply_markup: data.inlineKeyboard,
+                });   
+            }
         }
-        else {
-            await this.bot.api.sendMessage(data.chatId, data.text || '', {
-                parse_mode: 'HTML', 
-                link_preview_options: {
-                    is_disabled: true
-                },
-                reply_markup: data.inlineKeyboard,
-            });   
+        catch (e: any){
+            if (e instanceof GrammyError && e.description == 'Forbidden: bot was blocked by the user'){
+                const user = await UserManager.getUserById(data.userId);
+                if (user){
+                    await BotManager.handleUserBlockedBot(user, this.botUsername);
+                }
+            }
+            else if (e instanceof GrammyError && e.description == 'Bad Request: wrong type of the web page content' && data.imageUrl){
+                // if photo can't be sent, try to send message without photo. it's better than nothing
+                data.imageUrl = undefined;
+                await this.sendMessage(data);
+            }
+            //TODO: check for other errors. Like photo can't be sent, so send without photo
+            else {
+                LogManager.error('BotManager - error while sending message', e);
+                throw e;
+            }
         }
     }
 
@@ -440,16 +451,20 @@ export class BotManager {
         const buyAmounts: number[] = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
         const sellAmounts: number[] = traderProfile?.sellAmounts || [50, 100];
         const mintInfo = await SolanaManager.getTokenMint(token.chain, token.address);
+        const kSOL = getNativeToken(token.chain);
+        const currencySymbol = currency == Currency.SOL ? kSOL.symbol : currency;
 
         const buttons: InlineButton[] = [
             { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
             { id: 'row', text: '' },
         ];
 
+
+
         for (const amount of buyAmounts) {
-            buttons.push({ id: `buy|${token.chain}|${token.address}|${amount}`, text: `Buy ${amount} ${currency}` });
+            buttons.push({ id: `buy|${token.chain}|${token.address}|${amount}`, text: `Buy ${amount} ${currencySymbol}` });
         }
-        buttons.push({ id: `buy|${token.chain}|${token.address}|X`, text: `Buy X ${currency}` });
+        buttons.push({ id: `buy|${token.chain}|${token.address}|X`, text: `Buy X ${currencySymbol}` });
 
         let message = `<b>${token.symbol}</b> (${token.name})`;
 
@@ -480,15 +495,14 @@ export class BotManager {
             message += `\n└ Freeze Authority: ${mintInfo.freezeAuthority ? `Yes 🔴` : 'No 🟢'}`;    
         }
         
-        const connection = newConnectionByChain(token.chain);
         let solBalance: TokenBalance | undefined = undefined;
         if (traderProfile && traderProfile.encryptedWallet?.publicKey){
             const walletAddress = traderProfile.encryptedWallet.publicKey;
-            solBalance = await SolanaManager.getWalletSolBalance(connection, walletAddress);
-            const tokenBalance = await SolanaManager.getWalletTokenBalance(connection, walletAddress, token.address);
+            solBalance = await SolanaManager.getWalletSolBalance(token.chain, walletAddress);
+            const tokenBalance = await SolanaManager.getWalletTokenBalance(token.chain, walletAddress, token.address);
 
             message += '\n\n';
-            message += `Balance: ${solBalance?.uiAmount || 0} SOL`;
+            message += `Balance: ${solBalance?.uiAmount || 0} ${kSOL.symbol}`;
             if (tokenBalance && tokenBalance.uiAmount>0){
                 message += ` | ${tokenBalance.uiAmount} ${token.symbol}`;
 
@@ -505,13 +519,13 @@ export class BotManager {
                 if (lpBalances && lpBalances.balances.length > 0){
                     const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
                     const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
-                    const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
+                    const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getNativeTokenPrice(token.chain);
 
                     if (solBalance?.uiAmount || tokenBalance?.uiAmount){
                         const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
                         const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
 
-                        message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} SOL = $${Helpers.numberFormatter(usdValue, 2)}`;
+                        message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} ${kSOL.symbol} = $${Helpers.numberFormatter(usdValue, 2)}`;
 
                         let btnIndex = 0;
                         for (const amount of sellAmounts) {
@@ -535,7 +549,7 @@ export class BotManager {
 
         if (traderProfile && traderProfile.encryptedWallet?.publicKey){
             if (!solBalance || solBalance.uiAmount < 0.01){
-                message += '\n\n🔴 Send some SOL to your trading wallet to ape into memes and cover gas fee.';                
+                message += `\n\n🔴 Send some ${kSOL.symbol} to your trading wallet to ape into memes and cover gas fee.`;                
             }
         }
 
@@ -576,6 +590,7 @@ export class BotManager {
     static async buildPortfolioMessage(user: IUser, traderProfile: IUserTraderProfile, botUsername: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
         const chain = user.defaultChain || Chain.SOLANA;
         const { values, assets, lpAssets, warning } = await ChainManager.getPortfolio(chain, traderProfile);
+        const kSOL = getNativeToken(chain);
 
         let message = `<b>${traderProfile.title}</b>${traderProfile.default?' ⭐️':''}`;
         if (chain != Chain.SOLANA){
@@ -621,7 +636,7 @@ export class BotManager {
                     const solBalanceString = Helpers.prettyNumberFromString('' + solBalance, 3);
                     const tokenBalanceString = Helpers.prettyNumberFromString('' + tokenBalance, 3);
 
-                    message += `\n${asset.symbol} LP: ${tokenBalanceString} ${asset.symbol} + ${solBalanceString} SOL`;
+                    message += `\n${asset.symbol} LP: ${tokenBalanceString} ${asset.symbol} + ${solBalanceString} ${kSOL.symbol}`;
 
                     if (asset.priceInfo?.totalPrice){
                         message += ` = $${Helpers.numberFormatter(asset.priceInfo.totalPrice, 2)}`;
@@ -655,6 +670,20 @@ export class BotManager {
             this.defaultBots[userId] = user.defaultBot;
             return user.defaultBot;
         }
+    }
+
+    static async handleUserBlockedBot(user: IUser, botUsername: string){
+        LogManager.log('handleUserBlockedBot', user.id, botUsername);
+
+        if (!user.bots){
+            user.bots = {};
+        }
+        user.bots[botUsername] = UserBotStatus.BLOCKED;
+        await User.updateOne({ _id: user._id }, {
+            $set: {
+                bots: user.bots,
+            }
+        });
     }
 
 }

@@ -5,7 +5,7 @@ import {
   ParsedTransactionWithMeta,
   PublicKey,
 } from "@solana/web3.js";
-import { Chain } from "../../types";
+import { Chain, kChains } from "../../types";
 
 export const maxSupportedTransactionVersion = 2;
 
@@ -37,11 +37,11 @@ export function newConnectionForLandingTxs(chain: Chain): Connection {
 }
 
 export function getRpc(chain?: Chain, isForLandingTxs = false): {http: string, ws: string} {
-    if (chain === Chain.SONIC) {
-        return { http: process.env.SONIC_RPC || "", ws: process.env.SONIC_RPC_WSS || "" };
-    }
-    else if (chain === Chain.SONIC_TESTNET) {
-        return { http: process.env.SONIC_RPC_TESTNET || "", ws: process.env.SONIC_RPC_WSS_TESTNET || "" };
+    if (chain && chain !== Chain.SOLANA) {
+        return {
+            http: kChains[chain].rpc,
+            ws: kChains[chain].websocket,
+        }
     }
 
     // SOLANA

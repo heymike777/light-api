@@ -39,6 +39,7 @@ export const UserRefStatsSchema = new mongoose.Schema<IUserRefStats>({
 UserRefStatsSchema.index({ userId: 1 }, { unique: true });
 UserRefStatsSchema.index({ 'stats.rewards.sol.rewardsTotal.sol': 1 });
 UserRefStatsSchema.index({ 'stats.rewards.sonic.rewardsTotal.sol': 1 });
+//TODO: add index for all chains
 
 UserRefStatsSchema.methods.toJSON = function () {
     return {

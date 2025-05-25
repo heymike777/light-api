@@ -3,6 +3,7 @@ import { ParsedTx } from '../../managers/ProgramManager';
 import { ChangedWallet } from '../../models/types';
 import { IToken, ITokenModel } from '../tokens/Token';
 import { Chain } from '../../services/solana/types';
+import { LogManager } from '../../managers/LogManager';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -89,7 +90,7 @@ export function userTransactionFromJson(json: string): IUserTransaction | undefi
         return tx;
     }
     catch(e){
-        console.error('userTransactionFromJson', e);
+        LogManager.error('userTransactionFromJson', e);
     }
     return undefined
 };

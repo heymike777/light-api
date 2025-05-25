@@ -5,6 +5,8 @@ import { LogManager } from "./LogManager";
 import { JupiterManager } from "./JupiterManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
+import { TokenManager } from "./TokenManager";
+import { RedisManager } from "./db/RedisManager";
 
 export class TokenPriceManager {
 
@@ -52,7 +54,7 @@ export class TokenPriceManager {
                 // }
             }
         } catch (error) {
-            LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
+            // LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
         }
 
         return prices;
@@ -119,7 +121,7 @@ export class TokenPriceManager {
                 }
             }
         } catch (error: any) {
-            LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+            // LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
             SystemNotificationsManager.sendSystemMessage('TokenPriceManager.getPricesFromRaydium error:' + error.message);
         }
 
@@ -140,7 +142,7 @@ export class TokenPriceManager {
                 prices.push(...tmpPrices);
             }
         } catch (error) {
-            LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+            LogManager.error('Error in TokenPriceManager.getPricesFromJupiter', error);
         }
 
         console.log('TokenPriceManager', 'getPricesFromJupiter', `found ${prices.length} prices`);
@@ -171,5 +173,42 @@ export class TokenPriceManager {
 
         return prices;
     }
+
+    static async updateNativeTokenPrices(){
+        const solPrice = await this.fetchTokenPriceOnBinance('SOL');
+        if (solPrice!=undefined){
+            TokenManager.solPrice = solPrice;
+            await RedisManager.saveNativeTokenPrice(Chain.SOLANA, solPrice);
+        }
+
+        const ethPrice = await this.fetchTokenPriceOnBinance('ETH');
+        if (ethPrice!=undefined){
+            TokenManager.ethPrice = ethPrice;
+            await RedisManager.saveNativeTokenPrice(Chain.SOON_MAINNET, ethPrice);
+        }
+
+        const bnbPrice = await this.fetchTokenPriceOnBinance('BNB');
+        if (bnbPrice!=undefined){
+            TokenManager.bnbPrice = bnbPrice;
+            await RedisManager.saveNativeTokenPrice(Chain.SVMBNB_MAINNET, bnbPrice);
+        }
+    }
+
+
+    static async fetchTokenPriceOnBinance(symbol: string): Promise<number | undefined> {
+        const url = `https://www.binance.com/api/v3/ticker/price?symbol=${symbol}USDT`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            return undefined;
+        }
+
+        const data: any = await response.json();
+        const price = parseFloat(data.price);
+        if (isNaN(price)) {
+            return undefined;
+        }
+        return price;
+    }
+    
 
 }

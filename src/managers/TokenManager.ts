@@ -29,6 +29,8 @@ export interface TokenTag {
 export class TokenManager {
 
     static solPrice: number = 0;
+    static ethPrice: number = 0;
+    static bnbPrice: number = 0;
     static tokenTags: TokenTag[] = [
         { id: 'verified', title: 'Verified', color: '#28A745' },
         { id: 'stable', title: 'Stable', color: '#2775CA' },
@@ -37,6 +39,10 @@ export class TokenManager {
         { id: 'pumpfun', title: 'pump.fun', color: '#86EFAC' },
         { id: 'virtuals', title: 'Virtuals', color: '#57A0A4' },
     ];
+
+    static manualTokens: { [key: string]: { symbol?: string } } = {
+        'sol:bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1': { symbol: 'bSOL' },
+    }
 
     static excludedTokens: string[] = [
         kSolAddress,
@@ -70,6 +76,13 @@ export class TokenManager {
 
             token.name = digitalAsset.metadata.name;
             token.symbol = digitalAsset.metadata.symbol;
+            if (!token.symbol){
+                const key = `${token.chain}:${token.address}`;
+                if (TokenManager.manualTokens[key] && TokenManager.manualTokens[key].symbol){
+                    token.symbol = TokenManager.manualTokens[key].symbol;
+                }
+            }
+
             token.decimals = digitalAsset.mint.decimals;
             token.supply = digitalAsset.mint.supply.toString();
             
@@ -250,7 +263,7 @@ export class TokenManager {
             }
         }
 
-        return Math.round(liquidity.sol * this.getSolPrice() + liquidity.token * token.price);
+        return Math.round(liquidity.sol * this.getNativeTokenPrice(token.chain) + liquidity.token * token.price);
     }
 
     // static async fetchTokensInfo(){
@@ -278,7 +291,14 @@ export class TokenManager {
         await TokenSwap.deleteMany({ createdAt: { $lt: yesterday } });
     }
 
-    static getSolPrice(): number {
+    static getNativeTokenPrice(chain: Chain): number {
+        if (chain == Chain.SOON_MAINNET || chain == Chain.SOON_TESTNET || chain == Chain.SOONBASE_MAINNET || chain == Chain.SOONBASE_TESTNET){
+            return this.ethPrice;
+        }
+        else if (chain == Chain.SVMBNB_MAINNET || chain == Chain.SVMBNB_TESTNET){
+            return this.bnbPrice;
+        }
+
         return this.solPrice;
     }
 
@@ -446,10 +466,6 @@ export class TokenManager {
 
     static async updateTokenPrice(chain: Chain, mint: string) {
         const token = await RedisManager.getToken(chain, mint);
-
-        console.log('updateTokenPrice', mint);
-
-
         if (token){
             // const prices = await JupiterManager.getPrices([mint]);
             const prices = await MicroserviceManager.getTokensPrices(chain, [mint]);
@@ -462,11 +478,23 @@ export class TokenManager {
         }
     }
 
-    static async fetchSolPriceFromRedis(){
-        const price = await RedisManager.getToken(Chain.SOLANA, kSolAddress);
-        console.log('fetchSolPriceFromRedis price:', price?.price);
-        if (price && price.price!=undefined){
-            TokenManager.solPrice = price.price;
+    static async fetchNativeTokenPriceFromRedis(){
+        const solPrice = await RedisManager.getNativeTokenPrice(Chain.SOLANA);
+        console.log('fetchNativeTokenPriceFromRedis SOL price:', solPrice);
+        if (solPrice!=undefined){
+            TokenManager.solPrice = solPrice;
+        }
+
+        const ethPrice = await RedisManager.getNativeTokenPrice(Chain.SOON_MAINNET);
+        console.log('fetchNativeTokenPriceFromRedis ETH price:', ethPrice);
+        if (ethPrice!=undefined){
+            TokenManager.ethPrice = ethPrice;
+        }
+
+        const bnbPrice = await RedisManager.getNativeTokenPrice(Chain.SVMBNB_MAINNET);
+        console.log('fetchNativeTokenPriceFromRedis BNB price:', bnbPrice);
+        if (bnbPrice!=undefined){
+            TokenManager.bnbPrice = bnbPrice;
         }
     }
 
@@ -558,4 +586,5 @@ export class TokenManager {
             LogManager.error('!catched', 'TokenManager', 'saveLpMint', error);
         }
     }
+
 }

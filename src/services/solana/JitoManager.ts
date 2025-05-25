@@ -24,6 +24,7 @@ export class JitoManager {
             tipsAmount = maxTipsAmount;
         }
 
+        // Jito only on Solana Mainnet, so it's ok to use LAMPORTS_PER_SOL
         return Math.ceil(tipsAmount * web3.LAMPORTS_PER_SOL);
     }
 

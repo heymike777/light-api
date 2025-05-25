@@ -1,4 +1,4 @@
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { Program } from "../entities/Program";
 import { IWallet, Wallet, WalletStatus } from "../entities/Wallet";
 import { BotManager } from "../managers/bot/BotManager";
@@ -26,7 +26,7 @@ import { SubscriptionManager } from "../managers/SubscriptionManager";
 import { Subscription, SubscriptionPlatform, SubscriptionTier } from "../entities/payments/Subscription";
 import { RevenueCatManager } from "../managers/RevenueCatManager";
 import { UserManager } from "../managers/UserManager";
-import { User } from "../entities/users/User";
+import { User, UserBotStatus } from "../entities/users/User";
 import { UserRefClaim } from "../entities/referrals/UserRefClaim";
 import { Message } from "../entities/Message";
 import { Auth } from "../entities/Auth";
@@ -65,6 +65,7 @@ import { Config } from "../entities/Config";
 import { UserRefPayout } from "../entities/referrals/UserRefPayout";
 import { EncryptionManager } from "../managers/EncryptionManager";
 import { PreWallet } from "../entities/PreWallet";
+import { LaserstreamManager } from "./solana/geyser/LaserstreamManager";
 
 export class MigrationManager {
 
@@ -74,20 +75,16 @@ export class MigrationManager {
     static kMikeUserId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
 
     static async migrate() {
-        if (process.env.SERVER_NAME != 'heynova0' && process.env.SERVER_NAME != 'light0'){
+        if (process.env.SERVER_NAME == 'light0'){
+            TokenPriceManager.updateNativeTokenPrices();
+        }
+        else {
             SystemNotificationsManager.sendSystemMessage('Server started');
             TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
         }
         LogManager.forceLog('MigrationManager', 'migrate', 'start');
         this.syncIndexes();
         const chatId = 862473;
-
-        if (process.env.TEST === 'TRUE'){
-            const connection = newConnection(undefined);
-            const balance = await SolanaManager.getWalletSolBalance(connection, '9Xt9Zj9HoAh13MpoB6hmY9UZz37L4Jabtyn8zE7AAsL');
-            console.log('balance', balance);
-            exit(0);
-        }
 
         // await TokenManager.setTokenTags(this.kBonk, ['verified']);
         // await TokenManager.setTokenTags('MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u', ['verified']);
@@ -185,9 +182,15 @@ export class MigrationManager {
         // await this.processTx(Chain.SOLANA, ''); // START FILLING ORDER
         // await this.processTx(Chain.SOLANA, ''); // END FILLING ORDER
 
-
         // TITAN DEX
         // await this.processTx(Chain.SOLANA, '55FqEG5gr7bKADuH6oy539qbDwyfBVdNSif3c57pXE8kX6Tkz3KC1g9cvkKAjJa9HsAkXDuUGoTxaG8akhRfdYPu'); // swap
+
+        // RAYDIUM CLMM
+        // await this.processTx(Chain.SOLANA, '3Appnyjw6zUSAF4seJpvvymQQFLu3CazksHMdfNVujQ17kXDkbWgnWvSZYJqPw2cj1KfiUfuGLF1tEPzCHoS4Dzi'); // swapV2
+        // await this.processTx(Chain.SOLANA, '3Ly43U46SPBVkZYf1pAndHD17dL2nPAJUWYGjonBPMnPDAVLKntWQwNocEioQPW8Mm89QUovnnmXLDP4oVEyKbHt'); // swap
+
+        // COBALTX
+        // await this.processTx(Chain.SVMBNB_MAINNET, '2vpxxNevRE5qyU6mwbgx5wAwCedTxPVP2MnG2E8hGz3pzPgDt9z7rBrztXFtZUGuQVHXSxrZqhjN1Dg4tcCuGhtf'); // CobaltX
 
         // const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(Chain.SONIC, [
         //     'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', 
@@ -224,7 +227,7 @@ export class MigrationManager {
         // await this.mongoImport();
 
         // process.on("unhandledRejection", (reason) => {
-        //     console.error('!mike', "Unhandled rejection detected:", reason);
+        //     LogManager.error('!mike', "Unhandled rejection detected:", reason);
         //     // This can kill Node depending on your configuration,
         //     // so you must fix whatever code triggers the unhandled rejection.
         // });
@@ -248,7 +251,7 @@ export class MigrationManager {
         //             }
         //         }
         //         catch (error) {
-        //             console.error('!mike', 'error', error);
+        //             LogManager.error('!mike', 'error', error);
         //         }
         //     }
         //     console.log('!mike', 'countUsers', countUsers);
@@ -269,7 +272,7 @@ export class MigrationManager {
         // const userId = process.env.ENVIRONMENT === 'PRODUCTION' ? '66eefe2c8fed7f2c60d147ef' : '66ef97ab618c7ff9c1bbf17d';
         // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
         // if (!traderProfile){
-        //     console.error('!mike', 'traderProfile not found');
+        //     LogManager.error('!mike', 'traderProfile not found');
         //     return;
         // }
         // const { signature, swap } = await SwapManager.initiateBuy(user, Chain.SOLANA, SwapDex.RAYDIUM_AMM, traderProfile.id, this.kChillGuy, 0.005, true);
@@ -300,6 +303,25 @@ export class MigrationManager {
         // await ReferralsManager.recalcRefStats(true);
         // await ReferralsManager.checkIfFeeWalletHasEnoughUnpaidFunds();
         
+        // const laserstream = new LaserstreamManager();
+        // await laserstream.subscribe();
+
+        //run every 10 seconds
+        // setInterval(async () => {
+        //     const stats: { pubkey: string, count: number, perMinute: number }[] = [];
+        //     for (const pubkey in YellowstoneManager.walletsStats) {
+        //         const count = YellowstoneManager.walletsStats[pubkey];
+        //         const perMinute = Math.floor(count / ((Date.now() - YellowstoneManager.walletsStatsStartDate.getTime()) / 1000 / 60));
+        //         stats.push({ pubkey, count, perMinute });
+        //     }
+        //     stats.sort((a, b) => b.count - a.count);
+        //     console.log('!geyser stats', stats);
+        // }, 10 * 1000);
+
+        // if (EnvManager.isCronProcess){
+        //     await UserManager.checkUsersWhoHasBlockedBot();
+        // }
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
@@ -372,7 +394,7 @@ export class MigrationManager {
 
             const engine = SwapManager.engines.find((e) => e.id === engineId);
             if (!engine) {
-                console.error('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'engine not found', engineId);
+                LogManager.error('MigrationManager', 'migrateUserEnginesToTraderProfiles', 'engine not found', engineId);
                 continue;
             }
 
@@ -423,7 +445,7 @@ export class MigrationManager {
         const wallets = await Wallet.find({ userId: userId, status: {$in: [WalletStatus.ACTIVE, WalletStatus.TRADER]} });
         const user = await UserManager.getUserById(userId, true);
         if (!user){
-            console.error('!mike', 'user not found', userId);
+            LogManager.error('!mike', 'user not found', userId);
             return;
         }
         const chats = [{user, wallets}];
@@ -474,7 +496,7 @@ export class MigrationManager {
         // export each collection to json file
 
         if (!mongoose.connection.db){
-            console.error('mongoExport: No db connection');
+            LogManager.error('mongoExport: No db connection');
             return;
         }
 
@@ -499,7 +521,7 @@ export class MigrationManager {
         // export each collection to json file
 
         if (!mongoose.connection.db){
-            console.error('mongoImport: No db connection');
+            LogManager.error('mongoImport: No db connection');
             return;
         }
 

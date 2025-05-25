@@ -20,14 +20,23 @@ export class CronManager {
             cron.schedule('* * * * *', () => {
                 if (EnvManager.chain == Chain.SOLANA){
                     YellowstoneManager.cleanupProcessedSignatures();
+
+                    const stats: { pubkey: string, count: number, perMinute: number }[] = [];
+                    for (const pubkey in YellowstoneManager.walletsStats) {
+                        const count = YellowstoneManager.walletsStats[pubkey];
+                        const perMinute = Math.floor(count / ((Date.now() - YellowstoneManager.walletsStatsStartDate.getTime()) / 1000 / 60));
+                        stats.push({ pubkey, count, perMinute });
+                    }
+                    stats.sort((a, b) => b.count - a.count);
+                    console.log('!geyser stats', stats);
                 }
-                //TODO: need to cleanup for SONIC as well?
             });
         }
 
         if (EnvManager.isPricesProcess){
             cron.schedule('* * * * *', () => {
                 TokenPriceManager.cleanOldCache();
+                TokenPriceManager.updateNativeTokenPrices();
             });
         }
 
@@ -38,7 +47,6 @@ export class CronManager {
     
             cron.schedule('*/10 * * * *', () => {
                 // every 10 minutes
-                RedisManager.migrateAllUsersTransactionsToMongo();
                 ReferralsManager.checkPendingRefPayouts();
             });
 
@@ -55,6 +63,7 @@ export class CronManager {
 
             cron.schedule('0 * * * *', () => {
                 // once an hour
+                RedisManager.migrateAllUsersTransactionsToMongo();
                 TokenManager.clearOldSwaps();
                 SubscriptionManager.cleanExpiredGiftCardSubscriptions();
             });
@@ -62,6 +71,7 @@ export class CronManager {
             cron.schedule('5 1 * * *', () => {
                 // once a day at 1:05 am UTC
                 ReferralsManager.recalcRefStats();
+                UserManager.checkUsersWhoHasBlockedBot();
             });
 
 
@@ -75,7 +85,7 @@ export class CronManager {
 
         if (EnvManager.isMainProcess){
             cron.schedule('* * * * *', () => {
-                TokenManager.fetchSolPriceFromRedis();
+                TokenManager.fetchNativeTokenPriceFromRedis();
 
                 WalletManager.fetchAllWalletAddresses(false);
             });
@@ -83,7 +93,7 @@ export class CronManager {
 
         if (EnvManager.isTelegramProcess){
             cron.schedule('* * * * *', () => {
-                TokenManager.fetchSolPriceFromRedis();
+                TokenManager.fetchNativeTokenPriceFromRedis();
                 HealthManager.checkTelegramBotHealth();
             });
         }

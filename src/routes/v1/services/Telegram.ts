@@ -5,6 +5,7 @@ import { kServiceKey } from "../../../managers/MicroserviceManager";
 import { BotManager } from "../../../managers/bot/BotManager";
 import { SendMessageData } from "../../../managers/bot/BotTypes";
 import { RabbitManager } from "../../../managers/RabbitManager";
+import { LogManager } from "../../../managers/LogManager";
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.post(
             // await BotManager.sendMessage(message);
             success = true;
         } catch (error) {
-            console.error('Error in service/telegram/send-message', error);
+            LogManager.error('Error in service/telegram/send-message', error);
         }
 
         res.status(200).send({ success });

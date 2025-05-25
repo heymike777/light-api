@@ -2,7 +2,7 @@ import { SwapDex } from "../../entities/payments/Swap";
 import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { PortfolioAsset } from "../../models/types";
-import { kSolAddress } from "../../services/solana/Constants";
+import { getNativeToken, kSolAddress } from "../../services/solana/Constants";
 import { SolanaManager } from "../../services/solana/SolanaManager";
 import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
@@ -13,6 +13,7 @@ export class ChainSolanaManager {
 
     static async getPortfolio(traderProfile: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], lpAssets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
         const chain = Chain.SOLANA;
+        const kSOL = getNativeToken(chain);
 
         const values: {
             walletAddress?: string,
@@ -32,7 +33,7 @@ export class ChainSolanaManager {
                 throw new BadRequestError('Wallet not found');
             }
 
-            const assetsData = await SolanaManager.getAssetsByOwner(walletAddress);
+            const assetsData = await SolanaManager.getAssetsByOwner(chain, walletAddress);
             const tmpAssets = assetsData.assets;
             const lpTokens = assetsData.lpTokens;
 
@@ -88,7 +89,7 @@ export class ChainSolanaManager {
                     if (lpBalances && lpBalances.balances.length > 0){
                         const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
                         const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
-                        const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getSolPrice();
+                        const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getNativeTokenPrice(chain);
                         totalPrice += usdValue;
                         amount = tokenBalance?.uiAmount || 0;
 
@@ -155,11 +156,11 @@ export class ChainSolanaManager {
             textColor: string,
         } | undefined = undefined;
 
-        const solAsset = assets.find(a => a.address == kSolAddress && a.symbol == 'SOL');
+        const solAsset = assets.find(a => a.address == kSolAddress && a.symbol == kSOL.symbol);
 
         if (!solAsset || solAsset.uiAmount < 0.01){
             warning = {
-                message: 'Send some SOL to your trading wallet to ape into memes and cover gas fee.',
+                message: `Send some ${kSOL.symbol} to your trading wallet to ape into memes and cover gas fee.`,
                 backgroundColor: '#DC3545',
                 textColor: '#FFFFFF',
             }

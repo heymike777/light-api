@@ -1,4 +1,4 @@
-import { CurveCalculator, Network, Sega, TxVersion } from '@heymike/sega-sdk';
+import { CurveCalculator, Network, Sega, TxVersion } from '@sega-so/sega-sdk';
 import BN from 'bn.js';
 import { SwapManager } from '../../../../managers/SwapManager';
 import { Chain } from '../../types';
@@ -13,6 +13,8 @@ import { TokenManager } from '../../../../managers/TokenManager';
 import { kProgram } from '../../../../managers/constants/ProgramConstants';
 import { TokenPair } from '../../../../entities/tokens/TokenPair';
 import { IUser } from '../../../../entities/users/User';
+
+//TODO: SVM
 
 export class SegaManager {
 
@@ -42,7 +44,6 @@ export class SegaManager {
             apiRequestTimeout: 10 * 1000,
             apiCacheTime: 5 * 60 * 1000,
             blockhashCommitment: 'confirmed',
-            
         });
 
         const pool = await this.fetchPoolForMints(inputMint, outputMint);
@@ -85,7 +86,6 @@ export class SegaManager {
             slippage: slippage / 100, // range: 1 ~ 0.0001, means 100% ~ 0.01%
             baseIn,
             txVersion: TxVersion.V0,
-            
         });
 
         // add 1% fee instruction to tx

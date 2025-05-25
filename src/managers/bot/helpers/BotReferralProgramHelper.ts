@@ -9,8 +9,8 @@ import { UserRefCode } from "../../../entities/referrals/UserRefCode";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { ReferralsManager } from "../../ReferralsManager";
 import { Helpers } from "../../../services/helpers/Helpers";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { Chain } from "../../../services/solana/types";
+import { getNativeToken } from "../../../services/solana/Constants";
 
 export class BotReferralProgramHelper extends BotHelper {
 
@@ -134,6 +134,7 @@ export class BotReferralProgramHelper extends BotHelper {
         
         message += `\n\nIf you have a premium subscription, you'll get higher rewards from the fees paid by your referrees.\n• FREE users will get 25% share of the fees paid by their referrees\n• SILVER subscribers - 30% fee share\n• GOLD subscriber - 35% fee share\n• PLATINUM subscribers - 40% fee share`;
 
+        //TODO: show referral rewards for all chains. for now it's only Solana and Sonic
         const usersCountDirect = refStats?.usersCount.direct || 0;
         const usersCountIndirect = refStats?.usersCount.indirect || 0;
         const rewardsTotalSol = (refStats?.rewards[Chain.SOLANA].rewardsTotal.sol || 0) + (refStats?.rewards[Chain.SONIC].rewardsTotal.sol || 0);
@@ -143,12 +144,14 @@ export class BotReferralProgramHelper extends BotHelper {
         // const rewardsPaidUsdc = refStats?.rewardsPaid.usdc || 0;
         // const rewardsUnpaidUsdc = rewardsTotalUsdc - rewardsPaidUsdc;
 
+        const kSOL = getNativeToken(Chain.SOLANA);
+
         message += `\n\n`;
         message += `Your Referrals (updated every hour)
 • Users referred: ${usersCountDirect+usersCountIndirect} (direct: ${usersCountDirect}, indirect: ${usersCountIndirect})
-• Total rewards: ${Helpers.prettyNumber(rewardsTotalSol / LAMPORTS_PER_SOL, 6)} SOL
-• Total paid: ${Helpers.prettyNumber(rewardsPaidSol / LAMPORTS_PER_SOL, 6)} SOL
-• Total unpaid: ${Helpers.prettyNumber(rewardsUnpaidSol / LAMPORTS_PER_SOL, 6)} SOL`;
+• Total rewards: ${Helpers.prettyNumber(rewardsTotalSol / kSOL.lamportsPerSol, 6)} ${kSOL.symbol}
+• Total paid: ${Helpers.prettyNumber(rewardsPaidSol / kSOL.lamportsPerSol, 6)} ${kSOL.symbol}
+• Total unpaid: ${Helpers.prettyNumber(rewardsUnpaidSol / kSOL.lamportsPerSol, 6)} ${kSOL.symbol}`;
 
         message += `\n\n`;
         message += `Rewards are paid daily and airdropped directly to your main trader profile wallet. <u><b>You must have accrued at least 0.005 SOL in unpaid fees to be eligible for a payout.</b></u>`;

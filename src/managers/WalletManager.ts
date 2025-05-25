@@ -10,7 +10,7 @@ import { Helpers } from "../services/helpers/Helpers";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import { TokenBalance } from "@solana/web3.js";
 import { BN } from "bn.js";
-import { kSolAddress } from "../services/solana/Constants";
+import { getNativeToken, kSolAddress } from "../services/solana/Constants";
 import { TokenManager } from "./TokenManager";
 import { kMinSolChange } from "../services/Constants";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
@@ -41,11 +41,20 @@ export class WalletManager {
     static statsStartedAt: number | undefined = undefined;
     static stats: Record<string, number> = {};
 
+    static forbiddenWallets: string[] = [
+        '11111111111111111111111111111111',
+    ]
+
     static async addWallet(chatId: number, user: IUser, walletAddress: string, title?: string, ipAddress?: string, traderProfileId?: string): Promise<IWallet>{
         //check if walletAddress is a valid address
         if (SolanaManager.isValidPublicKey(walletAddress) == false){
             MixpanelManager.trackError(user.id, { text: `Invalid wallet address: ${walletAddress}` }, ipAddress);
             throw new BadRequestError('Invalid wallet address');
+        }
+
+        if (this.forbiddenWallets.includes(walletAddress)){
+            MixpanelManager.trackError(user.id, { text: `Forbidden wallet address: ${walletAddress}` }, ipAddress);
+            throw new BadRequestError('Forbidden wallet address');
         }
 
         const existingWallet = await Wallet.findOne({userId: user.id, walletAddress: walletAddress});
@@ -413,6 +422,7 @@ export class WalletManager {
         const txPreTokenBalances = parsedTx.preTokenBalances || [];
         const txPostTokenBalances = parsedTx.postTokenBalances || [];
         const tokens: ITokenModel[] = [];
+        const kSOL = getNativeToken(chain);
 
         const changedWallets: ChangedWallet[] = [];
         // LogManager.log('!parsedTx.walletsInvolved', parsedTx.walletsInvolved);
@@ -457,7 +467,7 @@ export class WalletManager {
                         const lamportsPerToken = 10 ** (preTokenBalance?.uiTokenAmount.decimals || postTokenBalance?.uiTokenAmount.decimals || 0);
                         // const { div, mod } = balanceDiff.divmod(new BN(lamportsPerToken));
                         // const balanceChange = div.toNumber() + mod.toNumber() / lamportsPerToken;
-                        const balanceChange = Helpers.bnDivBnWithDecimals(balanceDiff, new BN(lamportsPerToken), 9);
+                        const balanceChange = Helpers.bnDivBnWithDecimals(balanceDiff, new BN(lamportsPerToken), getNativeToken(chain).decimals);
                         
 
                         tokenBalances.push({ accountIndex, mint, balanceChange, pre: preTokenBalance, post: postTokenBalance });
@@ -467,7 +477,7 @@ export class WalletManager {
                 let hasBalanceChange = false;
                 const nativeBalanceChange = txPostBalances[walletAccountIndex] - txPreBalances[walletAccountIndex];
                 const wsolBalanceChange = tokenBalances.find((b) => b.mint == kSolAddress)?.balanceChange || 0;                    
-                const balanceChange = nativeBalanceChange / web3.LAMPORTS_PER_SOL + wsolBalanceChange;
+                const balanceChange = nativeBalanceChange / getNativeToken(chain).lamportsPerSol + wsolBalanceChange;
                 if (balanceChange && Math.abs(balanceChange) >= kMinSolChange){
                     hasBalanceChange = true;
                     hasWalletsChanges = true;
@@ -483,11 +493,11 @@ export class WalletManager {
 
                     const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
                     const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+ totalUsdValue + ')' : '';
-                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, kSolAddress)}">SOL</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
+                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, kSolAddress)}">${kSOL.symbol}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
 
                     walletTokenChanges.push({
                         mint: kSolAddress,
-                        symbol: 'SOL',
+                        symbol: kSOL.symbol,
                         description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`,
                     });
                 }
@@ -635,12 +645,12 @@ export class WalletManager {
 
         if (txDescription){
             let description = txDescription.html;
-            description = Helpers.replaceAddressesWithPretty(description, txDescription.addresses, chat.wallets, tokens);
+            description = Helpers.replaceAddressesWithPretty(chain, description, txDescription.addresses, chat.wallets, tokens);
             message = message.replace('{description}', description);
         }
 
         const plainText = txDescription?.html ? Helpers.htmlToPlainText(txDescription?.html) : undefined;
-        const description = plainText ? Helpers.replaceAddressesWithPretty(plainText, txDescription?.addresses, chat.wallets, tokens) : undefined;
+        const description = plainText ? Helpers.replaceAddressesWithPretty(chain, plainText, txDescription?.addresses, chat.wallets, tokens) : undefined;
 
         LogManager.log('!changedWallets', JSON.stringify(changedWallets));
 

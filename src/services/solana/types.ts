@@ -83,8 +83,68 @@ export enum Priority {
 export enum Chain {
     SOLANA = 'sol',
     SONIC = 'sonic', // Sonic SVM mainnet
-    SONIC_TESTNET = 'sonic_testnet',
+    SONIC_TESTNET = 't_sonic',
+    SOON_MAINNET = 'soon',
+    SOON_TESTNET = 't_soon',
+    SVMBNB_MAINNET = 'svmbnb',
+    SVMBNB_TESTNET = 't_svmbnb',
+    SOONBASE_MAINNET = 'soonba',
+    SOONBASE_TESTNET = 't_soonbase',
 }
+
+export const kAllChains = Object.values(Chain) as Chain[];
+
+export const kChains: {[key: string]: {
+    geyserPort: number,
+    rpc: string,
+    websocket: string,
+}} = {
+    [Chain.SOLANA]: {
+        geyserPort: 3340, 
+        rpc: process.env.SOLANA_RPC!,
+        websocket: '',
+    },
+    [Chain.SONIC]: {
+        geyserPort: 3344,
+        rpc: process.env.SONIC_RPC!,
+        websocket: process.env.SONIC_RPC_WSS!,
+    },
+    [Chain.SONIC_TESTNET]: {
+        geyserPort: 3345,
+        rpc: process.env.SONIC_RPC_TESTNET!,
+        websocket: process.env.SONIC_RPC_WSS_TESTNET!,
+    },
+    [Chain.SOON_MAINNET]: {
+        geyserPort: 3346,
+        rpc: process.env.SOON_MAINNET_RPC!,
+        websocket: process.env.SOON_MAINNET_RPC_WSS!,
+    },
+    [Chain.SOON_TESTNET]: {
+        geyserPort: 3347,
+        rpc: process.env.SOON_TESTNET_RPC!,
+        websocket: process.env.SOON_TESTNET_RPC_WSS!,
+    },
+    [Chain.SVMBNB_MAINNET]: {
+        geyserPort: 3348,
+        rpc: process.env.SVMBNB_MAINNET_RPC!,
+        websocket: process.env.SVMBNB_MAINNET_RPC_WSS!,
+    },
+    [Chain.SVMBNB_TESTNET]: {
+        geyserPort: 3349,
+        rpc: process.env.SVMBNB_TESTNET_RPC!,
+        websocket: process.env.SVMBNB_TESTNET_RPC_WSS!,
+    },
+    [Chain.SOONBASE_MAINNET]: {
+        geyserPort: 3351,
+        rpc: process.env.SOONBASE_MAINNET_RPC!,
+        websocket: process.env.SOONBASE_MAINNET_RPC_WSS!,
+    },
+    [Chain.SOONBASE_TESTNET]: {
+        geyserPort: 3352,
+        rpc: process.env.SOONBASE_TESTNET_RPC!,
+        websocket: process.env.SOONBASE_TESTNET_RPC_WSS!,
+    },
+};
 
 export interface SubscriptionConfig {
     type: 'free' | SubscriptionTier,

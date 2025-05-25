@@ -9,7 +9,9 @@ import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
 import { TokenManager } from "../TokenManager";
 
-export interface SonicAsset {
+//TODO: SVM
+
+export interface SvmAsset {
     mint: string;
     symbol: string;
     name: string;
@@ -17,12 +19,10 @@ export interface SonicAsset {
     balance: BN;
 }
 
-export class ChainSonicManager {
+export class ChainSvmManager {
 
-    static chain = Chain.SONIC;
-
-    static async getPortfolio(traderProfile: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], lpAssets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
-        const kSOL = getNativeToken(this.chain);
+    static async getPortfolio(chain: Chain, traderProfile: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], lpAssets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
+        const kSOL = getNativeToken(chain);
         const values: {
             walletAddress?: string,
             totalPrice: number,
@@ -40,7 +40,7 @@ export class ChainSonicManager {
                 throw new BadRequestError('Wallet not found');
             }
 
-            const assetsData = await this.getAssetsByOwner(walletAddress);
+            const assetsData = await this.getAssetsByOwner(chain, walletAddress);
             let totalPrice = 0;
 
             for (const tmpAsset of assetsData) {
@@ -82,12 +82,12 @@ export class ChainSonicManager {
         return { values, assets, lpAssets: [], warning };
     }
 
-    static async getAssetsByOwner(walletAddress: string): Promise<SonicAsset[]> {
+    static async getAssetsByOwner(chain: Chain, walletAddress: string): Promise<SvmAsset[]> {
         try{
-            const solBalance = await SolanaManager.getWalletSolBalance(this.chain, walletAddress);
-            const balances = await SolanaManager.getWalletTokensBalances(this.chain, walletAddress);
-            const kSOL = getNativeToken(Chain.SONIC);
-            const tokens: SonicAsset[] = [];
+            const solBalance = await SolanaManager.getWalletSolBalance(chain, walletAddress);
+            const balances = await SolanaManager.getWalletTokensBalances(chain, walletAddress);
+            const kSOL = getNativeToken(chain);
+            const tokens: SvmAsset[] = [];
             tokens.push({
                 mint: kSolAddress,
                 symbol: kSOL.symbol,

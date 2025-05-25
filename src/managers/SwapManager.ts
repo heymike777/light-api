@@ -1,6 +1,5 @@
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
-import { kSolAddress, kUsdcAddress, kUsdcMintDecimals } from "../services/solana/Constants";
+import { getNativeToken, kSolAddress, kUsdcAddress, kUsdcMintDecimals } from "../services/solana/Constants";
 import { Chain, Engine, Priority } from "../services/solana/types";
 import { JupiterManager } from "./JupiterManager";
 import { BadRequestError } from "../errors/BadRequestError";
@@ -218,13 +217,13 @@ export class SwapManager {
 
             if (currency == Currency.SOL){
                 swap.value = {
-                    sol: +swapAmountInLamports / LAMPORTS_PER_SOL,
-                    usd : Math.round((+swapAmountInLamports / LAMPORTS_PER_SOL) * TokenManager.getSolPrice() * 100) / 100,
+                    sol: +swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol,
+                    usd : Math.round((+swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
                 }
             }
             else if (currency == Currency.USDC){
                 swap.value = {
-                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getSolPrice()) / 1000000000, // 10**6 / 10**9
+                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getNativeTokenPrice(swap.chain)) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
                     usd: +swapAmountInLamports / (10 ** 6),
                 }
             }
@@ -468,13 +467,13 @@ export class SwapManager {
         let internalMessage = `${swap.type} tx`;
         if (token){
             const bnAmount = new BN(swap.amountIn);
-            const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(10**9) : new BN(10 ** (token.decimals || 0))
+            const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(getNativeToken(swap.chain).lamportsPerSol) : new BN(10 ** (token.decimals || 0))
             // const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
             // const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
 
-            const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, 9);
+            const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, getNativeToken(swap.chain).decimals);
             const actionString = swap.type == SwapType.BUY 
-                ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} SOL` 
+                ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} ${getNativeToken(swap.chain).symbol}` 
                 : `sell ${Helpers.prettyNumberFromString(amountIn, 6)} ${token.symbol}`;
             internalMessage = `tx to ${actionString}`
         }
@@ -537,17 +536,19 @@ export class SwapManager {
     }
 
     static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
+        //TODO: add trading support for other chains 
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+        const kSOL = getNativeToken(chain);
 
         // console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
-        if (chain == Chain.SOLANA){
-            const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
-            if (!isFreezeAuthorityRevoked){
-                dex = SwapDex.RAYDIUM_AMM;
-                isHoneypot = true;
-            }
-            LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
-        }
+        // if (chain == Chain.SOLANA){
+        //     const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
+        //     if (!isFreezeAuthorityRevoked){
+        //         dex = SwapDex.RAYDIUM_AMM;
+        //         isHoneypot = true;
+        //     }
+        //     LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
+        // }
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
@@ -570,29 +571,27 @@ export class SwapManager {
         }
 
         if (isHoneypot && currency != Currency.SOL){
-            throw new BadRequestError('Honeypot is supported only for SOL');
+            throw new BadRequestError(`Honeypot is supported only for ${kSOL.symbol}`);
         }
 
         if (chain != Chain.SOLANA && currency != Currency.SOL){
-            throw new BadRequestError('Only SOL is supported for this chain');
+            throw new BadRequestError(`Only ${kSOL.symbol} is supported for this chain`);
         }
 
-        const connection = newConnectionByChain(chain);
-
-        const balance = await SolanaManager.getWalletSolBalance(connection, tpWallet.publicKey);
+        const balance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
         const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
         if (!balance || balance.uiAmount < minSolRequired){
-            throw new BadRequestError(`Insufficient SOL balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
+            throw new BadRequestError(`Insufficient ${kSOL.symbol} balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
         }
 
         if (currency == Currency.USDC){
-            const balance = await SolanaManager.getWalletTokenBalance(connection, tpWallet.publicKey, kUsdcAddress);
+            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, kUsdcAddress);
             if (!balance || balance.uiAmount < amount){
                 throw new BadRequestError('Insufficient USDC balance');
             }    
         }
 
-        const decimals = currency == Currency.SOL ? 9 : 6;
+        const decimals = currency == Currency.SOL ? kSOL.decimals : 6;
         const amountInLamports = amount * (10 ** decimals);
 
         const swap = new Swap();
@@ -624,7 +623,9 @@ export class SwapManager {
     }
 
     static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
+        //TODO: add trading support for other chains 
         let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+        const kSOL = getNativeToken(chain);
         LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
@@ -642,7 +643,7 @@ export class SwapManager {
         }
 
         if (mint == kSolAddress){
-            throw new BadRequestError('Selling SOL is not supported');
+            throw new BadRequestError(`Selling ${kSOL.symbol} is not supported`);
         }
 
         if (amountPercents <= 0 || amountPercents > 100){
@@ -652,18 +653,16 @@ export class SwapManager {
         const currency = traderProfile.currency || Currency.SOL;
         const userId = traderProfile.userId;
 
-        const connection = newConnectionByChain(chain);
-
-        const solBalance = await SolanaManager.getWalletSolBalance(connection, tpWallet.publicKey);
+        const solBalance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
         const minSolRequired = 0.01;
         if (!solBalance || solBalance.uiAmount < minSolRequired){
-            throw new BadRequestError('Insufficient SOL balance');
+            throw new BadRequestError(`Insufficient ${kSOL.symbol} balance`);
         }
 
         let amountInLamports = new BN(0);
         if (!isHoneypot){
             // if not honeypot, then we need to check balance
-            const balance = await SolanaManager.getWalletTokenBalance(connection, tpWallet.publicKey, mint);
+            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, mint);
             if (!balance){
                 throw new BadRequestError('Insufficient balance');
             }
@@ -752,8 +751,8 @@ export class SwapManager {
                 return;
             }
 
-            const feeSol = feeLamports / LAMPORTS_PER_SOL;
-            const feeUsd = Math.round(feeSol * TokenManager.getSolPrice() * 100000) / 100000;
+            const feeSol = feeLamports / getNativeToken(swap.chain).lamportsPerSol;
+            const feeUsd = Math.round(feeSol * TokenManager.getNativeTokenPrice(swap.chain) * 100000) / 100000;
             swap.referralRewards = {
                 fee: {
                     sol: feeLamports,
