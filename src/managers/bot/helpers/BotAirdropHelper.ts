@@ -1,12 +1,10 @@
 import { Context } from "grammy";
 import { IUser } from "../../../entities/users/User";
-import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { LogManager } from "../../LogManager";
 import { WalletManager } from "../../WalletManager";
 import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
-import { TgMessage } from "../BotTypes";
-import { AirdropManager } from "../../AirdropManager";
+import { AirdropManager } from "../../airdrops/AirdropManager";
 
 export class BotAirdropHelper extends BotHelper {
 
@@ -40,7 +38,7 @@ export class BotAirdropHelper extends BotHelper {
                     const info = sns[i];
                     const wallet = wallets.find(w => w.walletAddress == info.walletAddress);
                     const walletTitle = wallet ? ` (${wallet.title})` : '';
-                    response += `\n${i + 1}. ${info.walletAddress}${walletTitle} - ${info.tokens} SNS`;
+                    response += `\n${i + 1}. ${info.walletAddress}${walletTitle} - ${info.tokensToClaim} SNS (${info.tokensClaimed} SNS claimed)`;
                 }
             }
         }
