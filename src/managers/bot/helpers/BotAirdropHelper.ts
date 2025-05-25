@@ -80,14 +80,9 @@ export class BotAirdropHelper extends BotHelper {
     }
 
     async fetchAirdrop(ctx: Context, airdropId: string, walletAddresses: string[], wallets?: IWallet[]) {
-        const pendingMsg = await BotManager.reply(ctx, 'Fetching airdrop info...');
-        const airdropWallets = await AirdropManager.fetchAirdropInfo(walletAddresses, airdropId);
+        const airdropWallets = await AirdropManager.fetchAirdropInfo(walletAddresses, airdropId, ctx);
 
         if (airdropWallets.length == 0){
-            if (pendingMsg){
-                await BotManager.deleteMessage(ctx, pendingMsg.message_id, pendingMsg.chat.id);
-            }
-            
             await BotManager.reply(ctx, 'No airdrop allocation found.');
             return;
         }
@@ -110,11 +105,6 @@ export class BotAirdropHelper extends BotHelper {
             if (response.length > 0){
                 await BotManager.reply(ctx, response);
             }
-
-            if (pendingMsg){
-                await BotManager.deleteMessage(ctx, pendingMsg.message_id, pendingMsg.chat.id);
-            }
-
         }
     }
 

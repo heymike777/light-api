@@ -1,3 +1,6 @@
+import { Context } from "grammy";
+import { BotManager } from "../bot/BotManager";
+
 export interface IAirdropInfo {
     walletAddress: string;
     tokensToClaim: number;
@@ -6,9 +9,11 @@ export interface IAirdropInfo {
 
 export class AirdropManager {
 
-    static async fetchAirdropInfo(wallets: string[], airdropId: string): Promise<IAirdropInfo[]> {
+    static async fetchAirdropInfo(wallets: string[], airdropId: string, ctx?: Context): Promise<IAirdropInfo[]> {
+        const pendingMsg = ctx ? await BotManager.reply(ctx, `Fetching ${airdropId} airdrop info (0/${wallets.length})...`) : undefined;
         const airdropInfo: IAirdropInfo[] = [];
 
+        let index = 0;
         for (const walletAddress of wallets) {
             let info: IAirdropInfo | undefined;
             
@@ -22,6 +27,15 @@ export class AirdropManager {
             if (info) {
                 airdropInfo.push(info);
             }
+
+            if (ctx && pendingMsg) {
+                await BotManager.editMessage(ctx, `Fetching ${airdropId} airdrop info (${index+1}/${wallets.length})...`, undefined, pendingMsg.message_id, pendingMsg.chat.id);
+            }
+            index++;
+        }
+
+        if (ctx && pendingMsg){
+            await BotManager.deleteMessage(ctx, pendingMsg.message_id, pendingMsg.chat.id);
         }
 
         return airdropInfo;
