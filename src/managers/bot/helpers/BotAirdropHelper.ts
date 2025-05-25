@@ -67,7 +67,7 @@ export class BotAirdropHelper extends BotHelper {
                 const wallets = await WalletManager.fetchWalletsByUserId(user.id);
                 MixpanelManager.track('Airdrops checker: my wallets', user.id, { walletsCount: wallets.length, airdropId });
 
-                if (wallets.length == 0 || wallets.length > 1){
+                if (wallets.length == 0){
                     const buttons: InlineButton[] = [
                         {id: 'add_wallet', text: '➕ Add wallets'},
                     ];
