@@ -38,7 +38,11 @@ export class BotAirdropHelper extends BotHelper {
                     const info = sns[i];
                     const wallet = wallets.find(w => w.walletAddress == info.walletAddress);
                     const walletTitle = wallet ? ` (${wallet.title})` : '';
-                    response += `\n${i + 1}. ${info.walletAddress}${walletTitle} - ${info.tokensToClaim} SNS (${info.tokensClaimed} SNS claimed)`;
+                    response += `\n${i + 1}. ${info.walletAddress}${walletTitle} - ${info.tokensToClaim} SNS`;
+
+                    if (info.tokensClaimed && info.tokensClaimed > 0){
+                        response += ` (${info.tokensClaimed} SNS claimed)`;
+                    }
                 }
             }
         }
