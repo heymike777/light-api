@@ -695,9 +695,22 @@ export class SolanaManager {
 
     
     static async getWalletTokensBalances(chain: Chain, walletAddress: string): Promise<{mint: string, symbol?: string, name?: string, balance: TokenBalance}[]>{
+        const res = await Promise.all([
+            this.getWalletTokensBalancesForProgram(chain, walletAddress, spl.TOKEN_PROGRAM_ID),
+            this.getWalletTokensBalancesForProgram(chain, walletAddress, spl.TOKEN_2022_PROGRAM_ID)
+        ]);
+
+        return [
+            ...res[0],
+            ...res[1],
+        ];        
+    }
+
+    static async getWalletTokensBalancesForProgram(chain: Chain, walletAddress: string, programId: web3.PublicKey): Promise<{mint: string, symbol?: string, name?: string, balance: TokenBalance}[]>{
         try {
+            // console.log('getWalletTokensBalancesForProgram', 'chain:', chain, 'walletAddress:', walletAddress, 'programId:', programId.toBase58());
+
             const web3Conn = newConnectionByChain(chain);
-            const programId = spl.TOKEN_2022_PROGRAM_ID; // That was made for Sonic SVM. For Solana Mainnet we need to use spl.TOKEN_PROGRAM_ID + spl.TOKEN_2022_PROGRAM_ID
 
             // console.log(new Date(), process.env.SERVER_NAME, 'getWalletTokenBalance', 'walletAddress', walletAddress, 'tokenAddress', tokenAddress);
             const mainWalletPublicKey = new web3.PublicKey(walletAddress);
@@ -735,6 +748,8 @@ export class SolanaManager {
                     });
                 }
             }
+
+            // console.log('getWalletTokensBalancesForProgram', 'balances:', balances);
 
             return balances;
         }
