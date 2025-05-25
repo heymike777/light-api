@@ -64,6 +64,8 @@ export class BotSettingsHelper extends BotHelper {
         buttons.push({ id: `settings|refresh`, text: '↻ Refresh' });
         buttons.push({ id: `delete_message`, text: '✕ Close' });
         buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: 'connect_email', text: '✉️ Connect email' });
+        buttons.push({ id: 'row', text: '' });
 
         const extraButtons: InlineButton[] = [];
         if (user.isAmbassador){

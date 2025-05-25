@@ -151,13 +151,12 @@ export class BotStartHelper extends BotHelper {
             {id: 'trader_profiles', text: '💰 Trader profiles'},
             {id: 'portfolio', text: '🎨 Portfolio'},
             {id: 'row', text: ''},
-            {id: 'connect_email', text: '✉️ Connect email'},
+            // {id: 'connect_email', text: '✉️ Connect email'},
+            {id: 'upgrade', text: '👑 Upgrade'},
             {id: 'referral_program', text: '👥 Refer friends'},
             {id: 'row', text: ''}, 
             {id: 'airdrops', text: '🪂 Airdrops'},
             {id: 'settings', text: '⚙️ Settings'},
-            {id: 'row', text: ''}, 
-            {id: 'upgrade', text: '👑 Upgrade'},
         ];
 
         const replyMessage: Message = {
