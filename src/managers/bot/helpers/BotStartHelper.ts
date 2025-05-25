@@ -1,6 +1,5 @@
 import { Context } from "grammy";
 import { IUser, User, UserBotStatus } from "../../../entities/users/User";
-import { UserRefClaim } from "../../../entities/referrals/UserRefClaim";
 import { LogManager } from "../../LogManager";
 import { BotManager } from "../BotManager";
 import { BotHelper, Message } from "./BotHelper";
@@ -10,7 +9,6 @@ import { UserUtm } from "../../../entities/users/UserUtm";
 import { WalletManager } from "../../WalletManager";
 import { PremiumError } from "../../../errors/PremiumError";
 import { IWallet } from "../../../entities/Wallet";
-import { LegacyContentInstance } from "twilio/lib/rest/content/v1/legacyContent";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { ReferralsManager } from "../../ReferralsManager";
 
@@ -20,7 +18,7 @@ export class BotStartHelper extends BotHelper {
         LogManager.log('BotStartHelper', 'constructor');
         
         const replyMessage: Message = {
-            text: '🚀 Light - real-time Solana wallet tracker and Trading Terminal.'
+            text: '🚀 Light - real-time Solana wallet tracker and Trading Engine.'
         };
 
         super('start', replyMessage);
@@ -155,14 +153,16 @@ export class BotStartHelper extends BotHelper {
             {id: 'row', text: ''},
             {id: 'connect_email', text: '✉️ Connect email'},
             {id: 'referral_program', text: '👥 Refer friends'},
-            {id: 'row', text: ''},
-            {id: 'upgrade', text: '👑 Upgrade'},
+            {id: 'row', text: ''}, 
+            {id: 'airdrops', text: '🪂 Airdrops'},
             {id: 'settings', text: '⚙️ Settings'},
+            {id: 'row', text: ''}, 
+            {id: 'upgrade', text: '👑 Upgrade'},
         ];
 
         const replyMessage: Message = {
             photo: 'https://light.dangervalley.com/static/telegram/start2.png',
-            text: '🚀 Light - trading terminal on Solana.\n' + 
+            text: '🚀 Light - trading engine on Solana.\n' + 
             '\n' +
 
             (trader?.encryptedWallet ? '<b>Your main trader profile:</b> <code>' + trader.encryptedWallet.publicKey + '</code> (Tap to copy)\n\n' : '') +
@@ -174,13 +174,13 @@ export class BotStartHelper extends BotHelper {
             '/trader_profiles - your trader wallets\n' +
             '/buy - buy tokens\n' +
             '/sell - sell tokens\n' +
-            // '/settings - configure your settings\n' +
+            '/airdrops - track airdrop allocation\n' +
             '\n' +
-            'We support <b>Solana</b> and <b>Sonic SVM</b>. You can select your network in /settings \n' +
-            '\n' +
-            '<b>Light mobile app:</b> <a href="https://apps.apple.com/app/id6739495155">AppStore</a> or <a href="https://play.google.com/store/apps/details?id=app.light.bot">Google Play</a>.\n' +
-            '\n' +
-            'If you want to use the same account in mobile app and Telegram bot, connect email address here, and you\'ll be able to login in mobile app with the same email.\n',
+            'We support <b>Solana</b> and <b>Sonic SVM</b>. You can select your network in /settings \n',
+            // '\n' +
+            // '<b>Light mobile app:</b> <a href="https://apps.apple.com/app/id6739495155">AppStore</a> or <a href="https://play.google.com/store/apps/details?id=app.light.bot">Google Play</a>.\n' +
+            // '\n' +
+            // 'If you want to use the same account in mobile app and Telegram bot, connect email address here, and you\'ll be able to login in mobile app with the same email.\n'
             buttons: buttons,
             markup: BotManager.buildInlineKeyboard(buttons),
         };

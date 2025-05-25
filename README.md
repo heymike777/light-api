@@ -1,6 +1,6 @@
-# 💡 Light — Real-Time mobile-first trading bot on Solana and SVM
+# 💡 Light — Real-Time mobile-first trading engine on Solana and SVM
 
-Light is an open-source real-time wallet tracking and trading bot built on the [Solana](https://solana.com) blockchain. Designed for speed and simplicity, it enables you to:
+Light is an open-source real-time wallet tracking and trading engine built on the [Solana](https://solana.com) blockchain. Designed for speed and simplicity, it enables you to:
 
 - 📈 Track wallet activity instantly
 - 🔁 Make swaps on [Jupiter](https://sega.so) (Solana)
