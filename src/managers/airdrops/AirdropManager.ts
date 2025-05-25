@@ -6,11 +6,19 @@ export interface IAirdropInfo {
 
 export class AirdropManager {
 
-    static async fetchSnsAirdropInfo(wallets: string[]): Promise<IAirdropInfo[]> {
+    static async fetchAirdropInfo(wallets: string[], airdropId: string): Promise<IAirdropInfo[]> {
         const airdropInfo: IAirdropInfo[] = [];
 
         for (const walletAddress of wallets) {
-            const info = await this.fetchSnsAirdropInfoForWallet(walletAddress);
+            let info: IAirdropInfo | undefined;
+            
+            if (airdropId == 'SNS'){
+                info = await this.fetchSnsAirdropInfoForWallet(walletAddress);
+            }
+            else if (airdropId == 'HUMA'){
+                info = await this.fetchHumaAirdropInfoForWallet(walletAddress);
+            }
+
             if (info) {
                 airdropInfo.push(info);
             }
