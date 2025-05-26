@@ -1,5 +1,8 @@
 import { Context } from "grammy";
 import { BotManager } from "../bot/BotManager";
+import { UserManager } from "../UserManager";
+import { BotAirdropHelper } from "../bot/helpers/BotAirdropHelper";
+import { WalletManager } from "../WalletManager";
 
 export interface IAirdropInfo {
     walletAddress: string;
@@ -83,6 +86,18 @@ export class AirdropManager {
             console.error(`Error fetching ${airdropId} airdrop info:`, error);
         }
         return undefined;
+    }
+
+    static async checkAllUsersForAirdrop(airdropId: string) {
+        const user = await UserManager.getUserById('66eefe2c8fed7f2c60d147ef');
+        if (user){
+            const wallets = await WalletManager.fetchWalletsByUserId(user.id);
+
+            if (wallets.length > 0){
+                const walletAddresses: string[] = wallets.map(w => w.walletAddress);
+                await BotAirdropHelper.fetchAirdrop(undefined, airdropId, walletAddresses, wallets, user);
+            }
+        }
     }
 
 }

@@ -77,7 +77,7 @@ export class BotAirdropHelper extends BotHelper {
                 }
                 else {
                     const walletAddresses: string[] = wallets.map(w => w.walletAddress);
-                    await this.fetchAirdrop(ctx, airdropId, walletAddresses, wallets);
+                    await BotAirdropHelper.fetchAirdrop(ctx, airdropId, walletAddresses, wallets);
                 }
             }
             else if (action == 'enter_wallets'){
@@ -126,7 +126,7 @@ export class BotAirdropHelper extends BotHelper {
                 return false;
             }
 
-            await this.fetchAirdrop(ctx, user.telegramState?.data?.airdropId, walletAddresses, wallets);
+            await BotAirdropHelper.fetchAirdrop(ctx, user.telegramState?.data?.airdropId, walletAddresses, wallets);
             await UserManager.updateTelegramState(user.id, undefined);
 
             return true;
@@ -135,12 +135,14 @@ export class BotAirdropHelper extends BotHelper {
         return false; // Not handled by this helper
     }
 
-    async fetchAirdrop(ctx: Context, airdropId: string, walletAddresses: string[], wallets?: {walletAddress: string, title?:string}[]) {
+    static async fetchAirdrop(ctx: Context | undefined, airdropId: string, walletAddresses: string[], wallets?: {walletAddress: string, title?:string}[], user?: IUser) {
         const airdropWallets = await AirdropManager.fetchAirdropInfo(walletAddresses, airdropId, ctx);
         const image = `https://light.dangervalley.com/static/airdrops/${airdropId}.png`;
 
         if (airdropWallets.length == 0){
-            await BotManager.replyWithPhoto(ctx, image, 'No airdrop allocation found.');
+            if (ctx) {
+                await BotManager.replyWithPhoto(ctx, image, 'No airdrop allocation found.');
+            }
             return;
         }
         else {
@@ -157,7 +159,6 @@ export class BotAirdropHelper extends BotHelper {
             let totalTokensClaimed = airdropWallets.reduce((sum, info) => sum + (info.tokensClaimed || 0), 0);
             let response = '';
             for (const batch of batches) {
-                // response = `$${airdropId} airdrop checker\n`;
                 response = '';
 
                 for (let i = 0; i < batch.length; i++){
@@ -177,7 +178,18 @@ export class BotAirdropHelper extends BotHelper {
                 }
 
                 if (batches.length > 1){
-                    await BotManager.replyWithPhoto(ctx, image, response);               
+                    if (ctx){
+                        await BotManager.replyWithPhoto(ctx, image, response);               
+                    } else if (user && user.telegram?.id) {
+                        // send to user
+                        await BotManager.sendMessage({
+                            id: `user_${user.id}_airdrop_checker_${Helpers.makeid(12)}`,
+                            userId: user.id,
+                            chatId: user.telegram?.id, 
+                            text: response, 
+                            imageUrl: image 
+                        });
+                    }
                 }
             }
 
@@ -187,7 +199,18 @@ export class BotAirdropHelper extends BotHelper {
                     response += `\n<b>Claimed:</b> ${totalTokensClaimed} ${airdropId}`;
                 }
 
-                await BotManager.replyWithPhoto(ctx, image, response);               
+                if (ctx){
+                    await BotManager.replyWithPhoto(ctx, image, response);               
+                } else if (user && user.telegram?.id) {
+                    // send to user
+                    await BotManager.sendMessage({
+                        id: `user_${user.id}_airdrop_checker_${Helpers.makeid(12)}`,
+                        userId: user.id,
+                        chatId: user.telegram?.id, 
+                        text: response, 
+                        imageUrl: image 
+                    });
+                }
             }
         }
     }

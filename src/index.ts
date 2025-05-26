@@ -42,6 +42,7 @@ import { JitoManager } from './services/solana/JitoManager';
 import { pricesServiceRouter } from './routes/v1/services/Prices';
 import { RabbitManager } from './managers/RabbitManager';
 import { LaserstreamManager } from './services/solana/geyser/LaserstreamManager';
+import { adminRouter } from './routes/v1/Admin';
 
 // top of index.js
 process.on('unhandledRejection', (err) => {
@@ -75,7 +76,7 @@ if (process.env.API_ENABLED == 'true' && EnvManager.isMainProcess) {
     app.use(authRouter);
     app.use(walletsRouter);
     app.use(usersRouter);
-    app.use(testRouter);
+    // app.use(testRouter);
     app.use(webhooksRouter);
     app.use(configRouter);
     app.use(giftCardsRouter);
@@ -83,6 +84,7 @@ if (process.env.API_ENABLED == 'true' && EnvManager.isMainProcess) {
     app.use(tradeRouter);
     app.use(searchRouter);
     app.use(portfolioRouter);
+    app.use(adminRouter);
 }
 
 if (EnvManager.isMainProcess) {
