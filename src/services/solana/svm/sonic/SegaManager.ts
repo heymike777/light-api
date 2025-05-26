@@ -27,15 +27,10 @@ export class SegaManager {
 
         // console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
-        // Initialize connection and SDK
-        const network = Network.SonicMainnet;
-        const connection = newConnectionByChain(Chain.SONIC);// getConnection(network);
+        const connection = newConnectionByChain(Chain.SONIC);
         const currency = Currency.SOL;
 
-        // Create or import a wallet
         const wallet = web3.Keypair.fromSecretKey(bs58.decode(tpWallet.privateKey))
-
-        // Initialize Sega SDK
         const sega = await Sega.load({
             cluster: 'mainnet',
             connection,
@@ -51,7 +46,6 @@ export class SegaManager {
             throw new Error('Pool not found');
         }
         const poolId = pool.poolId;
-        // console.log('poolId:', poolId);
 
         // Get pool information
         const data = await sega.cpmm.getPoolInfoFromRpc(poolId);

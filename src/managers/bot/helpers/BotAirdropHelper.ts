@@ -12,11 +12,16 @@ import { IWallet } from "../../../entities/Wallet";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { BonfidaManager } from "../../../services/solana/BonfidaManager";
 import { MixpanelManager } from "../../MixpanelManager";
+import { InlineKeyboardMarkup } from "grammy/types";
 
 export class BotAirdropHelper extends BotHelper {
 
     static supportedAirdrops = ['SNS', 'HUMA'];
     static MAX_WALLETS_PER_AIRDROP_CHECK = 10;
+    static claimUrls: { [key: string]: string } = {
+        'SNS': 'https://airdrop.sns.id/',
+        'HUMA': 'https://claim.huma.finance/',
+    };
 
     constructor() {
         LogManager.log('BotAirdropHelper', 'constructor');
@@ -158,6 +163,16 @@ export class BotAirdropHelper extends BotHelper {
             let totalTokensToClaim = airdropWallets.reduce((sum, info) => sum + info.tokensToClaim, 0);
             let totalTokensClaimed = airdropWallets.reduce((sum, info) => sum + (info.tokensClaimed || 0), 0);
             let response = '';
+
+            const claimUrl = BotAirdropHelper.claimUrls[airdropId] || undefined;
+            let markup: InlineKeyboardMarkup | undefined = undefined;
+            if (claimUrl){
+                const buttons: InlineButton[] = [
+                    {id: 'claim', text: 'Claim', link: claimUrl},
+                ];
+                markup = BotManager.buildInlineKeyboard(buttons);
+            }
+
             for (const batch of batches) {
                 response = '';
 
@@ -179,15 +194,17 @@ export class BotAirdropHelper extends BotHelper {
 
                 if (batches.length > 1){
                     if (ctx){
-                        await BotManager.replyWithPhoto(ctx, image, response);               
+                        await BotManager.replyWithPhoto(ctx, image, response, markup);               
                     } else if (user && user.telegram?.id) {
                         // send to user
+
                         await BotManager.sendMessage({
                             id: `user_${user.id}_airdrop_checker_${Helpers.makeid(12)}`,
                             userId: user.id,
                             chatId: user.telegram?.id, 
                             text: response, 
-                            imageUrl: image 
+                            imageUrl: image,
+                            inlineKeyboard: markup
                         });
                     }
                 }
@@ -200,7 +217,7 @@ export class BotAirdropHelper extends BotHelper {
                 }
 
                 if (ctx){
-                    await BotManager.replyWithPhoto(ctx, image, response);               
+                    await BotManager.replyWithPhoto(ctx, image, response, markup);               
                 } else if (user && user.telegram?.id) {
                     // send to user
                     await BotManager.sendMessage({
@@ -208,7 +225,8 @@ export class BotAirdropHelper extends BotHelper {
                         userId: user.id,
                         chatId: user.telegram?.id, 
                         text: response, 
-                        imageUrl: image 
+                        imageUrl: image,
+                        inlineKeyboard: markup
                     });
                 }
             }
