@@ -37,10 +37,8 @@ export class MetaplexManager {
             }      
         }  
 
-        const leftMints = mints.filter(mint => !assets.find(asset => asset.mint.toString() == mint));
+        let leftMints = mints.filter(mint => !assets.find(asset => asset.mint.toString() == mint));
         if (leftMints.length > 0){
-            LogManager.log('MetaplexManager', 'fetchAllDigitalAssets', 'leftMints', leftMints);
-
             for (const mint of leftMints) {
                 const tmpAsset = await this.getDigitalAssetManually(chain, mint);
                 if (tmpAsset){
@@ -53,19 +51,43 @@ export class MetaplexManager {
     }
 
     static async getDigitalAssetManually(chain: Chain, mint: string): Promise<DigitalAsset | undefined> {
-        LogManager.log('getDigitalAssetManually', chain, mint);
+        // console.log('getDigitalAssetManually', chain, mint);
 
         try {
+            const rpc = getRpc(chain).http;
+            // console.log('getDigitalAssetManually', 'rpc', rpc);
+
             const umi = createUmi(getRpc(chain).http, this.commitment); 
             // umi.use(dasApi());
-            // umi.use(mplTokenMetadata());
-    
-            const mintAccount = await fetchMint(umi, publicKey(mint));
+            umi.use(mplTokenMetadata());
 
+            const mintAccount = await fetchMint(umi, publicKey(mint));
+            // console.log('getDigitalAssetManually', 'mintAccount', mintAccount);
+
+            let metadata: Metadata.Metadata | undefined = undefined;
+            try {
+                metadata = await Metadata.fetchMetadataFromSeeds(umi, { mint: publicKey(mint) });
+                // console.log('getDigitalAssetManually', 'metadata', metadata);
+
+                const digitalAsset: DigitalAsset = {
+                    publicKey: publicKey(mint),
+                    mint: mintAccount,
+                    metadata: metadata
+                };
+                return digitalAsset; 
+            }
+            catch (error) {
+                LogManager.error('MetaplexManager', 'getDigitalAssetManually', 'fetchMetadataFromSeeds', error);
+            }
+    
             const connection = newConnectionByChain(chain);
             let accountInfo = await connection.getParsedAccountInfo(new web3.PublicKey(mint));
             const data: any = accountInfo.value?.data;
             const owner = accountInfo.value?.owner; // program owner
+            // console.log('getDigitalAssetManually', 'accountInfo', accountInfo);
+            // console.log('getDigitalAssetManually', 'data', data);
+
+            //TODO: parse not only extensions, but also metadata
 
             const extensions = data?.parsed?.info?.extensions;
             if (extensions){

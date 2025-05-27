@@ -1,20 +1,18 @@
 import { CurveCalculator, Network, Sega, TxVersion } from '@sega-so/sega-sdk';
 import BN from 'bn.js';
-import { SwapManager } from '../../../../managers/SwapManager';
-import { Chain } from '../../types';
-import { IUserTraderProfile } from '../../../../entities/users/TraderProfile';
+import { SwapManager } from '../../../managers/SwapManager';
+import { Chain } from '../types';
+import { IUserTraderProfile } from '../../../entities/users/TraderProfile';
 import * as web3 from '@solana/web3.js';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
-import { kSolAddress } from '../../Constants';
-import { SolanaManager } from '../../SolanaManager';
-import { Currency } from '../../../../models/types';
-import { newConnectionByChain } from '../../lib/solana';
-import { TokenManager } from '../../../../managers/TokenManager';
-import { kProgram } from '../../../../managers/constants/ProgramConstants';
-import { TokenPair } from '../../../../entities/tokens/TokenPair';
-import { IUser } from '../../../../entities/users/User';
-
-//TODO: SVM
+import { kSolAddress } from '../Constants';
+import { SolanaManager } from '../SolanaManager';
+import { Currency } from '../../../models/types';
+import { newConnectionByChain } from '../lib/solana';
+import { TokenManager } from '../../../managers/TokenManager';
+import { kProgram } from '../../../managers/constants/ProgramConstants';
+import { TokenPair } from '../../../entities/tokens/TokenPair';
+import { IUser } from '../../../entities/users/User';
 
 export class SegaManager {
 

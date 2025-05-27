@@ -33,6 +33,7 @@ export enum SwapDex {
     JUPITER = 'jupiter',
     RAYDIUM_AMM = 'raydium_amm',
     SEGA = 'sega',
+    COBALTX = 'cobaltx',
 }
 
 export interface ISwap extends mongoose.Document {

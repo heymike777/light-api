@@ -23,12 +23,13 @@ import { Currency } from "../models/types";
 import { SwapMode } from "@jup-ag/api";
 import { RaydiumManager } from "../services/solana/RaydiumManager";
 import { BN } from "bn.js";
-import { SegaManager } from "../services/solana/svm/sonic/SegaManager";
+import { SegaManager } from "../services/solana/svm/SegaManager";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { IUser } from "../entities/users/User";
 import { SubscriptionTier } from "../entities/payments/Subscription";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { ReferralsManager } from "./ReferralsManager";
+import { CobaltxManager } from "../services/solana/svm/CobaltxManager";
 
 export class SwapManager {
 
@@ -213,6 +214,13 @@ export class SwapManager {
                 swapAmountInLamports = segaResults.swapAmountInLamports.toString();
                 tx = segaResults.tx;
                 blockhash = segaResults.blockhash;
+            }
+            else if (swap.dex == SwapDex.COBALTX){
+                //TODO: add trading support for other chains
+                const cobaltxResults = await CobaltxManager.swap(swap.chain, user, traderProfile, inputMint, outputMint, new BN(amount), slippage);
+                swapAmountInLamports = cobaltxResults.swapAmountInLamports.toString();
+                tx = cobaltxResults.tx;
+                blockhash = cobaltxResults.blockhash;
             }
 
             if (currency == Currency.SOL){
@@ -536,8 +544,19 @@ export class SwapManager {
     }
 
     static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
-        //TODO: add trading support for other chains 
-        let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+        let dex: SwapDex;
+        if (chain == Chain.SOLANA){
+            dex = SwapDex.JUPITER;
+        }
+        else if (chain == Chain.SONIC){
+            dex = SwapDex.SEGA;
+        }
+        else if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
+            dex = SwapDex.COBALTX;
+        }
+        else {
+            throw new BadRequestError('Unsupported chain');
+        }
         const kSOL = getNativeToken(chain);
 
         // console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
@@ -579,7 +598,7 @@ export class SwapManager {
         }
 
         const balance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
-        const minSolRequired = currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01;
+        const minSolRequired = [Chain.SOON_MAINNET, Chain.SOONBASE_MAINNET, Chain.SVMBNB_MAINNET].includes(chain) ? (currency == Currency.SOL ? amount * 1.01 + 0.005 : 0.005) : (currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01);
         if (!balance || balance.uiAmount < minSolRequired){
             throw new BadRequestError(`Insufficient ${kSOL.symbol} balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
         }
@@ -622,9 +641,20 @@ export class SwapManager {
         return { signature, swap };
     }
 
-    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{
-        //TODO: add trading support for other chains 
-        let dex = chain == Chain.SONIC ? SwapDex.SEGA : SwapDex.JUPITER;
+    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{ 
+        let dex: SwapDex;
+        if (chain == Chain.SOLANA){
+            dex = SwapDex.JUPITER;
+        }
+        else if (chain == Chain.SONIC){
+            dex = SwapDex.SEGA;
+        }
+        else if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
+            dex = SwapDex.COBALTX;
+        }
+        else {
+            throw new BadRequestError('Unsupported chain');
+        }
         const kSOL = getNativeToken(chain);
         LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
 
