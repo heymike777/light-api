@@ -149,6 +149,7 @@ export const kValidators: {[key: string]: {name: string}} = {
     '6GoijNiK3JZVAY96ykCfPhcJnrQfrQMLvrQaX5HyMVhu': {name: `byasa mencius`},
     '6JfBwvcz5QUKQJ37BMKTLrf968DDJBtwoZLw19aHwFtQ': {name: `Spectrum Staking +MEV`},
     'punK4RDD3pFbcum79ACHatYPLLE1hr5UNnQVUGNfeyP': {name: `Sol Strategies`},
+    'BDn3HiXMTym7ZQofWFxDb7ZGQX6GomQzJYKfytTAqd5g': {name: `StakeCraft`},
 }
 
 export const kKnownAddresses: {[key: string]: {name: string}} = {
