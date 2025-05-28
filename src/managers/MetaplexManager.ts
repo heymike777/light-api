@@ -1,7 +1,7 @@
 import { DigitalAsset, fetchAllDigitalAsset, findMetadataPda } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { getRpc, getSharedRpc, newConnectionByChain } from '../services/solana/lib/solana';
-import { publicKey, Commitment, deserializeAccount } from '@metaplex-foundation/umi';
+import { publicKey, Commitment } from '@metaplex-foundation/umi';
 import { dasApi, DasApiAsset } from '@metaplex-foundation/digital-asset-standard-api';
 import { findLeafAssetIdPda, mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
 import { ExplorerManager } from '../services/explorers/ExplorerManager';
@@ -9,11 +9,9 @@ import { TokenNft, TokenNftAttribute } from '../entities/tokens/Token';
 import { LogManager } from './LogManager';
 import { Chain } from '../services/solana/types';
 import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
-import { SolanaManager } from '../services/solana/SolanaManager';
 import * as web3 from '@solana/web3.js';
 import * as Metadata from '@metaplex-foundation/mpl-token-metadata';
-import axios from 'axios';
-import { fetchMint, fetchToken, findAssociatedTokenPda, safeFetchToken } from '@metaplex-foundation/mpl-toolbox';
+import { fetchMint } from '@metaplex-foundation/mpl-toolbox';
 
 export class MetaplexManager {
 
