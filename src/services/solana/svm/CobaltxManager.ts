@@ -21,6 +21,8 @@ import axios from 'axios';
 import { VersionedTransaction } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 import base58 from "bs58";
+import { TransactionInstruction } from '@solana/web3.js';
+import { TransactionMessage } from '@solana/web3.js';
 
 export class CobaltxManager {
 
@@ -31,8 +33,24 @@ export class CobaltxManager {
         loadToken?: boolean;
     }): Promise<CobaltX> {
 
+        const network = CobaltxManager.getNetworkName(params.chain);
+
+        const cobaltx = await CobaltX.load({
+            owner: params.owner,
+            connection: params.conn,
+            cluster: 'mainnet',
+            disableFeatureCheck: true,
+            disableLoadToken: !params?.loadToken,
+            blockhashCommitment: 'confirmed',
+            network: network,
+        });
+
+        return cobaltx;
+    }
+
+    static getNetworkName(chain: Chain): NetworkName {
         let network: NetworkName;
-        switch (params.chain) {
+        switch (chain) {
             case Chain.SOON_MAINNET:
                 network = NetworkName.sooneth;
                 break;
@@ -46,18 +64,7 @@ export class CobaltxManager {
                 network = NetworkName.sooneth;
                 break;
         }
-
-        const cobaltx = await CobaltX.load({
-            owner: params.owner,
-            connection: params.conn,
-            cluster: 'mainnet',
-            disableFeatureCheck: true,
-            disableLoadToken: !params?.loadToken,
-            blockhashCommitment: 'confirmed',
-            network: network,
-        });
-
-        return cobaltx;
+        return network;
     }
 
     // static async swap2({ cobaltx, inputMint, inputAmount, outputMint, slippage, owner }: {
@@ -129,7 +136,7 @@ export class CobaltxManager {
 
     static async swap(chain: Chain, user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         console.log('CobaltxManager', 'swap', 'chain:', chain, 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
-        
+
         const tpWallet = traderProfile.getWallet();
         if (!tpWallet) {
             throw new Error('Wallet not found');
@@ -140,6 +147,7 @@ export class CobaltxManager {
 
         const connection = newConnectionByChain(chain);
         const currency = Currency.SOL;
+        const network = CobaltxManager.getNetworkName(chain);
 
         const wallet = web3.Keypair.fromSecretKey(bs58.decode(tpWallet.privateKey))
 
@@ -154,7 +162,7 @@ export class CobaltxManager {
 
         const swapComputeUrl =
             inputMint && outputMint && !new Decimal(inputAmount.toString() || 0).isZero()
-            ? `${getApiUrl(NetworkName.sooneth).SWAP_HOST}${API_URLS.SWAP_COMPUTE}swap-base-in?inputMint=${inputMint}&outputMint=${outputMint}&amount=${inputAmount.toString()}&slippageBps=${slippage}&txVersion=V0`
+            ? `${getApiUrl(network).SWAP_HOST}${API_URLS.SWAP_COMPUTE}swap-base-in?inputMint=${inputMint}&outputMint=${outputMint}&amount=${inputAmount.toString()}&slippageBps=${slippage}&txVersion=V0`
             : null;
 
         if (!swapComputeUrl) {
@@ -164,7 +172,12 @@ export class CobaltxManager {
         const computeSwapResponse = await axios.get(swapComputeUrl).then((res) => res.data).catch((err) => {
             console.error(err)
             throw new Error("Swap compute failed");
-        })
+        });
+
+        console.log('CobaltxManager', 'swap', 'computeSwapResponse:', JSON.stringify(computeSwapResponse, null, 2));
+
+        const swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : computeSwapResponse.data.outputAmount.toNumber();
+
 
         const inputToken = await cobaltx.token.getTokenInfo(new PublicKey(inputMint))
         const outputToken = await cobaltx.token.getTokenInfo(new PublicKey(outputMint))
@@ -179,10 +192,10 @@ export class CobaltxManager {
         const outputTokenAcc = await cobaltx.account.getCreatedTokenAccount({
             programId: new PublicKey(outputToken.programId ?? "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5D"),
             mint: new PublicKey(outputToken.address)
-        })
+        });
 
         const buildTxResponse = await axios.post(
-            `${getApiUrl(NetworkName.sooneth).SWAP_HOST}${API_URLS.SWAP_TX}swap-base-in`,
+            `${getApiUrl(network).SWAP_HOST}${API_URLS.SWAP_TX}swap-base-in`,
             {
                 wallet: wallet.publicKey.toBase58(),
                 computeUnitPriceMicroLamports: Number((computeSwapResponse.data?.microLamports || 0).toFixed(0)),
@@ -197,91 +210,72 @@ export class CobaltxManager {
             console.error(err)
             throw new Error("Swap transaction generation failed");
         })
+        console.log('CobaltxManager', 'swap', 'buildTxResponse:', JSON.stringify(buildTxResponse, null, 2));    
         const swapTransactions = buildTxResponse.data || []
         const allTxBuf = swapTransactions.map((tx: any) => base58.decode(tx.transaction))
-        const allTx = allTxBuf.map((txBuf: any) => new VersionedTransaction(web3.VersionedMessage.deserialize(Uint8Array.from(txBuf))))
+        const allTx: VersionedTransaction[] = allTxBuf.map((txBuf: any) => new VersionedTransaction(web3.VersionedMessage.deserialize(Uint8Array.from(txBuf))))
 
-        const signedTransactions = allTx.map((tx: VersionedTransaction) => {
-            tx.sign([wallet]);
-            return tx;
+        if (allTx.length === 0) {
+            throw new Error('No transactions generated for swap');
+        }
+
+        if (allTx.length > 1) {
+            console.warn('CobaltxManager.swap', 'Multiple transactions generated for swap, only the first one will be signed and sent');
+            throw new Error('Multiple transactions generated for swap. Please try again or contact support.');
+        }
+
+        const tx = allTx[0];
+        console.log('CobaltxManager', 'swap', 'tx:', tx);
+        console.log('CobaltxManager', 'swap', 'txJSON:', JSON.stringify(tx, null, 2));
+
+        const message = tx.message;
+        // Extract instructions from compiled form
+        const instructions: TransactionInstruction[] = message.compiledInstructions.map((ci) => {
+            const programId = message.staticAccountKeys[ci.programIdIndex];
+            const keys = ci.accountKeyIndexes.map((i) => ({
+                pubkey: message.staticAccountKeys[i],
+                isSigner: message.isAccountSigner(i),
+                isWritable: message.isAccountWritable(i),
+            }));
+            return new TransactionInstruction({
+                programId,
+                keys,
+                data: Buffer.from(ci.data),
+            });
         });
 
-        console.log('CobaltxManager', 'swap', 'signedTransactions:', signedTransactions);
+        // const addressLookupTableAccounts: web3.AddressLookupTableAccount[] | undefined = message.addressTableLookups;
+        let lookups: web3.AddressLookupTableAccount[] | undefined = undefined;
+        if (message.addressTableLookups && message.addressTableLookups.length > 0){
+            const lookupsAccountKeys = message.addressTableLookups.map((lookup) => lookup.accountKey.toBase58());
+            lookups = await SolanaManager.getAddressLookupTableAccounts(connection, lookupsAccountKeys);
+        }
+
+        const txMessage = new TransactionMessage({
+            payerKey: wallet.publicKey,
+            recentBlockhash: message.recentBlockhash,
+            instructions: [...instructions],
+        });
+
+        //TODO: add fee instruction
+        // const feeIx = SwapManager.createFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
+        // builder.addInstruction({
+        //     endInstructions: [feeIx],
+        // });
+
+        console.log('CobaltxManager', 'swap', 'allTx:', allTx);
+
+        const compiledMessage = txMessage.compileToV0Message(lookups);
+        const newVersionedTx = new VersionedTransaction(compiledMessage);
 
         throw new Error('CobaltxManager.swap is not implemented yet');
 
-        // return { swapAmountInLamports, tx, blockhash };
+        return { 
+            swapAmountInLamports, 
+            tx: newVersionedTx, 
+            blockhash: message.recentBlockhash,
+        };
 
-        /*
-        const sega = await Sega.load({
-            cluster: 'mainnet',
-            connection,
-            owner: wallet,
-            apiRequestInterval: 5 * 60 * 1000,
-            apiRequestTimeout: 10 * 1000,
-            apiCacheTime: 5 * 60 * 1000,
-            blockhashCommitment: 'confirmed',
-        });
-
-        const pool = await this.fetchPoolForMints(chain, inputMint, outputMint);
-        if (!pool) {
-            throw new Error('Pool not found');
-        }
-        const poolId = pool.poolId;
-
-        // Get pool information
-        const data = await sega.cpmm.getPoolInfoFromRpc(poolId);
-        const poolInfo = data.poolInfo;
-        const poolKeys = data.poolKeys;
-        const rpcData = data.rpcData;
-
-        // Verify input mint matches pool
-        if (inputMint !== poolInfo.mintA.address && inputMint !== poolInfo.mintB.address) {
-            throw new Error('Input mint does not match pool');
-        }
-
-        // Calculate swap parameters
-        const baseIn = inputMint === poolInfo.mintA.address;
-        const swapResult = CurveCalculator.swap(
-            inputAmount,
-            baseIn ? rpcData.baseReserve : rpcData.quoteReserve,
-            baseIn ? rpcData.quoteReserve : rpcData.baseReserve,
-            rpcData.configInfo!.tradeFeeRate
-        );
-
-        const swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : swapResult.destinationAmountSwapped.toNumber();
-        // console.log(`Swap amount in lamports: ${swapAmountInLamports}`);
-
-        // Create and execute swap transaction
-        // console.log('Creating swap transaction...', 'slippage:', slippage);
-        const { builder, buildProps } = await sega.cpmm.swap({
-            poolInfo,
-            poolKeys,
-            inputAmount,
-            swapResult,
-            slippage: slippage / 100, // range: 1 ~ 0.0001, means 100% ~ 0.01%
-            baseIn,
-            txVersion: TxVersion.V0,
-        });
-
-        // add 1% fee instruction to tx
-        const feeIx = SwapManager.createFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
-        builder.addInstruction({
-            endInstructions: [feeIx],
-        });
-
-        // console.log('buildProps:', buildProps);
-
-        const blockhash = (await SolanaManager.getRecentBlockhash(chain)).blockhash;
-        const result = await builder.buildV0({
-            recentBlockhash: blockhash,
-            lookupTableAddress: buildProps?.lookupTableAddress,
-            lookupTableCache: buildProps?.lookupTableCache,
-        });
-
-        const tx = result.transaction;
-        return { swapAmountInLamports, tx, blockhash };
-        */
     }
 
     // static async fetchPoolForMints(chain: Chain, mintA: string, mintB: string): Promise<{poolId: string} | undefined> {
