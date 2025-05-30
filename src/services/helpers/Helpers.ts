@@ -9,6 +9,23 @@ import BN from "bn.js";
 import { getNativeToken, kSolAddress } from "../solana/Constants";
 import { Chain } from "../solana/types";
 
+export const base64ToUint8Array = (base64String: string): Uint8Array => {
+    const binaryString = atob(base64String);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+};
+
+export const uint8ArrayToBase64 = (uint8Array: Uint8Array): string => {
+    let binaryString = '';
+    uint8Array.forEach((byte) => {
+        binaryString += String.fromCharCode(byte);
+    });
+    return btoa(binaryString);
+};
 
 export class Helpers {
 

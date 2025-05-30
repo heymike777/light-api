@@ -67,73 +67,6 @@ export class CobaltxManager {
         return network;
     }
 
-    // static async swap2({ cobaltx, inputMint, inputAmount, outputMint, slippage, owner }: {
-    //     cobaltx: CobaltX;
-    //     inputMint: string;
-    //     outputMint: string;
-    //     inputAmount: BN;
-    //     slippage: number;
-    //     owner: Keypair;
-    // }) {
-    //     const swapComputeUrl =
-    //         inputMint && outputMint && !new Decimal(inputAmount.toString() || 0).isZero()
-    //         ? `${getApiUrl(NetworkName.sooneth).SWAP_HOST}${API_URLS.SWAP_COMPUTE}swap-base-in?inputMint=${inputMint}&outputMint=${outputMint}&amount=${inputAmount.toString()}&slippageBps=${slippage}&txVersion=V0`
-    //         : null;
-
-    //     if (!swapComputeUrl) {
-    //         throw new Error("Swap compute url generation failed");
-    //     }
-
-    //     const computeSwapResponse = await axios.get(swapComputeUrl).then((res) => res.data).catch((err) => {
-    //         console.error(err)
-    //         throw new Error("Swap compute failed");
-    //     })
-
-    //     const inputToken = await cobaltx.token.getTokenInfo(new PublicKey(inputMint))
-    //     const outputToken = await cobaltx.token.getTokenInfo(new PublicKey(outputMint))
-
-    //     const inputTokenAcc = await cobaltx.account.getCreatedTokenAccount({
-    //         programId: new PublicKey(inputToken.programId ?? "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5D"),
-    //         mint: new PublicKey(inputToken.address),
-    //         associatedOnly: false
-    //     })
-
-    //     const outputTokenAcc = await cobaltx.account.getCreatedTokenAccount({
-    //         programId: new PublicKey(outputToken.programId ?? "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5D"),
-    //         mint: new PublicKey(outputToken.address)
-    //     })
-
-    //     const buildTxResponse = await axios.post(
-    //         `${getApiUrl(NetworkName.sooneth).SWAP_HOST}${API_URLS.SWAP_TX}swap-base-in`,
-    //         {
-    //             wallet: owner.publicKey.toBase58(),
-    //             computeUnitPriceMicroLamports: Number((computeSwapResponse.data?.microLamports || 0).toFixed(0)),
-    //             swapResponse: computeSwapResponse.data,
-    //             txVersion: 'V0',
-    //             wrapSol: true,
-    //             unwrapSol: true,
-    //             inputAccount: inputTokenAcc,
-    //             outputAccount: outputTokenAcc
-    //         }
-    //     ).then((res) => res.data).catch((err) => {
-    //         console.error(err)
-    //         throw new Error("Swap transaction generation failed");
-    //     })
-    //     const swapTransactions = buildTxResponse.data || []
-    //     const allTxBuf = swapTransactions.map((tx: any) => base58.decode(tx.transaction))
-    //     const allTx = allTxBuf.map((txBuf: any) => new VersionedTransaction(web3.VersionedMessage.deserialize(Uint8Array.from(txBuf))))
-
-    //     const signedTransactions = allTx.map((tx: VersionedTransaction) => {
-    //         tx.sign([owner]);
-    //         return tx;
-    //     });
-
-    //     // await sendTxn(
-    //     //     Promise.all(signedTransactions.map((tx: VersionedTransaction) => conn.sendTransaction(tx))),
-    //     //     `Swap from ${inputMint} to ${outputMint}`
-    //     // );
-    // }
-
     static async swap(chain: Chain, user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         console.log('CobaltxManager', 'swap', 'chain:', chain, 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
@@ -211,69 +144,82 @@ export class CobaltxManager {
             throw new Error("Swap transaction generation failed");
         })
         console.log('CobaltxManager', 'swap', 'buildTxResponse:', JSON.stringify(buildTxResponse, null, 2));    
-        const swapTransactions = buildTxResponse.data || []
-        const allTxBuf = swapTransactions.map((tx: any) => base58.decode(tx.transaction))
-        const allTx: VersionedTransaction[] = allTxBuf.map((txBuf: any) => new VersionedTransaction(web3.VersionedMessage.deserialize(Uint8Array.from(txBuf))))
-
-        if (allTx.length === 0) {
+        const swapTransactions = buildTxResponse.data || [];
+        
+        if (swapTransactions.length === 0) {
             throw new Error('No transactions generated for swap');
         }
 
-        if (allTx.length > 1) {
+        if (swapTransactions.length > 1) {
             console.warn('CobaltxManager.swap', 'Multiple transactions generated for swap, only the first one will be signed and sent');
             throw new Error('Multiple transactions generated for swap. Please try again or contact support.');
         }
 
-        const tx = allTx[0];
-        console.log('CobaltxManager', 'swap', 'tx:', tx);
-        console.log('CobaltxManager', 'swap', 'txJSON:', JSON.stringify(tx, null, 2));
+        const txData = await SolanaManager.extractTransactionComponents(connection, swapTransactions[0].transaction)
 
-        const message = tx.message;
-        // Extract instructions from compiled form
-        const instructions: TransactionInstruction[] = message.compiledInstructions.map((ci) => {
-            const programId = message.staticAccountKeys[ci.programIdIndex];
-            const keys = ci.accountKeyIndexes.map((i) => ({
-                pubkey: message.staticAccountKeys[i],
-                isSigner: message.isAccountSigner(i),
-                isWritable: message.isAccountWritable(i),
-            }));
-            return new TransactionInstruction({
-                programId,
-                keys,
-                data: Buffer.from(ci.data),
-            });
-        });
+        // const allTxBuf = swapTransactions.map((tx: any) => base58.decode(tx.transaction))
+        // const allTx: VersionedTransaction[] = allTxBuf.map((txBuf: any) => new VersionedTransaction(web3.VersionedMessage.deserialize(Uint8Array.from(txBuf))))
 
-        // const addressLookupTableAccounts: web3.AddressLookupTableAccount[] | undefined = message.addressTableLookups;
-        let lookups: web3.AddressLookupTableAccount[] | undefined = undefined;
-        if (message.addressTableLookups && message.addressTableLookups.length > 0){
-            const lookupsAccountKeys = message.addressTableLookups.map((lookup) => lookup.accountKey.toBase58());
-            lookups = await SolanaManager.getAddressLookupTableAccounts(connection, lookupsAccountKeys);
-        }
+        // const tx = allTx[0];
+        // console.log('CobaltxManager', 'swap', 'tx:', tx);
+        // console.log('CobaltxManager', 'swap', 'txJSON:', JSON.stringify(tx, null, 2));
+
+        // const message = tx.message;
+        // // Extract instructions from compiled form
+        // const instructions: TransactionInstruction[] = message.compiledInstructions.map((ci) => {
+        //     const programId = message.staticAccountKeys[ci.programIdIndex];
+        //     const keys = ci.accountKeyIndexes.map((i) => ({
+        //         pubkey: message.staticAccountKeys[i],
+        //         isSigner: message.isAccountSigner(i),
+        //         isWritable: message.isAccountWritable(i),
+        //     }));
+        //     console.log('CobaltxManager', 'swap', 'ci:', ci, 'programId:', programId.toBase58(), '!keys:', keys);
+        //     return new TransactionInstruction({
+        //         programId,
+        //         keys,
+        //         data: Buffer.from(ci.data),
+        //     });
+        // });
+
+        // // const addressLookupTableAccounts: web3.AddressLookupTableAccount[] | undefined = message.addressTableLookups;
+        // let lookups: web3.AddressLookupTableAccount[] | undefined = undefined;
+        // if (message.addressTableLookups && message.addressTableLookups.length > 0){
+        //     const lookupsAccountKeys = message.addressTableLookups.map((lookup) => lookup.accountKey.toBase58());
+        //     lookups = await SolanaManager.getAddressLookupTableAccounts(connection, lookupsAccountKeys);
+        // }
+
+        // const txMessage = new TransactionMessage({
+        //     payerKey: wallet.publicKey,
+        //     recentBlockhash: message.recentBlockhash,
+        //     instructions: [...instructions],
+        // });
+
+        // //TODO: add fee instruction
+        // // const feeIx = SwapManager.createFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
+        // // builder.addInstruction({
+        // //     endInstructions: [feeIx],
+        // // });
 
         const txMessage = new TransactionMessage({
             payerKey: wallet.publicKey,
-            recentBlockhash: message.recentBlockhash,
-            instructions: [...instructions],
+            recentBlockhash: txData.blockhash,
+            instructions: txData.instructions,
         });
-
-        //TODO: add fee instruction
-        // const feeIx = SwapManager.createFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
-        // builder.addInstruction({
-        //     endInstructions: [feeIx],
-        // });
-
-        console.log('CobaltxManager', 'swap', 'allTx:', allTx);
+        const lookups = txData.lookups;
+        // console.log('CobaltxManager', 'swap', 'allTx:', allTx);
 
         const compiledMessage = txMessage.compileToV0Message(lookups);
         const newVersionedTx = new VersionedTransaction(compiledMessage);
+
+        // console.log('CobaltxManager', 'swap', 'oldTx:', tx);
+        console.log('CobaltxManager', 'swap', 'newTx:', newVersionedTx);
 
         throw new Error('CobaltxManager.swap is not implemented yet');
 
         return { 
             swapAmountInLamports, 
             tx: newVersionedTx, 
-            blockhash: message.recentBlockhash,
+            blockhash: txData.blockhash,
         };
 
     }

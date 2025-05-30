@@ -10,12 +10,16 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TransactionMessage } from "@solana/web3.js";
 // import { JitoManager } from "./JitoManager";
 import { Keypair } from "@solana/web3.js";
-import { Helpers } from "../helpers/Helpers";
+import { base64ToUint8Array, Helpers } from "../helpers/Helpers";
 import { LogManager } from "../../managers/LogManager";
 import { Interface } from "helius-sdk";
 import { getNativeToken, kRaydiumAuthority, kSolAddress } from "./Constants";
 import BN from "bn.js";
 import { MetaplexManager } from "../../managers/MetaplexManager";
+import { TransactionInstruction } from "@solana/web3.js";
+import { AddressLookupTableAccount } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
+import { VersionedTransaction } from "@solana/web3.js";
 
 export interface CreateTransactionResponse {
     tx: web3.Transaction,
@@ -759,6 +763,45 @@ export class SolanaManager {
 
         return [];
     }
+
+    static async extractTransactionComponents(connection: Connection, transactionData: string): Promise<{ instructions: TransactionInstruction[]; lookups: AddressLookupTableAccount[], blockhash: string }>  {
+        const txBuf = base58.decode(transactionData);
+        const existingTransaction = new VersionedTransaction(web3.VersionedMessage.deserialize(Uint8Array.from(txBuf)))
+
+        const addressLookupTableAccounts: AddressLookupTableAccount[] = await this.resolveAddressLookupTables(
+            existingTransaction,
+            connection,
+        );
+
+        const decompiledMessage = TransactionMessage.decompile(existingTransaction.message, {
+            addressLookupTableAccounts,
+        });
+
+        return {
+            instructions: decompiledMessage.instructions,
+            lookups: addressLookupTableAccounts,
+            blockhash: decompiledMessage.recentBlockhash,
+        };
+    };
+
+    static async resolveAddressLookupTables(transaction: VersionedTransaction, connection: Connection): Promise<AddressLookupTableAccount[]> {
+        const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
+
+        if (transaction.message.addressTableLookups.length > 0) {
+            const lookupTablePromises = transaction.message.addressTableLookups.map(async (lookup) => {
+                const account = await connection.getAddressLookupTable(lookup.accountKey);
+                if (account.value) {
+                    return account.value;
+                }
+                throw new Error(`Failed to fetch lookup table: ${lookup.accountKey.toBase58()}`);
+            });
+
+            const lookupTables = await Promise.all(lookupTablePromises);
+            addressLookupTableAccounts.push(...lookupTables);
+        }
+
+        return addressLookupTableAccounts;
+    };
 
     // ---------------------
     private static recentBlockhash: web3.BlockhashWithExpiryBlockHeight | undefined;
