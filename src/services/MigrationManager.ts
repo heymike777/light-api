@@ -191,6 +191,7 @@ export class MigrationManager {
 
         // COBALTX
         // await this.processTx(Chain.SVMBNB_MAINNET, '2vpxxNevRE5qyU6mwbgx5wAwCedTxPVP2MnG2E8hGz3pzPgDt9z7rBrztXFtZUGuQVHXSxrZqhjN1Dg4tcCuGhtf'); // CobaltX
+        // await this.processTx(Chain.SOON_MAINNET, '3QGVcZJduS7pK3RzDUVZcd7zr9FF776ZDK5duKZVYVsE4mdMuT4ufSyP8HEccSupb1E7QtZeKbpZWbZDPN6rcpsw'); // CobaltX
 
         // const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(Chain.SONIC, [
         //     'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', 

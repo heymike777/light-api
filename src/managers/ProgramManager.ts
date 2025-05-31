@@ -364,7 +364,7 @@ export class ProgramManager {
                     }
                 }
             }
-            else if (programId == kProgram.RAYDIUM_CLMM || programId == kProgram.COBALTX){
+            else if (programId == kProgram.RAYDIUM_CLMM || programId == kProgram.COBALTX || programId == kProgram.COBALTX_SOON){
                 if (['swap', 'swapV2'].indexOf(ixType) != -1){
                     const walletAddress = accounts?.[0]?.toBase58();
                     if (walletAddress && tx){

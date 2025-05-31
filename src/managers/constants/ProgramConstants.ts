@@ -43,6 +43,7 @@ export enum kProgram {
 
     // SOON, SVMBNB, SOONBASE
     COBALTX = '6f1b3xyVZbnWMHXBjgW1KPwxmPAgXcRdrvKNn4Nmf1Cn',
+    COBALTX_SOON = '2TnjBuwqyBB9to5jURagDT7jLmBPefGRiKL2yh1zPZ4V',
 
 }
 
@@ -426,6 +427,23 @@ export const kPrograms: { [key: string]: {
         skip: false,
     },
     [kProgram.COBALTX]: {
+        name: 'COBALTX',
+        knownInstructions: [
+            { 'swap': {title: 'SWAP', priority: 2} },
+            { 'swapV2': {title: 'SWAP', priority: 2} },
+            { 'swapRouterBaseIn': {title: 'SWAP', priority: 2} },
+            { 'decreaseLiquidity': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'decreaseLiquidityV2': {title: 'REMOVE LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidity': {title: 'ADD LIQUIDOTY', priority: 3} },
+            { 'increaseLiquidityV2': {title: 'ADD LIQUIDOTY', priority: 3} },
+        ],
+        skip: false,
+        customIdl: {
+            path: 'src/idls/cobaltx_clmm_idl.json',
+            type: 'anchor',
+        },
+    },
+    [kProgram.COBALTX_SOON]: {
         name: 'COBALTX',
         knownInstructions: [
             { 'swap': {title: 'SWAP', priority: 2} },
