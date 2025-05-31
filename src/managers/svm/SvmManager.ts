@@ -73,6 +73,7 @@ export class SvmManager {
 
     async processTransaction(signature: string) {
         try {
+            console.log(`Processing transaction: ${signature} on chain: ${this.chain}`);
             const parsedTx = await SolanaManager.getParsedTransaction(this.chain, signature);
 
             if (parsedTx && !parsedTx.meta?.err) {
@@ -81,6 +82,9 @@ export class SvmManager {
 
                 MicroserviceManager.receivedTx(this.id, signature, JSON.stringify(parsedTx));
             } 
+            else {
+                console.log(`Transaction ${signature} has an error or not fetched correctly.`);
+            }
         } catch (err) {
             LogManager.error(`Error fetching transaction ${signature}:`, err);
         }
