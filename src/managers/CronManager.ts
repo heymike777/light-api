@@ -66,6 +66,7 @@ export class CronManager {
                 RedisManager.migrateAllUsersTransactionsToMongo();
                 TokenManager.clearOldSwaps();
                 SubscriptionManager.cleanExpiredGiftCardSubscriptions();
+                TokenManager.refreshHotTokens();
             });
 
             cron.schedule('5 1 * * *', () => {

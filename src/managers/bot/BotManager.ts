@@ -44,6 +44,7 @@ import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { run } from "@grammyjs/runner";
 import { RabbitManager } from "../RabbitManager";
 import { BotAirdropHelper } from "./helpers/BotAirdropHelper";
+import { BotTokensHelper } from "./helpers/BotTokensHelper";
 
 export class BotManager {
     botUsername: string;
@@ -66,6 +67,7 @@ export class BotManager {
         new BotNoneHelper(),
         new BotAdminHelper(),
         new BotAirdropHelper(),
+        new BotTokensHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 

@@ -66,6 +66,7 @@ import { UserRefPayout } from "../entities/referrals/UserRefPayout";
 import { EncryptionManager } from "../managers/EncryptionManager";
 import { PreWallet } from "../entities/PreWallet";
 import { LaserstreamManager } from "./solana/geyser/LaserstreamManager";
+import { HotToken } from "../entities/tokens/HotToken";
 
 export class MigrationManager {
 
@@ -325,6 +326,8 @@ export class MigrationManager {
         //     await UserManager.checkUsersWhoHasBlockedBot();
         // }
 
+        // await TokenManager.refreshHotTokens();
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
@@ -435,6 +438,8 @@ export class MigrationManager {
         await UserRefCode.syncIndexes();
         await UserRefPayout.syncIndexes();
         await Config.syncIndexes();
+        await HotToken.syncIndexes();
+        await Swap.syncIndexes();
     }
 
     static async processTx(chain: Chain, signature: string) {

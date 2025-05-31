@@ -13,8 +13,11 @@ import { TokenManager } from '../../../managers/TokenManager';
 import { kProgram } from '../../../managers/constants/ProgramConstants';
 import { TokenPair } from '../../../entities/tokens/TokenPair';
 import { IUser } from '../../../entities/users/User';
+import { IHotToken, IHotTokenModel } from '../../../entities/tokens/HotToken';
 
 export class SegaManager {
+
+    static kSonicAddress = 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL';
 
     static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         const tpWallet = traderProfile.getWallet();
@@ -146,6 +149,54 @@ export class SegaManager {
             page++;
         }
 
+    }
+
+    static async fetchHotTokens(limit: number): Promise<IHotTokenModel[] | undefined> {
+        const tokens: IHotTokenModel[] = [];
+
+        let page = 1;
+        const pageSize = 100;
+        const url = `https://api.sega.so/api/pools/info/list?poolType=all&poolSortField=default&sortType=desc&pageSize=${pageSize}&page=${page}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            return undefined;
+        }
+
+        let sortIndex = 1;
+        const data: any = await response.json();
+        if (data && data.data && data.data.data) {
+            const pools = data.data.data;
+            for (const pool of pools) {
+                if (pool.mintA.address == kSolAddress || pool.mintB.address == kSolAddress) {
+                    const hotToken: IHotTokenModel = {
+                        chain: Chain.SONIC,
+                        mint: pool.mintA.address == kSolAddress ? pool.mintB.address : pool.mintA.address,
+                        symbol: pool.mintA.address == kSolAddress ? pool.mintB.symbol : pool.mintA.symbol,
+                        sort: sortIndex++,
+                    };
+                    tokens.push(hotToken);
+
+                    if (tokens.length >= limit) {
+                        break;
+                    }
+                }
+                else if (pool.mintA.address == this.kSonicAddress || pool.mintB.address == this.kSonicAddress) {
+                    const hotToken: IHotTokenModel = {
+                        chain: Chain.SONIC,
+                        mint: pool.mintA.address == this.kSonicAddress ? pool.mintB.address : pool.mintA.address,
+                        symbol: pool.mintA.address == this.kSonicAddress ? pool.mintB.symbol : pool.mintA.symbol,
+                        sort: sortIndex++,
+                    };
+                    tokens.push(hotToken);
+
+                    if (tokens.length >= limit) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return tokens;
     }
 
 }

@@ -19,6 +19,8 @@ import { SwapDex } from "../entities/payments/Swap";
 import * as spl from "@solana/spl-token";
 import { RaydiumManager } from "../services/solana/RaydiumManager";
 import { MicroserviceManager } from "./MicroserviceManager";
+import { HotToken, IHotToken, IHotTokenModel } from "../entities/tokens/HotToken";
+import { SegaManager } from "../services/solana/svm/SegaManager";
 
 export interface TokenTag {
     id: string;
@@ -585,6 +587,92 @@ export class TokenManager {
         catch (error){
             LogManager.error('!catched', 'TokenManager', 'saveLpMint', error);
         }
+    }
+
+    static async refreshHotTokens(){
+        const chains = [Chain.SOLANA, Chain.SONIC, Chain.SOON_MAINNET, Chain.SVMBNB_MAINNET, Chain.SOONBASE_MAINNET];
+        const limit = 10;
+
+        for (const chain of chains) {
+            let hotTokens: IHotTokenModel[] | undefined = undefined;
+            let manualTokens: IHotTokenModel[] | undefined = undefined;
+            
+            if (chain == Chain.SONIC){
+                manualTokens = [
+                    { chain, symbol: 'CHILL', mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', sort: 0 },
+                ];
+                hotTokens = await SegaManager.fetchHotTokens(limit);
+            }
+            else if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
+                //TODO: fetch from CobaltX
+            }
+            else if (chain == Chain.SOLANA){
+                //TODO: where to get hot tokens from Solana? SolScan? Dexscreener? Maybe just use manual tokens for now                    
+            }
+
+            console.log('!!!mike', 'refreshHotTokens', chain, 'hotTokens:', hotTokens);
+
+            // add manualTokens to hotTokens
+            if (manualTokens && manualTokens.length > 0){
+                for (const manualToken of manualTokens) {
+                    const existingHotToken = hotTokens?.find(token => token.mint === manualToken.mint);
+                    if (existingHotToken){
+                        existingHotToken.sort = manualToken.sort || 0;
+                    }
+                    else {
+                        hotTokens = hotTokens || [];
+                        hotTokens.push({
+                            chain,
+                            mint: manualToken.mint,
+                            symbol: manualToken.symbol,
+                            sort: manualToken.sort || 0,
+                        });
+                    }
+                }
+            }
+
+            // Remove duplicates
+            if (hotTokens && hotTokens.length > 0){
+                const uniqueMints = new Set<string>();
+                hotTokens = hotTokens.filter(token => {
+                    if (uniqueMints.has(token.mint)){
+                        return false;
+                    }
+                    uniqueMints.add(token.mint);
+                    return true;
+                });
+            }
+
+            if (hotTokens){
+                const mints = hotTokens.map(token => token.mint);
+                // Remove non-existing mints
+                await HotToken.deleteMany({ chain, mint: { $nin: mints } });
+
+                for (const hotToken of hotTokens) {
+                    const existing = await HotToken.findOne({ chain, mint: hotToken.mint });
+                    if (existing){
+                        existing.symbol = hotToken.symbol;
+                        existing.sort = hotToken.sort || 0;
+                        await existing.save();
+                    }
+                    else {
+                        const newHotToken = new HotToken();
+                        newHotToken.chain = chain;
+                        newHotToken.mint = hotToken.mint;
+                        newHotToken.symbol = hotToken.symbol;
+                        newHotToken.sort = hotToken.sort || 0;
+                        await newHotToken.save();
+                    }
+                }
+            }
+        }
+
+
+    }
+
+    static async getHotTokens(chain: Chain): Promise<IHotToken[]> {
+        const tokens = await HotToken.find({ chain }).sort({ sort: 1 });
+        return tokens;
     }
 
 }
