@@ -94,11 +94,17 @@ export enum Chain {
 
 export const kAllChains = Object.values(Chain) as Chain[];
 
-export const kChains: {[key: string]: {
+export interface ChainConfig {
     geyserPort: number,
     rpc: string,
     websocket: string,
-}} = {
+    tracker?: {
+        useWss?: boolean,
+        useHttp?: boolean,
+    },
+}
+
+export const kChains: {[key: string]: ChainConfig} = {
     [Chain.SOLANA]: {
         geyserPort: 3340, 
         rpc: process.env.SOLANA_RPC!,
@@ -108,41 +114,73 @@ export const kChains: {[key: string]: {
         geyserPort: 3344,
         rpc: process.env.SONIC_RPC!,
         websocket: process.env.SONIC_RPC_WSS!,
+        tracker: {
+            useWss: true,
+            useHttp: false,
+        },
     },
     [Chain.SONIC_TESTNET]: {
         geyserPort: 3345,
         rpc: process.env.SONIC_RPC_TESTNET!,
         websocket: process.env.SONIC_RPC_WSS_TESTNET!,
+        tracker: {
+            useWss: true,
+            useHttp: false,
+        },
     },
     [Chain.SOON_MAINNET]: {
         geyserPort: 3346,
         rpc: process.env.SOON_MAINNET_RPC!,
         websocket: process.env.SOON_MAINNET_RPC_WSS!,
+        tracker: {
+            useWss: false,
+            useHttp: true,
+        },
     },
     [Chain.SOON_TESTNET]: {
         geyserPort: 3347,
         rpc: process.env.SOON_TESTNET_RPC!,
         websocket: process.env.SOON_TESTNET_RPC_WSS!,
+        tracker: {
+            useWss: false,
+            useHttp: true,
+        },
     },
     [Chain.SVMBNB_MAINNET]: {
         geyserPort: 3348,
         rpc: process.env.SVMBNB_MAINNET_RPC!,
         websocket: process.env.SVMBNB_MAINNET_RPC_WSS!,
+        tracker: {
+            useWss: false,
+            useHttp: true,
+        },
     },
     [Chain.SVMBNB_TESTNET]: {
         geyserPort: 3349,
         rpc: process.env.SVMBNB_TESTNET_RPC!,
         websocket: process.env.SVMBNB_TESTNET_RPC_WSS!,
+        tracker: {
+            useWss: false,
+            useHttp: true,
+        },
     },
     [Chain.SOONBASE_MAINNET]: {
         geyserPort: 3351,
         rpc: process.env.SOONBASE_MAINNET_RPC!,
         websocket: process.env.SOONBASE_MAINNET_RPC_WSS!,
+        tracker: {
+            useWss: false,
+            useHttp: true,
+        },
     },
     [Chain.SOONBASE_TESTNET]: {
         geyserPort: 3352,
         rpc: process.env.SOONBASE_TESTNET_RPC!,
         websocket: process.env.SOONBASE_TESTNET_RPC_WSS!,
+        tracker: {
+            useWss: false,
+            useHttp: true,
+        },
     },
 };
 
