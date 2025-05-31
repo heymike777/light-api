@@ -141,45 +141,18 @@ const onExpressStarted = async () => {
     await WalletManager.fetchAllWalletAddresses();
 
     if (EnvManager.isGeyserProcess){
+        console.log('Geyser process started for chain:', EnvManager.chain);
+        
         if (EnvManager.chain == Chain.SOLANA){
             const laserstream = new LaserstreamManager();
             await laserstream.subscribe();
     
             YellowstoneManager.createInstances();
         }
-        else if (EnvManager.chain == Chain.SONIC){
-            const svm = new SvmManager(Chain.SONIC);
+        else {
+            const svm = new SvmManager(EnvManager.chain);
             await svm.subscribe();
         }
-        else if (EnvManager.chain == Chain.SONIC_TESTNET){
-            const svm = new SvmManager(Chain.SONIC_TESTNET);
-            await svm.subscribe();
-        }
-        else if (EnvManager.chain == Chain.SOON_MAINNET){
-            const svm = new SvmManager(Chain.SOON_MAINNET);
-            await svm.subscribe();
-        }
-        else if (EnvManager.chain == Chain.SOON_TESTNET){
-            const svm = new SvmManager(Chain.SOON_TESTNET);
-            await svm.subscribe();
-        }
-        else if (EnvManager.chain == Chain.SVMBNB_MAINNET){
-            const svm = new SvmManager(Chain.SVMBNB_MAINNET);
-            await svm.subscribe();
-        }
-        else if (EnvManager.chain == Chain.SVMBNB_TESTNET){
-            const svm = new SvmManager(Chain.SVMBNB_TESTNET);
-            await svm.subscribe();
-        }
-        else if (EnvManager.chain == Chain.SOONBASE_MAINNET){
-            const svm = new SvmManager(Chain.SOONBASE_MAINNET);
-            await svm.subscribe();
-        }
-        else if (EnvManager.chain == Chain.SOONBASE_TESTNET){
-            const svm = new SvmManager(Chain.SOONBASE_TESTNET);
-            await svm.subscribe();
-        }
-
 
     }
 

@@ -24,7 +24,7 @@ export class SvmManager {
         const subscriptionId = connection.onLogs('all', async (logInfo) => {
             const { signature } = logInfo;
             
-            LogManager.log(`New transaction observed: ${signature}`);
+            console.log(`New transaction observed (${this.chain}): ${signature}`);
 
             try {
                 const parsedTx = await SolanaManager.getParsedTransaction(this.chain, signature);
