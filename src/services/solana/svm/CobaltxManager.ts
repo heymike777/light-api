@@ -110,7 +110,7 @@ export class CobaltxManager {
 
         LogManager.log('CobaltxManager', 'swap', 'computeSwapResponse:', JSON.stringify(computeSwapResponse, null, 2));
 
-        const swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : computeSwapResponse.data.outputAmount.toNumber();
+        const swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : computeSwapResponse.data.outputAmount;
 
 
         const inputToken = await cobaltx.token.getTokenInfo(new PublicKey(inputMint))
