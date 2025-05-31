@@ -97,18 +97,6 @@ module.exports = {
             },
         },
         {
-            name   : "light-geyser-soon-testnet",
-            script : "build/index.js",
-            node_args: "--max-old-space-size=8192",
-            min_uptime: "5s",
-            env: {
-                IS_GEYSER_PROCESS: "true",
-                CHAIN: 't_soon',
-                SERVER_NAME: "light-geyser-soon-testnet",
-                PORT: 3347,
-            },
-        },
-        {
             name   : "light-geyser-svmbnb-mainnet",
             script : "build/index.js",
             node_args: "--max-old-space-size=8192",
@@ -121,18 +109,6 @@ module.exports = {
             },
         },
         {
-            name   : "light-geyser-svmbnb-testnet",
-            script : "build/index.js",
-            node_args: "--max-old-space-size=8192",
-            min_uptime: "5s",
-            env: {
-                IS_GEYSER_PROCESS: "true",
-                CHAIN: 't_svmbnb',
-                SERVER_NAME: "light-geyser-svmbnb-testnet",
-                PORT: 3349,
-            },
-        },
-        {
             name   : "light-geyser-soonbase-mainnet",
             script : "build/index.js",
             node_args: "--max-old-space-size=8192",
@@ -142,18 +118,6 @@ module.exports = {
                 CHAIN: 'soonba',
                 SERVER_NAME: "light-geyser-soonbase-mainnet",
                 PORT: 3351,
-            },
-        },
-        {
-            name   : "light-geyser-soonbase-testnet",
-            script : "build/index.js",
-            node_args: "--max-old-space-size=8192",
-            min_uptime: "5s",
-            env: {
-                IS_GEYSER_PROCESS: "true",
-                CHAIN: 't_soonbase',
-                SERVER_NAME: "light-geyser-soonbase-testnet",
-                PORT: 3352,
             },
         },
         {
