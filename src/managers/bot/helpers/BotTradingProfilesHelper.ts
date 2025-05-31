@@ -16,6 +16,7 @@ import { Chain, Priority } from "../../../services/solana/types";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import * as web3 from '@solana/web3.js';
 import { getNativeToken } from "../../../services/solana/Constants";
+import { Wallet } from "../../../entities/Wallet";
 
 export class BotTraderProfilesHelper extends BotHelper {
 
@@ -364,6 +365,8 @@ export class BotTraderProfilesHelper extends BotHelper {
             const updated = await UserTraderProfile.updateOne({ userId: user.id, _id: profileId }, { $set: { title: title } });
             if (updated.modifiedCount == 1){
                 await BotManager.reply(ctx, `Trader updated ✅`);
+
+                await Wallet.updateOne({ userId: user.id, traderProfileId: profileId }, { $set: { title: title } })
             }
             else {
                 await BotManager.reply(ctx, `Trader profile not found`);
