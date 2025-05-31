@@ -236,6 +236,8 @@ export class MigrationManager {
         // await svm.subscribe();
         // const svm = new SvmManager(Chain.SONIC_TESTNET);
         // await svm.subscribe();
+        // const svm = new SvmManager(Chain.SVMBNB_MAINNET);
+        // await svm.subscribe();
 
         // if (EnvManager.isCronProcess){
         //     let countUsers = 0;

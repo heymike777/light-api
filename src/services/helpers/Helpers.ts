@@ -116,12 +116,8 @@ export class Helpers {
         return resultDate;
     }
 
-    static isEmptyString(str: string | undefined): boolean {
-        if (str && str!=null && str!='' && str!='null'){
-            return false;
-        }
-
-        return true;
+    static isEmptyString(str: string | undefined | null): boolean {        
+        return !str || str.trim() === '' || str.trim() === 'null' || str.trim() === 'undefined';
     }
 
     static prettyWallet(address: string): string {
@@ -151,27 +147,27 @@ export class Helpers {
                 const txToken = txTokens?.find(t => t.address == address);
 
                 let title = undefined;
-                if (wallet?.title){
-                    title = wallet?.title;
-                }
-                else if (kSolscanAddresses[address]){
-                    title = kSolscanAddresses[address].name;
-                }
-                else if (kValidators[address]){
-                    title = kValidators[address].name;
-                }
-                else if (kKnownAddresses[address]){
-                    title = kKnownAddresses[address].name;
-                }
-                else if (txToken){
-                    title = txToken.nft ? txToken.nft.title : (txToken.symbol || txToken.name);
-                }
-                else if (address == kSolAddress){
+                if (this.isEmptyString(title) && address == kSolAddress){
                     const kSOL = getNativeToken(chain);
                     title = kSOL.symbol;
                 }
-
-                if (!title || title==''){
+                if (this.isEmptyString(title) && wallet?.title){
+                    title = wallet?.title;
+                }
+                if (this.isEmptyString(title) && kSolscanAddresses[address]){
+                    title = kSolscanAddresses[address].name;
+                }
+                if (this.isEmptyString(title) && kValidators[address]){
+                    title = kValidators[address].name;
+                }
+                if (this.isEmptyString(title) && kKnownAddresses[address]){
+                    title = kKnownAddresses[address].name;
+                }
+                if (this.isEmptyString(title) && txToken){
+                    title = txToken.nft ? txToken.nft.title : (txToken.symbol || txToken.name);
+                }
+                
+                if (!title || title.trim()==''){
                     title = this.prettyWallet(address);
                 }
                 
