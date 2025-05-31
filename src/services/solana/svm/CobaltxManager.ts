@@ -23,6 +23,7 @@ import { PublicKey } from '@solana/web3.js';
 import base58 from "bs58";
 import { TransactionInstruction } from '@solana/web3.js';
 import { TransactionMessage } from '@solana/web3.js';
+import { LogManager } from '../../../managers/LogManager';
 
 export class CobaltxManager {
 
@@ -68,7 +69,7 @@ export class CobaltxManager {
     }
 
     static async swap(chain: Chain, user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
-        console.log('CobaltxManager', 'swap', 'chain:', chain, 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
+        LogManager.log('CobaltxManager', 'swap', 'chain:', chain, 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
         const tpWallet = traderProfile.getWallet();
         if (!tpWallet) {
@@ -103,11 +104,11 @@ export class CobaltxManager {
         }
 
         const computeSwapResponse = await axios.get(swapComputeUrl).then((res) => res.data).catch((err) => {
-            console.error(err)
+            LogManager.error(err)
             throw new Error("Swap compute failed");
         });
 
-        console.log('CobaltxManager', 'swap', 'computeSwapResponse:', JSON.stringify(computeSwapResponse, null, 2));
+        LogManager.log('CobaltxManager', 'swap', 'computeSwapResponse:', JSON.stringify(computeSwapResponse, null, 2));
 
         const swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : computeSwapResponse.data.outputAmount.toNumber();
 
@@ -115,7 +116,6 @@ export class CobaltxManager {
         const inputToken = await cobaltx.token.getTokenInfo(new PublicKey(inputMint))
         const outputToken = await cobaltx.token.getTokenInfo(new PublicKey(outputMint))
 
-        //TODO: does it create token accounts if they don't exist?? or only checks if they exist?
         const inputTokenAcc = await cobaltx.account.getCreatedTokenAccount({
             programId: new PublicKey(inputToken.programId ?? "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5D"),
             mint: new PublicKey(inputToken.address),
@@ -140,10 +140,10 @@ export class CobaltxManager {
                 outputAccount: outputTokenAcc
             }
         ).then((res) => res.data).catch((err) => {
-            console.error(err)
+            LogManager.error(err)
             throw new Error("Swap transaction generation failed");
         })
-        console.log('CobaltxManager', 'swap', 'buildTxResponse:', JSON.stringify(buildTxResponse, null, 2));    
+        LogManager.log('CobaltxManager', 'swap', 'buildTxResponse:', JSON.stringify(buildTxResponse, null, 2));    
         const swapTransactions = buildTxResponse.data || [];
         
         if (swapTransactions.length === 0) {
@@ -151,54 +151,15 @@ export class CobaltxManager {
         }
 
         if (swapTransactions.length > 1) {
-            console.warn('CobaltxManager.swap', 'Multiple transactions generated for swap, only the first one will be signed and sent');
+            LogManager.error('CobaltxManager.swap', 'Multiple transactions generated for swap, only the first one will be signed and sent');
             throw new Error('Multiple transactions generated for swap. Please try again or contact support.');
         }
 
         const txData = await SolanaManager.extractTransactionComponents(connection, swapTransactions[0].transaction)
 
-        // const allTxBuf = swapTransactions.map((tx: any) => base58.decode(tx.transaction))
-        // const allTx: VersionedTransaction[] = allTxBuf.map((txBuf: any) => new VersionedTransaction(web3.VersionedMessage.deserialize(Uint8Array.from(txBuf))))
-
-        // const tx = allTx[0];
-        // console.log('CobaltxManager', 'swap', 'tx:', tx);
-        // console.log('CobaltxManager', 'swap', 'txJSON:', JSON.stringify(tx, null, 2));
-
-        // const message = tx.message;
-        // // Extract instructions from compiled form
-        // const instructions: TransactionInstruction[] = message.compiledInstructions.map((ci) => {
-        //     const programId = message.staticAccountKeys[ci.programIdIndex];
-        //     const keys = ci.accountKeyIndexes.map((i) => ({
-        //         pubkey: message.staticAccountKeys[i],
-        //         isSigner: message.isAccountSigner(i),
-        //         isWritable: message.isAccountWritable(i),
-        //     }));
-        //     console.log('CobaltxManager', 'swap', 'ci:', ci, 'programId:', programId.toBase58(), '!keys:', keys);
-        //     return new TransactionInstruction({
-        //         programId,
-        //         keys,
-        //         data: Buffer.from(ci.data),
-        //     });
-        // });
-
-        // // const addressLookupTableAccounts: web3.AddressLookupTableAccount[] | undefined = message.addressTableLookups;
-        // let lookups: web3.AddressLookupTableAccount[] | undefined = undefined;
-        // if (message.addressTableLookups && message.addressTableLookups.length > 0){
-        //     const lookupsAccountKeys = message.addressTableLookups.map((lookup) => lookup.accountKey.toBase58());
-        //     lookups = await SolanaManager.getAddressLookupTableAccounts(connection, lookupsAccountKeys);
-        // }
-
-        // const txMessage = new TransactionMessage({
-        //     payerKey: wallet.publicKey,
-        //     recentBlockhash: message.recentBlockhash,
-        //     instructions: [...instructions],
-        // });
-
-        // //TODO: add fee instruction
-        // // const feeIx = SwapManager.createFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
-        // // builder.addInstruction({
-        // //     endInstructions: [feeIx],
-        // // });
+        // add fee instruction
+        const feeIx = SwapManager.createFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
+        txData.instructions.push(feeIx);
 
         const txMessage = new TransactionMessage({
             payerKey: wallet.publicKey,
@@ -206,15 +167,11 @@ export class CobaltxManager {
             instructions: txData.instructions,
         });
         const lookups = txData.lookups;
-        // console.log('CobaltxManager', 'swap', 'allTx:', allTx);
 
         const compiledMessage = txMessage.compileToV0Message(lookups);
         const newVersionedTx = new VersionedTransaction(compiledMessage);
 
-        // console.log('CobaltxManager', 'swap', 'oldTx:', tx);
-        console.log('CobaltxManager', 'swap', 'newTx:', newVersionedTx);
-
-        throw new Error('CobaltxManager.swap is not implemented yet');
+        newVersionedTx.sign([wallet]);
 
         return { 
             swapAmountInLamports, 

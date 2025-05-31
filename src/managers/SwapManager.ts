@@ -216,11 +216,12 @@ export class SwapManager {
                 blockhash = segaResults.blockhash;
             }
             else if (swap.dex == SwapDex.COBALTX){
-                //TODO: add trading support for other chains
                 const cobaltxResults = await CobaltxManager.swap(swap.chain, user, traderProfile, inputMint, outputMint, new BN(amount), slippage);
                 swapAmountInLamports = cobaltxResults.swapAmountInLamports.toString();
                 tx = cobaltxResults.tx;
                 blockhash = cobaltxResults.blockhash;
+
+                console.log('CobaltxManager swap results:', cobaltxResults);
             }
 
             if (currency == Currency.SOL){

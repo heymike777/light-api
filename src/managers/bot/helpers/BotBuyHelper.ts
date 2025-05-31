@@ -12,6 +12,7 @@ import { SwapManager } from "../../SwapManager";
 import { SwapDex } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { Chain } from "../../../services/solana/types";
+import { getNativeToken } from "../../../services/solana/Constants";
 
 export class BotBuyHelper extends BotHelper {
 
@@ -54,8 +55,10 @@ export class BotBuyHelper extends BotHelper {
                     }
                 }
                 else if (parts[3] == 'x' || parts[3] == 'X') {
+                    const currencyName = currency == Currency.SOL ? getNativeToken(chain).symbol : currency;
+
                     await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.BUY_AMOUNT, data: { chain, mint, traderProfileId: traderProfile?.id, currency }, helper: this.kCommand });
-                    await BotManager.reply(ctx, `Enter ${currency} amount`);
+                    await BotManager.reply(ctx, `Enter ${currencyName} amount`);
                 }
                 else {
                     const amount = parseFloat(parts[3]);
@@ -108,12 +111,14 @@ export class BotBuyHelper extends BotHelper {
             LogManager.error('Error getting token', error);
         }
 
-        const message = await BotManager.reply(ctx, `Buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}.\n\nPlease, wait...`);      
+        const kSOL = getNativeToken(chain);
+        const currencyName = currency == Currency.SOL ? kSOL.symbol : currency;
+
+        const message = await BotManager.reply(ctx, `Buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currencyName}.\n\nPlease, wait...`);      
 
         try {
             const { signature, swap } = await SwapManager.initiateBuy(user, chain, traderProfileId, mint, amount);
 
-            // let msg = `🟢 Bought <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}.`
             let msg = `🟡 Transaction sent. Waiting for confirmation.`
             if (swap.intermediateWallet){
                 msg += `\n\nIntermediate wallet:\n<code>${swap.intermediateWallet.publicKey}</code> (Tap to copy)`;
@@ -130,7 +135,7 @@ export class BotBuyHelper extends BotHelper {
             }
         }
         catch (error: any) {
-            const msg = `🔴 Error buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currency}. Try again.\n\nError: ${error.message}`;
+            const msg = `🔴 Error buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currencyName}. Try again.\n\nError: ${error.message}`;
 
             if (message){
                 await BotManager.editMessage(ctx, msg, undefined, message.message_id);
