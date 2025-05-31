@@ -7,6 +7,7 @@ import { Chain } from "../../../services/solana/types";
 import { BotManager } from "../BotManager";
 import { UserManager } from "../../UserManager";
 import { title } from "process";
+import { ChainManager } from "../../chains/ChainManager";
 
 export class BotSettingsHelper extends BotHelper {
 
@@ -36,6 +37,21 @@ export class BotSettingsHelper extends BotHelper {
                 user.defaultChain = chain;
                 await User.updateOne({ _id: user.id }, { $set: { defaultChain: chain } });
                 await this.refresh(ctx, user);
+
+                // send message to user about chain change
+                const buttons: InlineButton[] = [];
+                buttons.push({ id: 'tokens|hot', text: '🔥 Hot tokens' });
+                buttons.push({ id: 'row', text: '' });
+                if (chain != Chain.SOLANA){
+                    const link = ChainManager.getBridgeUrl(chain);
+                    if (link) { buttons.push({ id: 'bridge', text: '🌉 Bridge', link }); }
+                }
+                buttons.push({ id: 'settings', text: '⚙️ Settings' });
+
+                const markup = BotManager.buildInlineKeyboard(buttons);
+                const chainTitle = ChainManager.getChainTitle(chain);
+                const message = `✅ Your chain switched to: ${chainTitle}\n\nYou can trade token on ${chainTitle} now. Just send me the token address or click "Hot tokens" to find trading tokens.`;
+                await BotManager.reply(ctx, message, { reply_markup: markup });
             }
         }
         else if (buttonId && buttonId.startsWith('settings|')){

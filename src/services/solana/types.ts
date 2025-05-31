@@ -95,6 +95,7 @@ export enum Chain {
 export const kAllChains = Object.values(Chain) as Chain[];
 
 export interface ChainConfig {
+    title: string,
     geyserPort: number,
     rpc: string,
     websocket: string,
@@ -102,15 +103,20 @@ export interface ChainConfig {
         useWss?: boolean,
         useHttp?: boolean,
     },
+    bridge?: {
+        url?: string,
+    }
 }
 
 export const kChains: {[key: string]: ChainConfig} = {
     [Chain.SOLANA]: {
+        title: 'Solana',
         geyserPort: 3340, 
         rpc: process.env.SOLANA_RPC!,
         websocket: '',
     },
     [Chain.SONIC]: {
+        title: 'Sonic SVM',
         geyserPort: 3344,
         rpc: process.env.SONIC_RPC!,
         websocket: process.env.SONIC_RPC_WSS!,
@@ -118,8 +124,12 @@ export const kChains: {[key: string]: ChainConfig} = {
             useWss: true,
             useHttp: false,
         },
+        bridge: {
+            url: 'https://bridge.sonic.game/'
+        },
     },
     [Chain.SONIC_TESTNET]: {
+        title: 'Sonic SVM Testnet',
         geyserPort: 3345,
         rpc: process.env.SONIC_RPC_TESTNET!,
         websocket: process.env.SONIC_RPC_WSS_TESTNET!,
@@ -129,6 +139,7 @@ export const kChains: {[key: string]: ChainConfig} = {
         },
     },
     [Chain.SOON_MAINNET]: {
+        title: 'SOON SVM',
         geyserPort: 3346,
         rpc: process.env.SOON_MAINNET_RPC!,
         websocket: process.env.SOON_MAINNET_RPC_WSS!,
@@ -136,8 +147,12 @@ export const kChains: {[key: string]: ChainConfig} = {
             useWss: false,
             useHttp: true,
         },
+        bridge: {
+            url: 'https://bridge.soo.network/home?chain=0'
+        },
     },
     [Chain.SOON_TESTNET]: {
+        title: 'SOON SVM Testnet',
         geyserPort: 3347,
         rpc: process.env.SOON_TESTNET_RPC!,
         websocket: process.env.SOON_TESTNET_RPC_WSS!,
@@ -147,6 +162,7 @@ export const kChains: {[key: string]: ChainConfig} = {
         },
     },
     [Chain.SVMBNB_MAINNET]: {
+        title: 'svmBNB',
         geyserPort: 3348,
         rpc: process.env.SVMBNB_MAINNET_RPC!,
         websocket: process.env.SVMBNB_MAINNET_RPC_WSS!,
@@ -154,8 +170,12 @@ export const kChains: {[key: string]: ChainConfig} = {
             useWss: false,
             useHttp: true,
         },
+        bridge: {
+            url: 'https://bridge.soo.network/home?chain=1'
+        },
     },
     [Chain.SVMBNB_TESTNET]: {
+        title: 'svmBNB Testnet',
         geyserPort: 3349,
         rpc: process.env.SVMBNB_TESTNET_RPC!,
         websocket: process.env.SVMBNB_TESTNET_RPC_WSS!,
@@ -165,6 +185,7 @@ export const kChains: {[key: string]: ChainConfig} = {
         },
     },
     [Chain.SOONBASE_MAINNET]: {
+        title: 'soonBase',
         geyserPort: 3351,
         rpc: process.env.SOONBASE_MAINNET_RPC!,
         websocket: process.env.SOONBASE_MAINNET_RPC_WSS!,
@@ -172,8 +193,12 @@ export const kChains: {[key: string]: ChainConfig} = {
             useWss: false,
             useHttp: true,
         },
+        bridge: {
+            url: 'https://bridge.soo.network/home?chain=2'
+        },
     },
     [Chain.SOONBASE_TESTNET]: {
+        title: 'soonBase Testnet',
         geyserPort: 3352,
         rpc: process.env.SOONBASE_TESTNET_RPC!,
         websocket: process.env.SOONBASE_TESTNET_RPC_WSS!,

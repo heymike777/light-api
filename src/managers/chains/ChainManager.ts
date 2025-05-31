@@ -1,6 +1,6 @@
 import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { PortfolioAsset } from "../../models/types";
-import { Chain } from "../../services/solana/types";
+import { Chain, kChains } from "../../services/solana/types";
 import { ChainSolanaManager } from "./ChainSolanaManager";
 import { ChainSonicManager } from "./ChainSonicManager";
 import { ChainSvmManager } from "./ChainSvmManager";
@@ -8,28 +8,16 @@ import { ChainSvmManager } from "./ChainSvmManager";
 export class ChainManager {
 
     static getChainTitle(chain: Chain): string {
-        switch (chain) {
-            case Chain.SOLANA:
-                return 'Solana';
-            case Chain.SONIC:
-                return 'Sonic SVM';
-            case Chain.SONIC_TESTNET:
-                return 'Sonic SVM Testnet';
-            case Chain.SOON_MAINNET:
-                return 'Soon SVM';
-            case Chain.SOON_TESTNET:
-                return 'Soon SVM Testnet';
-            case Chain.SVMBNB_MAINNET:
-                return 'svmBNB';
-            case Chain.SVMBNB_TESTNET:
-                return 'svmBNB Testnet';
-            case Chain.SOONBASE_MAINNET:
-                return 'soonBase';
-            case Chain.SOONBASE_TESTNET:
-                return 'soonBase Testnet';
-            default:
-                return 'Solana';
+        const chainConfig = kChains[chain];
+        if (chainConfig && chainConfig.title) {
+            return chainConfig.title;
         }
+        return 'Solana';
+    }
+
+    static getBridgeUrl(chain: Chain): string | undefined {
+        const chainConfig = kChains[chain];
+        return chainConfig?.bridge?.url;
     }
 
     static async getPortfolio(chain: Chain, traderProfile?: IUserTraderProfile): Promise<{ values?: { walletAddress?: string, totalPrice: number, pnl?: number }, assets: PortfolioAsset[], lpAssets: PortfolioAsset[], warning?: { message: string, backgroundColor: string, textColor: string } }> {
