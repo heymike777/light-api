@@ -15,7 +15,7 @@ export class SvmManager {
 
     POLL_MS   = 1000;                   // how often to poll
     TTL_MS    = 10 * 60 * 1000;        // 10-minute retention
-    FIREHOSE  = new PublicKey("SysvarRecentB1ockHashes11111111111111111111"); // constant churn address works on all SVM chains
+    FIREHOSE  = new PublicKey("So11111111111111111111111111111111111111112");
     seen  = new Map<string, number>(); // sig → first-seen timestamp
 
     constructor(chain: Chain){
@@ -53,6 +53,7 @@ export class SvmManager {
 
     async poll() {
         const now = Date.now();
+        console.log('chain:', this.chain, 'seen.size:', this.seen.size);
 
         // 1️⃣  Evict signatures older than 10 min
         for (const [sig, firstSeen] of this.seen) {
@@ -60,7 +61,7 @@ export class SvmManager {
         }
 
         // 2️⃣  Fetch the newest N signatures (adjust limit to your budget)
-        const sigs = await this.connection.getSignaturesForAddress(this.FIREHOSE, { limit: 256 });
+        const sigs = await this.connection.getSignaturesForAddress(this.FIREHOSE, { limit: 64 });
 
         for (const s of sigs) {
             if (this.seen.has(s.signature)) continue;   // already processed (and still fresh)
