@@ -42,7 +42,7 @@ export class BotTokensHelper extends BotHelper {
                     text += `\n\n<b>${token.symbol}</b>`;
                     text += `\nCA: <code>${token.mint}</code>`;
                     if (token.volume?.["24h"]){
-                        text += `\nVOL (24h): $${Helpers.numberWithCommas(token.volume["24h"])}`;
+                        text += `\nVOL (24h): $${Helpers.numberWithCommas(Math.round(token.volume["24h"]))}`;
                     }
 
                     if (index % 3 == 0) { buttons.push({ id: 'row', text: '' }); }

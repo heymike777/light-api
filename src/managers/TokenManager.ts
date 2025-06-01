@@ -21,6 +21,7 @@ import { RaydiumManager } from "../services/solana/RaydiumManager";
 import { MicroserviceManager } from "./MicroserviceManager";
 import { HotToken, IHotToken, IHotTokenModel } from "../entities/tokens/HotToken";
 import { SegaManager } from "../services/solana/svm/SegaManager";
+import { CobaltxManager } from "../services/solana/svm/CobaltxManager";
 
 export interface TokenTag {
     id: string;
@@ -605,6 +606,7 @@ export class TokenManager {
             }
             else if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
                 //TODO: fetch from CobaltX
+                hotTokens = await CobaltxManager.fetchHotTokens(chain, limit);
             }
             else if (chain == Chain.SOLANA){
                 //TODO: where to get hot tokens from Solana? SolScan? Dexscreener? Maybe just use manual tokens for now                    

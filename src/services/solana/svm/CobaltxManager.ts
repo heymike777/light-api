@@ -8,11 +8,8 @@ import { kSolAddress } from '../Constants';
 import { SolanaManager } from '../SolanaManager';
 import { Currency } from '../../../models/types';
 import { newConnectionByChain } from '../lib/solana';
-import { TokenManager } from '../../../managers/TokenManager';
-import { kProgram } from '../../../managers/constants/ProgramConstants';
-import { TokenPair } from '../../../entities/tokens/TokenPair';
 import { IUser } from '../../../entities/users/User';
-import { API_URLS, CobaltX, TxVersion, getApiUrl } from '@cobaltx/sdk-v2';
+import { API_URLS, CobaltX, getApiUrl } from '@cobaltx/sdk-v2';
 import { NetworkName } from "@cobaltx/sdk-v2/lib/config";
 import { Keypair } from '@solana/web3.js';
 import { Connection } from '@solana/web3.js';
@@ -20,12 +17,17 @@ import Decimal from 'decimal.js';
 import axios from 'axios';
 import { VersionedTransaction } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
-import base58 from "bs58";
-import { TransactionInstruction } from '@solana/web3.js';
 import { TransactionMessage } from '@solana/web3.js';
 import { LogManager } from '../../../managers/LogManager';
+import { IHotTokenModel } from '../../../entities/tokens/HotToken';
 
 export class CobaltxManager {
+
+    static apiBaseUrls: { [key: string]: string } = {
+        soon: 'https://api.cobaltx.io',
+        svmbnb: 'https://api.svmbnb.cobaltx.io',
+        soonbase: 'https://api.soonbase.cobaltx.io',
+    };
 
     static async initSdk(params: {
         chain: Chain;
@@ -228,5 +230,55 @@ export class CobaltxManager {
     //         page++;
     //     }
     // }
+
+    static getApiUrl(chain: Chain): string {
+        switch (chain) {
+            case Chain.SOON_MAINNET:
+                return CobaltxManager.apiBaseUrls.soon;
+            case Chain.SVMBNB_MAINNET:
+                return CobaltxManager.apiBaseUrls.svmbnb;
+            case Chain.SOONBASE_MAINNET:
+                return CobaltxManager.apiBaseUrls.soonbase;
+            default:
+                throw new Error(`Unsupported chain: ${chain}`);
+        }
+    }
+
+    static async fetchHotTokens(chain: Chain, limit: number): Promise<IHotTokenModel[] | undefined> {
+        const tokens: IHotTokenModel[] = [];
+
+        let page = 1;
+        const pageSize = 100;
+        const baseUrl = CobaltxManager.getApiUrl(chain);
+        const url = `${baseUrl}/pools/info/list?poolType=concentrated&poolSortField=default&sortType=desc&pageSize=${pageSize}&page=${page}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            return undefined;
+        }
+
+        let sortIndex = 1;
+        const data: any = await response.json();
+        if (data && data.data) {
+            const pools = data.data;
+            for (const pool of pools) {
+                if (pool.mintA.address == kSolAddress || pool.mintB.address == kSolAddress) {
+                    const hotToken: IHotTokenModel = {
+                        chain: chain,
+                        mint: pool.mintA.address == kSolAddress ? pool.mintB.address : pool.mintA.address,
+                        symbol: pool.mintA.address == kSolAddress ? pool.mintB.symbol : pool.mintA.symbol,
+                        volume: { '24h': pool.day.volume },
+                        sort: sortIndex++,
+                    };
+                    tokens.push(hotToken);
+
+                    if (tokens.length >= limit) {
+                        break;
+                    }
+                }                
+            }
+        }
+
+        return tokens;
+    }
 
 }
