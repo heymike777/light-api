@@ -23,6 +23,8 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 export class ReferralsManager {
 
+    static kMinReferralPayout = 0.005; // in SOL
+
     static async claimRefCode(user: IUser, referralCode: string, throwError: boolean = true) {
         const now = new Date();
         LogManager.log('claimRefCode', 'user:', user.id, 'referralCode:', referralCode);
@@ -207,7 +209,7 @@ export class ReferralsManager {
         usersIds.push(...tmpUsersIds2);
         // remove duplicates
         usersIds = [...new Set(usersIds)];
-        console.log('Recalculating ref stats for', usersIds.length, 'users:', usersIds);
+        LogManager.log('Recalculating ref stats for', usersIds.length, 'users:', usersIds);
 
         if (usersIds.length == 0){
             LogManager.log('ReferralsManager', 'recalcRefStats', 'No users to recalc');
@@ -291,8 +293,8 @@ export class ReferralsManager {
                 },
             ]);
 
-            console.log(chain, userId, 'refStats:', refStats);
-            console.log(chain, userId, 'rewards:', rewards);
+            LogManager.log(chain, userId, 'refStats:', refStats);
+            LogManager.log(chain, userId, 'rewards:', rewards);
 
             // rewards[0] is the total rewards
             if (rewards.length > 0){
@@ -316,7 +318,7 @@ export class ReferralsManager {
                 },
             ]);
 
-            console.log(chain, userId, 'payouts:', payouts);
+            LogManager.log(chain, userId, 'payouts:', payouts);
             // payouts[0] is the total payouts
             if (payouts.length > 0){
                 const payout = payouts[0];
@@ -355,7 +357,7 @@ export class ReferralsManager {
         }
 
         //TODO: for now it's ok, but in the future let's make if different for each chain
-        const minLamports = 0.005 * LAMPORTS_PER_SOL;
+        const minLamports = this.kMinReferralPayout * LAMPORTS_PER_SOL;
 
         const refStatsSolana = await UserRefStats.find({ 'stats.rewards.sol.rewardsTotal.sol': { $gte: minLamports } });
         for (const refStat of refStatsSolana) {
@@ -379,11 +381,11 @@ export class ReferralsManager {
             const refStats = await UserRefStats.find();
             const kSOL = getNativeToken(chain);
             const solUpaid = refStats.reduce((acc, refStat) => {
-                console.log(chain, 'refStat:', refStat);
+                LogManager.log(chain, 'refStat:', refStat);
                 return acc + (refStat.stats.rewards[chain]?.rewardsTotal?.sol || 0) - (refStat.stats.rewards[chain]?.rewardsPaid?.sol || 0);
             }, 0);
 
-            console.log('checkIfFeeWalletHasEnoughUnpaidFunds', 'chain:', chain, 'balance:', balance, 'solUpaid:', solUpaid);
+            LogManager.log('checkIfFeeWalletHasEnoughUnpaidFunds', 'chain:', chain, 'balance:', balance, 'solUpaid:', solUpaid);
 
             if (balance < solUpaid){
                 LogManager.error('ReferralsManager', 'checkIfFeeWalletHasEnoughUnpaidFunds', 'Fee wallet has not enough funds', { chain, balance, solUpaid });
@@ -410,20 +412,20 @@ export class ReferralsManager {
             return;
         }
         const unpaid = refStats.rewards[chain].rewardsTotal.sol - refStats.rewards[chain].rewardsPaid.sol;
-        console.log('unpaid:', unpaid / getNativeToken(chain).lamportsPerSol, getNativeToken(chain).symbol);
-        if (unpaid < 0.005){
-            console.log('unpaid is less than 0.005 SOL');
+        LogManager.log('unpaid:', unpaid / getNativeToken(chain).lamportsPerSol, getNativeToken(chain).symbol);
+        if (unpaid < this.kMinReferralPayout * getNativeToken(chain).lamportsPerSol){
+            LogManager.log(`unpaid is less than ${this.kMinReferralPayout} SOL`);
             return;
         }
 
         // add to UserRefPayout
         const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(userId);
         if (!traderProfile){
-            console.log('Trader profile not found for user:', userId);
+            LogManager.log('Trader profile not found for user:', userId);
             return;
         }
         if (!traderProfile.encryptedWallet?.publicKey){
-            console.log('Trader profile wallet not found for user:', userId);
+            LogManager.log('Trader profile wallet not found for user:', userId);
             return;
         }
         const payout = new UserRefPayout();
@@ -437,15 +439,15 @@ export class ReferralsManager {
             type: StatusType.CREATED,
         };
         await payout.save();
-        // console.log('UserRefPayout created:', payout);
+        // LogManager.log('UserRefPayout created:', payout);
 
         // calc amount again, if it doesn't exceed the expected amount
         const refStatsUpdated = await this.recalcUserRefStats(userId);
-        // console.log('refStatsUpdated:', refStatsUpdated);
+        // LogManager.log('refStatsUpdated:', refStatsUpdated);
         if (!refStatsUpdated || refStatsUpdated.rewards[chain].rewardsTotal.sol < refStatsUpdated.rewards[chain].rewardsPaid.sol){
             // remove CREATED payout. Don't proceed the payment.
             await UserRefPayout.updateMany({ userId: userId, 'status.type': StatusType.CREATED }, { $set: { 'status.type': StatusType.CANCELLED } });
-            console.log('Unpaid amount is less than expected. Payout removed.');
+            LogManager.log('Unpaid amount is less than expected. Payout removed.');
             SystemNotificationsManager.sendSystemMessage('ReferralsManager: processUserRefPayout: refStatsUpdated is wrong for user: ' + userId + '- Canceling the payout.');
             return;
         }
@@ -462,7 +464,7 @@ export class ReferralsManager {
                 const tx = await SolanaManager.createVersionedTransaction(chain, ixs, feeKeypair, undefined, undefined, false);
                 const connection = newConnectionByChain(chain);
                 const signature = await connection.sendTransaction(tx);
-                console.log('UserRefPayout', 'userId:', userId, 'chain:', chain, 'signature:', signature);
+                LogManager.log('UserRefPayout', 'userId:', userId, 'chain:', chain, 'signature:', signature);
                 await UserRefPayout.updateOne({ _id: payout._id }, { $set: { 'status.type': StatusType.PROCESSING, 'status.tx.signature': signature } });
             }
         }
@@ -494,7 +496,7 @@ export class ReferralsManager {
 
     static async checkPendingRefPayouts() {
         const refPayouts = await UserRefPayout.find({ "status.type": StatusType.PROCESSING });
-        console.log('ReferralsManager', 'checkPendingRefPayouts', 'Pending ref payouts:', refPayouts.length);
+        LogManager.log('ReferralsManager', 'checkPendingRefPayouts', 'Pending ref payouts:', refPayouts.length);
         if (!refPayouts || refPayouts.length === 0) {
             return;
         }

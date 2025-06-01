@@ -154,7 +154,7 @@ export class BotReferralProgramHelper extends BotHelper {
 • Total unpaid: ${Helpers.prettyNumber(rewardsUnpaidSol / kSOL.lamportsPerSol, 6)} ${kSOL.symbol}`;
 
         message += `\n\n`;
-        message += `Rewards are paid daily and airdropped directly to your main trader profile wallet. <u><b>You must have accrued at least 0.005 SOL in unpaid fees to be eligible for a payout.</b></u>`;
+        message += `Rewards are paid daily and airdropped directly to your main trader profile wallet. <u><b>You must have accrued at least ${ReferralsManager.kMinReferralPayout} ${kSOL.symbol} in unpaid fees to be eligible for a payout.</b></u>`;
 
         // message += `\n\n`;
         // message += `We've established a tiered referral system, ensuring that as more individuals come onboard, rewards extend through five different layers of users. This structure not only benefits community growth but also significantly increases the percentage share of fees for everyone.`;
