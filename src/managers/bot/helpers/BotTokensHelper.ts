@@ -6,6 +6,8 @@ import { BotHelper, Message } from "./BotHelper";
 import { ChainManager } from "../../chains/ChainManager";
 import { Chain } from "../../../services/solana/types";
 import { TokenManager } from "../../TokenManager";
+import { Helpers } from "../../../services/helpers/Helpers";
+import { InlineButton } from "../BotTypes";
 
 export class BotTokensHelper extends BotHelper {
 
@@ -30,11 +32,37 @@ export class BotTokensHelper extends BotHelper {
         if (buttonId && buttonId.startsWith('tokens|hot')){
             const tokens = await TokenManager.getHotTokens(chain);
             if (tokens.length > 0) {
-                let text = '🔥 Hot tokens';
-                await BotManager.reply(ctx, text);
+                const chainName = ChainManager.getChainTitle(chain);
+                let text = `🔥 Hot tokens on ${chainName}`;
+
+                const buttons: InlineButton[] = [];
+
+                let index = 0;
+                for (const token of tokens) {
+                    text += `\n\n<b>${token.symbol}</b>`;
+                    text += `\nCA: <code>${token.mint}</code>`;
+                    if (token.volume?.["24h"]){
+                        text += `\nVOL (24h): $${Helpers.numberWithCommas(token.volume["24h"])}`;
+                    }
+
+                    if (index % 3 == 0) { buttons.push({ id: 'row', text: '' }); }
+                    buttons.push({ id: `tokens|${token.mint}`, text: (token.isFeatured?'🔥 ':'') + `BUY ${token.symbol}` });
+                    index++;
+                }
+
+                const markup = BotManager.buildInlineKeyboard(buttons);
+                await BotManager.reply(ctx, text, { reply_markup: markup });
+
             }
             else {
                 await BotManager.reply(ctx, 'No hot tokens found.');
+            }
+        }
+        else if (buttonId && buttonId.startsWith('tokens|')){
+            const parts = buttonId.split('|');
+            if (parts.length == 2) {
+                const mint = parts[1];
+                await BotManager.tryToSendTokenInfo(ctx, mint, user)             
             }
         }
 

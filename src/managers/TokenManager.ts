@@ -599,7 +599,7 @@ export class TokenManager {
             
             if (chain == Chain.SONIC){
                 manualTokens = [
-                    { chain, symbol: 'CHILL', mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', sort: 0 },
+                    { chain, symbol: 'CHILL', mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', sort: 0, isFeatured: true },
                 ];
                 hotTokens = await SegaManager.fetchHotTokens(limit);
             }
@@ -618,6 +618,7 @@ export class TokenManager {
                     const existingHotToken = hotTokens?.find(token => token.mint === manualToken.mint);
                     if (existingHotToken){
                         existingHotToken.sort = manualToken.sort || 0;
+                        existingHotToken.isFeatured = manualToken.isFeatured || false;
                     }
                     else {
                         hotTokens = hotTokens || [];
@@ -626,6 +627,7 @@ export class TokenManager {
                             mint: manualToken.mint,
                             symbol: manualToken.symbol,
                             sort: manualToken.sort || 0,
+                            isFeatured: manualToken.isFeatured || false,
                         });
                     }
                 }
@@ -653,6 +655,8 @@ export class TokenManager {
                     if (existing){
                         existing.symbol = hotToken.symbol;
                         existing.sort = hotToken.sort || 0;
+                        existing.volume = hotToken.volume || undefined;
+                        existing.isFeatured = hotToken.isFeatured || false;
                         await existing.save();
                     }
                     else {
@@ -661,6 +665,8 @@ export class TokenManager {
                         newHotToken.mint = hotToken.mint;
                         newHotToken.symbol = hotToken.symbol;
                         newHotToken.sort = hotToken.sort || 0;
+                        newHotToken.volume = hotToken.volume || undefined;
+                        newHotToken.isFeatured = hotToken.isFeatured || false;
                         await newHotToken.save();
                     }
                 }
@@ -671,7 +677,7 @@ export class TokenManager {
     }
 
     static async getHotTokens(chain: Chain): Promise<IHotToken[]> {
-        const tokens = await HotToken.find({ chain }).sort({ sort: 1 });
+        const tokens = await HotToken.find({ chain }).sort({ sort: 1 }).limit(5);
         return tokens;
     }
 

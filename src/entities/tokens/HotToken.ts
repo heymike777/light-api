@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { Chain, DexId } from '../../services/solana/types';
+import { Chain, DexId, TimeBasedValue } from '../../services/solana/types';
 import { SwapDex } from '../payments/Swap';
 
 export let Schema = mongoose.Schema;
@@ -11,6 +11,8 @@ export interface IHotTokenModel {
     mint: string;
     symbol: string;
     sort?: number;
+    volume?: TimeBasedValue;
+    isFeatured?: boolean;
 }
 
 export interface IHotToken extends mongoose.Document {
@@ -18,6 +20,8 @@ export interface IHotToken extends mongoose.Document {
     mint: string;
     symbol: string;
     sort: number;
+    volume?: TimeBasedValue;
+    isFeatured?: boolean;
 
     updatedAt?: Date;
     createdAt?: Date;
@@ -27,7 +31,9 @@ export const HotTokenSchema = new mongoose.Schema<IHotToken>({
     chain: { type: String },
     mint: { type: String  },
     symbol: { type: String },
-    sort: { type: Number, default: 0 },
+    sort: { type: Number, default: 100 },
+    volume: { type: Mixed },
+    isFeatured: { type: Boolean, default: false },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }

@@ -64,8 +64,7 @@ export class BotTraderProfilesHelper extends BotHelper {
             const markup = BotManager.buildInlineKeyboard(buttons);
 
             await BotManager.reply(ctx, 'Choose your main trader profile', {
-                reply_markup: markup,
-                parse_mode: 'HTML',
+                reply_markup: markup
             });
         }
         else if (ctx?.update?.message?.text == '/portfolio' || buttonId == 'portfolio' || (buttonId && buttonId.startsWith('trader_profiles|portfolio'))){
@@ -125,7 +124,6 @@ export class BotTraderProfilesHelper extends BotHelper {
                 const markup = BotManager.buildInlineKeyboard(buttons);
                 await BotManager.reply(ctx, message, {
                     reply_markup: markup,
-                    parse_mode: 'HTML',
                 });
             }
             catch (e: any){
@@ -156,7 +154,6 @@ export class BotTraderProfilesHelper extends BotHelper {
             const markup = BotManager.buildInlineKeyboard(buttons);
             await BotManager.reply(ctx, message, {
                 reply_markup: markup,
-                parse_mode: 'HTML',
             });
         }
         else if (buttonId && buttonId.startsWith('trader_profiles|edit_name')){

@@ -172,6 +172,7 @@ export class SegaManager {
                         chain: Chain.SONIC,
                         mint: pool.mintA.address == kSolAddress ? pool.mintB.address : pool.mintA.address,
                         symbol: pool.mintA.address == kSolAddress ? pool.mintB.symbol : pool.mintA.symbol,
+                        volume: { '24h': pool.day.volume },
                         sort: sortIndex++,
                     };
                     tokens.push(hotToken);
