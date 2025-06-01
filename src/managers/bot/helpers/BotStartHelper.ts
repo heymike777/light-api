@@ -155,6 +155,7 @@ export class BotStartHelper extends BotHelper {
             {id: 'upgrade', text: '👑 Upgrade'},
             {id: 'referral_program', text: '👥 Refer friends'},
             {id: 'row', text: ''}, 
+            {id: 'tokens|hot', text: '🔥 Hot tokens'},
             {id: 'airdrops', text: '🪂 Airdrops'},
             {id: 'settings', text: '⚙️ Settings'},
         ];
