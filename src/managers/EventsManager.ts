@@ -2,7 +2,7 @@ import { ITradingEvent, TradingEvent, TradingEventStatus } from "../entities/eve
 
 export class EventsManager {
 
-    static async getActiveEvent(): Promise<ITradingEvent | undefined> {
+    static async getActiveEvent(onlyActive: boolean = false): Promise<ITradingEvent | undefined> {
         const now = new Date();
 
         let event: ITradingEvent | null = await TradingEvent.findOne({
@@ -11,6 +11,11 @@ export class EventsManager {
 
         if (event){
             return event;
+        }
+
+        if (onlyActive){
+            // if onlyActive is true, return undefined if no active event is found
+            return undefined;
         }
     
         // If no active event found, check for upcoming events

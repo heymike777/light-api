@@ -30,6 +30,8 @@ import { SubscriptionTier } from "../entities/payments/Subscription";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { ReferralsManager } from "./ReferralsManager";
 import { CobaltxManager } from "../services/solana/svm/CobaltxManager";
+import { EventsManager } from "./EventsManager";
+import { TradingEventStatus } from "../entities/events/Event";
 
 export class SwapManager {
 
@@ -237,9 +239,15 @@ export class SwapManager {
                 }
             }
 
-            const points = 0;
-            //TODO: calculate points for trading event based on chain, mint, and swap.value.usd
-
+            // calculate points for trading event based on chain, mint, and swap.value.usd
+            let points = 0;
+            const event = await EventsManager.getActiveEvent(true);
+            if (event && event.status == TradingEventStatus.ACTIVE && (!event.chain || event.chain == swap.chain) && event.tradingPoints){
+                const tmpPoints = event.tradingPoints[swap.mint] || event.tradingPoints['*'];
+                if (tmpPoints){
+                    points = tmpPoints * (swap.value?.usd || 0);
+                }
+            }
             await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value, points: points } });
             
             if (!tx){
