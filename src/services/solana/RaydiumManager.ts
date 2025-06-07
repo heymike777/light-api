@@ -570,7 +570,7 @@ export class RaydiumManager {
         const connection = newConnectionByChain(swap.chain);
         const blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
         const currency = Currency.SOL;
-        const fee = SwapManager.getFeeSize(user);
+        const fee = SwapManager.getFeeSize(user, swap.chain);
         const slippage = (swap.type == SwapType.BUY_HONEYPOT ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
 
         const lamports = +swap.amountIn;
@@ -739,7 +739,7 @@ export class RaydiumManager {
         const connection = newConnectionByChain(swap.chain);
         const blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
         const currency = Currency.SOL;
-        const fee = SwapManager.getFeeSize(user);
+        const fee = SwapManager.getFeeSize(user, swap.chain);
         const slippage = (swap.type == SwapType.BUY_HONEYPOT ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
 
         let signature: string | undefined;

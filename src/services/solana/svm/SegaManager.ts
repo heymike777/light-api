@@ -18,17 +18,18 @@ import { IHotToken, IHotTokenModel } from '../../../entities/tokens/HotToken';
 export class SegaManager {
 
     static kSonicAddress = 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL';
+    static chain = Chain.SONIC;
 
     static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         const tpWallet = traderProfile.getWallet();
         if (!tpWallet) {
             throw new Error('Wallet not found');
         }
-        const fee = SwapManager.getFeeSize(user);
+        const fee = SwapManager.getFeeSize(user, this.chain);
 
         // console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
-        const connection = newConnectionByChain(Chain.SONIC);
+        const connection = newConnectionByChain(this.chain);
         const currency = Currency.SOL;
 
         const wallet = web3.Keypair.fromSecretKey(bs58.decode(tpWallet.privateKey))
@@ -84,14 +85,14 @@ export class SegaManager {
         });
 
         // add 1% fee instruction to tx
-        const feeIx = SwapManager.createFeeInstruction(Chain.SONIC, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
+        const feeIx = SwapManager.createFeeInstruction(this.chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
         builder.addInstruction({
             endInstructions: [feeIx],
         });
 
         // console.log('buildProps:', buildProps);
 
-        const blockhash = (await SolanaManager.getRecentBlockhash(Chain.SONIC)).blockhash;
+        const blockhash = (await SolanaManager.getRecentBlockhash(this.chain)).blockhash;
         const result = await builder.buildV0({
             recentBlockhash: blockhash,
             lookupTableAddress: buildProps?.lookupTableAddress,
@@ -104,7 +105,7 @@ export class SegaManager {
 
     static async fetchPoolForMints(mintA: string, mintB: string): Promise<{poolId: string} | undefined> {
         const existing = await TokenPair.findOne({
-            chain: Chain.SONIC,
+            chain: this.chain,
             $or: [
                 { token1: mintA, token2: mintB },
                 { token1: mintB, token2: mintA },
@@ -131,7 +132,7 @@ export class SegaManager {
                 // console.log('mintA:', mintA, 'mintB:', mintB);
                 for (const pool of pools) {
                     if ((pool.mintA.address == mintA && pool.mintB.address == mintB) || (pool.mintA.address == mintB && pool.mintB.address == mintA)) {
-                        await TokenManager.createTokenPair(Chain.SONIC, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, kProgram.SEGA, pool.lpMint.address);
+                        await TokenManager.createTokenPair(this.chain, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, kProgram.SEGA, pool.lpMint.address);
                         
                         return { poolId: pool.id };
                     }
@@ -169,7 +170,7 @@ export class SegaManager {
             for (const pool of pools) {
                 if (pool.mintA.address == kSolAddress || pool.mintB.address == kSolAddress) {
                     const hotToken: IHotTokenModel = {
-                        chain: Chain.SONIC,
+                        chain: this.chain,
                         mint: pool.mintA.address == kSolAddress ? pool.mintB.address : pool.mintA.address,
                         symbol: pool.mintA.address == kSolAddress ? pool.mintB.symbol : pool.mintA.symbol,
                         volume: { '24h': pool.day.volume },
@@ -183,7 +184,7 @@ export class SegaManager {
                 }
                 else if (pool.mintA.address == this.kSonicAddress || pool.mintB.address == this.kSonicAddress) {
                     const hotToken: IHotTokenModel = {
-                        chain: Chain.SONIC,
+                        chain: this.chain,
                         mint: pool.mintA.address == this.kSonicAddress ? pool.mintB.address : pool.mintA.address,
                         symbol: pool.mintA.address == this.kSonicAddress ? pool.mintB.symbol : pool.mintA.symbol,
                         sort: sortIndex++,

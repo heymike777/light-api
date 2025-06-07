@@ -153,7 +153,6 @@ const onExpressStarted = async () => {
             const svm = new SvmManager(EnvManager.chain);
             await svm.subscribe();
         }
-
     }
 
     // await TokenManager.updateTokensPrices();

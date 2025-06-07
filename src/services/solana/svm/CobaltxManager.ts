@@ -77,7 +77,7 @@ export class CobaltxManager {
         if (!tpWallet) {
             throw new Error('Wallet not found');
         }
-        const fee = SwapManager.getFeeSize(user);
+        const fee = SwapManager.getFeeSize(user, chain);
 
         // console.log('CobaltxManager', 'swap', 'chain:', chain, 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 

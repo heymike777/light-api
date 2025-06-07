@@ -54,7 +54,7 @@ export interface IUser extends mongoose.Document {
         userId: string;
         referralCode: string;
         createdAt: Date;
-    }
+    }    
     lastIpAddress?: string;
     isAdmin?: boolean;
     usedGiftCardsCount?: number;
@@ -64,6 +64,7 @@ export interface IUser extends mongoose.Document {
     defaultChain?: Chain;
     defaultBot?: string;
     bots?: {[key: string]: 'default' | 'active' | 'blocked'};
+    volume?: {[key: string]: number}; // chain -> volume
 
     isAmbassador?: boolean;
 
@@ -92,7 +93,7 @@ export const UserSchema = new mongoose.Schema<IUser>({
     defaultChain: { type: String },
     defaultBot: { type: String },
     bots: { type: Mixed },
-    
+    volume: { type: Mixed },
     isAmbassador: { type: Boolean },
 
     updatedAt: { type: Date, default: new Date() },

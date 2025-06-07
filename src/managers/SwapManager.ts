@@ -25,7 +25,7 @@ import { RaydiumManager } from "../services/solana/RaydiumManager";
 import { BN } from "bn.js";
 import { SegaManager } from "../services/solana/svm/SegaManager";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
-import { IUser } from "../entities/users/User";
+import { IUser, User } from "../entities/users/User";
 import { SubscriptionTier } from "../entities/payments/Subscription";
 import { UserRefReward } from "../entities/referrals/UserRefReward";
 import { ReferralsManager } from "./ReferralsManager";
@@ -199,7 +199,7 @@ export class SwapManager {
                     swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
 
                     // add 1% fee instruction to tx
-                    const fee = SwapManager.getFeeSize(user);
+                    const fee = SwapManager.getFeeSize(user, swap.chain);
                     instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, tpWallet.publicKey, currency, fee));
 
                     blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
@@ -236,7 +236,11 @@ export class SwapManager {
                     usd: +swapAmountInLamports / (10 ** 6),
                 }
             }
-            await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value } });
+
+            const points = 0;
+            //TODO: calculate points for trading event based on chain, mint, and swap.value.usd
+
+            await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value, points: points } });
             
             if (!tx){
                 throw new BadRequestError('Transaction not found');
@@ -335,6 +339,14 @@ export class SwapManager {
         if (updateResult.modifiedCount > 0){
             await this.saveReferralRewards(swap, signature, parsedTransactionWithMeta);
             this.trackSwapInMixpanel(swap);    
+
+            // Update user's volume for this chain
+            const user = await UserManager.getUserById(swap.userId);
+            if (user && swap.value?.usd) {
+                const volume = user.volume || {};
+                volume[swap.chain] = (volume[swap.chain] || 0) + swap.value.usd;
+                await User.updateOne({ _id: user._id }, { $set: { volume } });
+            }
         }
         else {
             LogManager.error('SwapManager', 'receivedConfirmation', 'Swap not updated', `modifiedCount = ${updateResult.modifiedCount}`, 'swap:', { swap });
@@ -887,8 +899,20 @@ export class SwapManager {
 
     }
 
-    static getFeeSize(user: IUser): number {
-        return user.parent ? 0.009 : 0.01;
+    static getFeeSize(user: IUser, chain?: Chain): number {
+        if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
+            const volume = user.volume || {};
+            const volumeOnChain = volume[chain] || 0;
+            if (volumeOnChain < 100){
+                return 0.005;
+            }
+            else {
+                return 0.003;
+            }
+        }
+        else {
+            return user.parent ? 0.009 : 0.01;
+        }
     }
 
 }
