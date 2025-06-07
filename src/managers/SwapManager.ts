@@ -903,7 +903,7 @@ export class SwapManager {
         if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
             const volume = user.volume || {};
             const volumeOnChain = volume[chain] || 0;
-            if (volumeOnChain < 100){
+            if (volumeOnChain < 1000){
                 return 0.005;
             }
             else {
