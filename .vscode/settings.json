@@ -1,0 +1,25 @@
+{
+    "favorites.resources": [
+        {
+            "filePath": "src/entities/events/Event.ts",
+            "group": "Default"
+        },
+        {
+            "filePath": "src/services/MigrationManager.ts",
+            "group": "Default"
+        },
+        {
+            "filePath": "src/managers/EventsManager.ts",
+            "group": "Default"
+        },
+        {
+            "filePath": "src/index.ts",
+            "group": "Default"
+        },
+        {
+            "filePath": "src/managers/bot/helpers/BotEventsHelper.ts",
+            "group": "Default"
+        }
+    ],
+    "favorites.sortOrder": "DESC"
+}
