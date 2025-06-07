@@ -12,6 +12,7 @@ import { Chain } from '../services/solana/types';
 import { TokenPriceManager } from './TokenPriceManager';
 import { ReferralsManager } from './ReferralsManager';
 import { HealthManager } from './HealthManager';
+import { EventsManager } from './EventsManager';
 
 export class CronManager {
 
@@ -51,6 +52,7 @@ export class CronManager {
             });
 
             cron.schedule('* * * * *', () => {
+                // every minute
                 TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
 
                 // once a minute
@@ -59,6 +61,8 @@ export class CronManager {
 
                 // TokenManager.updateTokenPairsLiquidity();//TODO: this should be every seconds on production once I setup dedicated RPC node
                 // this.printStats();
+
+                EventsManager.updateEventStatusses();
             });
 
             cron.schedule('0 * * * *', () => {

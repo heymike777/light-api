@@ -74,6 +74,8 @@ export interface ISwap extends mongoose.Document {
         }
     }
 
+    points?: number; // points for trading event, if any
+
     updatedAt?: Date;
     createdAt: Date;
 }
@@ -92,6 +94,7 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     intermediateWallet: { type: Mixed },
     status: { type: Mixed },
     referralRewards: { type: Mixed },
+    points: { type: Number, default: 0 },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }

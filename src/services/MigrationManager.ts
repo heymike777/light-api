@@ -67,6 +67,8 @@ import { EncryptionManager } from "../managers/EncryptionManager";
 import { PreWallet } from "../entities/PreWallet";
 import { LaserstreamManager } from "./solana/geyser/LaserstreamManager";
 import { HotToken } from "../entities/tokens/HotToken";
+import { TradingEvent } from "../entities/events/Event";
+import { EventsManager } from "../managers/EventsManager";
 
 export class MigrationManager {
 
@@ -78,6 +80,7 @@ export class MigrationManager {
     static async migrate() {
         if (process.env.SERVER_NAME == 'light0'){
             TokenPriceManager.updateNativeTokenPrices();
+            EventsManager.updateEventStatusses();
         }
         else {
             SystemNotificationsManager.sendSystemMessage('Server started');
@@ -327,6 +330,15 @@ export class MigrationManager {
         // }
 
         // await TokenManager.refreshHotTokens();
+        
+        // await EventsManager.createChillEvent();
+        // const event = await EventsManager.getActiveEvent();
+        // if (event){
+        //     console.log('MigrationManager', 'migrate', 'active event found', event);
+        // }
+        // else {
+        //     console.log('MigrationManager', 'migrate', 'no active event found');
+        // }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
@@ -440,6 +452,7 @@ export class MigrationManager {
         await Config.syncIndexes();
         await HotToken.syncIndexes();
         await Swap.syncIndexes();
+        await TradingEvent.syncIndexes();
     }
 
     static async processTx(chain: Chain, signature: string) {

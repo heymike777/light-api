@@ -45,6 +45,7 @@ import { run } from "@grammyjs/runner";
 import { RabbitManager } from "../RabbitManager";
 import { BotAirdropHelper } from "./helpers/BotAirdropHelper";
 import { BotTokensHelper } from "./helpers/BotTokensHelper";
+import { BotEventsHelper } from "./helpers/BotEventsHelper";
 
 export class BotManager {
     botUsername: string;
@@ -68,6 +69,7 @@ export class BotManager {
         new BotAdminHelper(),
         new BotAirdropHelper(),
         new BotTokensHelper(),
+        new BotEventsHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 
