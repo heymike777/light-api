@@ -1,4 +1,7 @@
 import { ITradingEvent, TradingEvent, TradingEventStatus } from "../entities/events/Event";
+import { StatusType, Swap } from "../entities/payments/Swap";
+import { IUserTraderProfile } from "../entities/users/TraderProfile";
+import { IUser } from "../entities/users/User";
 
 export class EventsManager {
 
@@ -100,6 +103,38 @@ export class EventsManager {
             status: TradingEventStatus.UPCOMING,
             startAt: { $lt: now }
         }, { $set: { status: TradingEventStatus.ACTIVE } });
+    }
+
+    static async calculateEventPointsForTradingProfile(event: ITradingEvent, traderProfile: IUserTraderProfile): Promise<number> {
+        const pipeline = [
+            {
+                $match: {
+                    traderProfileId: traderProfile.id,
+                    'status.type': StatusType.COMPLETED,
+                    points: { $exists: true },
+                    createdAt: { $gte: event.startAt, $lte: event.endAt }
+                }
+            },
+            {
+                $project: {
+                    eventPoints: {
+                        $ifNull: [
+                            { $toDouble: { $getField: { field: event.id, input: '$points' } } },
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalPoints: { $sum: '$eventPoints' }
+                }
+            }
+        ];
+
+        const result = await Swap.aggregate(pipeline);
+        return result[0]?.totalPoints || 0;
     }
 
 }

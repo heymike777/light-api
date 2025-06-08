@@ -6,6 +6,8 @@ import { InlineButton } from "../BotTypes";
 import { BotManager } from "../BotManager";
 import { UserManager } from "../../UserManager";
 import { EventsManager } from "../../EventsManager";
+import { SwapManager } from "../../SwapManager";
+import { TraderProfilesManager } from "../../TraderProfilesManager";
 
 export class BotEventsHelper extends BotHelper {
 
@@ -99,9 +101,19 @@ export class BotEventsHelper extends BotHelper {
         text += `${event.description}`;
 
         if (event.status == 'active') {
-            text += `\n\nYour points:\n`;
+            text += `\n\n<b>Your points:</b>`;
 
-            //TODO: calc user's points for every trading profile
+            const traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
+            for (const traderProfile of traderProfiles) {
+                const points = await EventsManager.calculateEventPointsForTradingProfile(event, traderProfile);
+                if (traderProfiles.length > 1){
+                    text += `\n${traderProfile.title}: ${points}`;
+                }
+                else {
+                    text += ` ${points}`;
+                }
+            }
+
         }
         //TODO: if event.chain is not user.defaultChain, add button to switch chain to event.chain
         //TODO: add button "BUY CHILL"
