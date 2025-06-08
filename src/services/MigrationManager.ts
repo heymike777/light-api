@@ -69,6 +69,7 @@ import { LaserstreamManager } from "./solana/geyser/LaserstreamManager";
 import { HotToken } from "../entities/tokens/HotToken";
 import { TradingEvent } from "../entities/events/Event";
 import { EventsManager } from "../managers/EventsManager";
+import { CronManager } from "../managers/CronManager";
 
 export class MigrationManager {
 
@@ -81,6 +82,7 @@ export class MigrationManager {
         if (process.env.SERVER_NAME == 'light0'){
             TokenPriceManager.updateNativeTokenPrices();
             EventsManager.updateEventStatusses();
+            SwapManager.checkPendingSwaps();
         }
         else {
             SystemNotificationsManager.sendSystemMessage('Server started');

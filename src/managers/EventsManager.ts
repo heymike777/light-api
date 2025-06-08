@@ -2,6 +2,7 @@ import { ITradingEvent, TradingEvent, TradingEventStatus } from "../entities/eve
 import { StatusType, Swap } from "../entities/payments/Swap";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser } from "../entities/users/User";
+import { Chain } from "../services/solana/types";
 
 export class EventsManager {
 
@@ -53,11 +54,17 @@ export class EventsManager {
         event.endAt = new Date('2025-06-20T23:59:59Z');
         event.description = `Trade $CHILL on Sonic SVM using Light and earn points to win prizes! \n\nThe more $CHILL you trade, the more points you earn.`;
         event.status = TradingEventStatus.UPCOMING;
+        event.chain = Chain.SONIC;
         event.image = 'https://light.dangervalley.com/events/chill_1.png';
         event.tradingPoints = {
             'sonic:7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': 1000, // 1000 points for each $1 traded of CHILL on Sonic SVM
+            'sonic:mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': 500, 
             '*': 0, // 0 points for any other token
         }
+        event.tokens = [
+            { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', symbol: 'CHILL' },
+            { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', symbol: 'SONIC' }
+        ];
         event.createdAt = new Date();
         await event.save();
     }

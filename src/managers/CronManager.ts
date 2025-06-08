@@ -109,8 +109,6 @@ export class CronManager {
         await SwapManager.retrySwaps();
     }
 
-    
-
     static async printStats(){
         console.log('!printStats at', new Date().toISOString());
         const arr: {userId: string, count: number}[] = [];

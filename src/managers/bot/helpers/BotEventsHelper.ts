@@ -9,6 +9,7 @@ import { EventsManager } from "../../EventsManager";
 import { SwapManager } from "../../SwapManager";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
 import { ChainManager } from "../../chains/ChainManager";
+import { TradingEvent } from "../../../entities/events/Event";
 
 export class BotEventsHelper extends BotHelper {
 
@@ -120,14 +121,28 @@ export class BotEventsHelper extends BotHelper {
         let buttons: InlineButton[] = [];
         buttons.push({ id: `events|refresh`, text: '↻ Refresh' });
 
-
-        //TODO: if event.chain is not user.defaultChain, add button to switch chain to event.chain
         if (event.chain && event.chain != user.defaultChain){
             buttons.push({ id: 'row', text: '' });
             buttons.push({ id: `settings|set_chain|${event.chain}`, text: `🔗 Switch to ${ChainManager.getChainTitle(event.chain)}` });
         }
-        //TODO: add button "BUY CHILL"
 
+        const eventTokens = event.tokens || [];
+        let index = 0;
+        for (const token of eventTokens) {
+            if (index % 2 == 0){
+                buttons.push({ id: 'row', text: '' });
+            }
+
+            buttons.push({ id: `tokens|${token.mint}`, text: `BUY ${token.symbol}` });
+            index++;
+        }
+
+        //TODO: add Leaderboard button
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: `events|${event.id}|leaderboard`, text: '🏆 Leaderboard' });
+
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: `events|${event.id}|special`, text: '🎁 Special prizes' });
 
         const markup = BotManager.buildInlineKeyboard(buttons);
         return { 

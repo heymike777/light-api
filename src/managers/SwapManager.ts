@@ -243,7 +243,7 @@ export class SwapManager {
             let points: { [eventId: string]: number } | undefined = undefined;
             const event = await EventsManager.getActiveEvent(true);
             if (event && event.status == TradingEventStatus.ACTIVE && (!event.chain || event.chain == swap.chain) && event.tradingPoints){
-                const tmpPoints = event.tradingPoints[swap.mint] || event.tradingPoints['*'];
+                const tmpPoints = event.tradingPoints[`${swap.chain}:${swap.mint}`] || event.tradingPoints['*'];
                 if (tmpPoints){
                     if (!points){
                         points = {};
