@@ -240,12 +240,15 @@ export class SwapManager {
             }
 
             // calculate points for trading event based on chain, mint, and swap.value.usd
-            let points = 0;
+            let points: { [eventId: string]: number } | undefined = undefined;
             const event = await EventsManager.getActiveEvent(true);
             if (event && event.status == TradingEventStatus.ACTIVE && (!event.chain || event.chain == swap.chain) && event.tradingPoints){
                 const tmpPoints = event.tradingPoints[swap.mint] || event.tradingPoints['*'];
                 if (tmpPoints){
-                    points = tmpPoints * (swap.value?.usd || 0);
+                    if (!points){
+                        points = {};
+                    }
+                    points[event.id] = tmpPoints * (swap.value?.usd || 0);
                 }
             }
             await Swap.updateOne({ _id: swap._id }, { $set: { value: swap.value, points: points } });

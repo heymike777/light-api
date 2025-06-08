@@ -48,7 +48,7 @@ export class EventsManager {
         event.title = 'CHILL. TRADE. EARN.';
         event.startAt = new Date('2025-06-01T00:00:00Z');
         event.endAt = new Date('2025-06-20T23:59:59Z');
-        event.description = `Trade $CHILL on Sonic SVM using Light and earn points to win prizes! \n\nThe more you trade $CHILL, the more points you earn.`;
+        event.description = `Trade $CHILL on Sonic SVM using Light and earn points to win prizes! \n\nThe more $CHILL you trade, the more points you earn.`;
         event.status = TradingEventStatus.UPCOMING;
         event.image = 'https://light.dangervalley.com/events/chill_1.png';
         event.tradingPoints = {
