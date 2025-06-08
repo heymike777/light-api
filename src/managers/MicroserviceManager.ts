@@ -14,9 +14,9 @@ export class MicroserviceManager {
         console.log('MicroserviceManager geyserResubscribe');
         
         const triesCount = 3;
-        for (let index = 0; index < triesCount; index++) {
-            for (const key in kChains) {
-                const chain = kChains[key];                
+        for (const key in kChains) {
+            const chain = kChains[key];       
+            for (let index = 0; index < triesCount; index++) {
                 try {
                     const { data } = await axios({
                         url: `http://127.0.0.1:${chain.geyserPort}/api/v1/service/geyser/resubscribe`,
@@ -26,7 +26,7 @@ export class MicroserviceManager {
                             'serviceKey': kServiceKey
                         },
                     });
-                    return;
+                    break;
                 }
                 catch (e: any){
                     LogManager.error('MicroserviceManager', `geyserResubscribe for ${key}`, 'error', e?.response?.data?.message);
