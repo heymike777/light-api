@@ -26,6 +26,7 @@ export class MicroserviceManager {
                             'serviceKey': kServiceKey
                         },
                     });
+                    return;
                 }
                 catch (e: any){
                     LogManager.error('MicroserviceManager', `geyserResubscribe for ${key}`, 'error', e?.response?.data?.message);
@@ -83,6 +84,7 @@ export class MicroserviceManager {
                 });
 
                 LogManager.log('sendMessageToTelegram', data);
+                return;
             }
             catch (e: any){
                 LogManager.error('MicroserviceManager', 'sendMessageToTelegram', 'error', e);
