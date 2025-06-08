@@ -13,67 +13,81 @@ export class MicroserviceManager {
         // send POST API to /geyser/resubscribe with axios
         console.log('MicroserviceManager geyserResubscribe');
         
-        for (const key in kChains) {
-            const chain = kChains[key];                
-            try {
-                const { data } = await axios({
-                    url: `http://127.0.0.1:${chain.geyserPort}/api/v1/service/geyser/resubscribe`,
-                    method: 'post',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'serviceKey': kServiceKey
-                    },
-                });
-            }
-            catch (e: any){
-                LogManager.error('MicroserviceManager', `geyserResubscribe for ${key}`, 'error', e?.response?.data?.message);
-                SystemNotificationsManager.sendSystemMessage(`🔴 Geyser microservice is not running. Please check the logs.`);
+        const triesCount = 3;
+        for (let index = 0; index < triesCount; index++) {
+            for (const key in kChains) {
+                const chain = kChains[key];                
+                try {
+                    const { data } = await axios({
+                        url: `http://127.0.0.1:${chain.geyserPort}/api/v1/service/geyser/resubscribe`,
+                        method: 'post',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'serviceKey': kServiceKey
+                        },
+                    });
+                }
+                catch (e: any){
+                    LogManager.error('MicroserviceManager', `geyserResubscribe for ${key}`, 'error', e?.response?.data?.message);
+                    if (index == triesCount - 1){
+                        SystemNotificationsManager.sendSystemMessage(`🔴 Geyser microservice is not running. Please check the logs.`);
+                    }
+                }
             }
         }
     }
 
     static async receivedTx(geyserId: string, signature: string, txData: string){
-        try {
-            const { data } = await axios({
-                url: `http://127.0.0.1:3333/api/v1/service/main/received-tx`,
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'serviceKey': kServiceKey
-                },
-                data: {
-                    geyserId,
-                    signature,
-                    chain: EnvManager.chain,
-                    data: txData
+        const triesCount = 3;
+        for (let index = 0; index < triesCount; index++) {
+            try {
+                const { data } = await axios({
+                    url: `http://127.0.0.1:3333/api/v1/service/main/received-tx`,
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'serviceKey': kServiceKey
+                    },
+                    data: {
+                        geyserId,
+                        signature,
+                        chain: EnvManager.chain,
+                        data: txData
+                    }
+                });
+                return;
+            }
+            catch (e: any){
+                LogManager.error('MicroserviceManager', 'receivedTx', 'error', e);
+                if (index == triesCount - 1){
+                    SystemNotificationsManager.sendSystemMessage(`🔴 Main microservice is not running. Please check the logs.`);
                 }
-            });
-        }
-        catch (e: any){
-            LogManager.error('MicroserviceManager', 'receivedTx', 'error', e);
-            SystemNotificationsManager.sendSystemMessage(`🔴 Main microservice is not running. Please check the logs.`);
+            }
         }
     }
 
     static async sendMessageToTelegram(messageData: string){
-        try {
-            const { data } = await axios({
-                url: `http://127.0.0.1:3342/api/v1/service/telegram/send-message`,
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'serviceKey': kServiceKey
-                },
-                data: {
-                    messageData
-                }
-            });
+        const triesCount = 3;
+        for (let index = 0; index < triesCount; index++) {
+            try {
+                const { data } = await axios({
+                    url: `http://127.0.0.1:3342/api/v1/service/telegram/send-message`,
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'serviceKey': kServiceKey
+                    },
+                    data: {
+                        messageData
+                    }
+                });
 
-            LogManager.log('sendMessageToTelegram', data);
-        }
-        catch (e: any){
-            LogManager.error('MicroserviceManager', 'sendMessageToTelegram', 'error', e);
-            SystemNotificationsManager.sendSystemMessage(`🔴 Telegram microservice is not running. Please check the logs.`);
+                LogManager.log('sendMessageToTelegram', data);
+            }
+            catch (e: any){
+                LogManager.error('MicroserviceManager', 'sendMessageToTelegram', 'error', e);
+                SystemNotificationsManager.sendSystemMessage(`🔴 Telegram microservice is not running. Please check the logs.`);
+            }
         }
     }
 
