@@ -19,6 +19,10 @@
         {
             "filePath": "src/managers/bot/helpers/BotEventsHelper.ts",
             "group": "Default"
+        },
+        {
+            "filePath": "src/services/solana/svm/SegaManager.ts",
+            "group": "Default"
         }
     ],
     "favorites.sortOrder": "DESC"

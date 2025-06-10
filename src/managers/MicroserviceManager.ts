@@ -3,6 +3,7 @@ import { LogManager } from "./LogManager";
 import { Chain, kChains } from "../services/solana/types";
 import { EnvManager } from "./EnvManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
+import { Helpers } from "../services/helpers/Helpers";
 
 export const kServiceKey = process.env.MICROSERVICE_KEY!;
 
@@ -64,6 +65,7 @@ export class MicroserviceManager {
                     SystemNotificationsManager.sendSystemMessage(`🔴 Main microservice is not running. Please check the logs.`);
                 }
             }
+            await Helpers.sleep(1);
         }
     }
 
@@ -90,6 +92,7 @@ export class MicroserviceManager {
                 LogManager.error('MicroserviceManager', 'sendMessageToTelegram', 'error', e);
                 SystemNotificationsManager.sendSystemMessage(`🔴 Telegram microservice is not running. Please check the logs.`);
             }
+            await Helpers.sleep(1);
         }
     }
 
