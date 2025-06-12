@@ -1,4 +1,4 @@
-import { CurveCalculator, Network, Sega, TxVersion } from '@sega-so/sega-sdk';
+import { CacheLTA, CurveCalculator, Network, Sega, SwapResult, TokenAccount, TokenAccountRaw, TxBuilder, TxVersion } from '@sega-so/sega-sdk';
 import BN from 'bn.js';
 import { SwapManager } from '../../../managers/SwapManager';
 import { Chain } from '../types';
@@ -14,11 +14,34 @@ import { kProgram } from '../../../managers/constants/ProgramConstants';
 import { TokenPair } from '../../../entities/tokens/TokenPair';
 import { IUser } from '../../../entities/users/User';
 import { IHotToken, IHotTokenModel } from '../../../entities/tokens/HotToken';
+import { BadRequestError } from '../../../errors/BadRequestError';
+import * as spl from "@solana/spl-token";
+
+export interface ITradeThrough {
+    poolId: string;
+    from: string;
+    to: string;
+}
 
 export class SegaManager {
 
-    static kSonicAddress = 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL';
     static chain = Chain.SONIC;
+    static kSonicAddress = 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL';
+    static kSolSonicPoolId = 'DgMweMfMbmPFChTuAvTf4nriQDWpf9XX3g66kod9nsR4';
+    static tradeThroughSonic: { [key: string]: ITradeThrough[] } = {
+        '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': [
+            {
+                poolId: this.kSolSonicPoolId,
+                from: kSolAddress,
+                to: this.kSonicAddress
+            },
+            {
+                poolId: 'FmH2XRYcq3mL9fXNGq2ko5d4YctB3J2V6u5GYAtAsnm7',
+                from: this.kSonicAddress,
+                to: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3' // CHILL
+            }
+        ]
+    };
 
     static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         const tpWallet = traderProfile.getWallet();
@@ -27,7 +50,7 @@ export class SegaManager {
         }
         const fee = SwapManager.getFeeSize(user, this.chain);
 
-        // console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
+        console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
         const connection = newConnectionByChain(this.chain);
         const currency = Currency.SOL;
@@ -43,60 +66,140 @@ export class SegaManager {
             blockhashCommitment: 'confirmed',
         });
 
-        const pool = await this.fetchPoolForMints(inputMint, outputMint);
-        if (!pool) {
-            throw new Error('Pool not found');
+        let tradeThrough: ITradeThrough[] = [];
+        if (inputMint == kSolAddress && this.tradeThroughSonic[outputMint]){
+            tradeThrough = this.tradeThroughSonic[outputMint];
         }
-        const poolId = pool.poolId;
-
-        // Get pool information
-        const data = await sega.cpmm.getPoolInfoFromRpc(poolId);
-        const poolInfo = data.poolInfo;
-        const poolKeys = data.poolKeys;
-        const rpcData = data.rpcData;
-
-        // Verify input mint matches pool
-        if (inputMint !== poolInfo.mintA.address && inputMint !== poolInfo.mintB.address) {
-            throw new Error('Input mint does not match pool');
+        else if (outputMint == kSolAddress && this.tradeThroughSonic[inputMint]){
+            tradeThrough = this.tradeThroughSonic[inputMint];
+        }
+        else {
+            const pool = await this.fetchPoolForMints(inputMint, outputMint);
+            if (!pool) {
+                throw new Error('Pool not found');
+            }
+            const poolId = pool.poolId;
+            tradeThrough.push({
+                poolId,
+                from: inputMint,
+                to: outputMint
+            });
         }
 
-        // Calculate swap parameters
-        const baseIn = inputMint === poolInfo.mintA.address;
-        const swapResult = CurveCalculator.swap(
-            inputAmount,
-            baseIn ? rpcData.baseReserve : rpcData.quoteReserve,
-            baseIn ? rpcData.quoteReserve : rpcData.baseReserve,
-            rpcData.configInfo!.tradeFeeRate
-        );
+        let sonicTokenAta: string | undefined = undefined;
+        if (tradeThrough.length > 1){
+            sonicTokenAta = await SolanaManager.getTokenAta(this.kSonicAddress, wallet.publicKey.toBase58(), spl.TOKEN_2022_PROGRAM_ID);
+        }
 
-        const swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : swapResult.destinationAmountSwapped.toNumber();
-        // console.log(`Swap amount in lamports: ${swapAmountInLamports}`);
+        let txBuilder: TxBuilder | undefined = undefined;
+        let txBuildProps: { lookupTableCache?: CacheLTA; lookupTableAddress?: string[]; } | undefined = undefined;
+        let swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : 0;
+        let tradeIndex = 0;
+        let prevSwapResult: SwapResult | undefined = undefined;
+        for (const trade of tradeThrough) {
+            const data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);
+            const poolInfo = data.poolInfo;
+            const poolKeys = data.poolKeys;
+            const rpcData = data.rpcData;
 
-        // Create and execute swap transaction
-        // console.log('Creating swap transaction...', 'slippage:', slippage);
-        const { builder, buildProps } = await sega.cpmm.swap({
-            poolInfo,
-            poolKeys,
-            inputAmount,
-            swapResult,
-            slippage: slippage / 100, // range: 1 ~ 0.0001, means 100% ~ 0.01%
-            baseIn,
-            txVersion: TxVersion.V0,
-        });
+            // Verify input mint matches pool
+            if (trade.from !== poolInfo.mintA.address && trade.from !== poolInfo.mintB.address) {
+                throw new Error('Input mint does not match pool');
+            }
+
+            // Calculate swap parameters
+            let sourceAmount = tradeIndex == 0 ? inputAmount : prevSwapResult!.destinationAmountSwapped;
+            const baseIn = trade.from === poolInfo.mintA.address;
+            const swapResult = CurveCalculator.swap(
+                sourceAmount,
+                baseIn ? rpcData.baseReserve : rpcData.quoteReserve,
+                baseIn ? rpcData.quoteReserve : rpcData.baseReserve,
+                rpcData.configInfo!.tradeFeeRate
+            );
+
+            if (outputMint == kSolAddress && trade.to == kSolAddress){
+                swapAmountInLamports = swapResult.destinationAmountSwapped.toNumber();
+            }
+
+            let fixedOut = tradeThrough.length > 1 && tradeIndex == 0; // true only for first trade, if more than 1 trade
+            if (fixedOut){
+                sourceAmount = swapResult.destinationAmountSwapped;
+            }
+
+            if (tradeThrough.length > 1){
+                if (sonicTokenAta){
+                    // check if sega.account.tokenAccounts does not contain tokenAta
+                    const sonicTokenAccount = sega.account.tokenAccounts.find(ta => ta.mint.toString() == sonicTokenAta);
+                    if (!sonicTokenAccount){
+                        // console.log('SEGA', 'FAKE - BUILD FAKE');
+                        const { tokenAccount, tokenAccountRawInfo } = this.buildFakeTokenAccount(sonicTokenAta, this.kSonicAddress, wallet.publicKey.toBase58(), new BN(0), spl.TOKEN_2022_PROGRAM_ID);
+                        sega.account.tokenAccounts.push(tokenAccount);
+                        sega.account.tokenAccountRawInfos.push(tokenAccountRawInfo);
+                    }
+                    else {
+                        // console.log('SEGA', 'FAKE - NO NEED TO BUILD FAKE');
+                    }
+                }
+                else {
+                    console.log('SEGA', 'FAKE - sonicTokenAta is undefined');
+                }
+            }
+
+            const { builder, buildProps } = await sega.cpmm.swap({
+                poolInfo,
+                poolKeys,
+                inputAmount: sourceAmount,
+                swapResult,
+                slippage: slippage / 100, // range: 1 ~ 0.0001, means 100% ~ 0.01%
+                baseIn,
+                txVersion: TxVersion.V0,
+                fixedOut: fixedOut,
+            });
+
+            if (!txBuilder){
+                txBuilder = builder;
+            }
+            else {
+                txBuilder.addInstruction({ endInstructions: builder.allInstructions });
+            }
+
+            if (!txBuildProps){
+                txBuildProps = buildProps;
+            }
+            else {
+                if (buildProps?.lookupTableAddress){
+                    txBuildProps.lookupTableAddress = txBuildProps.lookupTableAddress || [];
+                    txBuildProps.lookupTableAddress.push(...buildProps.lookupTableAddress);
+                }
+                if (buildProps?.lookupTableCache){
+                    txBuildProps.lookupTableCache = txBuildProps.lookupTableCache || {};
+                    for (const key in buildProps.lookupTableCache) {
+                        txBuildProps.lookupTableCache[key] = buildProps.lookupTableCache[key];
+                    }
+                }
+            }
+
+            prevSwapResult = swapResult;
+            tradeIndex++;
+        }
+
+        if (!txBuilder){
+            throw new BadRequestError('Tx builder not found');
+        }
 
         // add 1% fee instruction to tx
         const feeIx = SwapManager.createFeeInstruction(this.chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
-        builder.addInstruction({
+        txBuilder.addInstruction({
             endInstructions: [feeIx],
         });
 
         // console.log('buildProps:', buildProps);
 
         const blockhash = (await SolanaManager.getRecentBlockhash(this.chain)).blockhash;
-        const result = await builder.buildV0({
+        const result = await txBuilder.buildV0({
             recentBlockhash: blockhash,
-            lookupTableAddress: buildProps?.lookupTableAddress,
-            lookupTableCache: buildProps?.lookupTableCache,
+            lookupTableAddress: txBuildProps?.lookupTableAddress,
+            lookupTableCache: txBuildProps?.lookupTableCache,
         });
 
         const tx = result.transaction;
@@ -199,6 +302,37 @@ export class SegaManager {
         }
 
         return tokens;
+    }
+
+    static buildFakeTokenAccount(tokenAta: string, mint: string, owner: string, amount: BN, programId = spl.TOKEN_2022_PROGRAM_ID): {tokenAccount: TokenAccount, tokenAccountRawInfo: TokenAccountRaw} {        
+        const tokenAccount: TokenAccount = {
+            publicKey: new web3.PublicKey(tokenAta),
+            mint: new web3.PublicKey(mint),
+            isAssociated: true,
+            amount: amount,
+            isNative: false,
+            programId: programId,
+        };
+
+        const tokenAccountRawInfo: TokenAccountRaw = {
+            programId: programId,
+            pubkey: new web3.PublicKey(tokenAta),
+            accountInfo: {
+                mint: new web3.PublicKey(mint),
+                owner: new web3.PublicKey(owner),
+                amount: amount,
+                delegateOption: 0,
+                delegate: new web3.PublicKey('11111111111111111111111111111111'),
+                state: 1,
+                isNativeOption: 0,
+                isNative: new BN(0),
+                delegatedAmount: new BN(0),
+                closeAuthorityOption: 0,
+                closeAuthority: new web3.PublicKey('11111111111111111111111111111111'),
+            }
+        };
+
+        return {tokenAccount, tokenAccountRawInfo};
     }
 
 }

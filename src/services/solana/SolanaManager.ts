@@ -834,5 +834,12 @@ export class SolanaManager {
         }
     }
     
+    static async getTokenAta(mint: string, walletAddress: string, programId = spl.TOKEN_PROGRAM_ID): Promise<string> {
+        const publicKey = new web3.PublicKey(walletAddress);
+        const mintKey = new web3.PublicKey(mint);
+        const tokenAta = await spl.getAssociatedTokenAddress(mintKey, publicKey, undefined, programId);
+        return tokenAta.toBase58();
+    }
+
 
 }
