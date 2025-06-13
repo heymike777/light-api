@@ -12,7 +12,7 @@ export class SystemNotificationsManager {
         LogManager.log('SystemNotificationsManager', 'send:', text);
         try {
             const url = 'https://tg-bot-api.sololabs.io/api/v1/messages/system';
-            const data = { message: text };
+            const data = { message: text, apiKey: process.env.SOLOLABS_API_KEY };
             const resp = await axios.post(url, data);    
         }
         catch (error){
