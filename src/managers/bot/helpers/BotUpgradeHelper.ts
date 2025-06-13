@@ -7,7 +7,7 @@ export class BotUpgradeHelper extends BotHelper {
 
     constructor() {
         LogManager.log('BotUpgradeHelper', 'constructor');
-        const replyMessage: Message = { text: '👑 Premium subscriptions are coming soon' };
+        const replyMessage: Message = { text: '👑 Premium subscriptions \n\nWe process premium subscriptions manually for now. Please DM @heymike777 and he will help you.\n\n❤️' };
         super('upgrade', replyMessage);
     }
 
