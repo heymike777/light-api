@@ -30,13 +30,23 @@ export class BotSettingsHelper extends BotHelper {
         else if (buttonId == 'settings|refresh'){
             await this.refresh(ctx, user);
         } 
+        else if (buttonId == 'settings|refresh|chain'){
+            await this.refresh(ctx, user, true);
+        } 
+        else if (buttonId == 'settings|chain'){
+            const replyMessage = await this.buildSettingsMessage(user, botUsername, true);
+            return await super.commandReceived(ctx, user, replyMessage);
+        } 
+
         else if (buttonId && buttonId.startsWith('settings|set_chain|')){
             const parts = buttonId.split('|');
             if (parts.length >= 3){
                 const chain = parts[2] as Chain;
+                const isOnlyChain = parts.length == 4 || parts[3] == 'chain';
+
                 user.defaultChain = chain;
                 await User.updateOne({ _id: user.id }, { $set: { defaultChain: chain } });
-                await this.refresh(ctx, user);
+                await this.refresh(ctx, user, isOnlyChain);
 
                 // send message to user about chain change
                 const buttons: InlineButton[] = [];
@@ -64,39 +74,53 @@ export class BotSettingsHelper extends BotHelper {
         }
     }
 
-    async refresh(ctx: Context, user: IUser) {
+    async refresh(ctx: Context, user: IUser, isOnlyChain = false) {
         const botUsername = BotManager.getBotUsername(ctx);
 
-        const message = await this.buildSettingsMessage(user, botUsername);
+        const message = await this.buildSettingsMessage(user, botUsername, isOnlyChain);
         await BotManager.editMessage(ctx, message.text, message.markup);
     }
 
-    async buildSettingsMessage(user: IUser, botUsername: string): Promise<Message> {
-        let text = `⚙️ Settings`;
-        text += `\n\n`;
-        text += `You can configure your default chain, priority fee, slippage, etc.`;
+    async buildSettingsMessage(user: IUser, botUsername: string, isOnlyChain = false): Promise<Message> {
+        let text = '';
+
+        if (!isOnlyChain){
+            text += `⚙️ Settings`;
+            text += `\n\n`;
+            text += `You can configure your default chain, priority fee, slippage, etc.`;
+        }
+        else {
+            text += `🌐 Chain`;
+            text += `\n\n`;
+            text += `You can switch your default chain. We support 5 chains:\n- Solana\n- Sonic SVM\n- SOON\n- svmBNB\n- soonBase`;
+        }
+
         let buttons: InlineButton[] = [];
 
-        buttons.push({ id: `settings|refresh`, text: '↻ Refresh' });
+        buttons.push({ id: isOnlyChain ? `settings|refresh|chain` : `settings|refresh`, text: '↻ Refresh' });
         buttons.push({ id: `delete_message`, text: '✕ Close' });
         buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: 'connect_email', text: '✉️ Connect email' });
-        buttons.push({ id: 'row', text: '' });
 
-        const extraButtons: InlineButton[] = [];
-        if (user.isAmbassador){
-            extraButtons.push({ id: `ambassador`, text: '👑 Ambassador' });            
+        if (!isOnlyChain){
+            buttons.push({ id: 'connect_email', text: '✉️ Connect email' });
+            buttons.push({ id: 'row', text: '' });
+    
+            const extraButtons: InlineButton[] = [];
+            if (user.isAmbassador){
+                extraButtons.push({ id: `ambassador`, text: '👑 Ambassador' });            
+            }
+            if (user.isAdmin){
+                extraButtons.push({ id: `admin`, text: '🛡️ Admin' });
+            }
+            if (extraButtons.length > 0){
+                extraButtons.push({ id: 'row', text: '' });
+            }
+            buttons.push(...extraButtons);
+    
+            buttons.push({ id: `none`, text: '-- Chain --' });
+            buttons.push({ id: 'row', text: '' });    
         }
-        if (user.isAdmin){
-            extraButtons.push({ id: `admin`, text: '🛡️ Admin' });
-        }
-        if (extraButtons.length > 0){
-            extraButtons.push({ id: 'row', text: '' });
-        }
-        buttons.push(...extraButtons);
 
-        buttons.push({ id: `none`, text: '-- Chain --' });
-        buttons.push({ id: 'row', text: '' });
         const chains = [
             { id: Chain.SOLANA, title: 'Solana' },
             { id: Chain.SONIC, title: 'Sonic SVM' },
@@ -115,7 +139,7 @@ export class BotSettingsHelper extends BotHelper {
             
             const isSelected = user.defaultChain == item.id || (!user.defaultChain && item.id == Chain.SOLANA);
             const prefix = isSelected ? '🟢 ' : '';
-            buttons.push({ id: `settings|set_chain|${item.id}`, text: prefix + item.title });
+            buttons.push({ id: `settings|set_chain|${item.id}${isOnlyChain ? '|chain' : ''}`, text: prefix + item.title });
         }
         buttons.push({ id: 'row', text: '' });
 

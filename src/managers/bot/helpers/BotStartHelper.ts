@@ -11,6 +11,8 @@ import { PremiumError } from "../../../errors/PremiumError";
 import { IWallet } from "../../../entities/Wallet";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { ReferralsManager } from "../../ReferralsManager";
+import { ChainManager } from "../../chains/ChainManager";
+import { Chain } from "../../../services/solana/types";
 
 export class BotStartHelper extends BotHelper {
 
@@ -149,11 +151,12 @@ export class BotStartHelper extends BotHelper {
             {id: 'my_wallets', text: '👀 My wallets'},
             {id: 'row', text: ''},
             {id: 'trader_profiles', text: '💰 Trader profiles'},
-            {id: 'portfolio', text: '🎨 Portfolio'},
+            {id: 'portfolio', text: '💼 Portfolio'},
             {id: 'row', text: ''},
             // {id: 'connect_email', text: '✉️ Connect email'},
             {id: 'upgrade', text: '👑 Upgrade'},
             {id: 'referral_program', text: '👥 Refer friends'},
+            {id: 'settings|chain', text: '🌐 '+ ChainManager.getChainTitle(user?.defaultChain || Chain.SOLANA)},
             {id: 'row', text: ''}, 
             {id: 'tokens|hot', text: '🔥 Hot tokens'},
             {id: 'airdrops', text: '🪂 Airdrops'},

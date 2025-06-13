@@ -279,7 +279,7 @@ export class BotTraderProfilesHelper extends BotHelper {
         }
 
         const buttons: InlineButton[] = [];
-        buttons.push({ id: `trader_profiles|portfolio|${traderProfile.id}`, text: '🎨 Portfolio' });
+        buttons.push({ id: `trader_profiles|portfolio|${traderProfile.id}`, text: '💼 Portfolio' });
         buttons.push({ id: `trader_profiles|refresh|${traderProfile.id}`, text: '↻ Refresh' });
         buttons.push({ id: `trader_profiles|make_main|${traderProfile.id}`, text: '⭐️ Make main' });    
         buttons.push({ id: 'row', text: '' });
