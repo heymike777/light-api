@@ -13,7 +13,7 @@ import { TokenManager } from '../../../managers/TokenManager';
 import { kProgram } from '../../../managers/constants/ProgramConstants';
 import { TokenPair } from '../../../entities/tokens/TokenPair';
 import { IUser } from '../../../entities/users/User';
-import { IHotToken, IHotTokenModel } from '../../../entities/tokens/HotToken';
+import { IHotTokenModel } from '../../../entities/tokens/HotToken';
 import { BadRequestError } from '../../../errors/BadRequestError';
 import * as spl from "@solana/spl-token";
 
@@ -72,6 +72,12 @@ export class SegaManager {
         }
         else if (outputMint == kSolAddress && this.tradeThroughSonic[inputMint]){
             tradeThrough = this.tradeThroughSonic[inputMint];
+            tradeThrough = tradeThrough.reverse();
+            for (const trade of tradeThrough) {
+                const tmp = trade.from;
+                trade.from = trade.to;
+                trade.to = tmp;
+            }
         }
         else {
             const pool = await this.fetchPoolForMints(inputMint, outputMint);
@@ -96,6 +102,8 @@ export class SegaManager {
         let swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : 0;
         let tradeIndex = 0;
         let prevSwapResult: SwapResult | undefined = undefined;
+        const isBuyTrade = inputMint == kSolAddress;
+
         for (const trade of tradeThrough) {
             const data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);
             const poolInfo = data.poolInfo;
@@ -121,10 +129,11 @@ export class SegaManager {
                 swapAmountInLamports = swapResult.destinationAmountSwapped.toNumber();
             }
 
-            let fixedOut = tradeThrough.length > 1 && tradeIndex == 0; // true only for first trade, if more than 1 trade
+            let fixedOut = tradeThrough.length > 1 && tradeIndex == 0 && isBuyTrade; // true only for first trade and only for BUY trades
             if (fixedOut){
                 sourceAmount = swapResult.destinationAmountSwapped;
             }
+
 
             if (tradeThrough.length > 1){
                 if (sonicTokenAta){
@@ -145,12 +154,14 @@ export class SegaManager {
                 }
             }
 
+            const swapSlippage = (tradeThrough.length > 1 && tradeIndex == 0 && !isBuyTrade) ? 0 : slippage / 100; // it should be 0 only for the first trade when multiple trades, and only for SELL trades
+
             const { builder, buildProps } = await sega.cpmm.swap({
                 poolInfo,
                 poolKeys,
                 inputAmount: sourceAmount,
                 swapResult,
-                slippage: slippage / 100, // range: 1 ~ 0.0001, means 100% ~ 0.01%
+                slippage: swapSlippage, // range: 1 ~ 0.0001, means 100% ~ 0.01%
                 baseIn,
                 txVersion: TxVersion.V0,
                 fixedOut: fixedOut,
