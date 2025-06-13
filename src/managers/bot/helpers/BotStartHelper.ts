@@ -42,7 +42,8 @@ export class BotStartHelper extends BotHelper {
         let utm: string | undefined = undefined;
         let trackWallet: string | undefined = undefined;
         let trackWalletTitle: string | undefined = undefined;
-        let shouldSendStartMessage = true;        
+        let shouldSendStartMessage = true;
+        let chainString: string | undefined = undefined;
 
         if (paramsString){
             let params = paramsString.split('-');
@@ -53,6 +54,9 @@ export class BotStartHelper extends BotHelper {
 
                 if (key == 'r'){
                     referralCode = value;
+                }
+                else if (key == 'c'){
+                    chainString = value;
                 }
                 else if (key == 'ca'){
                     mint = value;
@@ -79,6 +83,16 @@ export class BotStartHelper extends BotHelper {
     
         }
 
+        if (chainString){
+            console.log('BotStartHelper', 'start', 'chainString:', chainString);
+            chainString = chainString.toLowerCase();
+            if (chainString == 'soonbase') { chainString = Chain.SOONBASE_MAINNET; }
+            if (chainString == 'solana') { chainString = Chain.SOLANA; }
+            const chain = chainString as Chain;
+
+            user.defaultChain = chain;
+        }
+
         const userTelegramId = ctx.update.message?.from.id;
         LogManager.log('BotStartHelper', 'start', 'userTelegramId:', userTelegramId, 'referralCode:', referralCode);
 
@@ -95,6 +109,7 @@ export class BotStartHelper extends BotHelper {
             $set: {
                 bots: user.bots,
                 defaultBot: user.defaultBot,
+                defaultChain: user.defaultChain,
             }
         });
 

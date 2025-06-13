@@ -202,6 +202,10 @@ export class BotManager {
     }
 
     static async tryToSendTokenInfo(ctx: Context, query: string, user: IUser){
+        if (query.toLowerCase() == 'chill'){ query = '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3'; }
+        else if (query.toLowerCase() == 'bonk'){ query = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'; }
+        else if (query.toLowerCase() == 'jup'){ query = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'; }
+
         const tokens = await SearchManager.search(user.defaultChain || Chain.SOLANA, query, user.id);
         if (tokens.length > 0 && tokens[0].symbol && !TokenManager.excludedTokens.includes(tokens[0].address)){
             const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
