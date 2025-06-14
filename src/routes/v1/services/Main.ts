@@ -4,7 +4,7 @@ import { validateRequest } from "../../../middlewares/ValidateRequest";
 import { TxParser } from "../../../services/solana/geyser/TxParser";
 import { WalletManager } from "../../../managers/WalletManager";
 import { SwapManager } from "../../../managers/SwapManager";
-import { kServiceKey } from "../../../managers/MicroserviceManager";
+import { kServiceKey } from "../../../managers/microservices/MicroserviceManager";
 import { YellowstoneManager } from "../../../services/solana/geyser/YellowstoneManager";
 import { Chain } from "../../../services/solana/types";
 import { ReferralsManager } from "../../../managers/ReferralsManager";

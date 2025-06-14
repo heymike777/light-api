@@ -56,7 +56,7 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { StatusType, Swap, SwapDex } from "../entities/payments/Swap";
 import { LpMint } from "../entities/tokens/LpMint";
 import { Raydium } from "@raydium-io/raydium-sdk-v2";
-import { MicroserviceManager } from "../managers/MicroserviceManager";
+import { MicroserviceManager } from "../managers/microservices/MicroserviceManager";
 import { TokenPriceManager } from "../managers/TokenPriceManager";
 import { ReferralsManager } from "../managers/ReferralsManager";
 import { UserRefCode } from "../entities/referrals/UserRefCode";

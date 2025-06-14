@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { body, header } from "express-validator";
 import { validateRequest } from "../../../middlewares/ValidateRequest";
-import { kServiceKey } from "../../../managers/MicroserviceManager";
+import { kServiceKey } from "../../../managers/microservices/MicroserviceManager";
 import { Chain } from "../../../services/solana/types";
 import { JupiterManager } from "../../../managers/JupiterManager";
 import { kSolAddress } from "../../../services/solana/Constants";

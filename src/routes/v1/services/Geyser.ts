@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { header } from "express-validator";
 import { validateRequest } from "../../../middlewares/ValidateRequest";
-import { kServiceKey } from "../../../managers/MicroserviceManager";
+import { kServiceKey } from "../../../managers/microservices/MicroserviceManager";
 import { YellowstoneManager } from "../../../services/solana/geyser/YellowstoneManager";
 import { EnvManager } from "../../../managers/EnvManager";
 import { Chain } from "../../../services/solana/types";

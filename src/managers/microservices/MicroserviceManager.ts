@@ -1,9 +1,9 @@
 import axios from "axios";
-import { LogManager } from "./LogManager";
-import { Chain, kChains } from "../services/solana/types";
-import { EnvManager } from "./EnvManager";
-import { SystemNotificationsManager } from "./SytemNotificationsManager";
-import { Helpers } from "../services/helpers/Helpers";
+import { LogManager } from "../LogManager";
+import { Chain, kChains } from "../../services/solana/types";
+import { EnvManager } from "../EnvManager";
+import { SystemNotificationsManager } from "../SytemNotificationsManager";
+import { Helpers } from "../../services/helpers/Helpers";
 
 export const kServiceKey = process.env.MICROSERVICE_KEY!;
 

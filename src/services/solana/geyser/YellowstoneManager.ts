@@ -6,7 +6,7 @@ import { SystemNotificationsManager } from "../../../managers/SytemNotifications
 import { MixpanelManager } from "../../../managers/MixpanelManager";
 import { LogManager } from "../../../managers/LogManager";
 import { EnvManager } from "../../../managers/EnvManager";
-import { MicroserviceManager } from "../../../managers/MicroserviceManager";
+import { MicroserviceManager } from "../../../managers/microservices/MicroserviceManager";
 import { Chain } from "../types";
 
 export enum TxFilter {

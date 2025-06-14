@@ -18,7 +18,7 @@ import { LpMint } from "../entities/tokens/LpMint";
 import { SwapDex } from "../entities/payments/Swap";
 import * as spl from "@solana/spl-token";
 import { RaydiumManager } from "../services/solana/RaydiumManager";
-import { MicroserviceManager } from "./MicroserviceManager";
+import { MicroserviceManager } from "./microservices/MicroserviceManager";
 import { HotToken, IHotToken, IHotTokenModel } from "../entities/tokens/HotToken";
 import { SegaManager } from "../services/solana/svm/SegaManager";
 import { CobaltxManager } from "../services/solana/svm/CobaltxManager";

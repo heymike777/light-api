@@ -11,7 +11,7 @@ import { autoRetry } from "@grammyjs/auto-retry";
 import * as GrammyTypes from "grammy/types";
 import { LogManager } from "../LogManager";
 import { EnvManager } from "../EnvManager";
-import { MicroserviceManager } from "../MicroserviceManager";
+import { MicroserviceManager } from "../microservices/MicroserviceManager";
 import { BotConnectEmailHelper } from "./helpers/BotConnectEmailHelper";
 import { BotRevokeAccountHelper } from "./helpers/BotRevokeAccountHelper";
 import { BotTraderProfilesHelper } from "./helpers/BotTradingProfilesHelper";

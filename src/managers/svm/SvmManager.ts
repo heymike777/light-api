@@ -2,7 +2,7 @@ import { newConnection, newConnectionByChain } from "../../services/solana/lib/s
 import { Chain, ChainConfig, kChains } from "../../services/solana/types";
 import { Connection } from '@solana/web3.js';
 import { LogManager } from "../LogManager";
-import { MicroserviceManager } from "../MicroserviceManager";
+import { MicroserviceManager } from "../microservices/MicroserviceManager";
 import { SolanaManager } from "../../services/solana/SolanaManager";
 import { PublicKey } from "@solana/web3.js";
 
