@@ -4,6 +4,7 @@ import { Chain, kChains } from "../../services/solana/types";
 import { EnvManager } from "../EnvManager";
 import { SystemNotificationsManager } from "../SytemNotificationsManager";
 import { Helpers } from "../../services/helpers/Helpers";
+import { ServiceConnector } from "./ServiceConnector";
 
 export const kServiceKey = process.env.MICROSERVICE_KEY!;
 
@@ -40,6 +41,8 @@ export class MicroserviceManager {
     }
 
     static async receivedTx(geyserId: string, signature: string, txData: string){
+        await ServiceConnector.getInstance().pushGeyserItem(EnvManager.chain, geyserId, signature, txData);
+
         const triesCount = 3;
         for (let index = 0; index < triesCount; index++) {
             try {

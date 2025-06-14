@@ -43,6 +43,7 @@ import { pricesServiceRouter } from './routes/v1/services/Prices';
 import { RabbitManager } from './managers/RabbitManager';
 import { LaserstreamManager } from './services/solana/geyser/LaserstreamManager';
 import { adminRouter } from './routes/v1/Admin';
+import { ServiceConnector } from './managers/microservices/ServiceConnector';
 
 // top of index.js
 process.on('unhandledRejection', (err) => {
@@ -111,6 +112,7 @@ const start = async () => {
     await mongoose.connect(process.env.MONGODB_CONNECTION_URL!);
     LogManager.forceLog('Connected to mongo');
     await connectToRedis();
+    ServiceConnector.getInstance()
 
     // if (EnvManager.isTelegramProcess){
     //     RabbitManager.listenToTelegramMessages();
