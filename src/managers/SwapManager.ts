@@ -35,7 +35,7 @@ import { TradingEventStatus } from "../entities/events/Event";
 
 export class SwapManager {
 
-    static kDefaultEngineId = 'trojan';
+    static kDefaultEngineId = 'lightbot';
     static kNativeEngineId = 'light';
     static engines: Engine[] = [
         {
@@ -44,6 +44,15 @@ export class SwapManager {
             logo: 'https://light.dangervalley.com/static/light.png',
             isSubscriptionRequired: false,
             isExternal: false,
+        },
+        {
+            id: 'lightbot',
+            title: 'Light',
+            logo: 'https://light.dangervalley.com/static/light.png',
+            url: 'https://t.me/light_sol_bot?start=r-heymike777',
+            tokenUrl: 'https://t.me/light_sol_bot?start=r-heymike777-ca-{token}',
+            isSubscriptionRequired: false,
+            isExternal: true,
         },
         {
             id: 'bonkbot',
