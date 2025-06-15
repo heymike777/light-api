@@ -89,7 +89,7 @@ export class ServiceConnector {
     // -------- Geyser --------
 
     async onGeyserItem(itemStr: string): Promise<void> {
-        LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', itemStr);
+        // LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', itemStr);
         try {
             const item: IGeyserItem = JSON.parse(itemStr);
             const jsonParsed = JSON.parse(item.tx);
@@ -115,13 +115,13 @@ export class ServiceConnector {
             timestamp: Date.now(),
         }
         await this.geyserService.pushItem(JSON.stringify(item));
-        LogManager.forceLog('ServiceConnector', 'pushGeyserItem', 'Item:', item);
+        // LogManager.forceLog('ServiceConnector', 'pushGeyserItem', 'Item:', item);
     }
 
     // -------- Telegram --------
 
     async onTelegramMessage(itemStr: string): Promise<void> {
-        LogManager.forceLog('ServiceConnector', 'onTelegramMessage', 'Item:', itemStr);
+        // LogManager.forceLog('ServiceConnector', 'onTelegramMessage', 'Item:', itemStr);
         try {
             const item: ITelegramMessage = JSON.parse(itemStr);
             const message: SendMessageData = JSON.parse(item.message);
@@ -138,7 +138,7 @@ export class ServiceConnector {
             timestamp: Date.now(),
         }
         await this.telegramService.pushItem(JSON.stringify(item));
-        LogManager.forceLog('ServiceConnector', 'pushTelegramMessage', 'Item:', item);
+        // LogManager.forceLog('ServiceConnector', 'pushTelegramMessage', 'Item:', item);
     }
 
     // -------- static --------
