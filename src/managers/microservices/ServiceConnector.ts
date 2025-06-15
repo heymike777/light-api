@@ -1,4 +1,5 @@
 import { TxParser } from "../../services/solana/geyser/TxParser";
+import { YellowstoneManager } from "../../services/solana/geyser/YellowstoneManager";
 import { Chain } from "../../services/solana/types";
 import { SendMessageData } from "../bot/BotTypes";
 import { RedisManager } from "../db/RedisManager";
@@ -12,14 +13,20 @@ import { ConnectorService } from "./IConnectorService";
 export enum ServiceType {
     MAIN = 'main',
     TELEGRAM = 'telegram',
+    GEYSER = 'geyser',
+}
+
+interface IGeyserItem {
+    resubscribe: boolean;
+    timestamp: number;
 }
 
 interface IMainGeyserItem {
     chain: Chain;
     tx: string;
-    timestamp: number;
     geyserId: string;
     signature: string;
+    timestamp: number;
 }
 
 interface ITelegramMessage {
@@ -30,15 +37,22 @@ interface ITelegramMessage {
 export class ServiceConnector {
     private mainService: ConnectorService;
     private telegramService: ConnectorService;
+    private geyserService: ConnectorService;
     
     constructor(){
         this.mainService = new ConnectorService(ServiceType.MAIN);
         if (EnvManager.isMainProcess){
             this.mainService.readItems(this.onMainItem);
         }
+        
         this.telegramService = new ConnectorService(ServiceType.TELEGRAM);
         if (EnvManager.isTelegramProcess){
             this.telegramService.readItems(this.onTelegramMessage);
+        }
+
+        this.geyserService = new ConnectorService(ServiceType.GEYSER);
+        if (EnvManager.isGeyserProcess){
+            this.geyserService.readItems(this.onGeyserItem);
         }
     }
 
@@ -95,6 +109,30 @@ export class ServiceConnector {
         }
         await this.telegramService.pushItem(JSON.stringify(item));
         // LogManager.forceLog('ServiceConnector', 'pushTelegramMessage', 'Item:', item);
+    }
+
+    // -------- Geyser --------
+
+    async onGeyserItem(itemStr: string): Promise<void> {
+        // LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', itemStr);
+        try {
+            const item: IGeyserItem = JSON.parse(itemStr);
+            if (item.resubscribe){
+                await WalletManager.fetchAllWalletAddresses();
+            }
+        } catch (error) {
+            LogManager.error('ServiceConnector', 'onGeyserItem', 'Error parsing item:', error);
+            return;
+        }
+    }
+
+    async pushGeyserResubscribe(): Promise<void> {
+        const item: IGeyserItem = {
+            resubscribe: true,
+            timestamp: Date.now(),
+        }
+        await this.mainService.pushItem(JSON.stringify(item));
+        // LogManager.forceLog('ServiceConnector', 'pushGeyserResubscribe', 'Item:', item);
     }
 
     // -------- static --------

@@ -12,9 +12,9 @@ export class MicroserviceManager {
     // static baseUrl = 'http://127.0.0.1:3340/api/v1/service';
 
     static async geyserResubscribe(){
-        // send POST API to /geyser/resubscribe with axios
-        console.log('MicroserviceManager geyserResubscribe');
+        await ServiceConnector.getInstance().pushGeyserResubscribe();
         
+        /*
         const triesCount = 3;
         for (const key in kChains) {
             const chain = kChains[key];       
@@ -38,6 +38,7 @@ export class MicroserviceManager {
                 }
             }
         }
+        */
     }
 
     static async receivedTx(geyserId: string, signature: string, txData: string){
