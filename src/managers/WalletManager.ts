@@ -33,6 +33,7 @@ import { RedisManager } from "./db/RedisManager";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { EnvManager } from "./EnvManager";
 import { SvmManager } from "./svm/SvmManager";
+import { InlineButton } from "./bot/BotTypes";
 
 export class WalletManager {
 
@@ -373,16 +374,33 @@ export class WalletManager {
                         }
 
                         if (addedTx){
-                            let isTelegramSent = false;
+                            // let isTelegramSent = false;
                             if (chat.user.telegram?.id){
+                                const tokenButtons: InlineButton[] = [];
+                                let tokenIndex = 0;
+                                for (const token of info.tokens) {
+                                    if (TokenManager.isTokenTradable(token.address)){                                        
+                                        if (tokenIndex > 0 && tokenIndex % 3 == 0){
+                                            tokenButtons.push({ id: 'row', text: '' });
+                                        }
+
+                                        tokenButtons.push({ id: `tokens|${token.address}`, text: `${token.symbol}` });
+
+                                        tokenIndex++;
+                                    }
+                                }
+                                console.log('tokenButtons', tokenButtons);
+                                const inlineKeyboard = BotManager.buildInlineKeyboard(tokenButtons);
+
                                 BotManager.sendMessage({                                     
                                     id: `user_${chat.user.id}_signature_${signature}_${Helpers.makeid(12)}`,
                                     userId: chat.user.id,
                                     chatId: chat.user.telegram?.id, 
                                     text: info.message, 
-                                    imageUrl: asset?.image 
+                                    imageUrl: asset?.image,
+                                    inlineKeyboard,
                                 });
-                                isTelegramSent = true;
+                                // isTelegramSent = true;
                             }
 
                             let isPushSent = false;
@@ -678,6 +696,7 @@ export class WalletManager {
             asset,
             transactionApiResponse: txApiResponse,
             changedWallets,
+            tokens,
         };
 
         // if (hasWalletsChanges && chat.id != -1){
