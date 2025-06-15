@@ -75,6 +75,9 @@ export class MicroserviceManager {
     }
 
     static async sendMessageToTelegram(messageData: string){
+        await ServiceConnector.getInstance().pushTelegramMessage(messageData);
+
+        /*
         const triesCount = 3;
         for (let index = 0; index < triesCount; index++) {
             try {
@@ -99,6 +102,7 @@ export class MicroserviceManager {
             }
             await Helpers.sleep(1);
         }
+        */
     }
 
     static async getTokensPrices(chain: Chain, mints: string[]): Promise<{address: string, price: number}[]> {

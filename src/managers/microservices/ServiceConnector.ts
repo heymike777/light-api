@@ -1,13 +1,16 @@
 import { TxParser } from "../../services/solana/geyser/TxParser";
 import { Chain } from "../../services/solana/types";
+import { SendMessageData } from "../bot/BotTypes";
 import { RedisManager } from "../db/RedisManager";
 import { EnvManager } from "../EnvManager";
 import { LogManager } from "../LogManager";
+import { RabbitManager } from "../RabbitManager";
 import { SwapManager } from "../SwapManager";
 import { WalletManager } from "../WalletManager";
 
 export enum ServiceType {
     GEYSER = 'geyser',
+    TELEGRAM = 'telegram',
 }
 
 interface IConnectorService {
@@ -63,15 +66,27 @@ interface IGeyserItem {
     signature: string;
 }
 
+interface ITelegramMessage {
+    message: string;
+    timestamp: number;
+}
+
 export class ServiceConnector {
     private geyserService: ConnectorService;
-
+    private telegramService: ConnectorService;
+    
     constructor(){
         this.geyserService = new ConnectorService(ServiceType.GEYSER);
         if (EnvManager.isMainProcess){
             this.geyserService.readItems(this.onGeyserItem);
         }
+        this.telegramService = new ConnectorService(ServiceType.TELEGRAM);
+        if (EnvManager.isTelegramProcess){
+            this.telegramService.readItems(this.onTelegramMessage);
+        }
     }
+
+    // -------- Geyser --------
 
     async onGeyserItem(itemStr: string): Promise<void> {
         LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', itemStr);
@@ -101,6 +116,29 @@ export class ServiceConnector {
         }
         await this.geyserService.pushItem(JSON.stringify(item));
         LogManager.forceLog('ServiceConnector', 'pushGeyserItem', 'Item:', item);
+    }
+
+    // -------- Telegram --------
+
+    async onTelegramMessage(itemStr: string): Promise<void> {
+        LogManager.forceLog('ServiceConnector', 'onTelegramMessage', 'Item:', itemStr);
+        try {
+            const item: ITelegramMessage = JSON.parse(itemStr);
+            const message: SendMessageData = JSON.parse(item.message);
+            await RabbitManager.receivedMessage(message);
+        } catch (error) {
+            LogManager.error('ServiceConnector', 'onTelegramMessage', 'Error parsing item:', error);
+            return;
+        }
+    }
+
+    async pushTelegramMessage(messageData: string): Promise<void> {
+        const item: ITelegramMessage = {
+            message: messageData,
+            timestamp: Date.now(),
+        }
+        await this.telegramService.pushItem(JSON.stringify(item));
+        LogManager.forceLog('ServiceConnector', 'pushTelegramMessage', 'Item:', item);
     }
 
     // -------- static --------

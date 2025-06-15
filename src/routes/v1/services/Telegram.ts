@@ -9,6 +9,7 @@ import { LogManager } from "../../../managers/LogManager";
 
 const router = express.Router();
 
+//TODO: remove this route. it not used anymore
 router.post(
     '/api/v1/service/telegram/send-message',
     [
