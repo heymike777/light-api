@@ -41,7 +41,7 @@ export class MicroserviceManager {
     }
 
     static async receivedTx(geyserId: string, signature: string, txData: string){
-        await ServiceConnector.getInstance().pushGeyserItem(EnvManager.chain, geyserId, signature, txData);
+        await ServiceConnector.getInstance().pushMainGeyserItem(EnvManager.chain, geyserId, signature, txData);
 
         /*
         const triesCount = 3;

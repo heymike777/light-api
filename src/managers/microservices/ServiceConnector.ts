@@ -7,55 +7,11 @@ import { LogManager } from "../LogManager";
 import { RabbitManager } from "../RabbitManager";
 import { SwapManager } from "../SwapManager";
 import { WalletManager } from "../WalletManager";
+import { ConnectorService } from "./IConnectorService";
 
 export enum ServiceType {
-    GEYSER = 'geyser',
+    MAIN = 'main',
     TELEGRAM = 'telegram',
-}
-
-interface IConnectorService {
-    listId: ServiceType;
-    pushItem(data: string): Promise<boolean>;
-    getItem(): Promise<string | undefined>;
-    readItems(callback: (item: string) => void): Promise<void>;
-}
-
-class ConnectorService implements IConnectorService {
-    listId: ServiceType;
-
-    constructor(listId: ServiceType){
-        this.listId = listId;
-    }
-
-    async pushItem(data: string): Promise<boolean> {
-        try {
-            await RedisManager.instance?.client?.rPush(`stream:${this.listId}`, data);
-        } catch (error) {
-            LogManager.error('ServiceConnector', 'pushItem', 'Error pushing item to service:', error);
-            return false;
-        }
-
-        return true;
-    }
-
-    async getItem(): Promise<string | undefined> {
-        try {
-            const item = await RedisManager.instance?.client?.lPop(`stream:${this.listId}`);
-            return item || undefined;
-        } catch (error) {
-            LogManager.error('ServiceConnector', 'getItem', 'Error getting item from service:', error);
-        }
-        return undefined;
-    }
-
-    async readItems(callback: (item: string) => void): Promise<void> {
-        while (true){
-            const item = await this.getItem();
-            if (item){
-                callback(item);
-            }
-        }
-    }
 }
 
 interface IGeyserItem {
@@ -72,13 +28,13 @@ interface ITelegramMessage {
 }
 
 export class ServiceConnector {
-    private geyserService: ConnectorService;
+    private mainService: ConnectorService;
     private telegramService: ConnectorService;
     
     constructor(){
-        this.geyserService = new ConnectorService(ServiceType.GEYSER);
+        this.mainService = new ConnectorService(ServiceType.MAIN);
         if (EnvManager.isMainProcess){
-            this.geyserService.readItems(this.onGeyserItem);
+            this.mainService.readItems(this.onMainItem);
         }
         this.telegramService = new ConnectorService(ServiceType.TELEGRAM);
         if (EnvManager.isTelegramProcess){
@@ -86,9 +42,9 @@ export class ServiceConnector {
         }
     }
 
-    // -------- Geyser --------
+    // -------- Main --------
 
-    async onGeyserItem(itemStr: string): Promise<void> {
+    async onMainItem(itemStr: string): Promise<void> {
         // LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', itemStr);
         try {
             const item: IGeyserItem = JSON.parse(itemStr);
@@ -106,7 +62,7 @@ export class ServiceConnector {
         }
     }
 
-    async pushGeyserItem(chain: Chain, geyserId: string, signature: string, tx: string): Promise<void> {
+    async pushMainGeyserItem(chain: Chain, geyserId: string, signature: string, tx: string): Promise<void> {
         const item: IGeyserItem = {
             chain,
             geyserId,
@@ -114,7 +70,7 @@ export class ServiceConnector {
             tx,
             timestamp: Date.now(),
         }
-        await this.geyserService.pushItem(JSON.stringify(item));
+        await this.mainService.pushItem(JSON.stringify(item));
         // LogManager.forceLog('ServiceConnector', 'pushGeyserItem', 'Item:', item);
     }
 
