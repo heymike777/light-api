@@ -74,7 +74,7 @@ export class SvmManager {
 
     async processTransaction(signature: string) {
         try {
-            console.log(`Processing transaction: ${signature} on chain: ${this.chain}`);
+            // console.log(`Processing transaction: ${signature} on chain: ${this.chain}`);
             const parsedTx = await SolanaManager.getParsedTransaction(this.chain, signature);
 
             if (parsedTx && !parsedTx.meta?.err) {
