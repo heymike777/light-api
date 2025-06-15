@@ -14,7 +14,7 @@ export enum ServiceType {
     TELEGRAM = 'telegram',
 }
 
-interface IGeyserItem {
+interface IMainGeyserItem {
     chain: Chain;
     tx: string;
     timestamp: number;
@@ -45,9 +45,9 @@ export class ServiceConnector {
     // -------- Main --------
 
     async onMainItem(itemStr: string): Promise<void> {
-        // LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', itemStr);
+        // LogManager.forceLog('ServiceConnector', 'onMainItem', 'Item:', itemStr);
         try {
-            const item: IGeyserItem = JSON.parse(itemStr);
+            const item: IMainGeyserItem = JSON.parse(itemStr);
             const jsonParsed = JSON.parse(item.tx);
             
             const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(jsonParsed);
@@ -57,13 +57,13 @@ export class ServiceConnector {
 
             SwapManager.receivedConfirmationForSignature(item.chain, item.signature, parsedTransactionWithMeta);
         } catch (error) {
-            LogManager.error('ServiceConnector', 'onGeyserItem', 'Error parsing item:', error);
+            LogManager.error('ServiceConnector', 'onMainItem', 'Error parsing item:', error);
             return;
         }
     }
 
     async pushMainGeyserItem(chain: Chain, geyserId: string, signature: string, tx: string): Promise<void> {
-        const item: IGeyserItem = {
+        const item: IMainGeyserItem = {
             chain,
             geyserId,
             signature,
@@ -71,7 +71,7 @@ export class ServiceConnector {
             timestamp: Date.now(),
         }
         await this.mainService.pushItem(JSON.stringify(item));
-        // LogManager.forceLog('ServiceConnector', 'pushGeyserItem', 'Item:', item);
+        // LogManager.forceLog('ServiceConnector', 'pushMainGeyserItem', 'Item:', item);
     }
 
     // -------- Telegram --------
