@@ -1,7 +1,10 @@
+import { TxParser } from "../../services/solana/geyser/TxParser";
 import { Chain } from "../../services/solana/types";
 import { RedisManager } from "../db/RedisManager";
 import { EnvManager } from "../EnvManager";
 import { LogManager } from "../LogManager";
+import { SwapManager } from "../SwapManager";
+import { WalletManager } from "../WalletManager";
 
 export enum ServiceType {
     GEYSER = 'geyser',
@@ -46,7 +49,6 @@ class ConnectorService implements IConnectorService {
         while (true){
             const item = await this.getItem();
             if (item){
-                console.log(`ServiceConnector:${this.listId}`, 'readItems', 'Item:', item);
                 callback(item);
             }
         }
@@ -71,8 +73,22 @@ export class ServiceConnector {
         }
     }
 
-    async onGeyserItem(item: string): Promise<void> {
-        LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', item);
+    async onGeyserItem(itemStr: string): Promise<void> {
+        LogManager.forceLog('ServiceConnector', 'onGeyserItem', 'Item:', itemStr);
+        try {
+            const item: IGeyserItem = JSON.parse(itemStr);
+            const jsonParsed = JSON.parse(item.tx);
+            
+            const parsedTransactionWithMeta = await TxParser.parseGeyserTransactionWithMeta(jsonParsed);
+            if (parsedTransactionWithMeta){
+                WalletManager.processWalletTransaction(item.chain, parsedTransactionWithMeta, item.geyserId);
+            }
+
+            SwapManager.receivedConfirmationForSignature(item.chain, item.signature, parsedTransactionWithMeta);
+        } catch (error) {
+            LogManager.error('ServiceConnector', 'onGeyserItem', 'Error parsing item:', error);
+            return;
+        }
     }
 
     async pushGeyserItem(chain: Chain, geyserId: string, signature: string, tx: string): Promise<void> {

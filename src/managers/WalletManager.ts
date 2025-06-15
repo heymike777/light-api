@@ -219,6 +219,7 @@ export class WalletManager {
     static async processWalletTransaction(chain: Chain, tx: web3.ParsedTransactionWithMeta, geyserId: string) {
         try{
             const signature = tx.transaction.signatures[0];
+            LogManager.forceLog('WalletManager', 'processWalletTransaction', 'signature', signature, 'geyserId', geyserId);
                         
             if (!tx.transaction || !tx.meta){
                 LogManager.error('processWalletTransaction', 'tx not found', signature);
