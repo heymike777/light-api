@@ -95,7 +95,7 @@ export class UserManager {
             let fullName = from.first_name || '' + (from.last_name ? ' ' + from.last_name : '');
             fullName = fullName.trim();
             const count = await User.countDocuments({});
-            SystemNotificationsManager.sendSystemMessage(`New user (${count}): @${from.username} (${fullName})`);
+            SystemNotificationsManager.sendSystemMessage(`🔵 New user (${count}): @${from.username} (${fullName})`);
 
             if (this.cacheEnabled){
                 this.cachedUsers.push({ user: newUser, createdAt: now });
