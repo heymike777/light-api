@@ -9,7 +9,8 @@ import { EventsManager } from "../../EventsManager";
 import { SwapManager } from "../../SwapManager";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
 import { ChainManager } from "../../chains/ChainManager";
-import { TradingEvent } from "../../../entities/events/Event";
+import { TradingEvent } from "../../../entities/events/TradingEvent";
+import { Chain } from "../../../services/solana/types";
 
 export class BotEventsHelper extends BotHelper {
 
@@ -121,9 +122,12 @@ export class BotEventsHelper extends BotHelper {
         let buttons: InlineButton[] = [];
         buttons.push({ id: `events|refresh`, text: '↻ Refresh' });
 
-        if (event.chain && event.chain != user.defaultChain){
-            buttons.push({ id: 'row', text: '' });
-            buttons.push({ id: `settings|set_chain|${event.chain}`, text: `🔗 Switch to ${ChainManager.getChainTitle(event.chain)}` });
+        const userChain = user.defaultChain || Chain.SOLANA;
+        if (event.chains && event.chains.includes(userChain)==false){
+            for (const chain of event.chains){
+                buttons.push({ id: 'row', text: '' });
+                buttons.push({ id: `settings|set_chain|${chain}`, text: `🔗 Switch to ${ChainManager.getChainTitle(chain)}` });
+            }
         }
 
         const eventTokens = event.tokens || [];

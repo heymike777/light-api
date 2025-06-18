@@ -67,7 +67,7 @@ import { EncryptionManager } from "../managers/EncryptionManager";
 import { PreWallet } from "../entities/PreWallet";
 import { LaserstreamManager } from "./solana/geyser/LaserstreamManager";
 import { HotToken } from "../entities/tokens/HotToken";
-import { TradingEvent } from "../entities/events/Event";
+import { TradingEvent } from "../entities/events/TradingEvent";
 import { EventsManager } from "../managers/EventsManager";
 import { CronManager } from "../managers/CronManager";
 

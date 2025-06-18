@@ -1,4 +1,4 @@
-import { ITradingEvent, TradingEvent, TradingEventStatus } from "../entities/events/Event";
+import { ITradingEvent, TradingEvent, TradingEventStatus } from "../entities/events/TradingEvent";
 import { StatusType, Swap } from "../entities/payments/Swap";
 import { IUserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser } from "../entities/users/User";
@@ -54,7 +54,7 @@ export class EventsManager {
         event.endAt = new Date('2025-06-20T23:59:59Z');
         event.description = `Trade $CHILL on Sonic SVM using Light and earn points to win prizes! \n\nThe more $CHILL you trade, the more points you earn.`;
         event.status = TradingEventStatus.UPCOMING;
-        event.chain = Chain.SONIC;
+        event.chains = [Chain.SONIC];
         event.image = 'https://light.dangervalley.com/events/chill_1.png';
         event.tradingPoints = {
             'sonic:7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': 1000, // 1000 points for each $1 traded of CHILL on Sonic SVM
