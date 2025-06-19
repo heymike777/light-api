@@ -71,6 +71,7 @@ export class CronManager {
                 TokenManager.clearOldSwaps();
                 SubscriptionManager.cleanExpiredGiftCardSubscriptions();
                 TokenManager.refreshHotTokens();
+                EventsManager.recalculateLeaderboardForActiveEvents();
             });
 
             cron.schedule('5 1 * * *', () => {

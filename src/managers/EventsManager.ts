@@ -1,8 +1,10 @@
 import { ITradingEvent, TradingEvent, TradingEventStatus } from "../entities/events/TradingEvent";
+import { TradingEventPoints } from "../entities/events/TradingEventPoints";
 import { StatusType, Swap } from "../entities/payments/Swap";
-import { IUserTraderProfile } from "../entities/users/TraderProfile";
+import { IUserTraderProfile, UserTraderProfile } from "../entities/users/TraderProfile";
 import { IUser } from "../entities/users/User";
 import { Chain } from "../services/solana/types";
+import { TraderProfilesManager } from "./TraderProfilesManager";
 
 export class EventsManager {
 
@@ -45,6 +47,16 @@ export class EventsManager {
 
         // If no events found, return undefined
         return undefined;
+    }
+
+    static async getEventById(eventId: string): Promise<ITradingEvent | undefined> {
+        const event = await TradingEvent.findById(eventId).exec();
+
+        if (!event){
+            return undefined;
+        }
+
+        return event;
     }
 
     static async createChillEvent() {
@@ -112,11 +124,29 @@ export class EventsManager {
         }, { $set: { status: TradingEventStatus.ACTIVE } });
     }
 
-    static async calculateEventPointsForTradingProfile(event: ITradingEvent, traderProfile: IUserTraderProfile): Promise<number> {
+    static async calculateEventPointsForTradingProfile(event: ITradingEvent, traderProfiles: IUserTraderProfile[]): Promise<{ [traderProfileId: string]: number }> {
+        const ids = traderProfiles.map(tp => tp.id);
+        const points = await TradingEventPoints.find({ eventId: event.id, traderProfileId: { $in: ids } });
+        const result: { [traderProfileId: string]: number } = {};
+        for (const point of points){
+            result[point.traderProfileId] = point.points;
+        }
+        return result;
+    }
+
+    static async recalculateLeaderboard(eventId: string) {
+        console.log('recalculateLeaderboard', eventId);
+
+        const event = await EventsManager.getEventById(eventId);
+        if (!event){
+            return;
+        }        
+
+        // console.log('recalculateLeaderboard', event.title);
+        
         const pipeline = [
             {
                 $match: {
-                    traderProfileId: traderProfile.id,
                     'status.type': StatusType.COMPLETED,
                     points: { $exists: true },
                     createdAt: { $gte: event.startAt, $lte: event.endAt }
@@ -124,6 +154,8 @@ export class EventsManager {
             },
             {
                 $project: {
+                    traderProfileId: 1,
+                    userId: 1,
                     eventPoints: {
                         $ifNull: [
                             { $toDouble: { $getField: { field: event.id, input: '$points' } } },
@@ -134,14 +166,68 @@ export class EventsManager {
             },
             {
                 $group: {
-                    _id: null,
+                    _id: '$traderProfileId',
+                    userId: { $first: '$userId' },
                     totalPoints: { $sum: '$eventPoints' }
                 }
             }
         ];
 
-        const result = await Swap.aggregate(pipeline);
-        return result[0]?.totalPoints || 0;
+        const results = await Swap.aggregate(pipeline);
+        // console.log('recalculateLeaderboard', 'results:', results);
+        for (const result of results){
+            const traderProfileId = result._id;
+            const userId = result.userId;
+            const points = result.totalPoints;
+
+            const existingTradingEventPoints = await TradingEventPoints.findOne({ eventId: eventId, traderProfileId: traderProfileId });
+            if (existingTradingEventPoints){
+                if (existingTradingEventPoints.points != points){
+                    await TradingEventPoints.updateOne({ _id: existingTradingEventPoints.id }, { $set: { points: points, updatedAt: new Date() } });
+                }
+            }
+            else {
+                const tradingEventPoints = new TradingEventPoints();
+                tradingEventPoints.eventId = eventId;
+                tradingEventPoints.userId = userId;
+                tradingEventPoints.traderProfileId = traderProfileId;
+                tradingEventPoints.points = points;
+                await tradingEventPoints.save();
+            }
+        }
+    }
+
+    static async recalculateLeaderboardForActiveEvents() {
+        const activeEvents = await TradingEvent.find({
+            status: TradingEventStatus.ACTIVE
+        });
+        for (const event of activeEvents){
+            await EventsManager.recalculateLeaderboard(event.id);
+        }
+
+        //recalculate leaderboard for events that ended less than 2 hours ago
+        const endedEvents = await TradingEvent.find({
+            status: TradingEventStatus.COMPLETED,
+            endAt: { $lte: new Date(new Date().getTime() - 2 * 60 * 60 * 1000) }
+        });
+        for (const event of endedEvents){
+            await EventsManager.recalculateLeaderboard(event.id);
+        }
+    }
+
+    static async getLeaderboardForEvent(eventId: string): Promise<{ userId: string, traderProfileId: string, walletAddress: string, points: number }[]> {
+        const points = await TradingEventPoints.find({ eventId: eventId }).sort({ points: -1 }).limit(20);
+        const traderProfileIds = points.map(p => p.traderProfileId);
+        const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfileIds } });
+
+        const result: { userId: string, traderProfileId: string, walletAddress: string, points: number }[] = [];
+        for (const point of points){
+            const traderProfile = traderProfiles.find(tp => tp.id == point.traderProfileId);
+            if (traderProfile){
+                result.push({ userId: point.userId, traderProfileId: point.traderProfileId, walletAddress: traderProfile.encryptedWallet?.publicKey || 'unknown', points: point.points });
+            }
+        }
+        return result;
     }
 
 }

@@ -70,6 +70,7 @@ import { HotToken } from "../entities/tokens/HotToken";
 import { TradingEvent } from "../entities/events/TradingEvent";
 import { EventsManager } from "../managers/EventsManager";
 import { CronManager } from "../managers/CronManager";
+import { TradingEventPoints } from "../entities/events/TradingEventPoints";
 
 export class MigrationManager {
 
@@ -342,6 +343,11 @@ export class MigrationManager {
         //     console.log('MigrationManager', 'migrate', 'no active event found');
         // }
 
+        // const event = await EventsManager.getActiveEvent();
+        // if (event){
+        //     await EventsManager.recalculateLeaderboard(event.id);
+        // }
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
@@ -455,6 +461,7 @@ export class MigrationManager {
         await HotToken.syncIndexes();
         await Swap.syncIndexes();
         await TradingEvent.syncIndexes();
+        await TradingEventPoints.syncIndexes();
     }
 
     static async processTx(chain: Chain, signature: string) {

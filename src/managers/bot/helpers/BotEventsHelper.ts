@@ -9,8 +9,10 @@ import { EventsManager } from "../../EventsManager";
 import { SwapManager } from "../../SwapManager";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
 import { ChainManager } from "../../chains/ChainManager";
-import { TradingEvent } from "../../../entities/events/TradingEvent";
+import { ITradingEvent, TradingEvent } from "../../../entities/events/TradingEvent";
 import { Chain } from "../../../services/solana/types";
+import { Helpers } from "../../../services/helpers/Helpers";
+import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 
 export class BotEventsHelper extends BotHelper {
 
@@ -30,47 +32,34 @@ export class BotEventsHelper extends BotHelper {
             const replyMessage = await this.buildEventMessage(user, botUsername);
             return await super.commandReceived(ctx, user, replyMessage);
         }
-        else if (buttonId == 'events|refresh'){
-            await this.refresh(ctx, user);
+        else if (buttonId && buttonId.startsWith('events|')){
+            const parts = buttonId.split('|');
+            if (parts.length >= 3){
+                const type = parts[1];
+                const eventId = parts[2];
+                if (type == 'refresh'){
+                    console.log('refresh event', eventId);
+                    await this.refresh(ctx, user, eventId);
+                }
+                else if (type == 'leaderboard'){
+                    if (parts.length == 4 && parts[3] == 'refresh'){
+                        await this.refreshLeaderboard(ctx, user, eventId);
+                    }
+                    else {
+                        const replyMessage = await this.buildLeaderboardMessage(user, eventId);
+                        return await super.commandReceived(ctx, user, replyMessage);
+                    }
+                }
+                else if (type == 'special'){
+                    // await this.showSpecialPrizes(ctx, user, eventId);
+                }
+            }
         } 
-        // else if (buttonId && buttonId.startsWith('settings|set_chain|')){
-        //     const parts = buttonId.split('|');
-        //     if (parts.length >= 3){
-        //         const chain = parts[2] as Chain;
-        //         user.defaultChain = chain;
-        //         await User.updateOne({ _id: user.id }, { $set: { defaultChain: chain } });
-        //         await this.refresh(ctx, user);
-
-        //         // send message to user about chain change
-        //         const buttons: InlineButton[] = [];
-        //         buttons.push({ id: 'tokens|hot', text: '🔥 Hot tokens' });
-        //         buttons.push({ id: 'row', text: '' });
-        //         if (chain != Chain.SOLANA){
-        //             const link = ChainManager.getBridgeUrl(chain);
-        //             if (link) { buttons.push({ id: 'bridge', text: '🌉 Bridge', link }); }
-        //         }
-        //         buttons.push({ id: 'settings', text: '⚙️ Settings' });
-
-        //         const markup = BotManager.buildInlineKeyboard(buttons);
-        //         const chainTitle = ChainManager.getChainTitle(chain);
-        //         const message = `✅ Your chain switched to: ${chainTitle}\n\nYou can trade token on ${chainTitle} now. Just send me the token address or click "Hot tokens" to find trading tokens.`;
-        //         await BotManager.reply(ctx, message, { reply_markup: markup });
-        //     }
-        // }
-        // else if (buttonId && buttonId.startsWith('settings|')){
-        //     const parts = buttonId.split('|');
-        //     if (parts.length == 4){                
-        //     }
-        //     else {
-        //         LogManager.error('Invalid buttonId:', buttonId);
-        //     }
-        // }
     }
 
-    async refresh(ctx: Context, user: IUser) {
+    async refresh(ctx: Context, user: IUser, eventId: string) {
         const botUsername = BotManager.getBotUsername(ctx);
-
-        const message = await this.buildEventMessage(user, botUsername);
+        const message = await this.buildEventMessage(user, botUsername, eventId);
 
         if (message.photo){
             await BotManager.editMessageWithPhoto(ctx, message.photo, message.text, message.markup);
@@ -80,8 +69,27 @@ export class BotEventsHelper extends BotHelper {
         }
     }
 
-    async buildEventMessage(user: IUser, botUsername: string): Promise<Message> {
-        const event = await EventsManager.getActiveEvent();
+    async refreshLeaderboard(ctx: Context, user: IUser, eventId: string) {
+        const message = await this.buildLeaderboardMessage(user, eventId);
+
+        if (message.photo){
+            await BotManager.editMessageWithPhoto(ctx, message.photo, message.text, message.markup);
+        }
+        else {
+            await BotManager.editMessage(ctx, message.text, message.markup);
+        }
+    }
+
+    async buildEventMessage(user: IUser, botUsername: string, eventId?: string): Promise<Message> {
+        let event: ITradingEvent | undefined = undefined;
+
+        if (eventId){
+            event = await EventsManager.getEventById(eventId);
+        }
+
+        if (!event){
+            event = await EventsManager.getActiveEvent()
+        }
 
         if (!event) {
             return { text: '🚫 No trading events live right now.\n\n🚀 Stay tuned — new opportunities drop often!' };
@@ -107,20 +115,21 @@ export class BotEventsHelper extends BotHelper {
             text += `\n\n<b>Your points:</b>`;
 
             const traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
+            const points = await EventsManager.calculateEventPointsForTradingProfile(event, traderProfiles);
             for (const traderProfile of traderProfiles) {
-                const points = await EventsManager.calculateEventPointsForTradingProfile(event, traderProfile);
+                const eventPoints = points[traderProfile.id] || 0;
+
                 if (traderProfiles.length > 1){
-                    text += `\n${traderProfile.title}: ${points}`;
+                    text += `\n${traderProfile.title}: ${eventPoints}`;
                 }
                 else {
-                    text += ` ${points}`;
+                    text += ` ${eventPoints}`;
                 }
             }
-
         }
 
         let buttons: InlineButton[] = [];
-        buttons.push({ id: `events|refresh`, text: '↻ Refresh' });
+        buttons.push({ id: `events|refresh|${event.id}`, text: '↻ Refresh' });
 
         const userChain = user.defaultChain || Chain.SOLANA;
         if (event.chains && event.chains.includes(userChain)==false){
@@ -143,10 +152,69 @@ export class BotEventsHelper extends BotHelper {
 
         //TODO: add Leaderboard button
         buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: `events|${event.id}|leaderboard`, text: '🏆 Leaderboard' });
+        buttons.push({ id: `events|leaderboard|${event.id}`, text: '🏆 Leaderboard' });
 
         buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: `events|${event.id}|special`, text: '🎁 Special prizes' });
+        buttons.push({ id: `events|special|${event.id}`, text: '🎁 Special prizes' });
+
+        const markup = BotManager.buildInlineKeyboard(buttons);
+        return { 
+            text, 
+            markup, 
+            photo: event.image, 
+            buttons: buttons 
+        };
+    }
+
+    async buildLeaderboardMessage(user: IUser, eventId: string): Promise<Message> {
+        const event = await EventsManager.getEventById(eventId);
+
+        if (!event) {
+            return { text: '🚫 Event not found' };
+        }
+
+        console.log('event', event);
+
+        const leaderboard = await EventsManager.getLeaderboardForEvent(eventId);
+
+        let text = '';
+        text += `<b>${event.title}</b>`;
+        text += `\n`;
+
+        const chain = (event.chains && event.chains.length > 0) ? event.chains[0] : Chain.SOLANA;
+
+        let index = 0;
+        for (const entry of leaderboard){
+            const explorerUrl = ExplorerManager.getUrlToAddress(chain, entry.walletAddress);
+
+            text += `\n${index + 1}. ${entry.points} - <a href="${explorerUrl}">${Helpers.prettyWallet(entry.walletAddress)}</a>`;
+            //TODO: if that's your trader profile, add " (you)"
+            if (entry.userId == user.id){
+                text += ` (you)`;
+            }
+            index++;
+        }
+
+        text += `\n\n(updated every hour)`;
+
+        // if (event.status == 'active') {
+        //     text += `\n\n<b>Your points:</b>`;
+
+        //     const traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
+        //     for (const traderProfile of traderProfiles) {
+        //         const points = await EventsManager.calculateEventPointsForTradingProfile(event, traderProfile);
+        //         if (traderProfiles.length > 1){
+        //             text += `\n${traderProfile.title}: ${points}`;
+        //         }
+        //         else {
+        //             text += ` ${points}`;
+        //         }
+        //     }
+
+        // }
+
+        const buttons: InlineButton[] = [];
+        buttons.push({ id: `events|leaderboard|${event.id}|refresh`, text: '↻ Refresh' });
 
         const markup = BotManager.buildInlineKeyboard(buttons);
         return { 
