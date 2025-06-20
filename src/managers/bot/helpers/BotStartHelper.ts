@@ -181,7 +181,7 @@ export class BotStartHelper extends BotHelper {
         ];
 
         const replyMessage: Message = {
-            photo: 'https://light.dangervalley.com/static/telegram/start2.png',
+            photo: 'https://light.dangervalley.com/static/telegram/start3.png',
             text: '🚀 Light - trading engine on Solana.\n' + 
             '\n' +
 
