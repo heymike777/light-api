@@ -82,9 +82,17 @@ export class EventsManager {
     }
 
     static async createSoonEvent() {
+        const eventTitle = 'SOON RUSH';
+        const existingEvent = await TradingEvent.findOne({
+            title: eventTitle
+        });
+        if (existingEvent){
+            return;
+        }
+
         const event = new TradingEvent();
-        event.title = 'SOON RUSH';
-        event.startAt = new Date('2025-06-20T00:00:00Z');
+        event.title = eventTitle;
+        event.startAt = new Date('2025-06-20T11:00:00Z');
         event.endAt = new Date('2025-06-27T15:59:59Z');
         event.description = `Trade SOON, svmBNB, and soonBase on Light to win your share of 5,000 SOON + exclusive prizes \n\nYou should make at least $100 in volume to be eligible for the prizes. The more you trade, the more $SOON you win.\n\nIn addition, we have a few special prizes - anyone can win them, no matter how much you trade (still have to make the min $100 in volume).`;
         event.status = TradingEventStatus.UPCOMING;
@@ -103,7 +111,7 @@ export class EventsManager {
             description: `We are giving away 3 <a href="https://www.tensor.trade/trade/danger_valley_ducks">Danger Valley Ducks</a> NFTs! 🦆
 
 Here's how to win one:
-1. <b>Best X Thread</b> – Share your experience with Light in an X thread, tag <a href="https://x.com/lightdotapp">@lightdotapp</a>, and include your referral link. The most insightful or creative post wins!
+1. <b>Best X Thread</b> – Share your experience with Light in an X thread, tag <a href="https://x.com/lightdotapp">@lightdotapp</a>, <a href="https://x.com/soon_svm">@soon_svm</a>, <a href="https://x.com/cobaltx_io">@cobaltx_io</a>, and <a href="https://x.com/danger_valley">@danger_valley</a>, and include your Light's referral link. The most insightful or creative post wins!
 2. <b>Top Referrer</b> – Bring in the most new users to Light during the event and claim your Duck.
 3. <b>Most Active Referrals</b> – The third NFT goes to the person whose referrals generate the highest trading volume during the event.
 

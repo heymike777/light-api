@@ -6,6 +6,7 @@ import { UserManager } from "../../UserManager";
 import { BotManager } from "../BotManager";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { ConfigManager } from "../../ConfigManager";
+import { EventsManager } from "../../EventsManager";
 
 export class BotAdminHelper extends BotHelper {
 
@@ -45,6 +46,13 @@ export class BotAdminHelper extends BotHelper {
             const { message, buttons } = await this.buildAdminMessage(user, ctx);
             const markup = BotManager.buildInlineKeyboard(buttons);
             await BotManager.editMessage(ctx, message, markup);
+        }
+        else if (buttonId && buttonId == 'admin|create_event'){
+            await EventsManager.createSoonEvent();
+            await BotManager.reply(ctx, 'Event created ✅');
+            // const { message, buttons } = await this.buildAdminMessage(user, ctx);
+            // const markup = BotManager.buildInlineKeyboard(buttons);
+            // await BotManager.editMessage(ctx, message, markup);
         }
         else {
             await super.commandReceived(ctx, user);
@@ -97,6 +105,9 @@ export class BotAdminHelper extends BotHelper {
         else{
             buttons.push({ id: `admin|ref_payouts|true`, text: `🔴 Ref payouts` });
         }
+        buttons.push({ id: `row`, text: '' });
+        buttons.push({ id: `admin|create_event`, text: '➕ Create event' });
+
 
         return { message, buttons };
     }
