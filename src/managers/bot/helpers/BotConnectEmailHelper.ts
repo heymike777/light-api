@@ -26,7 +26,6 @@ export class BotConnectEmailHelper extends BotHelper {
         await super.commandReceived(ctx, user);
     }
 
-
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
         LogManager.log('BotConnectEmailHelper', 'messageReceived', message.text);
 

@@ -22,7 +22,12 @@ export interface ITradingEvent extends mongoose.Document {
     chains?: Chain[];    
     tradingPoints?: { [key: string]: number; }; // for example, { '<bonk mint>': 1250, '*': 1000 }. For all tokens, use '*'. 1250 points for every dollar traded on BONK, 1000 points for every dollar traded on any other token
     tokens?: {mint: string, symbol: string}[]; // tokens that are traded in the event
-
+    special?: {
+        description: string;
+        image?: string;
+        shouldAcceptData: boolean;
+    }
+    
     updatedAt?: Date;
     createdAt: Date;
 }
@@ -35,6 +40,7 @@ export const TradingEventSchema = new mongoose.Schema<ITradingEvent>({
     status: { type: String },
     image: { type: String },
     chains: { type: Array }, // optional, can be used to filter events by chain
+    special: { type: Mixed },
 
     tradingPoints: { type: Mixed },
     tokens: { type: Array },

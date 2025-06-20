@@ -81,6 +81,40 @@ export class EventsManager {
         await event.save();
     }
 
+    static async createSoonEvent() {
+        const event = new TradingEvent();
+        event.title = 'SOON RUSH';
+        event.startAt = new Date('2025-06-20T00:00:00Z');
+        event.endAt = new Date('2025-06-27T15:59:59Z');
+        event.description = `Trade SOON, svmBNB, and soonBase on Light to win your share of 5,000 SOON + exclusive prizes \n\nYou should make at least $100 in volume to be eligible for the prizes. The more you trade, the more $SOON you win.\n\nIn addition, we have a few special prizes - anyone can win them, no matter how much you trade (still have to make the min $100 in volume).`;
+        event.status = TradingEventStatus.UPCOMING;
+        event.chains = [Chain.SOON_MAINNET, Chain.SVMBNB_MAINNET, Chain.SOONBASE_MAINNET];
+        event.image = 'https://light.dangervalley.com/events/soon_rush.png';
+        event.tradingPoints = {
+            // 'sonic:7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': 1000, // 1000 points for each $1 traded of CHILL on Sonic SVM
+            // 'sonic:mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': 500, 
+            '*': 1000, // 0 points for any other token
+        }
+        // event.tokens = [
+        //     // { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', symbol: 'CHILL' },
+        //     // { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', symbol: 'SONIC' }
+        // ];
+        event.special = {
+            description: `We are giving away 3 <a href="https://www.tensor.trade/trade/danger_valley_ducks">Danger Valley Ducks</a> NFTs! 🦆
+
+Here's how to win one:
+1. <b>Best X Thread</b> – Share your experience with Light in an X thread, tag <a href="https://x.com/lightdotapp">@lightdotapp</a>, and include your referral link. The most insightful or creative post wins!
+2. <b>Top Referrer</b> – Bring in the most new users to Light during the event and claim your Duck.
+3. <b>Most Active Referrals</b> – The third NFT goes to the person whose referrals generate the highest trading volume during the event.
+
+Quack!`,
+            image: 'https://light.dangervalley.com/events/soon_rush_special.jpeg',
+            shouldAcceptData: true,
+        }
+        event.createdAt = new Date();
+        await event.save();
+    }
+
     static formatDateToString(date: Date): string {
         const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: 'UTC',

@@ -31,6 +31,7 @@ export enum TelegramWaitingType {
     SELL_LP_AMOUNT = 'SELL_LP_amount',
     ADD_REFCODE = 'add_refcode',
     AIRDROP_WALLETS = 'airdrop_wallets',
+    EVENT_SPECIAL_PRIZE_INFO = 'event_special_prize_info',
 
 }
 

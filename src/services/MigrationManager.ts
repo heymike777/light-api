@@ -334,7 +334,7 @@ export class MigrationManager {
 
         // await TokenManager.refreshHotTokens();
         
-        // await EventsManager.createChillEvent();
+        // await EventsManager.createSoonEvent();
         // const event = await EventsManager.getActiveEvent();
         // if (event){
         //     console.log('MigrationManager', 'migrate', 'active event found', event);

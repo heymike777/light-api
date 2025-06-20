@@ -1,8 +1,8 @@
 import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
 import { BotHelper, Message } from "./BotHelper";
-import { IUser } from "../../../entities/users/User";
-import { InlineButton } from "../BotTypes";
+import { IUser, TelegramWaitingType } from "../../../entities/users/User";
+import { InlineButton, TgMessage } from "../BotTypes";
 import { BotManager } from "../BotManager";
 import { UserManager } from "../../UserManager";
 import { EventsManager } from "../../EventsManager";
@@ -13,6 +13,7 @@ import { ITradingEvent, TradingEvent } from "../../../entities/events/TradingEve
 import { Chain } from "../../../services/solana/types";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
+import { TradingEventSpecialPrizeSubmission } from "../../../entities/events/TradingEventSpecialPrizeSubmission";
 
 export class BotEventsHelper extends BotHelper {
 
@@ -51,7 +52,14 @@ export class BotEventsHelper extends BotHelper {
                     }
                 }
                 else if (type == 'special'){
-                    // await this.showSpecialPrizes(ctx, user, eventId);
+                    if (parts.length == 4 && parts[3] == 'submit'){
+                        await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.EVENT_SPECIAL_PRIZE_INFO, data: { eventId: eventId }, helper: this.kCommand });
+                        await BotManager.reply(ctx, `Enter url to your X thread:`);    
+                    }
+                    else {
+                        const replyMessage = await this.buildSpecialPrizesMessage(user, eventId);
+                        return await super.commandReceived(ctx, user, replyMessage);                    
+                    }
                 }
             }
         } 
@@ -223,6 +231,55 @@ export class BotEventsHelper extends BotHelper {
             photo: event.image, 
             buttons: buttons 
         };
+    }
+
+    async buildSpecialPrizesMessage(user: IUser, eventId: string): Promise<Message> {
+        const event = await EventsManager.getEventById(eventId);
+
+        if (!event) {
+            return { text: '🚫 Event not found' };
+        }
+
+        if (!event.special){
+            return { text: '🚫 No special prizes for this event' };
+        }
+
+        let text = event.special.description;
+
+        const buttons: InlineButton[] = [];
+        buttons.push({ id: `events|special|${event.id}|submit`, text: '📦 Submit link to X thread' });
+
+        const markup = BotManager.buildInlineKeyboard(buttons);
+        return { 
+            text, 
+            markup, 
+            photo: event.special.image, 
+            buttons: buttons 
+        };
+    }
+
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
+        LogManager.log('BotEventsHelper', 'messageReceived', message.text);
+
+        super.messageReceived(message, ctx, user);
+
+        if (user.telegramState?.waitingFor == TelegramWaitingType.EVENT_SPECIAL_PRIZE_INFO){
+            const info = message.text.trim();
+            const eventId = user.telegramState?.data.eventId;
+
+            const submission = new TradingEventSpecialPrizeSubmission();
+            submission.eventId = eventId;
+            submission.userId = user.id;
+            submission.info = info;
+            submission.createdAt = new Date();
+            await submission.save();
+
+            await UserManager.updateTelegramState(user.id, undefined);
+            await BotManager.reply(ctx, `Submitted ✅\n\nWe will announce the winners after the event.\n\nBTW, you can submit multiple submissions 😉`);
+            return true;
+        }
+
+        return false;
     }
 
 }
