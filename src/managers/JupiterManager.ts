@@ -23,6 +23,7 @@ export interface JupSwapInstructionsInclude {
 export class JupiterManager {
     static apiKey = process.env.JUPITER_API_KEY || undefined;
     static config: ConfigurationParameters = {
+        basePath: this.apiKey ? 'https://api.jup.ag' : 'https://lite-api.jup.ag',
         apiKey: this.apiKey,
     };
     static quoteApi = createJupiterApiClient(this.config);
