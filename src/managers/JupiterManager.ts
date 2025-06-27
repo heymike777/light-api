@@ -21,9 +21,9 @@ export interface JupSwapInstructionsInclude {
 }
 
 export class JupiterManager {
-
+    static apiKey = process.env.JUPITER_API_KEY || undefined;
     static config: ConfigurationParameters = {
-        apiKey: process.env.JUPITER_API_KEY || undefined,
+        apiKey: this.apiKey,
     };
     static quoteApi = createJupiterApiClient(this.config);
 
@@ -78,6 +78,7 @@ export class JupiterManager {
     }
 
     static async getQuote(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: SwapMode = SwapMode.ExactIn): Promise<JupQuotes | undefined> {
+        console.log('JupiterManager', 'mike', 'apiKey:', this.apiKey);
         try {
             // console.log('JupiterManager', 'getQuote', inputMint, '->', outputMint);
             const maxAutoSlippageBps = Math.round(slippage * 100);
