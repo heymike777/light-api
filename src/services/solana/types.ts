@@ -128,16 +128,16 @@ export const kChains: {[key: string]: ChainConfig} = {
             url: 'https://bridge.sonic.game/'
         },
     },
-    [Chain.SONIC_TESTNET]: {
-        title: 'Sonic SVM Testnet',
-        geyserPort: 3345,
-        rpc: process.env.SONIC_RPC_TESTNET!,
-        websocket: process.env.SONIC_RPC_WSS_TESTNET!,
-        tracker: {
-            useWss: true,
-            useHttp: false,
-        },
-    },
+    // [Chain.SONIC_TESTNET]: {
+    //     title: 'Sonic SVM Testnet',
+    //     geyserPort: 3345,
+    //     rpc: process.env.SONIC_RPC_TESTNET!,
+    //     websocket: process.env.SONIC_RPC_WSS_TESTNET!,
+    //     tracker: {
+    //         useWss: true,
+    //         useHttp: false,
+    //     },
+    // },
     [Chain.SOON_MAINNET]: {
         title: 'SOON SVM',
         geyserPort: 3346,
@@ -151,16 +151,16 @@ export const kChains: {[key: string]: ChainConfig} = {
             url: 'https://bridge.soo.network/home?chain=0'
         },
     },
-    [Chain.SOON_TESTNET]: {
-        title: 'SOON SVM Testnet',
-        geyserPort: 3347,
-        rpc: process.env.SOON_TESTNET_RPC!,
-        websocket: process.env.SOON_TESTNET_RPC_WSS!,
-        tracker: {
-            useWss: false,
-            useHttp: true,
-        },
-    },
+    // [Chain.SOON_TESTNET]: {
+    //     title: 'SOON SVM Testnet',
+    //     geyserPort: 3347,
+    //     rpc: process.env.SOON_TESTNET_RPC!,
+    //     websocket: process.env.SOON_TESTNET_RPC_WSS!,
+    //     tracker: {
+    //         useWss: false,
+    //         useHttp: true,
+    //     },
+    // },
     [Chain.SVMBNB_MAINNET]: {
         title: 'svmBNB',
         geyserPort: 3348,
@@ -174,16 +174,16 @@ export const kChains: {[key: string]: ChainConfig} = {
             url: 'https://bridge.soo.network/home?chain=1'
         },
     },
-    [Chain.SVMBNB_TESTNET]: {
-        title: 'svmBNB Testnet',
-        geyserPort: 3349,
-        rpc: process.env.SVMBNB_TESTNET_RPC!,
-        websocket: process.env.SVMBNB_TESTNET_RPC_WSS!,
-        tracker: {
-            useWss: false,
-            useHttp: true,
-        },
-    },
+    // [Chain.SVMBNB_TESTNET]: {
+    //     title: 'svmBNB Testnet',
+    //     geyserPort: 3349,
+    //     rpc: process.env.SVMBNB_TESTNET_RPC!,
+    //     websocket: process.env.SVMBNB_TESTNET_RPC_WSS!,
+    //     tracker: {
+    //         useWss: false,
+    //         useHttp: true,
+    //     },
+    // },
     [Chain.SOONBASE_MAINNET]: {
         title: 'soonBase',
         geyserPort: 3351,
@@ -197,16 +197,16 @@ export const kChains: {[key: string]: ChainConfig} = {
             url: 'https://bridge.soo.network/home?chain=2'
         },
     },
-    [Chain.SOONBASE_TESTNET]: {
-        title: 'soonBase Testnet',
-        geyserPort: 3352,
-        rpc: process.env.SOONBASE_TESTNET_RPC!,
-        websocket: process.env.SOONBASE_TESTNET_RPC_WSS!,
-        tracker: {
-            useWss: false,
-            useHttp: true,
-        },
-    },
+    // [Chain.SOONBASE_TESTNET]: {
+    //     title: 'soonBase Testnet',
+    //     geyserPort: 3352,
+    //     rpc: process.env.SOONBASE_TESTNET_RPC!,
+    //     websocket: process.env.SOONBASE_TESTNET_RPC_WSS!,
+    //     tracker: {
+    //         useWss: false,
+    //         useHttp: true,
+    //     },
+    // },
 };
 
 export interface SubscriptionConfig {
