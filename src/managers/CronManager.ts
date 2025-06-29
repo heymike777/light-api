@@ -67,11 +67,7 @@ export class CronManager {
 
             cron.schedule('0 * * * *', () => {
                 // once an hour
-                RedisManager.migrateAllUsersTransactionsToMongo();
-                TokenManager.clearOldSwaps();
-                SubscriptionManager.cleanExpiredGiftCardSubscriptions();
-                TokenManager.refreshHotTokens();
-                EventsManager.recalculateLeaderboardForActiveEvents();
+                this.cronOnceAnHour();
             });
 
             cron.schedule('5 1 * * *', () => {
@@ -99,15 +95,67 @@ export class CronManager {
 
         if (EnvManager.isTelegramProcess){
             cron.schedule('* * * * *', () => {
-                TokenManager.fetchNativeTokenPriceFromRedis();
-                HealthManager.checkTelegramBotHealth();
+                this.cronEveryMinute();
             });
         }
     }
 
+    static async cronEveryMinute(){
+        if (EnvManager.isTelegramProcess){
+            try {
+                await TokenManager.fetchNativeTokenPriceFromRedis();
+            } catch (error) {
+                console.error('!cronOnceAnHour error', error);
+            }
+
+            try {
+                await HealthManager.checkTelegramBotHealth();
+            } catch (error) {
+                console.error('!cronOnceAnHour error', error);
+            }
+        }
+    }
+
+    static async cronOnceAnHour(){
+        try {
+            await RedisManager.migrateAllUsersTransactionsToMongo();
+        } catch (error) {
+            console.error('!cronOnceAnHour error', error);
+        }
+
+        try {
+            await TokenManager.clearOldSwaps();
+        } catch (error) {
+            console.error('!cronOnceAnHour error', error);
+        }
+
+        try {
+            await SubscriptionManager.cleanExpiredGiftCardSubscriptions();
+        } catch (error) {
+            console.error('!cronOnceAnHour error', error);
+        }
+
+        try {
+            await TokenManager.refreshHotTokens();
+        } catch (error) {
+            console.error('!cronOnceAnHour error', error);
+        }
+
+
+        try {
+            await EventsManager.recalculateLeaderboardForActiveEvents();
+        } catch (error) {
+            console.error('!cronOnceAnHour error', error);
+        }
+    }
+
     static async checkAndRetrySwaps() {
-        await SwapManager.checkPendingSwaps();
-        await SwapManager.retrySwaps();
+        try {
+            await SwapManager.checkPendingSwaps();
+            await SwapManager.retrySwaps();
+        } catch (error) {
+            console.error('!checkAndRetrySwaps error', error);
+        }
     }
 
     static async printStats(){
