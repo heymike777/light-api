@@ -176,8 +176,8 @@ export class BotStartHelper extends BotHelper {
             {id: 'tokens|hot', text: '🔥 Hot tokens'},
             {id: 'airdrops', text: '🪂 Airdrops'},
             {id: 'settings', text: '⚙️ Settings'},
-            {id: 'row', text: ''}, 
-            {id: 'events', text: '🏆 SOON RUSH'},
+            // {id: 'row', text: ''}, 
+            // {id: 'events', text: '🏆 SOON RUSH'},
         ];
 
         const replyMessage: Message = {
