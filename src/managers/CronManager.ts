@@ -72,15 +72,13 @@ export class CronManager {
 
             cron.schedule('5 1 * * *', () => {
                 // once a day at 1:05 am UTC
-                ReferralsManager.recalcRefStats();
-                UserManager.checkUsersWhoHasBlockedBot();
+                this.cronAt1Am();
             });
 
 
             cron.schedule('5 2 * * *', () => {
                 // once a day at 2:05 am UTC
-                SubscriptionManager.fetchAllRevenueCatSubscriptions();
-                ReferralsManager.processRefPayouts();
+                this.cronAt2Am();
             });
     
         }
@@ -100,6 +98,34 @@ export class CronManager {
         }
     }
 
+    static async cronAt1Am(){
+        try {
+            await ReferralsManager.recalcRefStats();
+        } catch (error) {
+            console.error('!cronAt1Am error1', error);
+        }
+
+        try {
+            await UserManager.checkUsersWhoHasBlockedBot();
+        } catch (error) {
+            console.error('!cronAt1Am error2', error);
+        }
+    }
+
+    static async cronAt2Am(){
+        try {            
+            await SubscriptionManager.fetchAllRevenueCatSubscriptions();
+        } catch (error) {
+            console.error('!cronAt2Am error1', error);
+        }
+
+        try {            
+            await ReferralsManager.processRefPayouts();
+        } catch (error) {
+            console.error('!cronAt2Am error2', error);
+        }
+
+    }
     static async cronEveryMinute(){
         if (EnvManager.isTelegramProcess){
             try {
@@ -152,9 +178,14 @@ export class CronManager {
     static async checkAndRetrySwaps() {
         try {
             await SwapManager.checkPendingSwaps();
+        } catch (error) {
+            console.error('!checkAndRetrySwaps error1', error);
+        }
+
+        try {
             await SwapManager.retrySwaps();
         } catch (error) {
-            console.error('!checkAndRetrySwaps error', error);
+            console.error('!checkAndRetrySwaps error2', error);
         }
     }
 
