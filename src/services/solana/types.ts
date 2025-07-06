@@ -237,6 +237,7 @@ export enum DexId {
     PUMPFUN = 'pumpfun',
     METEORA = 'meteora',
     ORCA = 'orca',
+    SEGA = 'sega',
     UNKNOWN = 'unknown',
 }
 

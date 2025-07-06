@@ -10,10 +10,46 @@ import { LogManager } from "../../LogManager";
 import { BotKeyboardMarkup, InlineButton, TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
-import { Chain } from "../../../services/solana/types";
+import { Chain, DexId } from "../../../services/solana/types";
 import { getNativeToken } from "../../../services/solana/Constants";
+import { Farm, FarmStatus, FarmType, IFarm } from "../../../entities/Farm";
+
+type Dex = {
+    id: DexId;
+    name: string;
+}
 
 export class BotFarmHelper extends BotHelper {
+
+    private static DEXES: { [key: string]: Dex[] } = {
+        [Chain.SONIC]: [
+            { id: DexId.SEGA, name: 'Sega' }
+        ]
+    }
+    private static FREQUENCIES: ({seconds: number, title: string, default: boolean} | undefined)[] = [
+        { seconds: 5, title: '5s', default: true },
+        { seconds: 10, title: '10s', default: false },
+        { seconds: 30, title: '30s', default: false },
+        { seconds: 60, title: '1m', default: false },
+        { seconds: 120, title: '2m', default: false },
+        undefined,
+        { seconds: 300, title: '5m', default: false },
+        { seconds: 600, title: '10m', default: false },
+        { seconds: 1800, title: '30m', default: false },
+        { seconds: 3600, title: '1h', default: false },
+        { seconds: -1, title: 'Custom', default: false },
+
+    ];
+
+    private static VOLUMES: ({usd: number, title: string, default: boolean, minSolAmount: number} | undefined)[] = [
+        { usd: 50000, title: '$50k', default: false, minSolAmount: 1 },
+        { usd: 100000, title: '$100k', default: true, minSolAmount: 2 },
+        { usd: 500000, title: '$500k', default: false, minSolAmount: 10 },
+        undefined,
+        { usd: 1000000, title: '$1M', default: false, minSolAmount: 20 },
+        { usd: 5000000, title: '$5M', default: false, minSolAmount: 100 },
+        { usd: -1, title: 'Custom', default: false, minSolAmount: 0 },
+    ];
 
     constructor() {
         const replyMessage: Message = {
@@ -32,6 +68,13 @@ export class BotFarmHelper extends BotHelper {
 
             const replyMessage = await BotFarmHelper.buildInitReplyMessage(user);
             return await super.commandReceived(ctx, user, replyMessage);
+        }
+        else if (buttonId == 'farm|dex'){
+            const replyMessage = await BotFarmHelper.buildFarmDexMessage(user);
+            return await super.commandReceived(ctx, user, replyMessage);
+        }
+        else if (buttonId == 'farm|token'){
+            //TODO: do noting for now. we'll add token volume boost later.
         }
         // else if (buttonId && buttonId.startsWith('buy|')){
         //     const parts = buttonId.split('|');
@@ -147,133 +190,99 @@ export class BotFarmHelper extends BotHelper {
     //     }
     // }
 
-    static async buildInitReplyMessage(user: IUser): Promise<Message> {
+    static async buildLimitChainMessage(): Promise<Message> {
+        const buttons: InlineButton[] = [
+            { id: `settings|set_chain|${Chain.SONIC}`, text: `🔗 Switch to Sonic SVM` }
+        ];
+        const markup = BotManager.buildInlineKeyboard(buttons);
+        return { 
+            text: '⛏️ Pump farm is only available on Sonic SVM for now.',
+            buttons: buttons,
+            markup: markup
+        };    
+    }
 
+    static async buildInitReplyMessage(user: IUser): Promise<Message> {
         if (user.defaultChain != Chain.SONIC){
-            const buttons: InlineButton[] = [
-                { id: `settings|set_chain|${Chain.SONIC}`, text: `🔗 Switch to Sonic SVM` }
-            ];
-            const markup = BotManager.buildInlineKeyboard(buttons);
-            return { 
-                text: '⛏️ Pump farm is only available on Sonic SVM for now.',
-                buttons: buttons,
-                markup: markup
-            };
+            return this.buildLimitChainMessage();
         }
+
+        const buttons: InlineButton[] = [
+            { id: 'farm|token', text: '🔥 Token volume (soon)' },
+            { id: 'farm|dex', text: '💰 DEX volume' },
+        ];
+        const markup = BotManager.buildInlineKeyboard(buttons);
 
         return {
-            text: '⛏️ Pump farm',
+            text: '⛏️ Pump farm\n\nDo you want to boost a specific token volume or farm DEX volume?',
+            buttons: buttons,
+            markup: markup
+        };
+    }
+
+    static async buildFarmDexMessage(user: IUser, farm?: IFarm): Promise<Message> {
+        const chain = user.defaultChain || Chain.SOLANA;
+        const dexes = BotFarmHelper.DEXES[chain];
+        if (!dexes){
+            return this.buildLimitChainMessage();
         }
 
-        // const currency = traderProfile?.currency || Currency.SOL;
-        // const buyAmounts: number[] = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);
-        // const sellAmounts: number[] = traderProfile?.sellAmounts || [50, 100];
-        // const mintInfo = await SolanaManager.getTokenMint(token.chain, token.address);
-        // const kSOL = getNativeToken(token.chain);
-        // const currencySymbol = currency == Currency.SOL ? kSOL.symbol : currency;
+        const traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
 
-        // const buttons: InlineButton[] = [
-        //     { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
-        //     { id: 'row', text: '' },
-        // ];
+        if (!farm){
+            const traderProfile = traderProfiles.find(tp => tp.default);
+
+            farm = new Farm();
+            farm.userId = user.id;
+            farm.traderProfileId = traderProfile?.id;
+            farm.status = FarmStatus.CREATED;
+            farm.type = FarmType.DEX;
+            farm.dexId = dexes[0].id;
+            farm.frequency = BotFarmHelper.FREQUENCIES.find(f => f?.default)?.seconds || 5;
+            farm.volume = BotFarmHelper.VOLUMES.find(v => v?.default)?.usd || 100000;
+            await farm.save();
+        }
 
 
+        const buttons: InlineButton[] = [];
 
-        // for (const amount of buyAmounts) {
-        //     buttons.push({ id: `buy|${token.chain}|${token.address}|${amount}`, text: `Buy ${amount} ${currencySymbol}` });
-        // }
-        // buttons.push({ id: `buy|${token.chain}|${token.address}|X`, text: `Buy X ${currencySymbol}` });
+        buttons.push({ id: 'none', text: '--------------- SELECT DEX ---------------' });
+        buttons.push({ id: 'row', text: '' });
+        buttons.push(...dexes.map(dex => ({ id: `farm|dex|${dex.id}`, text: (farm.dexId == dex.id ? '🟢 ' : '') + dex.name })));
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: 'none', text: '-------- SELECT TRADER PROFILE --------' });
+        buttons.push({ id: 'row', text: '' });
+        let profileIndex = 0;
+        for (const traderProfile of traderProfiles) {
+            buttons.push({ id: `farm|${farm.id}|prof|${traderProfile.id}`, text: (farm.traderProfileId == traderProfile.id ? '🟢 ' : '') + traderProfile.title });
+            profileIndex++;
+            if (profileIndex % 3 == 0){
+                buttons.push({ id: 'row', text: '' });
+            }
+        }
+        buttons.push({ id: `trader_profiles|create`, text: '➕ Add' }); //TODO: make trader_profiles|create|fast - and create it instantly without user interaction
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: 'none', text: '----- SELECT TIME BETWEEN SWAPS -----' });
+        buttons.push({ id: 'row', text: '' });
+        buttons.push(...BotFarmHelper.FREQUENCIES.map(f => (f ? { id: `farm|${farm.id}|frequency|${f.seconds}`, text: (farm.frequency == f.seconds ? '🟢 ' : '') + f.title } : { id: 'row', text: '' })));
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: 'none', text: '------------- SELECT VOLUME -------------' });
+        buttons.push({ id: 'row', text: '' });
+        buttons.push(...BotFarmHelper.VOLUMES.map(v => (v ? { id: `farm|${farm.id}|volume|${v.usd}`, text: (farm.volume == v.usd ? '🟢 ' : '') + v.title } : { id: 'row', text: '' })));
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: 'none', text: '--------------- ACTIONS ---------------' });
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: `farm|${farm.id}|refresh`, text: '↻ Refresh' });
+        buttons.push({ id: `delete_message`, text: '✕ Close' });
+        buttons.push({ id: `farm|${farm.id}|continue`, text: '🏁 Start' });
 
-        // let message = `<b>${token.symbol}</b> (${token.name})`;
+        const markup = BotManager.buildInlineKeyboard(buttons);
 
-        // const dexscreenerUrl = ExplorerManager.getDexscreenerTokenUrl(token.address, token.chain);
-        // if (dexscreenerUrl){
-        //     message += ` ᐧ <a href="${dexscreenerUrl}">📈</a>`;
-        // }
-
-        // const bubblemapsUrl = ExplorerManager.getBubblemapsTokenUrl(token.address, token.chain);
-        // if (bubblemapsUrl){
-        //     message += ` ᐧ <a href="${bubblemapsUrl}">🫧</a>`;
-        // }
-
-        // if (token.chain != Chain.SOLANA){
-        //     message += ` — 🔗 ${ChainManager.getChainTitle(token.chain)}`;
-        // }
-
-        // message += '\n';
-        // message += `<code>${token.address}</code>`;
-        // if (user.referralCode){
-        //     const reflink = ExplorerManager.getTokenReflink(token.address, user.referralCode, botUsername);
-        //     message += `\n<a href="${reflink}">Share token with your Reflink</a>`;    
-        // }
-
-        // if (mintInfo){
-        //     message += `\n\n⚙️ Security:`;
-        //     message += `\n├ Mint Authority: ${mintInfo.mintAuthority ? `Yes 🔴` : 'No 🟢'}`;
-        //     message += `\n└ Freeze Authority: ${mintInfo.freezeAuthority ? `Yes 🔴` : 'No 🟢'}`;    
-        // }
-        
-        // let solBalance: TokenBalance | undefined = undefined;
-        // if (traderProfile && traderProfile.encryptedWallet?.publicKey){
-        //     const walletAddress = traderProfile.encryptedWallet.publicKey;
-        //     solBalance = await SolanaManager.getWalletSolBalance(token.chain, walletAddress);
-        //     const tokenBalance = await SolanaManager.getWalletTokenBalance(token.chain, walletAddress, token.address);
-
-        //     message += '\n\n';
-        //     message += `Balance: ${solBalance?.uiAmount || 0} ${kSOL.symbol}`;
-        //     if (tokenBalance && tokenBalance.uiAmount>0){
-        //         message += ` | ${tokenBalance.uiAmount} ${token.symbol}`;
-
-        //         buttons.push({ id: 'row', text: '' });
-        //         for (const amount of sellAmounts) {
-        //             buttons.push({ id: `sell|${token.chain}|${token.address}|${amount}`, text: `Sell ${amount}%` });
-        //         }
-        //         buttons.push({ id: `sell|${token.chain}|${token.address}|X`, text: `Sell X%` });
-        //     }
-        //     message += ` — <b>${traderProfile.title}</b> ✏️`;
-
-        //     if (token.chain == Chain.SOLANA){
-        //         const lpBalances = await TraderProfilesManager.fetchTokenLpMintBalance(token.chain, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
-        //         if (lpBalances && lpBalances.balances.length > 0){
-        //             const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
-        //             const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
-        //             const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getNativeTokenPrice(token.chain);
-
-        //             if (solBalance?.uiAmount || tokenBalance?.uiAmount){
-        //                 const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
-        //                 const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
-
-        //                 message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} ${kSOL.symbol} = $${Helpers.numberFormatter(usdValue, 2)}`;
-
-        //                 let btnIndex = 0;
-        //                 for (const amount of sellAmounts) {
-        //                     if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
-
-        //                     buttons.push({ id: `sell_lp|${token.chain}|${token.address}|${amount}`, text: `Sell (LP) ${amount}%` });
-        //                     btnIndex++;                    
-        //                 }
-        //                 if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
-        //                 buttons.push({ id: `sell_lp|${token.chain}|${token.address}|X`, text: `Sell (LP) X%` });
-        //             }
-        //         }
-        //     }
-        // }
-
-        // const metricsMessage = BotManager.buildTokenMetricsMessage(token);
-        // if (metricsMessage){
-        //     message += '\n\n';
-        //     message += metricsMessage;
-        // }
-
-        // if (traderProfile && traderProfile.encryptedWallet?.publicKey){
-        //     if (!solBalance || solBalance.uiAmount < 0.01){
-        //         message += `\n\n🔴 Send some ${kSOL.symbol} to your trading wallet to ape into memes and cover gas fee.`;                
-        //     }
-        // }
-
-        // const markup = BotManager.buildInlineKeyboard(buttons);
-
-        // return { message, markup };
+        return {
+            text: '⛏️ Create a farm\n\nSelect a DEX, frequency and expected volume.\n\n👇 When you\'re ready, click “Continue” to start the bot.',
+            buttons: buttons,
+            markup: markup
+        };
     }
 
 }
