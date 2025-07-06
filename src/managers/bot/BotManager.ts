@@ -46,6 +46,7 @@ import { RabbitManager } from "../RabbitManager";
 import { BotAirdropHelper } from "./helpers/BotAirdropHelper";
 import { BotTokensHelper } from "./helpers/BotTokensHelper";
 import { BotEventsHelper } from "./helpers/BotEventsHelper";
+import { BotFarmHelper } from "./helpers/BotFarmHelper";
 
 export class BotManager {
     botUsername: string;
@@ -70,6 +71,7 @@ export class BotManager {
         new BotAirdropHelper(),
         new BotTokensHelper(),
         new BotEventsHelper(),
+        new BotFarmHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 

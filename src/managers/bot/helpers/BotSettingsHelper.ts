@@ -51,6 +51,9 @@ export class BotSettingsHelper extends BotHelper {
                 // send message to user about chain change
                 const buttons: InlineButton[] = [];
                 buttons.push({ id: 'tokens|hot', text: '🔥 Hot tokens' });
+                if (chain == Chain.SONIC){
+                    buttons.push({ id: 'farm', text: '⛏️ Pump farm' });
+                }
                 buttons.push({ id: 'row', text: '' });
                 if (chain != Chain.SOLANA){
                     const link = ChainManager.getBridgeUrl(chain);
