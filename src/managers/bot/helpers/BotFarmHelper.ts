@@ -10,6 +10,8 @@ import { SwapManager } from "../../SwapManager";
 import { Chain, DexId, Priority } from "../../../services/solana/types";
 import { Farm, FarmStatus, FarmType, IFarm } from "../../../entities/Farm";
 import { IUserTraderProfile, UserTraderProfile } from "../../../entities/users/TraderProfile";
+import { ChainManager } from "../../chains/ChainManager";
+import { getNativeToken } from "../../../services/solana/Constants";
 
 type Dex = {
     id: DexId;
@@ -74,6 +76,14 @@ export class BotFarmHelper extends BotHelper {
             const replyMessage = await BotFarmHelper.buildFarmDexMessage(user);
             return await super.commandReceived(ctx, user, replyMessage);
         }
+        else if (buttonId == 'farm|my_farms'){
+            const replyMessage = await BotFarmHelper.buildMyFarmsMessage(user);
+            return await super.commandReceived(ctx, user, replyMessage);
+        }
+        else if (buttonId == 'farm|my_farms|refresh'){
+            const replyMessage = await BotFarmHelper.buildMyFarmsMessage(user);
+            await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);    
+        }
         else if (buttonId == 'farm|token'){
             //TODO: do noting for now. we'll add token volume boost later.
         }
@@ -93,6 +103,9 @@ export class BotFarmHelper extends BotHelper {
                     await this.refreshFarm(ctx, user, farm);
                 }
                 else if (action == 'continue'){
+                    await this.startFarmConfirmation(ctx, user, farm);
+                }
+                else if (action == 'start'){
                     await this.startFarm(ctx, user, farm);
                 }
                 else if (action == 'prof'){
@@ -157,11 +170,44 @@ export class BotFarmHelper extends BotHelper {
         await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup, messageId || BotManager.getMessageIdFromContext(ctx));
     }
 
+    async startFarmConfirmation(ctx: Context, user: IUser, farm: IFarm) {
+        const traderProfiles = await TraderProfilesManager.getUserTraderProfiles(user.id, SwapManager.kNativeEngineId);
+        const traderProfile = traderProfiles.find(tp => tp.id == farm.traderProfileId);
+        if (!traderProfile){
+            await BotManager.reply(ctx, '🟡 Trader profile not found');
+            return;
+        }
+
+        const frequency = BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency);
+        const frequencyTitle = frequency ? `${frequency.title}` : `${farm.frequency}s`;
+        const dex = BotFarmHelper.DEXES[farm.chain].find(d => d.id == farm.dexId);
+
+        const volume = BotFarmHelper.VOLUMES.find(v => v?.usd == farm.volume);
+
+        const kSOL = getNativeToken(farm.chain);
+
+        let text = `🏁 New farm\n\n`;
+        text += `Chain: ${ChainManager.getChainTitle(farm.chain)}\n`;
+        text += `DEX: ${dex?.name || 'Unknown'}\n`;
+        text += `Frequency: ${frequencyTitle}\n`;
+        text += `Volume: ~$${farm.volume}\n`;
+        text += `Trader profile: ${traderProfile.title}\n`;
+        text += '\n';
+        if (volume && volume.minSolAmount > 0){
+            text += `Suggested balance: ${volume.minSolAmount} ${kSOL.symbol}\n`;
+        }
+        //TODO: add trader profile balance
+        
+        const buttons: InlineButton[] = [
+            { id: `farm|${farm.id}|start`, text: '🏁 Start' },
+        ];
+        const markup = BotManager.buildInlineKeyboard(buttons);
+        await BotManager.reply(ctx, text, { reply_markup: markup });
+    }
+
     async startFarm(ctx: Context, user: IUser, farm: IFarm) {
-        await BotManager.reply(ctx, `🏁 Starting the farm...`);
         //TODO: start the farm
-        //TODO: send message to the user confirm starting the farm (show wallet to FUND).
-        //TODO: check if wallet has enough SOL to start the farm.
+        await BotManager.reply(ctx, '🏁 Starting the farm...');
     }
 
     async createTraderProfile(ctx: Context, user: IUser): Promise<IUserTraderProfile | undefined> {
@@ -262,6 +308,8 @@ export class BotFarmHelper extends BotHelper {
         const buttons: InlineButton[] = [
             { id: 'farm|token', text: '🔥 Token volume (soon)' },
             { id: 'farm|dex', text: '💰 DEX volume' },
+            { id: 'row', text: '' },
+            { id: 'farm|my_farms', text: '⛏️ My farms' },
         ];
         const markup = BotManager.buildInlineKeyboard(buttons);
 
@@ -284,14 +332,20 @@ export class BotFarmHelper extends BotHelper {
         if (!farm){
             const traderProfile = traderProfiles.find(tp => tp.default);
 
+            const countAll = await Farm.countDocuments({ userId: user.id });
+            const title = `Farm #${countAll+1}`;
+
             farm = new Farm();
+            farm.chain = chain;
             farm.userId = user.id;
+            farm.title = title;
             farm.traderProfileId = traderProfile?.id;
             farm.status = FarmStatus.CREATED;
             farm.type = FarmType.DEX;
             farm.dexId = dexes[0].id;
             farm.frequency = BotFarmHelper.FREQUENCIES.find(f => f?.default)?.seconds || 5;
             farm.volume = BotFarmHelper.VOLUMES.find(v => v?.default)?.usd || 100000;
+            farm.fee = 0;
             await farm.save();
         }
 
@@ -359,7 +413,8 @@ export class BotFarmHelper extends BotHelper {
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: `farm|${farm.id}|refresh`, text: '↻ Refresh' });
         buttons.push({ id: `delete_message`, text: '✕ Close' });
-        buttons.push({ id: `farm|${farm.id}|continue`, text: '🏁 Start' });
+        buttons.push({ id: `row`, text: '' });
+        buttons.push({ id: `farm|${farm.id}|continue`, text: '🏁 Continue' });
 
         const markup = BotManager.buildInlineKeyboard(buttons);
 
@@ -368,6 +423,30 @@ export class BotFarmHelper extends BotHelper {
             buttons: buttons,
             markup: markup
         };
+    }
+
+    static async buildMyFarmsMessage(user: IUser): Promise<Message> {
+        const farms = await Farm.find({ userId: user.id, status: { $in: [FarmStatus.ACTIVE, FarmStatus.PAUSED] } });
+
+        let text = '⛏️ My farms';
+        if (farms.length == 0){
+            text += '\n\nNo active farms found.\nCreate a new farm to get started.';
+        }
+        else {
+            for (const farm of farms) {
+                text += '\n\n';
+                text += farm.title || `Farm #${farm.id}`;
+                text += '\n';
+                text += `View | Pause`;
+            }    
+        }
+        
+        const buttons: InlineButton[] = [];
+        buttons.push({ id: `farm|my_farms|refresh`, text: '↻ Refresh' });
+        buttons.push({ id: `delete_message`, text: '✕ Close' });
+        buttons.push({ id: 'row', text: '' });
+        
+        return { text: text, buttons: buttons, markup: BotManager.buildInlineKeyboard(buttons) };
     }
 
 }

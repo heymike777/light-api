@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { DexId } from '../services/solana/types';
+import { Chain, DexId } from '../services/solana/types';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -18,6 +18,8 @@ export enum FarmStatus {
 }
 
 export interface IFarm extends mongoose.Document {
+    title: string;
+    chain: Chain;
     userId: string;
     traderProfileId?: string;
     status: FarmStatus;
@@ -25,12 +27,15 @@ export interface IFarm extends mongoose.Document {
     dexId?: DexId;
     frequency?: number; // in seconds
     volume?: number; // in USD
+    fee: number; // in %
 
     updatedAt?: Date;
     createdAt: Date;
 }
 
 export const FarmSchema = new mongoose.Schema<IFarm>({
+    title: { type: String },
+    chain: { type: String, enum: Object.values(Chain), default: Chain.SOLANA },
     userId: { type: String },
     traderProfileId: { type: String },
     status: { type: String, enum: Object.values(FarmStatus), default: FarmStatus.CREATED },
@@ -38,6 +43,7 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
     dexId: { type: String, enum: Object.values(DexId) },
     frequency: { type: Number },
     volume: { type: Number },
+    fee: { type: Number, default: 0 },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -55,6 +61,7 @@ FarmSchema.pre('save', function (next) {
 FarmSchema.methods.toJSON = function () {
     return {
         id: this.id,
+        title: this.title,
         userId: this.userId,
         traderProfileId: this.traderProfileId,
         status: this.status,
@@ -62,6 +69,7 @@ FarmSchema.methods.toJSON = function () {
         dexId: this.dexId,
         frequency: this.frequency,
         volume: this.volume,
+        fee: this.fee,
     };
 };
 
