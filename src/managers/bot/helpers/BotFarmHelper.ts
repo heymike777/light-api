@@ -4,15 +4,12 @@ import { BotHelper, Message } from "./BotHelper";
 import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
 import { BotManager } from "../BotManager";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
-import { Currency } from "../../../models/types";
-import { TokenManager } from "../../TokenManager";
 import { LogManager } from "../../LogManager";
-import { BotKeyboardMarkup, InlineButton, TgMessage } from "../BotTypes";
+import { InlineButton, TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
-import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
-import { Chain, DexId } from "../../../services/solana/types";
-import { getNativeToken } from "../../../services/solana/Constants";
+import { Chain, DexId, Priority } from "../../../services/solana/types";
 import { Farm, FarmStatus, FarmType, IFarm } from "../../../entities/Farm";
+import { IUserTraderProfile, UserTraderProfile } from "../../../entities/users/TraderProfile";
 
 type Dex = {
     id: DexId;
@@ -24,6 +21,7 @@ export class BotFarmHelper extends BotHelper {
     private static DEXES: { [key: string]: Dex[] } = {
         [Chain.SONIC]: [
             { id: DexId.SEGA, name: 'Sega' }
+
         ]
     }
     private static FREQUENCIES: ({seconds: number, title: string, default: boolean} | undefined)[] = [
@@ -31,12 +29,15 @@ export class BotFarmHelper extends BotHelper {
         { seconds: 10, title: '10s', default: false },
         { seconds: 30, title: '30s', default: false },
         { seconds: 60, title: '1m', default: false },
-        { seconds: 120, title: '2m', default: false },
         undefined,
+        { seconds: 120, title: '2m', default: false },
         { seconds: 300, title: '5m', default: false },
         { seconds: 600, title: '10m', default: false },
         { seconds: 1800, title: '30m', default: false },
+        undefined,
         { seconds: 3600, title: '1h', default: false },
+        { seconds: 21600, title: '6h', default: false },
+        { seconds: 43200, title: '12h', default: false },
         { seconds: -1, title: 'Custom', default: false },
 
     ];
@@ -76,119 +77,170 @@ export class BotFarmHelper extends BotHelper {
         else if (buttonId == 'farm|token'){
             //TODO: do noting for now. we'll add token volume boost later.
         }
-        // else if (buttonId && buttonId.startsWith('buy|')){
-        //     const parts = buttonId.split('|');
-        //     if (parts.length == 4){
-        //         const chain = parts[1] as Chain;
-        //         const mint: string = parts[2];
+        else if (buttonId && buttonId.startsWith('farm|')){
+            const parts = buttonId.split('|');
+            if (parts.length == 3 || parts.length == 4){
+                const farmId: string = parts[1];
+                const action = parts[2];
 
-        //         const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
-        //         if (!traderProfile){
-        //             await BotManager.reply(ctx, '🟡 Please, create a trader profile first');
-        //             return;
-        //         }
+                const farm = await Farm.findById(farmId);
+                if (!farm || farm.status == FarmStatus.COMPLETED){
+                    await BotManager.reply(ctx, '🟡 Farm not found');
+                    return;
+                }
 
-        //         const currency = traderProfile.currency || Currency.SOL;
+                if (action == 'refresh'){
+                    await this.refreshFarm(ctx, user, farm);
+                }
+                else if (action == 'continue'){
+                    await this.startFarm(ctx, user, farm);
+                }
+                else if (action == 'prof'){
+                    let traderProfileId = parts[3];
+                    if (traderProfileId == 'create'){ 
+                        const traderProfile = await this.createTraderProfile(ctx, user);
+                        if (traderProfile) {
+                            traderProfileId = traderProfile.id;
+                        }
+                    }
 
-        //         if (parts[3] == 'refresh'){
-        //             const token = await TokenManager.getToken(chain, mint);
-        //             if (token){
-        //                 const botUsername = BotManager.getBotUsername(ctx);
-        //                 const { message, markup } = await BotManager.buildBuyMessageForToken(token, user, traderProfile, botUsername);
-        //                 await BotManager.editMessage(ctx, message, markup);
-        //             }
-        //         }
-        //         else if (parts[3] == 'x' || parts[3] == 'X') {
-        //             const currencyName = currency == Currency.SOL ? getNativeToken(chain).symbol : currency;
+                    if (traderProfileId == 'create'){
+                        return;
+                    }
+                    
+                    farm.traderProfileId = traderProfileId;
+                    await Farm.updateOne({ _id: farmId }, { traderProfileId: farm.traderProfileId });
+                    await this.refreshFarm(ctx, user, farm);    
+                }
+                else if (action == 'frequency'){
+                    const frequency = parseInt(parts[3]);
 
-        //             await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.BUY_AMOUNT, data: { chain, mint, traderProfileId: traderProfile?.id, currency }, helper: this.kCommand });
-        //             await BotManager.reply(ctx, `Enter ${currencyName} amount`);
-        //         }
-        //         else {
-        //             const amount = parseFloat(parts[3]);
-        //             if (amount > 0){
-        //                 await this.buy(ctx, user, chain, mint, amount, currency, traderProfile.id);
-        //             }
-        //         }
-        //     }
-        //     else {
-        //         LogManager.error('Invalid buttonId:', buttonId);
-        //     }
-        // }
+                    if (frequency == -1){
+                        await BotManager.reply(ctx, 'Enter a frequency of swaps <b>in seconds</b>');
+                        await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_FREQUENCY, helper: this.kCommand, data: { farmId, messageId: BotManager.getMessageIdFromContext(ctx) } });
+                        return;
+                    }
+                    else {
+                        farm.frequency = frequency;
+                        await Farm.updateOne({ _id: farmId }, { frequency: farm.frequency });
+                        await this.refreshFarm(ctx, user, farm);    
+                    }
+                }
+                else if (action == 'volume'){
+                    const volume = parseInt(parts[3]);
+                    if (volume == -1){
+                        await BotManager.reply(ctx, 'Enter a volume of swaps <b>in USD</b>');
+                        await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_VOLUME, helper: this.kCommand, data: { farmId, messageId: BotManager.getMessageIdFromContext(ctx) } });
+                        return;
+                    }
+                    else {
+                        farm.volume = volume;
+                        await Farm.updateOne({ _id: farmId }, { volume: farm.volume });
+                        await this.refreshFarm(ctx, user, farm);
+                    }
+                }
+                else if (action == 'dex'){
+                    const dexId = parts[3] as DexId;
+                    farm.dexId = dexId;
+                    await Farm.updateOne({ _id: farmId }, { dexId: farm.dexId });
+                    await this.refreshFarm(ctx, user, farm);
+                }
+            }
+            else {
+                LogManager.error('Invalid buttonId:', buttonId);
+            }
+        }
     }
 
-    // async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
-    //     LogManager.log('BotBuylHelper', 'messageReceived', message.text);
+    async refreshFarm(ctx: Context, user: IUser, farm: IFarm, messageId?: number) {
+        const replyMessage = await BotFarmHelper.buildFarmDexMessage(user, farm);
+        await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup, messageId || BotManager.getMessageIdFromContext(ctx));
+    }
 
-    //     super.messageReceived(message, ctx, user);
+    async startFarm(ctx: Context, user: IUser, farm: IFarm) {
+        await BotManager.reply(ctx, `🏁 Starting the farm...`);
+        //TODO: start the farm
+        //TODO: send message to the user confirm starting the farm (show wallet to FUND).
+        //TODO: check if wallet has enough SOL to start the farm.
+    }
 
-    //     if (user.telegramState?.waitingFor == TelegramWaitingType.BUY_AMOUNT){
-    //         const amountString = message.text.trim().replaceAll(',', '.');
-    //         const amount = parseFloat(amountString);
-    //         if (isNaN(amount) || amount <= 0){
-    //             await BotManager.reply(ctx, 'Invalid amount. Please, try again.');
-    //             return false;
-    //         }
+    async createTraderProfile(ctx: Context, user: IUser): Promise<IUserTraderProfile | undefined> {
+        const countAll = await UserTraderProfile.countDocuments({ userId: user.id });
+        const engineId = SwapManager.kNativeEngineId;
+        const title = `Wallet ${countAll+1}`;
+        const defaultAmount = 0.25;
+        const slippage = 10;
 
-    //         const chain: Chain = user.telegramState.data.chain;
-    //         const mint: string = user.telegramState.data.mint;
-    //         const currency: Currency = user.telegramState.data.currency;
-    //         const traderProfileId: string = user.telegramState.data.traderProfileId;
+        try {
+            const traderProfile = await TraderProfilesManager.createTraderProfile(user, engineId, title, Priority.MEDIUM, defaultAmount, slippage, undefined);
+            return traderProfile;
+        }
+        catch (e: any){
+            LogManager.error('e:', e);
+            if (e.statusCode == 444){
+                // premium error
+                await BotManager.replyWithPremiumError(ctx, e.message);
+            }
+            else {
+                await BotManager.reply(ctx, e.message);
+            }
+        }
 
-    //         await this.buy(ctx, user, chain, mint, amount, currency, traderProfileId);
+        return undefined;
+    }
 
-    //         await UserManager.updateTelegramState(user.id, undefined);
-    //         return true;
-    //     }
+    async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
+        LogManager.log('BotFarmHelper', 'messageReceived', message.text);
 
-    //     return false;
-    // }
+        super.messageReceived(message, ctx, user);
 
-    // async buy(ctx: Context, user: IUser, chain: Chain, mint: string, amount: number, currency: Currency, traderProfileId: string) {
-    //     let tokenName: string | undefined = mint;
-    //     try {
-    //         const token = await TokenManager.getToken(chain, mint);
-    //         if (token?.symbol){
-    //             tokenName = token.symbol;
-    //         }
-    //     } catch (error: any) {
-    //         LogManager.error('Error getting token', error);
-    //     }
+        if (user.telegramState?.waitingFor == TelegramWaitingType.FARM_FREQUENCY){
+            const frequencyString = message.text.trim().replaceAll(',', '.');
+            const frequency = parseFloat(frequencyString);
+            if (isNaN(frequency) || frequency <= 0 || frequency > 86400){
+                await BotManager.reply(ctx, 'Invalid frequency. Please, try again.\n<b>Frequency must be between 1 and 86400 seconds</b>');
+                return true;
+            }
 
-    //     const kSOL = getNativeToken(chain);
-    //     const currencyName = currency == Currency.SOL ? kSOL.symbol : currency;
+            const farmId = user.telegramState.data.farmId;
+            const farm = await Farm.findById(farmId);
+            if (!farm){
+                await BotManager.reply(ctx, '🟡 Farm not found');
+                return true;
+            }
 
-    //     const message = await BotManager.reply(ctx, `Buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currencyName}.\n\nPlease, wait...`);      
+            farm.frequency = frequency;
+            await Farm.updateOne({ _id: farmId }, { frequency: farm.frequency });
+            await this.refreshFarm(ctx, user, farm, user.telegramState.data.messageId);
 
-    //     try {
-    //         const { signature, swap } = await SwapManager.initiateBuy(user, chain, traderProfileId, mint, amount);
+            await UserManager.updateTelegramState(user.id, undefined);
+            return true;
+        }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.FARM_VOLUME){
+            const volumeString = message.text.trim().replaceAll(',', '.');
+            const volume = parseFloat(volumeString);
+            if (isNaN(volume) || volume <= 0){
+                await BotManager.reply(ctx, 'Invalid volume. Please, try again.\n<b>Volume must be greater than 0</b>');
+                return true;
+            }
 
-    //         let msg = `🟡 Transaction sent. Waiting for confirmation.`
-    //         if (swap.intermediateWallet){
-    //             msg += `\n\nIntermediate wallet:\n<code>${swap.intermediateWallet.publicKey}</code> (Tap to copy)`;
-    //         }
-    //         if (signature){
-    //             msg += '\n\n';
-    //             msg += `<a href="${ExplorerManager.getUrlToTransaction(chain, signature)}">Explorer</a>`;
-    //         }
-    //         if (message){
-    //             await BotManager.editMessage(ctx, msg, undefined, message.message_id);
-    //         }
-    //         else {
-    //             await BotManager.reply(ctx, msg);
-    //         }
-    //     }
-    //     catch (error: any) {
-    //         const msg = `🔴 Error buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currencyName}. Try again.\n\nError: ${error.message}`;
+            const farmId = user.telegramState.data.farmId;
+            const farm = await Farm.findById(farmId);
+            if (!farm){
+                await BotManager.reply(ctx, '🟡 Farm not found');
+                return true;
+            }
 
-    //         if (message){
-    //             await BotManager.editMessage(ctx, msg, undefined, message.message_id);
-    //         }
-    //         else {
-    //             await BotManager.reply(ctx, msg);
-    //         }
-    //     }
-    // }
+            farm.volume = volume;
+            await Farm.updateOne({ _id: farmId }, { volume: farm.volume });
+            await this.refreshFarm(ctx, user, farm, user.telegramState.data.messageId);
+
+            await UserManager.updateTelegramState(user.id, undefined);
+            return true;
+        }
+
+        return false;
+    }
 
     static async buildLimitChainMessage(): Promise<Message> {
         const buttons: InlineButton[] = [
@@ -248,7 +300,7 @@ export class BotFarmHelper extends BotHelper {
 
         buttons.push({ id: 'none', text: '--------------- SELECT DEX ---------------' });
         buttons.push({ id: 'row', text: '' });
-        buttons.push(...dexes.map(dex => ({ id: `farm|dex|${dex.id}`, text: (farm.dexId == dex.id ? '🟢 ' : '') + dex.name })));
+        buttons.push(...dexes.map(dex => ({ id: `farm|${farm.id}|dex|${dex.id}`, text: (farm.dexId == dex.id ? '🟢 ' : '') + dex.name })));
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: 'none', text: '-------- SELECT TRADER PROFILE --------' });
         buttons.push({ id: 'row', text: '' });
@@ -260,15 +312,48 @@ export class BotFarmHelper extends BotHelper {
                 buttons.push({ id: 'row', text: '' });
             }
         }
-        buttons.push({ id: `trader_profiles|create`, text: '➕ Add' }); //TODO: make trader_profiles|create|fast - and create it instantly without user interaction
+        buttons.push({ id: `farm|${farm.id}|prof|create`, text: '➕ Add' }); 
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: 'none', text: '----- SELECT TIME BETWEEN SWAPS -----' });
         buttons.push({ id: 'row', text: '' });
-        buttons.push(...BotFarmHelper.FREQUENCIES.map(f => (f ? { id: `farm|${farm.id}|frequency|${f.seconds}`, text: (farm.frequency == f.seconds ? '🟢 ' : '') + f.title } : { id: 'row', text: '' })));
+        const isCustomFrequency = BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency) == undefined;
+        for (const frequency of BotFarmHelper.FREQUENCIES) {
+            if (frequency){
+                const isSelected = farm.frequency == frequency.seconds || (isCustomFrequency && frequency.seconds == -1);
+                let title = (isSelected ? '🟢 ' : '');
+                if (isSelected && isCustomFrequency){
+                    title += `${farm.frequency}s`;
+                }
+                else {
+                    title += frequency.title;
+                }
+                buttons.push({ id: `farm|${farm.id}|frequency|${frequency.seconds}`, text: title });
+            }
+            else {
+                buttons.push({ id: 'row', text: '' });
+            }            
+        }
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: 'none', text: '------------- SELECT VOLUME -------------' });
         buttons.push({ id: 'row', text: '' });
-        buttons.push(...BotFarmHelper.VOLUMES.map(v => (v ? { id: `farm|${farm.id}|volume|${v.usd}`, text: (farm.volume == v.usd ? '🟢 ' : '') + v.title } : { id: 'row', text: '' })));
+        const isCustomVolume = BotFarmHelper.VOLUMES.find(v => v?.usd == farm.volume) == undefined;
+        for (const volume of BotFarmHelper.VOLUMES) {
+            if (volume){
+                const isSelected = farm.volume == volume.usd || (isCustomVolume && volume.usd == -1);
+                let title = (isSelected ? '🟢 ' : '');
+                if (isSelected && isCustomVolume){
+                    title += `$${farm.volume}`;
+                }
+                else {
+                    title += volume.title;
+                }
+                buttons.push({ id: `farm|${farm.id}|volume|${volume.usd}`, text: title });
+            }
+            else {
+                buttons.push({ id: 'row', text: '' });
+            }            
+        }
+        // buttons.push(...BotFarmHelper.VOLUMES.map(v => (v ? { id: `farm|${farm.id}|volume|${v.usd}`, text: (farm.volume == v.usd ? '🟢 ' : '') + v.title } : { id: 'row', text: '' })));
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: 'none', text: '--------------- ACTIONS ---------------' });
         buttons.push({ id: 'row', text: '' });

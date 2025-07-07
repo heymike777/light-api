@@ -342,7 +342,7 @@ export class BotManager {
 
     static async editMessage(ctx: Context, text?: string, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
-            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const messageId = sourceMessageId || this.getMessageIdFromContext(ctx);
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
             if (chatId && messageId && text){
                 const botUsername = BotManager.getBotUsername(ctx);
@@ -357,7 +357,7 @@ export class BotManager {
 
     static async editMessageWithPhoto(ctx: Context, photo: string, text?: string, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
-            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const messageId = sourceMessageId || this.getMessageIdFromContext(ctx);
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
             if (chatId && messageId && text){
                 const botUsername = BotManager.getBotUsername(ctx);
@@ -378,9 +378,13 @@ export class BotManager {
         catch (e: any){}
     }
 
+    static getMessageIdFromContext(ctx: Context): number | undefined {
+        return ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+    }
+
     static async editMessageReplyMarkup(ctx: Context, markup?: BotKeyboardMarkup, sourceMessageId?: number, sourceChatId?: number){
         try {
-            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const messageId = sourceMessageId || this.getMessageIdFromContext(ctx);
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
             if (chatId && messageId){
                 const botUsername = BotManager.getBotUsername(ctx);
@@ -395,7 +399,7 @@ export class BotManager {
 
     static async deleteMessage(ctx: Context, sourceMessageId?: number, sourceChatId?: number){
         try {
-            const messageId = sourceMessageId || ctx?.message?.message_id || ctx?.update?.callback_query?.message?.message_id || ctx?.callbackQuery?.message?.message_id;
+            const messageId = sourceMessageId || this.getMessageIdFromContext(ctx);
             const chatId = sourceChatId || ctx?.chat?.id || ctx?.update?.callback_query?.message?.chat?.id || ctx?.callbackQuery?.message?.chat?.id;
 
             if (chatId && messageId){
