@@ -107,6 +107,10 @@ export class FarmManager {
             const amountMax2 = solBalance.amount.toNumber() - 0.02 * LAMPORTS_PER_SOL;
             const amountMax = Math.min(amountMax1, amountMax2);
             const amount = Helpers.getRandomInt(amountMin, amountMax) / LAMPORTS_PER_SOL;
+            if (amount < 0){
+                console.log('FarmManager.makeSwap', 'farm', farm.id, 'amount is negative. Skipping the swap.');
+                return;
+            }
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap amount', amount);
             const mint = farm.pools[0].tokenB;
             const poolId = farm.pools[0].address;
