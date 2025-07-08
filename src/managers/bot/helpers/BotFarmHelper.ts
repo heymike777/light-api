@@ -11,7 +11,9 @@ import { Chain, DexId, Priority } from "../../../services/solana/types";
 import { Farm, FarmStatus, FarmType, IFarm } from "../../../entities/Farm";
 import { IUserTraderProfile, UserTraderProfile } from "../../../entities/users/TraderProfile";
 import { ChainManager } from "../../chains/ChainManager";
-import { getNativeToken } from "../../../services/solana/Constants";
+import { getNativeToken, kSolAddress } from "../../../services/solana/Constants";
+import { SolanaManager } from "../../../services/solana/SolanaManager";
+import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 
 type Dex = {
     id: DexId;
@@ -177,6 +179,10 @@ export class BotFarmHelper extends BotHelper {
             await BotManager.reply(ctx, '🟡 Trader profile not found');
             return;
         }
+        if (!traderProfile.encryptedWallet?.publicKey){
+            await BotManager.reply(ctx, '🟡 Trader profile has no wallet. Please, select another trader profile.');
+            return;
+        }
 
         const frequency = BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency);
         const frequencyTitle = frequency ? `${frequency.title}` : `${farm.frequency}s`;
@@ -192,21 +198,30 @@ export class BotFarmHelper extends BotHelper {
         text += `Frequency: ${frequencyTitle}\n`;
         text += `Volume: ~$${farm.volume}\n`;
         text += `Trader profile: ${traderProfile.title}\n`;
+
+        if (farm.pools.length > 0){
+            text += `Pools: ${farm.pools.map(p => `<a href="${ExplorerManager.getUrlToAddress(farm.chain, p.address)}">${p.title || p.address}</a>`).join(', ')}\n`;
+        }
+        
         text += '\n';
-        if (volume && volume.minSolAmount > 0){
+        text += `Wallet: <code>${traderProfile.encryptedWallet.publicKey}</code>\n`;
+        const solBalance = await SolanaManager.getWalletSolBalance(farm.chain, traderProfile.encryptedWallet?.publicKey);
+        text += `Balance: ${solBalance?.uiAmount || 0} ${kSOL.symbol}\n`;
+        if (volume && volume.minSolAmount > 0 && (solBalance?.uiAmount || 0) < volume.minSolAmount){
             text += `Suggested balance: ${volume.minSolAmount} ${kSOL.symbol}\n`;
         }
-        //TODO: add trader profile balance
-        
+
         const buttons: InlineButton[] = [
-            { id: `farm|${farm.id}|start`, text: '🏁 Start' },
+            { id: `farm|${farm.id}|start`, text: '🏁 Confirm and start' },
+            // { id: `delete_message`, text: '✕ Close' },
         ];
         const markup = BotManager.buildInlineKeyboard(buttons);
         await BotManager.reply(ctx, text, { reply_markup: markup });
     }
 
     async startFarm(ctx: Context, user: IUser, farm: IFarm) {
-        //TODO: start the farm
+        farm.status = FarmStatus.ACTIVE;
+        await Farm.updateOne({ _id: farm.id }, { status: farm.status });
         await BotManager.reply(ctx, '🏁 Starting the farm...');
     }
 
@@ -346,6 +361,12 @@ export class BotFarmHelper extends BotHelper {
             farm.frequency = BotFarmHelper.FREQUENCIES.find(f => f?.default)?.seconds || 5;
             farm.volume = BotFarmHelper.VOLUMES.find(v => v?.default)?.usd || 100000;
             farm.fee = 0;
+
+            //TODO: this is hardcoded for now. we'll add pool selection later.
+            farm.pools = [
+                { address: 'CKkoETT652fNFs8tYncMokW6SFwKENpTTDndAo1HkR7J', tokenA: kSolAddress, tokenB: 'qPzdrTCvxK3bxoh2YoTZtDcGVgRUwm37aQcC3abFgBy', title: 'SOL/USDT' }
+            ];
+
             await farm.save();
         }
 

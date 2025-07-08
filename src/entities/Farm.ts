@@ -28,6 +28,7 @@ export interface IFarm extends mongoose.Document {
     frequency?: number; // in seconds
     volume?: number; // in USD
     fee: number; // in %
+    pools: { address: string, tokenA: string, tokenB: string, title?: string }[];
 
     updatedAt?: Date;
     createdAt: Date;
@@ -44,6 +45,7 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
     frequency: { type: Number },
     volume: { type: Number },
     fee: { type: Number, default: 0 },
+    pools: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
