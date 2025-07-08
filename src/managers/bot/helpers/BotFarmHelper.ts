@@ -14,6 +14,7 @@ import { ChainManager } from "../../chains/ChainManager";
 import { getNativeToken, kSolAddress } from "../../../services/solana/Constants";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
+import { Swap } from "../../../entities/payments/Swap";
 
 type Dex = {
     id: DexId;
@@ -25,7 +26,6 @@ export class BotFarmHelper extends BotHelper {
     private static DEXES: { [key: string]: Dex[] } = {
         [Chain.SONIC]: [
             { id: DexId.SEGA, name: 'Sega' }
-
         ]
     }
     private static FREQUENCIES: ({seconds: number, title: string, default: boolean} | undefined)[] = [
@@ -61,7 +61,7 @@ export class BotFarmHelper extends BotHelper {
             text: '⛏️ Pump farm'
         };
 
-        super('farm', replyMessage);
+        super('farm', replyMessage, ['my_farm']);
     }
 
     async commandReceived(ctx: Context, user: IUser) {
@@ -91,7 +91,13 @@ export class BotFarmHelper extends BotHelper {
         }
         else if (buttonId && buttonId.startsWith('farm|')){
             const parts = buttonId.split('|');
-            if (parts.length == 3 || parts.length == 4){
+            if (parts.length == 2){
+                // farm details
+                const farmId: string = parts[1];
+                const replyMessage = await BotFarmHelper.buildMyFarmMessage(user, farmId);
+                return await super.commandReceived(ctx, user, replyMessage);
+            }
+            else if (parts.length == 3 || parts.length == 4){
                 const farmId: string = parts[1];
                 const action = parts[2];
 
@@ -159,6 +165,29 @@ export class BotFarmHelper extends BotHelper {
                     farm.dexId = dexId;
                     await Farm.updateOne({ _id: farmId }, { dexId: farm.dexId });
                     await this.refreshFarm(ctx, user, farm);
+                }
+            }
+            else {
+                LogManager.error('Invalid buttonId:', buttonId);
+            }
+        }
+        else if (buttonId && buttonId.startsWith('my_farm|')){
+            const parts = buttonId.split('|');
+            if (parts.length == 3){
+                const farmId: string = parts[1];
+                const action = parts[2];
+
+                if (action == 'refresh'){
+                    await this.refreshMyFarm(ctx, user, farmId);
+                }
+                else if (action == 'resume'){
+                    await this.resumeMyFarm(ctx, user, farmId);
+                }
+                else if (action == 'pause'){
+                    await this.pauseMyFarm(ctx, user, farmId);
+                }
+                else if (action == 'delete'){
+                    await this.deleteMyFarm(ctx, user, farmId);
                 }
             }
             else {
@@ -495,6 +524,85 @@ export class BotFarmHelper extends BotHelper {
         }
         
         return { text: text, buttons: buttons, markup: BotManager.buildInlineKeyboard(buttons) };
+    }
+
+    static async buildMyFarmMessage(user: IUser, farmId: string): Promise<Message> {
+        const farm = await Farm.findById(farmId);
+        if (!farm || farm.userId != user.id ){
+            return { text: '🟡 Farm not found' };
+        }
+
+        const traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, farm.traderProfileId);
+        if (!traderProfile){
+            return { text: '🟡 Trader profile not found' };
+        }
+
+        const farmTitle = farm.title || `Farm #${farm.id}`;
+        const kSOL = getNativeToken(farm.chain);
+
+        let text = `⛏️ <b>${farmTitle}</b>\n`;
+
+        text += `\nChain: ${ChainManager.getChainTitle(farm.chain)}`;
+        text += `\nDEX: ${BotFarmHelper.DEXES[farm.chain].find(d => d.id == farm.dexId)?.name || 'Unknown'}`;
+        text += `\nTrader profile: ${traderProfile.title}`;
+        text += `\nFrequency: ${BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency)?.title || `${farm.frequency}s`}`;
+        text += `\nExpected volume: $${farm.volume}`;
+        text += `\n`;
+
+        text += `\nConfirmed volume: $${farm.progress?.currentVolume.toFixed(2)}`;
+        text += `\nProcessing volume: $${farm.progress?.processingVolume.toFixed(2)}`;
+        const swapsCount = await Swap.countDocuments({ farmId: farmId });
+        text += `\nSwaps count: ${swapsCount}`;
+        text += `\nStatus: ${farm.status}`;
+
+        text += `\n\n`;
+        if (traderProfile.encryptedWallet?.publicKey){
+            text += `Wallet: <a href="${ExplorerManager.getUrlToAddress(farm.chain, traderProfile.encryptedWallet.publicKey)}">${traderProfile.encryptedWallet.publicKey}</a>\n`;
+        }
+        if (traderProfile.encryptedWallet?.publicKey){
+            const solBalance = await SolanaManager.getWalletSolBalance(farm.chain, traderProfile.encryptedWallet?.publicKey);
+            text += `Balance:\n• ${solBalance?.uiAmount || 0} ${kSOL.symbol}\n`;
+            const mints = farm.pools.map(p => p.tokenB);
+            const balances = await SolanaManager.getWalletTokensBalances(farm.chain, traderProfile.encryptedWallet.publicKey);
+            for (const balance of balances){
+                if (mints.includes(balance.mint)){
+                    text += `• ${balance.balance.uiAmount || 0} ${balance.symbol}\n`;
+                }
+            }
+        }
+
+        const buttons: InlineButton[] = [];
+        buttons.push({ id: `my_farm|${farmId}|refresh`, text: '↻ Refresh' });
+
+        if (farm.status == FarmStatus.ACTIVE){
+            buttons.push({ id: `my_farm|${farmId}|pause`, text: '⏸️ Pause farm' });
+        }
+        else if (farm.status == FarmStatus.PAUSED){
+            buttons.push({ id: `my_farm|${farmId}|resume`, text: '▶️ Resume farm' });
+        }
+        buttons.push({ id: `my_farm|${farmId}|delete`, text: '🗑️ Delete farm' });
+        
+        return { text: text, buttons: buttons, markup: BotManager.buildInlineKeyboard(buttons) };
+    }
+
+    async refreshMyFarm(ctx: Context, user: IUser, farmId: string) {
+        const replyMessage = await BotFarmHelper.buildMyFarmMessage(user, farmId);
+        await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup, BotManager.getMessageIdFromContext(ctx));
+    }
+
+    async deleteMyFarm(ctx: Context, user: IUser, farmId: string) {
+        await Farm.updateOne({ _id: farmId }, { status: FarmStatus.COMPLETED });
+        await BotManager.deleteMessage(ctx);
+    }
+
+    async pauseMyFarm(ctx: Context, user: IUser, farmId: string) {
+        await Farm.updateOne({ _id: farmId, status: FarmStatus.ACTIVE }, { status: FarmStatus.PAUSED });
+        await this.refreshMyFarm(ctx, user, farmId);
+    }
+
+    async resumeMyFarm(ctx: Context, user: IUser, farmId: string) {
+        await Farm.updateOne({ _id: farmId, status: FarmStatus.PAUSED }, { status: FarmStatus.ACTIVE });
+        await this.refreshMyFarm(ctx, user, farmId);
     }
 
 }
