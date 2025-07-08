@@ -65,6 +65,7 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
 FarmSchema.index({ userId: 1 });
 FarmSchema.index({ userId: 1, status: 1 });
 FarmSchema.index({ status: 1 });
+FarmSchema.index({ userId: 1, traderProfileId: 1, status: 1 });
 
 FarmSchema.pre('save', function (next) {
     this.updatedAt = new Date();

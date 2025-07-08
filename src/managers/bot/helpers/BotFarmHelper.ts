@@ -211,6 +211,11 @@ export class BotFarmHelper extends BotHelper {
             text += `Suggested balance: ${volume.minSolAmount} ${kSOL.symbol}\n`;
         }
 
+        const farms = await Farm.find({ userId: user.id, traderProfileId: farm.traderProfileId, status: FarmStatus.ACTIVE });
+        if (farms.length > 0){
+            text += `\n\n🔴 This trader profile already has an active farm. Please, select other trader profile.`;
+        }
+
         const buttons: InlineButton[] = [
             { id: `farm|${farm.id}|start`, text: '🏁 Confirm and start' },
             // { id: `delete_message`, text: '✕ Close' },
@@ -220,6 +225,13 @@ export class BotFarmHelper extends BotHelper {
     }
 
     async startFarm(ctx: Context, user: IUser, farm: IFarm) {
+        const farms = await Farm.find({ userId: user.id, traderProfileId: farm.traderProfileId, status: FarmStatus.ACTIVE });
+        if (farms.length > 0){
+            await BotManager.reply(ctx, '🔴 This trader profile already has an active farm. Please, select other trader profile.');
+            return;
+        }
+
+
         farm.status = FarmStatus.ACTIVE;
         await Farm.updateOne({ _id: farm.id }, { status: farm.status });
         await BotManager.reply(ctx, '🏁 Starting the farm...');
@@ -462,17 +474,25 @@ export class BotFarmHelper extends BotHelper {
         }
         else {
             for (const farm of farms) {
+                const farmTitle = farm.title || `Farm #${farm.id}`;
                 text += '\n\n';
-                text += farm.title || `Farm #${farm.id}`;
-                text += '\n';
-                text += `View | Pause`;
+                text += `<b>${farmTitle}</b>`;
+                text += `\nConfirmed volume: $${farm.progress?.currentVolume.toFixed(2)}`;
+                text += `\nProcessing volume: $${farm.progress?.processingVolume.toFixed(2)}`;
+                text += `\nStatus: ${farm.status}`;
             }    
         }
         
         const buttons: InlineButton[] = [];
         buttons.push({ id: `farm|my_farms|refresh`, text: '↻ Refresh' });
         buttons.push({ id: `delete_message`, text: '✕ Close' });
-        buttons.push({ id: 'row', text: '' });
+
+        for (const farm of farms) {
+            const farmTitle = farm.title || `Farm #${farm.id}`;
+
+            buttons.push({ id: 'row', text: '' });
+            buttons.push({ id: `farm|${farm.id}`, text: farmTitle });
+        }
         
         return { text: text, buttons: buttons, markup: BotManager.buildInlineKeyboard(buttons) };
     }
