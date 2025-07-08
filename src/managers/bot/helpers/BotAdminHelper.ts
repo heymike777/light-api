@@ -7,6 +7,8 @@ import { BotManager } from "../BotManager";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { ConfigManager } from "../../ConfigManager";
 import { EventsManager } from "../../EventsManager";
+import { StatusType, Swap } from "../../../entities/payments/Swap";
+import { ChainManager } from "../../chains/ChainManager";
 
 export class BotAdminHelper extends BotHelper {
 
@@ -91,7 +93,19 @@ export class BotAdminHelper extends BotHelper {
     async buildAdminMessage(user: IUser, ctx?: Context): Promise<{ message: string, buttons: InlineButton[] }> {
         const config = await ConfigManager.getConfig();
 
-        let message = `🤖 Admin config`;
+        let message = `🤖 Admin config\n`;
+
+        const volumesByChain = await Swap.aggregate([
+            {
+                $match: { "status.type": StatusType.COMPLETED }
+            },
+            { 
+                $group: { _id: '$chain', totalVolume: { $sum: '$value.usd' } } 
+            }
+        ]);
+        for (const volume of volumesByChain){
+            message += `\n${ChainManager.getChainTitle(volume._id)}: $${volume.totalVolume.toFixed(2)}`;
+        }
 
         message += `\n\nRef payouts: ${config?.isRefPayoutsEnabled ? '🟢' : '🔴'}`;
 
