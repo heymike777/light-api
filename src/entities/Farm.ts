@@ -21,14 +21,22 @@ export interface IFarm extends mongoose.Document {
     title: string;
     chain: Chain;
     userId: string;
-    traderProfileId?: string;
+    traderProfileId: string;
     status: FarmStatus;
     type: FarmType;
     dexId?: DexId;
-    frequency?: number; // in seconds
-    volume?: number; // in USD
+    frequency: number; // in seconds
+    volume: number; // in USD
     fee: number; // in %
     pools: { address: string, tokenA: string, tokenB: string, title?: string }[];
+    lastSwapAt?: Date;
+    progress?: {
+        currentVolume: number;
+        processingVolume: number;
+        buysInARow: number;
+        maxBuysInARow: number;
+    }
+    failedSwapsCount: number;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -46,6 +54,9 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
     volume: { type: Number },
     fee: { type: Number, default: 0 },
     pools: { type: Mixed },
+    lastSwapAt: { type: Date },
+    progress: { type: Mixed },
+    failedSwapsCount: { type: Number, default: 0 },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
@@ -53,6 +64,7 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
 
 FarmSchema.index({ userId: 1 });
 FarmSchema.index({ userId: 1, status: 1 });
+FarmSchema.index({ status: 1 });
 
 FarmSchema.pre('save', function (next) {
     this.updatedAt = new Date();

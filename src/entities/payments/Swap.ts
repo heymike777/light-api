@@ -51,7 +51,7 @@ export interface ISwap extends mongoose.Document {
         usd: number;
     }
     intermediateWallet?: WalletModel;
-    
+
     status: {
         type: StatusType;
         tryIndex: number;
@@ -75,6 +75,8 @@ export interface ISwap extends mongoose.Document {
     }
 
     points?: { [eventId: string]: number }; // points for trading events, if any
+    farmId?: string;
+    poolId?: string;
 
     updatedAt?: Date;
     createdAt: Date;
@@ -95,7 +97,9 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     status: { type: Mixed },
     referralRewards: { type: Mixed },
     points: { type: Mixed },
-
+    farmId: { type: String },
+    poolId: { type: String },
+    
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
 });
@@ -105,6 +109,7 @@ SwapSchema.index({ chain: 1, 'status.tx.signature': 1 });
 SwapSchema.index({ _id: 1, 'status.type': 1 });
 SwapSchema.index({ traderProfileId: 1, 'status.type': 1, createdAt: 1, points: 1 });
 SwapSchema.index({ 'status.type': 1, createdAt: 1, points: 1 });
+SwapSchema.index({ farmId: 1 });
 
 SwapSchema.pre('save', function (next) {
     this.updatedAt = new Date();

@@ -361,6 +361,13 @@ export class BotFarmHelper extends BotHelper {
             farm.frequency = BotFarmHelper.FREQUENCIES.find(f => f?.default)?.seconds || 5;
             farm.volume = BotFarmHelper.VOLUMES.find(v => v?.default)?.usd || 100000;
             farm.fee = 0;
+            farm.progress = {
+                currentVolume: 0,
+                processingVolume: 0,
+                buysInARow: 0,
+                maxBuysInARow: 0,
+            };
+            farm.failedSwapsCount = 0;
 
             //TODO: this is hardcoded for now. we'll add pool selection later.
             farm.pools = [

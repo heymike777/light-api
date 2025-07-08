@@ -13,6 +13,7 @@ import { TokenPriceManager } from './TokenPriceManager';
 import { ReferralsManager } from './ReferralsManager';
 import { HealthManager } from './HealthManager';
 import { EventsManager } from './EventsManager';
+import { FarmManager } from './FarmManager';
 
 export class CronManager {
 
@@ -42,6 +43,10 @@ export class CronManager {
         }
 
         if (EnvManager.isCronProcess){
+            cron.schedule('* * * * * *', () => {
+                this.cronEverySecond();
+            });
+
             cron.schedule('*/10 * * * * *', () => {
                 this.checkAndRetrySwaps();
             });
@@ -172,6 +177,14 @@ export class CronManager {
             await EventsManager.recalculateLeaderboardForActiveEvents();
         } catch (error) {
             console.error('!cronOnceAnHour error', error);
+        }
+    }
+
+    static async cronEverySecond() {
+        try {
+            await FarmManager.tick();
+        } catch (error) {
+            console.error('!cronEverySecond FarmManager error', error);
         }
     }
 

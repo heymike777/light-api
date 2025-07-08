@@ -43,12 +43,16 @@ export class SegaManager {
         ]
     };
 
-    static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
+    static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number, poolId?: string, fee?: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         const tpWallet = traderProfile.getWallet();
         if (!tpWallet) {
             throw new Error('Wallet not found');
         }
-        const fee = SwapManager.getFeeSize(user, this.chain);
+
+        if (fee == undefined){
+            fee = SwapManager.getFeeSize(user, this.chain);
+        }
+        console.log('SEGA', 'swap', '!!!fee:', fee);
 
         console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
@@ -80,11 +84,13 @@ export class SegaManager {
             }
         }
         else {
-            const pool = await this.fetchPoolForMints(inputMint, outputMint);
-            if (!pool) {
-                throw new Error('Pool not found');
+            if (!poolId){
+                const pool = await this.fetchPoolForMints(inputMint, outputMint);
+                if (!pool) {
+                    throw new Error('Pool not found');
+                }
+                poolId = pool.poolId;
             }
-            const poolId = pool.poolId;
             tradeThrough.push({
                 poolId,
                 from: inputMint,
@@ -99,6 +105,7 @@ export class SegaManager {
 
         let txBuilder: TxBuilder | undefined = undefined;
         let txBuildProps: { lookupTableCache?: CacheLTA; lookupTableAddress?: string[]; } | undefined = undefined;
+        console.log('inputAmount:', inputAmount.toString());
         let swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : 0;
         let tradeIndex = 0;
         let prevSwapResult: SwapResult | undefined = undefined;
