@@ -102,8 +102,9 @@ export class FarmManager {
         if (buyOrSell === 'buy'){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
 
-            const amountMin = this.kMinSolAmount * LAMPORTS_PER_SOL;
-            const amountMax1 = Math.floor(solBalance.amount.toNumber() * 0.8);
+            // const amountMin = this.kMinSolAmount * LAMPORTS_PER_SOL;
+            const amountMin = Math.floor(solBalance.amount.toNumber() * 0.7);
+            const amountMax1 = Math.floor(solBalance.amount.toNumber() * 0.9);
             const amountMax2 = solBalance.amount.toNumber() - 0.02 * LAMPORTS_PER_SOL;
             const amountMax = Math.min(amountMax1, amountMax2);
             const amount = Helpers.getRandomInt(amountMin, amountMax) / LAMPORTS_PER_SOL;
@@ -140,7 +141,7 @@ export class FarmManager {
         }
         else {
             farm.progress.buysInARow = 0;
-            farm.progress.maxBuysInARow = Helpers.getRandomInt(3, 10);
+            farm.progress.maxBuysInARow = Helpers.getRandomInt(2, 3);
         }
 
         await Farm.updateOne({ _id: farm.id }, { $set: { 
