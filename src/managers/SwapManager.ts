@@ -278,6 +278,9 @@ export class SwapManager {
                 swap.status.type = StatusType.CANCELLED;
                 swap.status.tryIndex++;
                 await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+                if (swap.farmId){
+                    await FarmManager.swapFailed(swap);
+                }
 
                 return;
             }
@@ -479,6 +482,9 @@ export class SwapManager {
                 const tmp = await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.CREATED }, { $set: { status: swap.status } });
                 if (tmp.modifiedCount > 0) {
                     LogManager.error('SwapManager', 'retrySwaps', 'Swap cancelled', { swap });
+                    if (swap.farmId){
+                        await FarmManager.swapFailed(swap);
+                    }
                     await this.sendSwapErrorToUser(swap);
                     continue;
                 }

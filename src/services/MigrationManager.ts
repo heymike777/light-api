@@ -350,10 +350,10 @@ export class MigrationManager {
         //     await EventsManager.recalculateLeaderboard(event.id);
         // }
 
-        while (true){
-            await FarmManager.tick();
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
+        // while (true){
+        //     await FarmManager.tick();
+        //     await new Promise((resolve) => setTimeout(resolve, 1000));
+        // }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
