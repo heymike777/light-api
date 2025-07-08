@@ -71,6 +71,8 @@ import { TradingEvent } from "../entities/events/TradingEvent";
 import { EventsManager } from "../managers/EventsManager";
 import { CronManager } from "../managers/CronManager";
 import { TradingEventPoints } from "../entities/events/TradingEventPoints";
+import { FarmManager } from "../managers/FarmManager";
+import { Farm } from "../entities/Farm";
 
 export class MigrationManager {
 
@@ -348,6 +350,11 @@ export class MigrationManager {
         //     await EventsManager.recalculateLeaderboard(event.id);
         // }
 
+        // while (true){
+        //     await FarmManager.tick();
+        //     await new Promise((resolve) => setTimeout(resolve, 1000));
+        // }
+
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
 
@@ -462,6 +469,7 @@ export class MigrationManager {
         await Swap.syncIndexes();
         await TradingEvent.syncIndexes();
         await TradingEventPoints.syncIndexes();
+        await Farm.syncIndexes();
     }
 
     static async processTx(chain: Chain, signature: string) {

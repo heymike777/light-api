@@ -176,7 +176,8 @@ export class BotStartHelper extends BotHelper {
             {id: 'tokens|hot', text: '🔥 Hot tokens'},
             {id: 'airdrops', text: '🪂 Airdrops'},
             {id: 'settings', text: '⚙️ Settings'},
-            // {id: 'row', text: ''}, 
+            {id: 'row', text: ''}, 
+            {id: 'farm', text: '⛏️ Pump farm'}, 
             // {id: 'events', text: '🏆 SOON RUSH'},
         ];
 

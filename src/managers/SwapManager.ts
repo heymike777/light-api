@@ -32,6 +32,7 @@ import { ReferralsManager } from "./ReferralsManager";
 import { CobaltxManager } from "../services/solana/svm/CobaltxManager";
 import { EventsManager } from "./EventsManager";
 import { TradingEventStatus } from "../entities/events/TradingEvent";
+import { FarmManager } from "./FarmManager";
 
 export class SwapManager {
 
@@ -221,7 +222,8 @@ export class SwapManager {
                 }
             }
             else if (swap.dex == SwapDex.SEGA){
-                const segaResults = await SegaManager.swap(user, traderProfile, inputMint, outputMint, new BN(amount), slippage);
+                const fee = swap.farmId ? 0 : undefined;
+                const segaResults = await SegaManager.swap(user, traderProfile, inputMint, outputMint, new BN(amount), slippage, swap.poolId, fee);
                 swapAmountInLamports = segaResults.swapAmountInLamports.toString();
                 tx = segaResults.tx;
                 blockhash = segaResults.blockhash;
@@ -276,6 +278,9 @@ export class SwapManager {
                 swap.status.type = StatusType.CANCELLED;
                 swap.status.tryIndex++;
                 await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
+                if (swap.farmId){
+                    await FarmManager.swapFailed(swap);
+                }
 
                 return;
             }
@@ -358,7 +363,10 @@ export class SwapManager {
         const updateResult = await Swap.updateOne({ _id: swap._id, "status.type": {$ne: StatusType.COMPLETED} }, { $set: { status: swap.status } });
         if (updateResult.modifiedCount > 0){
             await this.saveReferralRewards(swap, signature, parsedTransactionWithMeta);
-            this.trackSwapInMixpanel(swap);    
+            if (swap.farmId) {
+                await FarmManager.swapCompleted(swap);
+            }
+            this.trackSwapInMixpanel(swap);
 
             // Update user's volume for this chain
             const user = await UserManager.getUserById(swap.userId);
@@ -428,7 +436,10 @@ export class SwapManager {
                         const updateResult = await Swap.updateOne({ _id: swap._id, "status.type": {$ne: StatusType.COMPLETED} }, { $set: { status: swap.status } });
                         if (updateResult.modifiedCount > 0){
                             await this.saveReferralRewards(swap, signature);
-                            this.trackSwapInMixpanel(swap);    
+                            if (swap.farmId){ 
+                                await FarmManager.swapCompleted(swap);
+                            }
+                            this.trackSwapInMixpanel(swap);
                         }
                     }
                 }
@@ -471,6 +482,9 @@ export class SwapManager {
                 const tmp = await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.CREATED }, { $set: { status: swap.status } });
                 if (tmp.modifiedCount > 0) {
                     LogManager.error('SwapManager', 'retrySwaps', 'Swap cancelled', { swap });
+                    if (swap.farmId){
+                        await FarmManager.swapFailed(swap);
+                    }
                     await this.sendSwapErrorToUser(swap);
                     continue;
                 }
@@ -576,7 +590,7 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false): Promise<{signature?: string, swap: ISwap}>{
+    static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{signature?: string, swap: ISwap}>{
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
             dex = SwapDex.JUPITER;
@@ -630,17 +644,20 @@ export class SwapManager {
             throw new BadRequestError(`Only ${kSOL.symbol} is supported for this chain`);
         }
 
-        const balance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
-        const minSolRequired = [Chain.SOON_MAINNET, Chain.SOONBASE_MAINNET, Chain.SVMBNB_MAINNET].includes(chain) ? (currency == Currency.SOL ? amount * 1.01 + 0.005 : 0.005) : (currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01);
-        if (!balance || balance.uiAmount < minSolRequired){
-            throw new BadRequestError(`Insufficient ${kSOL.symbol} balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
-        }
+        if (!farmId){
+            // no need to check balance if farmId is provided. we already checked it in FarmManager.makeSwap
+            const balance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
+            const minSolRequired = [Chain.SOON_MAINNET, Chain.SOONBASE_MAINNET, Chain.SVMBNB_MAINNET].includes(chain) ? (currency == Currency.SOL ? amount * 1.01 + 0.005 : 0.005) : (currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01);
+            if (!balance || balance.uiAmount < minSolRequired){
+                throw new BadRequestError(`Insufficient ${kSOL.symbol} balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
+            }
 
-        if (currency == Currency.USDC){
-            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, kUsdcAddress);
-            if (!balance || balance.uiAmount < amount){
-                throw new BadRequestError('Insufficient USDC balance');
-            }    
+            if (currency == Currency.USDC){
+                const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, kUsdcAddress);
+                if (!balance || balance.uiAmount < amount){
+                    throw new BadRequestError('Insufficient USDC balance');
+                }    
+            }
         }
 
         const decimals = currency == Currency.SOL ? kSOL.decimals : 6;
@@ -660,6 +677,8 @@ export class SwapManager {
             type: StatusType.CREATED,
             tryIndex: 0,
         };
+        swap.farmId = farmId;
+        swap.poolId = poolId;
         await swap.save();
 
         MixpanelManager.track('Swap Init', userId, { chain: chain, type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});
@@ -674,7 +693,7 @@ export class SwapManager {
         return { signature, swap };
     }
 
-    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false): Promise<{ signature?: string, swap: ISwap }>{ 
+    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{ signature?: string, swap: ISwap }>{ 
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
             dex = SwapDex.JUPITER;
@@ -716,10 +735,13 @@ export class SwapManager {
         const currency = traderProfile.currency || Currency.SOL;
         const userId = traderProfile.userId;
 
-        const solBalance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
-        const minSolRequired = 0.01;
-        if (!solBalance || solBalance.uiAmount < minSolRequired){
-            throw new BadRequestError(`Insufficient ${kSOL.symbol} balance`);
+        if (!farmId){
+            // no need to check balance if farmId is provided. we already checked it in FarmManager.makeSwap
+            const solBalance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
+            const minSolRequired = 0.01;
+            if (!solBalance || solBalance.uiAmount < minSolRequired){
+                throw new BadRequestError(`Insufficient ${kSOL.symbol} balance`);
+            }
         }
 
         let amountInLamports = new BN(0);
@@ -759,6 +781,8 @@ export class SwapManager {
             tryIndex: 0,
         };
         swap.intermediateWallet = isHoneypot ? SolanaManager.createWallet() : undefined;
+        swap.farmId = farmId;
+        swap.poolId = poolId;
         await swap.save();
 
         MixpanelManager.track('Swap Init', userId, { chain: chain, type: swap.type, dex: swap.dex, mint: swap.mint, currency: swap.currency, traderProfileId: swap.traderProfileId});

@@ -32,7 +32,8 @@ export enum TelegramWaitingType {
     ADD_REFCODE = 'add_refcode',
     AIRDROP_WALLETS = 'airdrop_wallets',
     EVENT_SPECIAL_PRIZE_INFO = 'event_special_prize_info',
-
+    FARM_FREQUENCY = 'farm_frequency',
+    FARM_VOLUME = 'farm_volume',
 }
 
 export interface TelegramState {
