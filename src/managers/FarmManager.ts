@@ -104,7 +104,7 @@ export class FarmManager {
 
             // const amountMin = this.kMinSolAmount * LAMPORTS_PER_SOL;
             const amountMin1 = Math.floor(solBalance.amount.toNumber() * 0.7);
-            const amountMin2 = 0.1 * LAMPORTS_PER_SOL; // 20 SOL is the minimum amount for a buy swap
+            const amountMin2 = this.kMinSolAmount * LAMPORTS_PER_SOL; // 20 SOL is the minimum amount for a buy swap
             const amountMin = Math.max(amountMin1, amountMin2);
             const amountMax1 = Math.floor(solBalance.amount.toNumber() * 0.9);
             const amountMax2 = solBalance.amount.toNumber() - 0.02 * LAMPORTS_PER_SOL;
