@@ -222,8 +222,7 @@ export class SwapManager {
                 }
             }
             else if (swap.dex == SwapDex.SEGA){
-                const fee = swap.farmId ? 0 : undefined;
-                const segaResults = await SegaManager.swap(user, traderProfile, inputMint, outputMint, new BN(amount), slippage, swap.poolId, fee);
+                const segaResults = await SegaManager.swap(user, traderProfile, inputMint, outputMint, new BN(amount), slippage, swap.poolId);
                 swapAmountInLamports = segaResults.swapAmountInLamports.toString();
                 tx = segaResults.tx;
                 blockhash = segaResults.blockhash;
@@ -944,19 +943,20 @@ export class SwapManager {
     }
 
     static getFeeSize(user: IUser, chain?: Chain): number {
-        if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
-            const volume = user.volume || {};
-            const volumeOnChain = volume[chain] || 0;
-            if (volumeOnChain < 1000){
-                return 0.005;
-            }
-            else {
-                return 0.003;
-            }
-        }
-        else {
-            return user.parent ? 0.009 : 0.01;
-        }
+        return 0.005;
+        // if (chain == Chain.SOON_MAINNET || chain == Chain.SVMBNB_MAINNET || chain == Chain.SOONBASE_MAINNET){
+        //     const volume = user.volume || {};
+        //     const volumeOnChain = volume[chain] || 0;
+        //     if (volumeOnChain < 1000){
+        //         return 0.005;
+        //     }
+        //     else {
+        //         return 0.003;
+        //     }
+        // }
+        // else {
+        //     return user.parent ? 0.009 : 0.01;
+        // }
     }
 
 }
