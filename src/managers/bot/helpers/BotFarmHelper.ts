@@ -382,9 +382,6 @@ export class BotFarmHelper extends BotHelper {
             }
             await UserManager.updateTelegramState(user.id, undefined);
             
-            await BotManager.reply(ctx, `Token CA received: ${tokenCa}`);
-
-            //TODO: create a farm
             const replyMessage = await BotFarmHelper.buildFarmDexMessage(user, undefined, tokenCa, farmPools);
             await super.commandReceived(ctx, user, replyMessage);
 
@@ -538,10 +535,21 @@ export class BotFarmHelper extends BotHelper {
 
         const markup = BotManager.buildInlineKeyboard(buttons);
 
+        let text = '⛏️ Create a farm';
+        text += '\n\n';
+        text += 'Select a DEX, frequency and expected volume.'
+        text += '\n\n';
+        if (mint){
+            text += `CA: <code>${mint}</code>`;
+            text += '\n\n';
+        }
+
+        text += '👇 When you\'re ready, click “Continue” to start the bot.';
+
         return {
-            text: '⛏️ Create a farm\n\nSelect a DEX, frequency and expected volume.\n\n👇 When you\'re ready, click “Continue” to start the bot.',
-            buttons: buttons,
-            markup: markup
+            text,
+            buttons,
+            markup
         };
     }
 
