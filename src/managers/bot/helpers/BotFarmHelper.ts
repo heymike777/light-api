@@ -539,8 +539,8 @@ export class BotFarmHelper extends BotHelper {
         text += '\n\n';
         text += 'Select a DEX, frequency and expected volume.'
         text += '\n\n';
-        if (mint){
-            text += `CA: <code>${mint}</code>`;
+        if (farm.mint){
+            text += `CA: <code>${farm.mint}</code>`;
             text += '\n\n';
         }
 
