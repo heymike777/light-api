@@ -17,6 +17,13 @@ export enum FarmStatus {
     COMPLETED = 'completed',
 }
 
+export interface IFarmPool {
+    address: string;
+    tokenA: string;
+    tokenB: string;
+    title?: string;
+}
+
 export interface IFarm extends mongoose.Document {
     title: string;
     chain: Chain;
@@ -28,7 +35,8 @@ export interface IFarm extends mongoose.Document {
     frequency: number; // in seconds
     volume: number; // in USD
     fee: number; // in %
-    pools: { address: string, tokenA: string, tokenB: string, title?: string }[];
+    mint?: string;
+    pools: IFarmPool[];
     lastSwapAt?: Date;
     progress?: {
         currentVolume: number;
@@ -53,6 +61,7 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
     frequency: { type: Number },
     volume: { type: Number },
     fee: { type: Number, default: 0 },
+    mint: { type: String },
     pools: { type: Mixed },
     lastSwapAt: { type: Date },
     progress: { type: Mixed },

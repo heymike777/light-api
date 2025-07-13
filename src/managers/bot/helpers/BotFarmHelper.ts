@@ -8,13 +8,15 @@ import { LogManager } from "../../LogManager";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
 import { Chain, DexId, Priority } from "../../../services/solana/types";
-import { Farm, FarmStatus, FarmType, IFarm } from "../../../entities/Farm";
+import { Farm, FarmStatus, FarmType, IFarm, IFarmPool } from "../../../entities/Farm";
 import { IUserTraderProfile, UserTraderProfile } from "../../../entities/users/TraderProfile";
 import { ChainManager } from "../../chains/ChainManager";
-import { getNativeToken, kSolAddress } from "../../../services/solana/Constants";
+import { getNativeToken, kSolAddress, kSonicAddress } from "../../../services/solana/Constants";
 import { SolanaManager } from "../../../services/solana/SolanaManager";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { Swap } from "../../../entities/payments/Swap";
+import { SegaManager } from "../../../services/solana/svm/SegaManager";
+import { TokenManager } from "../../TokenManager";
 
 type Dex = {
     id: DexId;
@@ -47,12 +49,12 @@ export class BotFarmHelper extends BotHelper {
     ];
 
     private static VOLUMES: ({usd: number, title: string, default: boolean, minSolAmount: number} | undefined)[] = [
-        { usd: 50000, title: '$50k', default: false, minSolAmount: 1 },
-        { usd: 100000, title: '$100k', default: true, minSolAmount: 2 },
-        { usd: 500000, title: '$500k', default: false, minSolAmount: 10 },
+        { usd: 50000, title: '$50k', default: false, minSolAmount: 2.5 },
+        { usd: 100000, title: '$100k', default: true, minSolAmount: 5 },
+        { usd: 500000, title: '$500k', default: false, minSolAmount: 25 },
         undefined,
-        { usd: 1000000, title: '$1M', default: false, minSolAmount: 20 },
-        { usd: 5000000, title: '$5M', default: false, minSolAmount: 100 },
+        { usd: 1000000, title: '$1M', default: false, minSolAmount: 50 },
+        { usd: 5000000, title: '$5M', default: false, minSolAmount: 250 },
         { usd: -1, title: 'Custom', default: false, minSolAmount: 0 },
     ];
 
@@ -87,7 +89,9 @@ export class BotFarmHelper extends BotHelper {
             await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);    
         }
         else if (buttonId == 'farm|token'){
-            //TODO: do noting for now. we'll add token volume boost later.
+            await BotManager.reply(ctx, 'Send token CA address to boost volume');
+            await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_TOKEN_CA, helper: this.kCommand, data: { messageId: BotManager.getMessageIdFromContext(ctx) } });
+            return;
         }
         else if (buttonId && buttonId.startsWith('farm|')){
             const parts = buttonId.split('|');
@@ -340,6 +344,52 @@ export class BotFarmHelper extends BotHelper {
             await UserManager.updateTelegramState(user.id, undefined);
             return true;
         }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.FARM_TOKEN_CA){
+            const tokenCa = message.text.trim();
+            if (!tokenCa){
+                await BotManager.reply(ctx, 'Invalid token CA. Please, try again.\n<b>Token CA must be a valid address</b>');
+                return true;
+            }
+
+            const chain = user.defaultChain || Chain.SOLANA;
+            const token = await TokenManager.getToken(chain, tokenCa);
+
+            let farmPools: IFarmPool[] | undefined = [];
+            let isValid = false;
+            if (chain == Chain.SONIC){
+                if (!isValid){
+                    const poolInfo = await SegaManager.fetchPoolForMints(tokenCa, kSolAddress);
+                    if (poolInfo){
+                        isValid = true;
+                        const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
+                        farmPools.push({ address: poolInfo.poolId, tokenA: kSolAddress, tokenB: tokenCa, title: title });
+                    }
+                }
+
+                if (!isValid){
+                    const poolInfo = await SegaManager.fetchPoolForMints(tokenCa, kSonicAddress);
+                    if (poolInfo){
+                        isValid = true;
+                        const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
+                        farmPools.push({ address: poolInfo.poolId, tokenA: kSonicAddress, tokenB: tokenCa, title: title });
+                    }
+                }
+            }
+
+            if (!isValid){
+                await BotManager.reply(ctx, '🔴 Invalid token CA. Please, try again.\n\n<b>Token CA must be a valid address and have a liquidity pool</b>');
+                return true;
+            }
+            await UserManager.updateTelegramState(user.id, undefined);
+            
+            await BotManager.reply(ctx, `Token CA received: ${tokenCa}`);
+
+            //TODO: create a farm
+            const replyMessage = await BotFarmHelper.buildFarmDexMessage(user, undefined, tokenCa, farmPools);
+            await super.commandReceived(ctx, user, replyMessage);
+
+            return true;
+        }
 
         return false;
     }
@@ -362,7 +412,7 @@ export class BotFarmHelper extends BotHelper {
         }
 
         const buttons: InlineButton[] = [
-            { id: 'farm|token', text: '🔥 Token volume (soon)' },
+            { id: 'farm|token', text: '🔥 Token volume' },
             { id: 'farm|dex', text: '💰 DEX volume' },
             { id: 'row', text: '' },
             { id: 'farm|my_farms', text: '⛏️ My farms' },
@@ -376,7 +426,7 @@ export class BotFarmHelper extends BotHelper {
         };
     }
 
-    static async buildFarmDexMessage(user: IUser, farm?: IFarm): Promise<Message> {
+    static async buildFarmDexMessage(user: IUser, farm?: IFarm, mint?: string, pools?: IFarmPool[]): Promise<Message> {
         const chain = user.defaultChain || Chain.SOLANA;
         const dexes = BotFarmHelper.DEXES[chain];
         if (!dexes){
@@ -402,6 +452,7 @@ export class BotFarmHelper extends BotHelper {
             farm.frequency = BotFarmHelper.FREQUENCIES.find(f => f?.default)?.seconds || 5;
             farm.volume = BotFarmHelper.VOLUMES.find(v => v?.default)?.usd || 100000;
             farm.fee = 0;
+            farm.mint = mint;
             farm.progress = {
                 currentVolume: 0,
                 processingVolume: 0,
@@ -410,10 +461,10 @@ export class BotFarmHelper extends BotHelper {
             };
             farm.failedSwapsCount = 0;
 
-            //TODO: this is hardcoded for now. we'll add pool selection later.
-            farm.pools = [
+            //TODO: hardcoded pools for SOL/USDT on SonicSVM
+            farm.pools = pools || [
                 { address: 'CKkoETT652fNFs8tYncMokW6SFwKENpTTDndAo1HkR7J', tokenA: kSolAddress, tokenB: 'qPzdrTCvxK3bxoh2YoTZtDcGVgRUwm37aQcC3abFgBy', title: 'SOL/USDT' }
-            ];
+            ];    
 
             await farm.save();
         }

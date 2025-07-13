@@ -34,6 +34,7 @@ export enum TelegramWaitingType {
     EVENT_SPECIAL_PRIZE_INFO = 'event_special_prize_info',
     FARM_FREQUENCY = 'farm_frequency',
     FARM_VOLUME = 'farm_volume',
+    FARM_TOKEN_CA = 'farm_token_ca',
 }
 
 export interface TelegramState {

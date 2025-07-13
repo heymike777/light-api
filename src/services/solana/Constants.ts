@@ -9,6 +9,7 @@ export const kUsdcAddress = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 export const kUsdcMintDecimals = 6;
 export const kUsdtAddress = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 export const kJupAddress = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN';
+export const kSonicAddress = 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL';
 
 export const kPumpfunLiquidityWalletAddress = '39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg';
 
