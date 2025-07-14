@@ -16,11 +16,12 @@ import { InlineKeyboardMarkup } from "grammy/types";
 
 export class BotAirdropHelper extends BotHelper {
 
-    static supportedAirdrops = ['SNS', 'HUMA'];
+    static supportedAirdrops = ['SNS', 'HUMA', 'WTC'];
     static MAX_WALLETS_PER_AIRDROP_CHECK = 10;
     static claimUrls: { [key: string]: string } = {
         'SNS': 'https://airdrop.sns.id/',
         'HUMA': 'https://claim.huma.finance/',
+        'WTC': 'https://solana.walletconnect.network/',
     };
 
     constructor() {

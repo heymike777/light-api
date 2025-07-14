@@ -26,6 +26,9 @@ export class AirdropManager {
             else if (airdropId == 'HUMA'){
                 info = await this.fetchHumaAirdropInfoForWallet(walletAddress);
             }
+            else if (airdropId == 'WTC'){
+                info = await this.fetchWTCAirdropInfoForWallet(walletAddress);
+            }
 
             if (info) {
                 airdropInfo.push(info);
@@ -82,6 +85,24 @@ export class AirdropManager {
             const tokensToClaim = (data?.amountUnlocked || 0) / (10 ** 5);
             // const tokensClaimed = (data?.amountLocked || 0) / (10 ** 5);
             return { walletAddress, tokensToClaim };
+        } catch (error) {
+            console.error(`Error fetching ${airdropId} airdrop info:`, error);
+        }
+        return undefined;
+    }
+
+    static async fetchWTCAirdropInfoForWallet(walletAddress: string): Promise<IAirdropInfo | undefined> {
+        const airdropId = 'WTC';
+        try {
+            const response = await fetch(`https://api.walletconnect.network/airdrop/solana/${walletAddress}`);
+            if (!response.ok) {
+                throw new Error(`Error fetching airdrop info: ${response.statusText}`);
+            }
+            const data: any = await response.json();
+
+            console.log(walletAddress, data);
+
+            return { walletAddress, tokensToClaim: 0 };
         } catch (error) {
             console.error(`Error fetching ${airdropId} airdrop info:`, error);
         }
