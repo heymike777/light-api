@@ -102,7 +102,7 @@ export class AirdropManager {
 
             console.log(walletAddress, data);
 
-            return { walletAddress, tokensToClaim: 0 };
+            return { walletAddress, tokensToClaim: 1 };
         } catch (error) {
             console.error(`Error fetching ${airdropId} airdrop info:`, error);
         }
