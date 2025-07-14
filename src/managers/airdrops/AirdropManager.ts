@@ -100,7 +100,7 @@ export class AirdropManager {
             }
             const data: any = await response.json();
 
-            console.log(walletAddress, data);
+            console.log('WTC', walletAddress, data);
 
             return { walletAddress, tokensToClaim: 1 };
         } catch (error) {
