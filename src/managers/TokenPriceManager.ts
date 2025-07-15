@@ -122,7 +122,7 @@ export class TokenPriceManager {
             }
         } catch (error: any) {
             // LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
-            SystemNotificationsManager.sendSystemMessage('TokenPriceManager.getPricesFromRaydium error:' + error.message);
+            // SystemNotificationsManager.sendSystemMessage('TokenPriceManager.getPricesFromRaydium error:' + error.message);
         }
 
         console.log('TokenPriceManager', 'getPricesFromRaydium', `found ${prices.length} prices`);
