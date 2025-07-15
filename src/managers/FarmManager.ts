@@ -103,12 +103,16 @@ export class FarmManager {
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
 
             // const amountMin = this.kMinSolAmount * LAMPORTS_PER_SOL;
-            const amountMin1 = Math.floor(solBalance.amount.toNumber() * 0.7);
+            const amountMin1 = Math.floor(solBalance.amount.toNumber() * 0.2);
             const amountMin2 = this.kMinSolAmount * LAMPORTS_PER_SOL; // 20 SOL is the minimum amount for a buy swap
             const amountMin = Math.max(amountMin1, amountMin2);
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin1:', amountMin1, 'amountMin2:', amountMin2, 'amountMin:', amountMin);
+
             const amountMax1 = Math.floor(solBalance.amount.toNumber() * 0.9);
-            const amountMax2 = solBalance.amount.toNumber() - 0.02 * LAMPORTS_PER_SOL;
+            const amountMax2 = solBalance.amount.toNumber() - 0.01 * LAMPORTS_PER_SOL;
             const amountMax = Math.min(amountMax1, amountMax2);
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMax1:', amountMax1, 'amountMax2:', amountMax2, 'amountMax:', amountMax);
+            
             if (amountMin > amountMax){
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is greater than amountMax. Skipping the swap.');
                 return;
