@@ -71,11 +71,12 @@ export class RateLimitManager {
                 dayTxCount: 1,
                 rateLimitedUntil: undefined,
             }
-        } else {
-            this.users[userId].minuteTxCount++;
-            this.users[userId].hourTxCount++;
-            this.users[userId].dayTxCount++;
-        }
+        } 
+        // else {
+        //     this.users[userId].minuteTxCount++;
+        //     this.users[userId].hourTxCount++;
+        //     this.users[userId].dayTxCount++;
+        // }
         
         console.log('RateLimitManager - receivedTransaction', userId, this.users[userId]);
 
