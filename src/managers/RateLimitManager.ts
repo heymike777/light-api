@@ -42,18 +42,21 @@ export class RateLimitManager {
     }
 
     static async cleanMinuteRateLimits(){
+        console.log('RateLimitManager - cleanMinuteRateLimits');
         for (const userId in this.users) {
             this.users[userId].minuteTxCount = 0;
         }
     }
 
     static async cleanHourRateLimits(){
+        console.log('RateLimitManager - cleanHourRateLimits');
         for (const userId in this.users) {
             this.users[userId].hourTxCount = 0;
         }
     }
     
     static async cleanDayRateLimits(){
+        console.log('RateLimitManager - cleanDayRateLimits');
         for (const userId in this.users) {
             this.users[userId].dayTxCount = 0;
         }
@@ -74,6 +77,7 @@ export class RateLimitManager {
             this.users[userId].dayTxCount++;
         }
         
+        console.log('RateLimitManager - receivedTransaction', userId, this.users[userId]);
 
         let result = true;
         const user = this.users[userId];

@@ -461,11 +461,16 @@ export class BotManager {
     }
 
     static async sendPremiumError(userId: string, text: string) {
+        console.log('RateLimitManager - sendPremiumError', 'userId:', userId, 'text:', text);
+
         let chatId: number | undefined = undefined;
         const user = await UserManager.getUserById(userId);
         if (user && user.telegram?.id){
             chatId = user.telegram.id;
         }
+
+        console.log('RateLimitManager - sendPremiumError', 'chatId:', chatId);
+
 
         if (!chatId){
             return;
