@@ -471,7 +471,6 @@ export class BotManager {
 
         console.log('RateLimitManager - sendPremiumError', 'chatId:', chatId);
 
-
         if (!chatId){
             return;
         }

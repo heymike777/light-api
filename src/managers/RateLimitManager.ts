@@ -1,7 +1,14 @@
 import { ISubscription, SubscriptionTier } from "../entities/payments/Subscription";
 import { BotManager } from "./bot/BotManager";
 import { SubscriptionManager } from "./SubscriptionManager";
-import { UserManager } from "./UserManager";
+
+export interface IRateLimitedUser {
+    tier: SubscriptionTier | 'free',
+    minuteTxCount: number,
+    hourTxCount: number,
+    dayTxCount: number,
+    rateLimitedUntil?: Date,
+}
 
 export class RateLimitManager {
 
@@ -23,13 +30,7 @@ export class RateLimitManager {
         [SubscriptionTier.GOLD]: 30000,
         [SubscriptionTier.PLATINUM]: 40000,
     };
-    static users: { [key: string]: {
-        tier: SubscriptionTier | 'free',
-        minuteTxCount: number,
-        hourTxCount: number,
-        dayTxCount: number,
-        rateLimitedUntil?: Date,
-    } } = {}
+    static users: { [key: string]: IRateLimitedUser } = {}
     static subscriptions: { [key: string]: ISubscription } = {};
 
     static async fetchAllSubscriptions(){
@@ -63,25 +64,26 @@ export class RateLimitManager {
     }
 
     static receivedTransaction(userId: string, isTraderProfile: boolean): boolean {
-        if (!this.users[userId]){
-            this.users[userId] = {
+        let user = this.users[userId];
+
+        if (!user){
+            user = {
                 tier: this.subscriptions[userId]?.tier || 'free',
                 minuteTxCount: 1,
                 hourTxCount: 1,
                 dayTxCount: 1,
                 rateLimitedUntil: undefined,
             }
-        } 
-        // else {
-        //     this.users[userId].minuteTxCount++;
-        //     this.users[userId].hourTxCount++;
-        //     this.users[userId].dayTxCount++;
-        // }
+            this.users[userId] = user;
+        } else {
+            user.minuteTxCount++;
+            user.hourTxCount++;
+            user.dayTxCount++;
+        }
         
-        console.log('RateLimitManager - receivedTransaction', userId, this.users[userId]);
+        // console.log('RateLimitManager - receivedTransaction', userId, this.users[userId]);
 
         let result = true;
-        const user = this.users[userId];
         const now = new Date();
         let isJustRateLimited = false;
         let rateLimitedFor: string | undefined;
