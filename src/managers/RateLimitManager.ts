@@ -118,7 +118,7 @@ export class RateLimitManager {
         }
 
         if (isJustRateLimited){
-            const errorMessage = `You are rate limited for ${rateLimitedFor}. Please, upgrade your subscription to have higher limits.`;
+            const errorMessage = `🔴 You are rate limited for ${rateLimitedFor}. Please, upgrade your subscription to have higher limits.`;
             BotManager.sendPremiumError(userId, errorMessage);
         }
 

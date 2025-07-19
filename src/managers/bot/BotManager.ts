@@ -475,11 +475,6 @@ export class BotManager {
             return;
         }
 
-        if (chatId != 862473){
-            //TODO: that's a test
-            return;
-        }
-
         try {
             const buttons: InlineButton[] = [
                 { id: 'upgrade', text: '👑 Upgrade' },
@@ -487,7 +482,7 @@ export class BotManager {
             const markup = BotManager.buildInlineKeyboard(buttons);
 
             await BotManager.sendMessage({
-                id: `premium_error_${userId}`,
+                id: `premium_error_${userId}_${Date.now()}`,
                 userId: userId,
                 chatId: chatId,
                 text: text,
