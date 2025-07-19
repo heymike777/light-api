@@ -512,12 +512,12 @@ export class WalletManager {
 
                     const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
                     const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+ totalUsdValue + ')' : '';
-                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, kSolAddress)}">${kSOL.symbol}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`;
+                    blockMessage += `\n<a href="${ExplorerManager.getUrlToAddress(chain, kSolAddress)}">${kSOL.symbol}</a>: ${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 6)} ${tokenValueString}`;
 
                     walletTokenChanges.push({
                         mint: kSolAddress,
                         symbol: kSOL.symbol,
-                        description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`,
+                        description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 6)} ${tokenValueString}`,
                     });
                 }
 
@@ -536,6 +536,9 @@ export class WalletManager {
                             asset = token.nft;
                         }
                         const balanceChange = tokenBalance.balanceChange;
+                        if (balanceChange == 0){
+                            continue;
+                        }
                         const totalUsdValue = Math.round(Math.abs(balanceChange) * (token?.price || 0) * 100)/100;
                         const tokenValueString = token && token.price && totalUsdValue>0 ? '(' + (balanceChange<0?'-':'') + '$'+totalUsdValue + ')' : '';
                         const tokenName = token && token.symbol ? token.symbol : Helpers.prettyWallet(mint);
@@ -544,7 +547,7 @@ export class WalletManager {
                         walletTokenChanges.push({
                             mint: mint,
                             symbol: tokenName,
-                            description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 3)} ${tokenValueString}`,
+                            description: `${balanceChange>0?'+':''}${Helpers.prettyNumber(balanceChange, 6)} ${tokenValueString}`,
                         });
                     }
                 }
