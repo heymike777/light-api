@@ -226,8 +226,8 @@ export class YellowstoneManager {
             const wallets = WalletManager.walletsMap.get(geyserWallet);
             if (wallets){
                 for (const wallet of wallets) {
-                    if (wallet.traderProfileId && !traderProfilesUserIds.includes(wallet.traderProfileId)){
-                        traderProfilesUserIds.push(wallet.traderProfileId);
+                    if (wallet.traderProfileId && !traderProfilesUserIds.includes(wallet.userId)){
+                        traderProfilesUserIds.push(wallet.userId);
                     }
                     else if (!userIds.includes(wallet.userId) && !traderProfilesUserIds.includes(wallet.userId)) {
                         userIds.push(wallet.userId);
