@@ -4,6 +4,7 @@ import { BotManager } from "./bot/BotManager";
 import { Client, Offset } from "rabbitmq-stream-js-client";
 import { HealthManager } from "./HealthManager";
 import { LogManager } from "./LogManager";
+import { RateLimitManager } from "./RateLimitManager";
 
 export class RabbitManager {
 
@@ -77,7 +78,7 @@ export class RabbitManager {
     static async receivedMessage(payload: SendMessageData){
         HealthManager.telegramMessagesCount++;
         HealthManager.telegramMessagesCountByUser[payload.userId] = (HealthManager.telegramMessagesCountByUser[payload.userId] || 0) + 1;
-
+        
         try {            
             if (this.cachedMessages[payload.id]) {
                 console.log("Rabbit - message already processed, skipping", payload.id);

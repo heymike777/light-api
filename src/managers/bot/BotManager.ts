@@ -460,6 +460,43 @@ export class BotManager {
         }
     }
 
+    static async sendPremiumError(userId: string, text: string) {
+        let chatId: number | undefined = undefined;
+        const user = await UserManager.getUserById(userId);
+        if (user && user.telegram?.id){
+            chatId = user.telegram.id;
+        }
+
+        if (!chatId){
+            return;
+        }
+
+        if (chatId != 862473){
+            //TODO: that's a test
+            return;
+        }
+
+        try {
+            const buttons: InlineButton[] = [
+                { id: 'upgrade', text: '👑 Upgrade' },
+            ];
+            const markup = BotManager.buildInlineKeyboard(buttons);
+
+            await BotManager.sendMessage({
+                id: `premium_error_${userId}`,
+                userId: userId,
+                chatId: chatId,
+                text: text,
+                inlineKeyboard: markup,
+            });
+
+            // return await ctx.reply(text, { parse_mode: 'HTML', link_preview_options: { is_disabled: true }, reply_markup: markup });
+        }
+        catch (e: any){
+            LogManager.error('BotManager Error while replying', e);
+        }
+    }
+
     static async buildBuyMessageForToken(token: ITokenModel, user: IUser, traderProfile?: IUserTraderProfile, botUsername?: string): Promise<{  message: string, markup?: BotKeyboardMarkup }> {
         const currency = traderProfile?.currency || Currency.SOL;
         const buyAmounts: number[] = traderProfile?.buyAmounts || (currency == Currency.SOL ? [0.5, 1] : [50, 100]);

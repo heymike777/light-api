@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { ISubscription, SubscriptionTier } from '../payments/Subscription';
+import { ISubscription } from '../payments/Subscription';
 import { SwapManager } from '../../managers/SwapManager';
 import { IUserTraderProfile } from './TraderProfile';
 import { Chain } from '../../services/solana/types';

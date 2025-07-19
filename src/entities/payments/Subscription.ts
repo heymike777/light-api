@@ -45,6 +45,7 @@ SubscriptionSchema.index({ userId: 1, status: 1 });
 SubscriptionSchema.index({ userId: 1, platform: 1, createdAt: 1 });
 SubscriptionSchema.index({ userId: 1, platform: 1, status: 1 });
 SubscriptionSchema.index({ platform: 1, expiresAt: 1 });
+SubscriptionSchema.index({ status: 1 });
 
 SubscriptionSchema.pre('save', function (next) {
     this.updatedAt = new Date();

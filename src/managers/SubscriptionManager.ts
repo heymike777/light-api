@@ -178,4 +178,8 @@ export class SubscriptionManager {
         return 0;
     }
 
+    static async getActiveSubscriptions(): Promise<ISubscription[]> {
+        return await Subscription.find({ status: SubscriptionStatus.ACTIVE });
+    }
+
 }

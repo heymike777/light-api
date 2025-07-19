@@ -8,6 +8,7 @@ import { LogManager } from "../../../managers/LogManager";
 import { EnvManager } from "../../../managers/EnvManager";
 import { MicroserviceManager } from "../../../managers/microservices/MicroserviceManager";
 import { Chain } from "../types";
+import { RateLimitManager } from "../../../managers/RateLimitManager";
 
 export enum TxFilter {
     ALL_TRANSACTIONS = 'all_transactions',
@@ -19,9 +20,6 @@ export class YellowstoneManager {
     X_TOKEN: string;
     PING_INTERVAL_MS = 30_000; // 30s
     stream: any;
-
-    static walletsStatsStartDate: Date = new Date();
-    static walletsStats: { [key: string]: number } = {};
 
     static allWalletsPubKeys: string[] = [];
     static reloadAllWallets(): string[] {
@@ -198,15 +196,6 @@ export class YellowstoneManager {
             const geyserWallets = YellowstoneManager.allWalletsPubKeys.filter((pubkey) => {
                 return pubkeys.includes(pubkey);
             });
-
-            for (const pubkey of geyserWallets){
-                if (YellowstoneManager.walletsStats[pubkey]){
-                    YellowstoneManager.walletsStats[pubkey]++;
-                }
-                else {
-                    YellowstoneManager.walletsStats[pubkey] = 1;
-                }
-            }
             
             // console.log('YellowstoneManager receivedTx', 'geyserWallets:', geyserWallets);
             if (geyserWallets.length == 0){
@@ -219,11 +208,46 @@ export class YellowstoneManager {
                 return;
             }
 
-            MicroserviceManager.receivedTx(geyserId, signature, JSON.stringify(jsonParsedAny));
+            // so if there is zero users allowed (or all users are rate limited) - we don't need to process this tx
+            if (this.checkRateLimits(geyserWallets)){
+                MicroserviceManager.receivedTx(geyserId, signature, JSON.stringify(jsonParsedAny));
+            }
         }
         catch (e: any){
             LogManager.error(process.env.SERVER_NAME, 'YellowstoneManager receivedTx', 'error', e);
         }
+    }
+
+    static checkRateLimits(geyserWallets: string[]): boolean {
+        // rate limits
+        const userIds: string[] = [];
+        const traderProfilesUserIds: string[] = [];
+        for (const geyserWallet of geyserWallets) {
+            const wallets = WalletManager.walletsMap.get(geyserWallet);
+            if (wallets){
+                for (const wallet of wallets) {
+                    if (wallet.traderProfileId && !traderProfilesUserIds.includes(wallet.traderProfileId)){
+                        traderProfilesUserIds.push(wallet.traderProfileId);
+                    }
+                    else if (!userIds.includes(wallet.userId) && !traderProfilesUserIds.includes(wallet.userId)) {
+                        userIds.push(wallet.userId);
+                    }
+                }
+            }
+        }
+
+        let isAllowedAtLeastOnce = false;
+
+        for (const userId of [...userIds, ...traderProfilesUserIds]) {
+            // at this point we increase the rate limit for this user
+            const isTraderProfile = traderProfilesUserIds.includes(userId);
+            const isAllowed = RateLimitManager.receivedTransaction(userId, isTraderProfile);
+            if (isAllowed){
+                isAllowedAtLeastOnce = true;
+            }
+        }
+
+        return isAllowedAtLeastOnce;
     }
 
     // ### static methods

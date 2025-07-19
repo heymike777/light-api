@@ -14,24 +14,35 @@ import { ReferralsManager } from './ReferralsManager';
 import { HealthManager } from './HealthManager';
 import { EventsManager } from './EventsManager';
 import { FarmManager } from './FarmManager';
+import { RateLimitManager } from './RateLimitManager';
 
 export class CronManager {
 
     static async setupCron() {
         if (EnvManager.isGeyserProcess){
             cron.schedule('* * * * *', () => {
+                // every minute
+                
                 if (EnvManager.chain == Chain.SOLANA){
                     YellowstoneManager.cleanupProcessedSignatures();
-
-                    const stats: { pubkey: string, count: number, perMinute: number }[] = [];
-                    for (const pubkey in YellowstoneManager.walletsStats) {
-                        const count = YellowstoneManager.walletsStats[pubkey];
-                        const perMinute = Math.floor(count / ((Date.now() - YellowstoneManager.walletsStatsStartDate.getTime()) / 1000 / 60));
-                        stats.push({ pubkey, count, perMinute });
-                    }
-                    stats.sort((a, b) => b.count - a.count);
-                    console.log('!geyser stats', stats);
                 }
+
+                RateLimitManager.cleanMinuteRateLimits();
+            });
+
+            cron.schedule('*/5 * * * *', () => {
+                // every 5 minutes
+                RateLimitManager.fetchAllSubscriptions();
+            });
+
+            cron.schedule('* * * * *', () => {
+                // every hour
+                RateLimitManager.cleanHourRateLimits
+            });
+
+            cron.schedule('0 0 * * *', () => {
+                // every day at 00:00
+                RateLimitManager.cleanDayRateLimits();
             });
         }
 
