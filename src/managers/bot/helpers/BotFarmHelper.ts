@@ -25,7 +25,7 @@ type Dex = {
 
 export class BotFarmHelper extends BotHelper {
 
-    private static DEXES: { [key: string]: Dex[] } = {
+    static DEXES: { [key: string]: Dex[] } = {
         [Chain.SONIC]: [
             { id: DexId.SEGA, name: 'Sega' }
         ]
@@ -351,44 +351,51 @@ export class BotFarmHelper extends BotHelper {
                 return true;
             }
 
-            const chain = user.defaultChain || Chain.SOLANA;
-            const token = await TokenManager.getToken(chain, tokenCa);
-
-            let farmPools: IFarmPool[] | undefined = [];
-            let isValid = false;
-            if (chain == Chain.SONIC){
-                if (!isValid){
-                    const poolInfo = await SegaManager.fetchPoolForMints(tokenCa, kSolAddress);
-                    if (poolInfo){
-                        isValid = true;
-                        const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
-                        farmPools.push({ address: poolInfo.poolId, tokenA: kSolAddress, tokenB: tokenCa, title: title });
-                    }
-                }
-
-                if (!isValid){
-                    const poolInfo = await SegaManager.fetchPoolForMints(tokenCa, kSonicAddress);
-                    if (poolInfo){
-                        isValid = true;
-                        const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
-                        farmPools.push({ address: poolInfo.poolId, tokenA: kSonicAddress, tokenB: tokenCa, title: title });
-                    }
-                }
+            const replyMessage = await BotFarmHelper.startFarmForToken(ctx, user, tokenCa);
+            if (replyMessage){
+                await super.commandReceived(ctx, user, replyMessage);
             }
-
-            if (!isValid){
-                await BotManager.reply(ctx, '🔴 Invalid token CA. Please, try again.\n\n<b>Token CA must be a valid address and have a liquidity pool</b>');
-                return true;
-            }
-            await UserManager.updateTelegramState(user.id, undefined);
-            
-            const replyMessage = await BotFarmHelper.buildFarmDexMessage(user, undefined, tokenCa, farmPools);
-            await super.commandReceived(ctx, user, replyMessage);
 
             return true;
         }
 
         return false;
+    }
+
+    static async startFarmForToken(ctx: Context, user: IUser, tokenCa: string): Promise<Message | undefined> {
+        const chain = user.defaultChain || Chain.SOLANA;
+        const token = await TokenManager.getToken(chain, tokenCa);
+
+        let farmPools: IFarmPool[] | undefined = [];
+        let isValid = false;
+        if (chain == Chain.SONIC){
+            if (!isValid){
+                const poolInfo = await SegaManager.fetchPoolForMints(tokenCa, kSolAddress);
+                if (poolInfo){
+                    isValid = true;
+                    const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
+                    farmPools.push({ address: poolInfo.poolId, tokenA: kSolAddress, tokenB: tokenCa, title: title });
+                }
+            }
+
+            if (!isValid){
+                const poolInfo = await SegaManager.fetchPoolForMints(tokenCa, kSonicAddress);
+                if (poolInfo){
+                    isValid = true;
+                    const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
+                    farmPools.push({ address: poolInfo.poolId, tokenA: kSonicAddress, tokenB: tokenCa, title: title });
+                }
+            }
+        }
+
+        if (!isValid){
+            await BotManager.reply(ctx, '🔴 Invalid token CA. Please, try again.\n\n<b>Token CA must be a valid address and have a liquidity pool</b>');
+            return undefined;
+        }
+        await UserManager.updateTelegramState(user.id, undefined);
+        
+        const replyMessage = await BotFarmHelper.buildFarmDexMessage(user, undefined, tokenCa, farmPools);
+        return replyMessage;
     }
 
     static async buildLimitChainMessage(): Promise<Message> {

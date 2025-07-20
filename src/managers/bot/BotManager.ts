@@ -504,12 +504,13 @@ export class BotManager {
         const kSOL = getNativeToken(token.chain);
         const currencySymbol = currency == Currency.SOL ? kSOL.symbol : currency;
 
-        const buttons: InlineButton[] = [
-            { id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' },
-            { id: 'row', text: '' },
-        ];
-
-
+        const buttons: InlineButton[] = [];
+        buttons.push({ id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' });
+        console.log('buildBuyMessageForToken', 'token.chain:', token.chain);
+        if (BotFarmHelper.DEXES[token.chain] && BotFarmHelper.DEXES[token.chain].length > 0){
+            buttons.push({ id: `buy|${token.chain}|${token.address}|farm`, text: '⛏️ Pump farm' });
+        }
+        buttons.push({ id: 'row', text: '' });
 
         for (const amount of buyAmounts) {
             buttons.push({ id: `buy|${token.chain}|${token.address}|${amount}`, text: `Buy ${amount} ${currencySymbol}` });

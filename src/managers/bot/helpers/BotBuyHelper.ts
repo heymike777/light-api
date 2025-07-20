@@ -13,6 +13,7 @@ import { SwapDex } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { Chain } from "../../../services/solana/types";
 import { getNativeToken } from "../../../services/solana/Constants";
+import { BotFarmHelper } from "./BotFarmHelper";
 
 export class BotBuyHelper extends BotHelper {
 
@@ -52,6 +53,12 @@ export class BotBuyHelper extends BotHelper {
                         const botUsername = BotManager.getBotUsername(ctx);
                         const { message, markup } = await BotManager.buildBuyMessageForToken(token, user, traderProfile, botUsername);
                         await BotManager.editMessage(ctx, message, markup);
+                    }
+                }
+                else if (parts[3] == 'farm'){
+                    const replyMessage = await BotFarmHelper.startFarmForToken(ctx, user, mint);
+                    if (replyMessage){
+                        await super.commandReceived(ctx, user, replyMessage);
                     }
                 }
                 else if (parts[3] == 'x' || parts[3] == 'X') {
