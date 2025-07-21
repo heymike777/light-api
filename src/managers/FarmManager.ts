@@ -93,6 +93,10 @@ export class FarmManager {
             }
         }
 
+        if (buyOrSell === 'buy' && farm.progress?.buysInARow && farm.progress.buysInARow >= farm.progress.maxBuysInARow){
+            buyOrSell = 'sell';
+        }
+
         const user = await User.findById(farm.userId);
         if (!user){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'user not found');
