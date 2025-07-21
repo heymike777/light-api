@@ -103,6 +103,20 @@ export class FarmManager {
             return;
         }
 
+        if (buyOrSell === 'buy') {
+            farm.progress.buysInARow++;
+        }
+        else {
+            farm.progress.buysInARow = 0;
+            farm.progress.maxBuysInARow = Helpers.getRandomInt(2, 3);
+        }
+
+        await Farm.updateOne({ _id: farm.id }, { $set: { 
+            lastSwapAt: farm.lastSwapAt, 
+            'progress.buysInARow': farm.progress.buysInARow, 
+            'progress.maxBuysInARow': farm.progress.maxBuysInARow 
+        }});
+
         if (buyOrSell === 'buy'){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
 
@@ -149,20 +163,6 @@ export class FarmManager {
 
             await this.swapStarted(swap);
         }
-
-        if (buyOrSell === 'buy') {
-            farm.progress.buysInARow++;
-        }
-        else {
-            farm.progress.buysInARow = 0;
-            farm.progress.maxBuysInARow = Helpers.getRandomInt(2, 3);
-        }
-
-        await Farm.updateOne({ _id: farm.id }, { $set: { 
-            lastSwapAt: farm.lastSwapAt, 
-            'progress.buysInARow': farm.progress.buysInARow, 
-            'progress.maxBuysInARow': farm.progress.maxBuysInARow 
-        }});
     }
 
     private static traderProfilesCache: { [key: string]: { traderProfile: IUserTraderProfile, lastUpdate: Date } } = {};
