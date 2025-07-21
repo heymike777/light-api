@@ -9,6 +9,7 @@ import { ConfigManager } from "../../ConfigManager";
 import { EventsManager } from "../../EventsManager";
 import { StatusType, Swap } from "../../../entities/payments/Swap";
 import { ChainManager } from "../../chains/ChainManager";
+import { Chain } from "../../../services/solana/types";
 
 export class BotAdminHelper extends BotHelper {
 
@@ -103,8 +104,12 @@ export class BotAdminHelper extends BotHelper {
                 $group: { _id: '$chain', totalVolume: { $sum: '$value.usd' } } 
             }
         ]);
-        for (const volume of volumesByChain){
-            message += `\n${ChainManager.getChainTitle(volume._id)}: $${volume.totalVolume.toFixed(2)}`;
+        const chainsOrder = [Chain.SOLANA, Chain.SONIC, Chain.SOON_MAINNET, Chain.SVMBNB_MAINNET, Chain.SOONBASE_MAINNET];
+        for (const chain of chainsOrder){
+            const volume = volumesByChain.find(v => v._id === chain);
+            if (volume){
+                message += `\n${ChainManager.getChainTitle(volume._id)}: $${volume.totalVolume.toFixed(2)}`;
+            }
         }
 
         message += `\n\nRef payouts: ${config?.isRefPayoutsEnabled ? '🟢' : '🔴'}`;
