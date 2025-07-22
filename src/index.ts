@@ -48,9 +48,23 @@ import { eventsRouter } from './routes/v1/Events';
 
 // top of index.js
 process.on('unhandledRejection', (err) => {
+    // Specifically handle the "Invalid time value" error that's causing crashes
+    if (err instanceof RangeError && err.message.includes('Invalid time value')) {
+        LogManager.error('!UNHANDLED REJECTION (Invalid time value):', err);
+        // Don't let this crash the process
+        return;
+    }
+    
     LogManager.error('!UNHANDLED REJECTION:', err);
 });
 process.on('uncaughtException', (err) => {
+    // Specifically handle the "Invalid time value" error that's causing crashes
+    if (err instanceof RangeError && err.message.includes('Invalid time value')) {
+        LogManager.error('!UNCAUGHT EXCEPTION (Invalid time value):', err);
+        // Don't let this crash the process
+        return;
+    }
+    
     LogManager.error('!UNCAUGHT EXCEPTION:', err);
 });
 

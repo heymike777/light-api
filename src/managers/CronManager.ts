@@ -129,18 +129,27 @@ export class CronManager {
     }
 
     static async cronAt2Am(){
+        console.log('CronManager.cronAt2Am', 'Starting 2AM cron job at', new Date().toISOString());
+        
         try {            
+            console.log('CronManager.cronAt2Am', 'Fetching RevenueCat subscriptions...');
             await SubscriptionManager.fetchAllRevenueCatSubscriptions();
+            console.log('CronManager.cronAt2Am', 'RevenueCat subscriptions fetched successfully');
         } catch (error) {
-            console.error('!cronAt2Am error1', error);
+            console.error('CronManager.cronAt2Am error1 - RevenueCat subscriptions:', error);
+            // Don't let this crash the entire cron job
         }
 
         try {            
+            console.log('CronManager.cronAt2Am', 'Processing referral payouts...');
             await ReferralsManager.processRefPayouts();
+            console.log('CronManager.cronAt2Am', 'Referral payouts processed successfully');
         } catch (error) {
-            console.error('!cronAt2Am error2', error);
+            console.error('CronManager.cronAt2Am error2 - Referral payouts:', error);
+            // Don't let this crash the entire cron job
         }
 
+        console.log('CronManager.cronAt2Am', 'Completed 2AM cron job at', new Date().toISOString());
     }
     static async cronEveryMinute(){
         if (EnvManager.isTelegramProcess){

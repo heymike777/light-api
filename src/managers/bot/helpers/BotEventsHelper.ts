@@ -107,14 +107,34 @@ export class BotEventsHelper extends BotHelper {
         text += `<b>${event.title}</b>`;
         
         if (event.status == 'upcoming') {
-            text += `\nStarts on ${EventsManager.formatDateToString(event.startAt)}`;
+            try {
+                const safeStartAt = EventsManager.safeDate(event.startAt);
+                text += `\nStarts on ${safeStartAt ? EventsManager.formatDateToString(safeStartAt) : 'Invalid date'}`;
+            } catch (error) {
+                console.error('BotEventsHelper.formatDateToString error for startAt:', error);
+                text += `\nStarts on Invalid date`;
+            }
         }
         else if (event.status == 'active') {
-            text += `\nStart: ${EventsManager.formatDateToString(event.startAt)}`;
-            text += `\nEnd: ${EventsManager.formatDateToString(event.endAt)}`;
+            try {
+                const safeStartAt = EventsManager.safeDate(event.startAt);
+                const safeEndAt = EventsManager.safeDate(event.endAt);
+                text += `\nStart: ${safeStartAt ? EventsManager.formatDateToString(safeStartAt) : 'Invalid date'}`;
+                text += `\nEnd: ${safeEndAt ? EventsManager.formatDateToString(safeEndAt) : 'Invalid date'}`;
+            } catch (error) {
+                console.error('BotEventsHelper.formatDateToString error for active event:', error);
+                text += `\nStart: Invalid date`;
+                text += `\nEnd: Invalid date`;
+            }
         }
         else if (event.status == 'completed') {
-            text += `\nEnded on ${EventsManager.formatDateToString(event.endAt)}`;
+            try {
+                const safeEndAt = EventsManager.safeDate(event.endAt);
+                text += `\nEnded on ${safeEndAt ? EventsManager.formatDateToString(safeEndAt) : 'Invalid date'}`;
+            } catch (error) {
+                console.error('BotEventsHelper.formatDateToString error for endAt:', error);
+                text += `\nEnded on Invalid date`;
+            }
         }
         text += `\n\n`;
         text += `${event.description}`;

@@ -8,6 +8,58 @@ import { TraderProfilesManager } from "./TraderProfilesManager";
 
 export class EventsManager {
 
+    static safeDate(date: any): Date | null {
+        if (!date) return null;
+        
+        // If it's already a valid Date object, return it
+        if (date instanceof Date && !isNaN(date.getTime())) {
+            return date;
+        }
+        
+        // If it's a string, try to parse it
+        if (typeof date === 'string') {
+            const parsed = new Date(date);
+            if (!isNaN(parsed.getTime())) {
+                return parsed;
+            }
+        }
+        
+        // If it's a number (timestamp), try to create a Date from it
+        if (typeof date === 'number') {
+            const parsed = new Date(date);
+            if (!isNaN(parsed.getTime())) {
+                return parsed;
+            }
+        }
+        
+        return null;
+    }
+
+    static formatDateToString(date: Date): string {
+        // Validate that date is a valid Date object
+        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+            return 'Invalid date';
+        }
+
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'UTC',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+
+        const datePart = formatter.format(date);
+
+        let hours = date.getUTCHours();
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+
+        hours = hours % 12;
+        hours = hours === 0 ? 12 : hours;
+
+        return `${datePart} at ${hours}:${minutes} ${ampm} UTC`;
+    }
+
     static async getActiveEvent(onlyActive: boolean = false): Promise<ITradingEvent | undefined> {
         const now = new Date();
 
@@ -121,26 +173,6 @@ Quack!`,
         }
         event.createdAt = new Date();
         await event.save();
-    }
-
-    static formatDateToString(date: Date): string {
-        const formatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'UTC',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-
-        const datePart = formatter.format(date);
-
-        let hours = date.getUTCHours();
-        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-
-        hours = hours % 12;
-        hours = hours === 0 ? 12 : hours;
-
-        return `${datePart} at ${hours}:${minutes} ${ampm} UTC`;
     }
 
     static async updateEventStatusses(){
