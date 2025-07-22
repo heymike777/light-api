@@ -173,7 +173,7 @@ export class YellowstoneManager {
             }
 
             const signature = base58.encode(data.signature);
-            // console.log('YellowstoneManager receivedTx', signature);
+            console.log('YellowstoneManager receivedTx', signature);
 
             const jsonParsed = txEncode.encode(data, txEncode.encoding.JsonParsed, 255, true);
             const jsonParsedAny: any = jsonParsed;
