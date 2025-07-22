@@ -44,6 +44,7 @@ import { RabbitManager } from './managers/RabbitManager';
 import { LaserstreamManager } from './services/solana/geyser/LaserstreamManager';
 import { adminRouter } from './routes/v1/Admin';
 import { ServiceConnector } from './managers/microservices/ServiceConnector';
+import { eventsRouter } from './routes/v1/Events';
 
 // top of index.js
 process.on('unhandledRejection', (err) => {
@@ -86,6 +87,7 @@ if (process.env.API_ENABLED == 'true' && EnvManager.isMainProcess) {
     app.use(searchRouter);
     app.use(portfolioRouter);
     app.use(adminRouter);
+    app.use(eventsRouter);
 }
 
 if (EnvManager.isMainProcess) {
@@ -146,8 +148,8 @@ const onExpressStarted = async () => {
         console.log('Geyser process started for chain:', EnvManager.chain);
         
         if (EnvManager.chain == Chain.SOLANA){
-            const laserstream = new LaserstreamManager();
-            await laserstream.subscribe();
+            // const laserstream = new LaserstreamManager();
+            // await laserstream.subscribe();
     
             YellowstoneManager.createInstances();
         }
