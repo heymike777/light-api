@@ -376,10 +376,8 @@ export class MigrationManager {
     }
 
     static async testTick() {
-        LogManager.forceLog('test_tick');
-
         setInterval(() => {
-            MigrationManager.testTick();
+            LogManager.forceLog('test_tick');
         }, 10000);
     }
 
