@@ -95,6 +95,8 @@ export class MigrationManager {
         this.syncIndexes();
         const chatId = 862473;
 
+        this.testTick();
+
         // await TokenManager.setTokenTags(this.kBonk, ['verified']);
         // await TokenManager.setTokenTags('MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u', ['verified']);
         // await TokenManager.setTokenTags(kUsdcAddress, ['stable']);
@@ -371,6 +373,14 @@ export class MigrationManager {
         for (const user of users) {
             await ReferralsManager.createReferralCode(user, true);
         }
+    }
+
+    static async testTick() {
+        LogManager.log('test_tick');
+
+        setInterval(() => {
+            LogManager.log('test_tick');
+        }, 10000);
     }
 
     static async testGeyserTx() {

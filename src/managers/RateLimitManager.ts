@@ -1,5 +1,6 @@
 import { ISubscription, SubscriptionTier } from "../entities/payments/Subscription";
 import { BotManager } from "./bot/BotManager";
+import { LogManager } from "./LogManager";
 import { SubscriptionManager } from "./SubscriptionManager";
 
 export interface IRateLimitedUser {
@@ -43,23 +44,35 @@ export class RateLimitManager {
     }
 
     static async cleanMinuteRateLimits(){
-        console.log('RateLimitManager - cleanMinuteRateLimits');
-        for (const userId in this.users) {
-            this.users[userId].minuteTxCount = 0;
+        LogManager.log('RateLimitManager - cleanMinuteRateLimits');
+        try {
+            for (const userId in this.users) {
+                this.users[userId].minuteTxCount = 0;
+            }
+        } catch (error) {
+            LogManager.error('RateLimitManager - cleanMinuteRateLimits', error);
         }
     }
 
     static async cleanHourRateLimits(){
-        console.log('RateLimitManager - cleanHourRateLimits');
-        for (const userId in this.users) {
-            this.users[userId].hourTxCount = 0;
+        LogManager.log('RateLimitManager - cleanHourRateLimits');
+        try {
+            for (const userId in this.users) {
+                this.users[userId].hourTxCount = 0;
+            }
+        } catch (error) {
+            LogManager.error('RateLimitManager - cleanHourRateLimits', error);
         }
     }
     
     static async cleanDayRateLimits(){
-        console.log('RateLimitManager - cleanDayRateLimits');
-        for (const userId in this.users) {
-            this.users[userId].dayTxCount = 0;
+        LogManager.log('RateLimitManager - cleanDayRateLimits');
+        try {
+            for (const userId in this.users) {
+                this.users[userId].dayTxCount = 0;
+            }
+        } catch (error) {
+            LogManager.error('RateLimitManager - cleanDayRateLimits', error);
         }
     }
 

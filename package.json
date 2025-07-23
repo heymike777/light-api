@@ -63,7 +63,7 @@
     "mixpanel": "^0.18.1",
     "mongoose": "^8.15.0",
     "multer": "^1.4.4",
-    "node-cron": "^4.0.5",
+    "node-cron": "^4.2.1",
     "rabbitmq-stream-js-client": "^0.6.0",
     "redis": "^5.0.1",
     "reflect-metadata": "^0.2.2",

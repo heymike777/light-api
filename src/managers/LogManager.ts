@@ -32,7 +32,7 @@ export class LogManager {
     static forceLog(...args: any[]){
         this.logger.info(args.map((a: any) => a?.toString()).join(' '));
         try {
-            console.log(new Date(), ...args);
+            console.log(new Date(), `[${process.env.SERVER_NAME}]`,...args);
         }
         catch (e: any){
         }
@@ -42,7 +42,7 @@ export class LogManager {
         this.logger.error(args.map((a: any) => a?.toString()).join(' '));
         if (this.isErrorsEnabled){
             try {
-                console.error(new Date(), ...args);
+                console.error(new Date(), `[${process.env.SERVER_NAME}]`, ...args);
             }
             catch (e: any){
             }

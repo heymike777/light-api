@@ -1007,15 +1007,15 @@ export class RaydiumManager {
     printTokenAccounts(tmp: string) {
         const tokenAccounts = this.raydium?.account.tokenAccounts;
         const tokenAccountRawInfos = this.raydium?.account.tokenAccountRawInfos;
-        console.log('printTokenAccounts', tmp, 'tokenAccounts:', JSON.stringify(tokenAccounts), 'tokenAccountRawInfos:', JSON.stringify(tokenAccountRawInfos));
+        LogManager.log('printTokenAccounts', tmp, 'tokenAccounts:', JSON.stringify(tokenAccounts), 'tokenAccountRawInfos:', JSON.stringify(tokenAccountRawInfos));
 
         if (tokenAccounts && tokenAccounts.length > 0){
             for (const tokenAccount of tokenAccounts) {
-                console.log(tmp, 'tokenAccount', tokenAccount.mint.toBase58(), tokenAccount.amount.toString());
+                LogManager.log(tmp, 'tokenAccount', tokenAccount.mint.toBase58(), tokenAccount.amount.toString());
             }    
         }
         else {
-            console.log(tmp, 'tokenAccounts is undefined');
+            LogManager.log(tmp, 'tokenAccounts is undefined');
         }
 
         if (tokenAccountRawInfos && tokenAccountRawInfos.length > 0){
@@ -1024,7 +1024,7 @@ export class RaydiumManager {
             }
         }
         else {
-            console.log(tmp, 'tokenAccountRawInfos is undefined');
+            LogManager.log(tmp, 'tokenAccountRawInfos is undefined');
         }
     }
 

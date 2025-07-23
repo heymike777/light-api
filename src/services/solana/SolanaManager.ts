@@ -253,10 +253,7 @@ export class SolanaManager {
                 undefined, 
                 spl.TOKEN_PROGRAM_ID
             );
-            console.log('MIKE BONK ACCOUNT EXISTS', account);
         } catch (error: unknown) {
-            console.log('MIKE BONK ACCOUNT NOT EXISTS');
-
             if (error instanceof spl.TokenAccountNotFoundError || error instanceof spl.TokenInvalidAccountOwnerError) {
                 return spl.createAssociatedTokenAccountInstruction(
                     feePayerPublicKey,
@@ -574,8 +571,6 @@ export class SolanaManager {
         const heliusAssets = heliusData.items;
         const nativeBalance = heliusData.nativeBalance;
 
-        console.log('heliusData:', JSON.stringify(heliusData));
-
         const assets: Asset[] = [];
         
         const kSOL = getNativeToken(chain);
@@ -666,7 +661,6 @@ export class SolanaManager {
         try {
             const mintPublicKey = new web3.PublicKey(mint);
             const supplyInfo = await connection.getTokenSupply(mintPublicKey);
-            console.log('supplyInfo:', supplyInfo);
             return supplyInfo?.value;
         }
         catch (err){

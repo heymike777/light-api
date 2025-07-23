@@ -67,6 +67,12 @@ process.on('uncaughtException', (err) => {
     
     LogManager.error('!UNCAUGHT EXCEPTION:', err);
 });
+process.on('exit', (code) => {
+    LogManager.error(`!!! exiting with code ${code}`);
+});
+process.on('SIGTERM', () => {
+    LogManager.error(`!!! received SIGTERM`);
+});
 
 const corsOptions: CorsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-light-platform', 'x-light-app-version'],
