@@ -22,7 +22,7 @@ export class LogManager {
         // this.logger.info(args.map((a: any) => a?.toString()).join(' '));
         if (this.isLogsEnabled){
             try {
-                console.log(new Date(), ...args);
+                console.log(new Date(), `[${process.env.SERVER_NAME}]`, ...args);
             }
             catch (e: any){
             }

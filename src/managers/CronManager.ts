@@ -15,6 +15,7 @@ import { HealthManager } from './HealthManager';
 import { EventsManager } from './EventsManager';
 import { FarmManager } from './FarmManager';
 import { RateLimitManager } from './RateLimitManager';
+import { LogManager } from './LogManager';
 
 export class CronManager {
 
@@ -22,6 +23,7 @@ export class CronManager {
         if (EnvManager.isGeyserProcess){
             cron.schedule('* * * * *', () => {
                 // every minute
+                LogManager.forceLog('every minute');
                 
                 if (EnvManager.chain == Chain.SOLANA){
                     YellowstoneManager.cleanupProcessedSignatures();
@@ -69,6 +71,8 @@ export class CronManager {
 
             cron.schedule('* * * * *', () => {
                 // every minute
+                LogManager.forceLog('every minute');
+
                 TokenManager.updateTokenPrice(Chain.SOLANA, kSolAddress);
 
                 // once a minute
@@ -101,6 +105,8 @@ export class CronManager {
 
         if (EnvManager.isMainProcess){
             cron.schedule('* * * * *', () => {
+                LogManager.forceLog('every minute');
+
                 TokenManager.fetchNativeTokenPriceFromRedis();
 
                 WalletManager.fetchAllWalletAddresses(false);
@@ -109,6 +115,8 @@ export class CronManager {
 
         if (EnvManager.isTelegramProcess){
             cron.schedule('* * * * *', () => {
+                LogManager.forceLog('every minute');
+
                 this.cronEveryMinute();
             });
         }
