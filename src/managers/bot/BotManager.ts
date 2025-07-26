@@ -47,6 +47,8 @@ import { BotAirdropHelper } from "./helpers/BotAirdropHelper";
 import { BotTokensHelper } from "./helpers/BotTokensHelper";
 import { BotEventsHelper } from "./helpers/BotEventsHelper";
 import { BotFarmHelper } from "./helpers/BotFarmHelper";
+import { ChaosManager } from "../../services/solana/svm/ChaosManager";
+import { BotStakeHelper } from "./helpers/BotStakeHelper";
 
 export class BotManager {
     botUsername: string;
@@ -72,6 +74,7 @@ export class BotManager {
         new BotTokensHelper(),
         new BotEventsHelper(),
         new BotFarmHelper(),
+        new BotStakeHelper(),
     ];
     static defaultBots: { [key: string]: string } = {}
 
@@ -509,6 +512,9 @@ export class BotManager {
         console.log('buildBuyMessageForToken', 'token.chain:', token.chain);
         if (BotFarmHelper.DEXES[token.chain] && BotFarmHelper.DEXES[token.chain].length > 0){
             buttons.push({ id: `buy|${token.chain}|${token.address}|farm`, text: '⛏️ Pump farm' });
+        }
+        if (token.chain == Chain.SONIC && ChaosManager.kSupportedTokens[token.address]){
+            buttons.push({ id: `stake|${token.chain}|${token.address}`, text: '🪽 Stake' });
         }
         buttons.push({ id: 'row', text: '' });
 

@@ -375,7 +375,8 @@ export const kPrograms: { [key: string]: {
     [kProgram.CHAOS_VAULT]: {
         name: 'CHAOS',
         knownInstructions: [
-            // { 'initializeOrder': {title: 'LIMIT ORDER', priority: 2} },
+            { 'stake': {title: 'STAKE', priority: 2} },
+            { 'unstake': {title: 'UNSTAKE', priority: 2} },
         ],
         skip: false,
         customIdl: {
