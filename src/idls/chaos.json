@@ -1,0 +1,1399 @@
+{
+    "version": "0.1.0",
+    "name": "lsd_program",
+    "instructions": [
+      {
+        "name": "initializeStakeManager",
+        "accounts": [
+          {
+            "name": "admin",
+            "isMut": false,
+            "isSigner": true
+          },
+          {
+            "name": "rentPayer",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakePool",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "lsdTokenMint",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "sonicTokenMint",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "associatedTokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "rent",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "params",
+            "type": {
+              "defined": "InitializeStakeManagerParams"
+            }
+          }
+        ]
+      },
+      {
+        "name": "transferStakeManagerAdmin",
+        "accounts": [
+          {
+            "name": "admin",
+            "isMut": false,
+            "isSigner": true
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "newAdmin",
+            "type": "publicKey"
+          }
+        ]
+      },
+      {
+        "name": "configStakeManager",
+        "accounts": [
+          {
+            "name": "admin",
+            "isMut": false,
+            "isSigner": true
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "params",
+            "type": {
+              "defined": "ConfigStakeManagerParams"
+            }
+          }
+        ]
+      },
+      {
+        "name": "stake",
+        "accounts": [
+          {
+            "name": "user",
+            "isMut": false,
+            "isSigner": true
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakePool",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "lsdTokenMint",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sonicTokenMint",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "userLsdTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "userSonicTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "poolSonicTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "tokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "associatedTokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "stakeAmount",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "unstake",
+        "accounts": [
+          {
+            "name": "user",
+            "isMut": false,
+            "isSigner": true
+          },
+          {
+            "name": "rentPayer",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "lsdTokenMint",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "userLsdTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "unstakeAccount",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "tokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "associatedTokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "rent",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "unstakeAmount",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "withdraw",
+        "accounts": [
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakePool",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "unstakeAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sonicTokenMint",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "userSonicTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "poolSonicTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "tokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "associatedTokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "eraNew",
+        "accounts": [
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "eraBond",
+        "accounts": [
+          {
+            "name": "feeAndRentPayer",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "sspStakingPool",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sspPublicStakeConfig",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "sspUserStake",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sspUserStakeIndex",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sspPoolTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sonicTokenMint",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "poolTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakePool",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "ssp",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "tokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "associatedTokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "rent",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "params",
+            "type": {
+              "defined": "EraBondParams"
+            }
+          }
+        ]
+      },
+      {
+        "name": "eraWithdraw",
+        "accounts": [
+          {
+            "name": "feeAndRentPayer",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "sspStakingPool",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sspPublicStakeConfig",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "sspUserStake",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sspUserStakeIndex",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sspPoolTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "sonicTokenMint",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "poolTokenAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakePool",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "ssp",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "tokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "associatedTokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "rent",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "params",
+            "type": {
+              "defined": "EraWithdrawParams"
+            }
+          }
+        ]
+      },
+      {
+        "name": "eraActive",
+        "accounts": [
+          {
+            "name": "stakeManager",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "stakePool",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "lsdTokenMint",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "platformFeeRecipient",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "tokenProgram",
+            "isMut": false,
+            "isSigner": false
+          },
+          {
+            "name": "associatedTokenProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": []
+      }
+    ],
+    "accounts": [
+      {
+        "name": "StakingPoolAccount",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "lastBlockTimestamp",
+              "docs": ["timestamp when account updated"],
+              "type": "i64"
+            },
+            {
+              "name": "signingAuthority",
+              "docs": ["signing authority"],
+              "type": "publicKey"
+            },
+            {
+              "name": "backAuthority",
+              "docs": ["back authority"],
+              "type": "publicKey"
+            },
+            {
+              "name": "withdrawalAuthority",
+              "docs": ["withdrawal authority"],
+              "type": "publicKey"
+            },
+            {
+              "name": "mint",
+              "docs": ["mint"],
+              "type": "publicKey"
+            },
+            {
+              "name": "totalWalletStakedCount",
+              "type": "u32"
+            },
+            {
+              "name": "totalAirdropStakedCount",
+              "type": "u32"
+            },
+            {
+              "name": "totalWalletStakedAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalAirdropStakedAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalWalletStakedRewardAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalAirdropStakedRewardAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalWalletStakedWithdrawCount",
+              "type": "u32"
+            },
+            {
+              "name": "totalAirdropStakedWithdrawCount",
+              "type": "u32"
+            },
+            {
+              "name": "totalWalletStakedWithdrawAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalAirdropStakedWithdrawAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalWalletStakedRewardWithdrawAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalAirdropStakedRewardWithdrawAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalAllocatedRewardAmount",
+              "type": "u64"
+            },
+            {
+              "name": "enable",
+              "type": "bool"
+            },
+            {
+              "name": "enableAirdropStaking",
+              "type": "bool"
+            },
+            {
+              "name": "enableWalletStaking",
+              "type": "bool"
+            },
+            {
+              "name": "enableAirdropStakingWithdrawal",
+              "type": "bool"
+            },
+            {
+              "name": "enableWalletStakingWithdrawal",
+              "type": "bool"
+            },
+            {
+              "name": "minimumAirdropStakingAmount",
+              "type": "u64"
+            },
+            {
+              "name": "minimumWalletStakingAmount",
+              "type": "u64"
+            },
+            {
+              "name": "totalAddedPoolSupply",
+              "type": "u64"
+            },
+            {
+              "name": "totalWithdrawPoolSupply",
+              "type": "u64"
+            },
+            {
+              "name": "baseFee",
+              "type": "u64"
+            },
+            {
+              "name": "feeReceiver",
+              "type": "publicKey"
+            }
+          ]
+        }
+      },
+      {
+        "name": "stakeManager",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "admin",
+              "type": "publicKey"
+            },
+            {
+              "name": "poolSeedBump",
+              "type": "u8"
+            },
+            {
+              "name": "lsdTokenMint",
+              "type": "publicKey"
+            },
+            {
+              "name": "sonicTokenMint",
+              "type": "publicKey"
+            },
+            {
+              "name": "ssp",
+              "type": "publicKey"
+            },
+            {
+              "name": "sspStakePool",
+              "type": "publicKey"
+            },
+            {
+              "name": "eraSeconds",
+              "type": "i64"
+            },
+            {
+              "name": "eraOffset",
+              "type": "i64"
+            },
+            {
+              "name": "minStakeAmount",
+              "type": "u64"
+            },
+            {
+              "name": "platformFeeCommission",
+              "type": "u64"
+            },
+            {
+              "name": "rateChangeLimit",
+              "type": "u64"
+            },
+            {
+              "name": "stakeInfosLenLimit",
+              "type": "u32"
+            },
+            {
+              "name": "sspMinStakeAmount",
+              "type": "u64"
+            },
+            {
+              "name": "sspStakingPeriod",
+              "type": "i64"
+            },
+            {
+              "name": "eraStatus",
+              "type": {
+                "defined": "EraStatus"
+              }
+            },
+            {
+              "name": "latestEra",
+              "type": "u64"
+            },
+            {
+              "name": "rate",
+              "type": "u64"
+            },
+            {
+              "name": "eraBond",
+              "type": "u64"
+            },
+            {
+              "name": "eraUnbond",
+              "type": "u64"
+            },
+            {
+              "name": "pendingBond",
+              "type": "u64"
+            },
+            {
+              "name": "pendingUnbond",
+              "type": "u64"
+            },
+            {
+              "name": "active",
+              "type": "u64"
+            },
+            {
+              "name": "totalPlatformFee",
+              "type": "u64"
+            },
+            {
+              "name": "accumulatedUnstake",
+              "type": "u128"
+            },
+            {
+              "name": "withdrawableIndex",
+              "type": "u128"
+            },
+            {
+              "name": "eraRates",
+              "type": {
+                "vec": {
+                  "defined": "EraRate"
+                }
+              }
+            },
+            {
+              "name": "stakeInfos",
+              "type": {
+                "vec": {
+                  "defined": "StakeInfo"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "unstakeAccount",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stakeManager",
+              "type": "publicKey"
+            },
+            {
+              "name": "user",
+              "type": "publicKey"
+            },
+            {
+              "name": "amount",
+              "type": "u64"
+            },
+            {
+              "name": "withdrawIndex",
+              "type": "u128"
+            }
+          ]
+        }
+      }
+    ],
+    "types": [
+      {
+        "name": "ConfigStakeManagerParams",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "minStakeAmount",
+              "type": {
+                "option": "u64"
+              }
+            },
+            {
+              "name": "platformFeeCommission",
+              "type": {
+                "option": "u64"
+              }
+            },
+            {
+              "name": "rateChangeLimit",
+              "type": {
+                "option": "u64"
+              }
+            },
+            {
+              "name": "stakeInfosLenLimit",
+              "type": {
+                "option": "u32"
+              }
+            },
+            {
+              "name": "sspMinStakeAmount",
+              "type": {
+                "option": "u64"
+              }
+            },
+            {
+              "name": "sspStakingPeriod",
+              "type": {
+                "option": "i64"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "EraBondParams",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "poolName",
+              "type": "string"
+            },
+            {
+              "name": "stakingPoolBump",
+              "type": "u8"
+            },
+            {
+              "name": "publicStakeConfigBump",
+              "type": "u8"
+            },
+            {
+              "name": "stakingRewardAmount",
+              "type": "u64"
+            },
+            {
+              "name": "stakingRate",
+              "type": "u16"
+            },
+            {
+              "name": "index",
+              "type": "string"
+            },
+            {
+              "name": "signatureCreatedAt",
+              "type": "i64"
+            },
+            {
+              "name": "signature",
+              "type": {
+                "array": ["u8", 64]
+              }
+            },
+            {
+              "name": "signatureRecoveryId",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "EraWithdrawParams",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "stakingPoolBump",
+              "type": "u8"
+            },
+            {
+              "name": "publicStakeConfigBump",
+              "type": "u8"
+            },
+            {
+              "name": "userStakeBump",
+              "type": "u8"
+            },
+            {
+              "name": "userStakeIndexBump",
+              "type": "u8"
+            },
+            {
+              "name": "index",
+              "type": "string"
+            },
+            {
+              "name": "signatureCreatedAt",
+              "type": "i64"
+            },
+            {
+              "name": "signature",
+              "type": {
+                "array": ["u8", 64]
+              }
+            },
+            {
+              "name": "signatureRecoveryId",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PublicStakingInputParams",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "poolName",
+              "type": "string"
+            },
+            {
+              "name": "stakingPoolBump",
+              "type": "u8"
+            },
+            {
+              "name": "publicStakeConfigBump",
+              "type": "u8"
+            },
+            {
+              "name": "stakingAmount",
+              "type": "u64"
+            },
+            {
+              "name": "stakingRewardAmount",
+              "type": "u64"
+            },
+            {
+              "name": "stakingPeriod",
+              "type": "i64"
+            },
+            {
+              "name": "stakingRate",
+              "type": "u16"
+            },
+            {
+              "name": "index",
+              "type": "string"
+            },
+            {
+              "name": "signatureCreatedAt",
+              "type": "i64"
+            },
+            {
+              "name": "signature",
+              "type": {
+                "array": ["u8", 64]
+              }
+            },
+            {
+              "name": "signatureRecoveryId",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PublicStakingWithdrawInputParams",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "poolName",
+              "type": "string"
+            },
+            {
+              "name": "stakingPoolBump",
+              "type": "u8"
+            },
+            {
+              "name": "publicStakeConfigBump",
+              "type": "u8"
+            },
+            {
+              "name": "userStakeBump",
+              "type": "u8"
+            },
+            {
+              "name": "userStakeIndexBump",
+              "type": "u8"
+            },
+            {
+              "name": "index",
+              "type": "string"
+            },
+            {
+              "name": "signatureCreatedAt",
+              "type": "i64"
+            },
+            {
+              "name": "signature",
+              "type": {
+                "array": ["u8", 64]
+              }
+            },
+            {
+              "name": "signatureRecoveryId",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "InitializeStakeManagerParams",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "eraSeconds",
+              "type": "i64"
+            },
+            {
+              "name": "sspMinStakeAmount",
+              "type": "u64"
+            },
+            {
+              "name": "sspStakingPeriod",
+              "type": "i64"
+            },
+            {
+              "name": "ssp",
+              "type": "publicKey"
+            },
+            {
+              "name": "sspStakePool",
+              "type": "publicKey"
+            }
+          ]
+        }
+      },
+      {
+        "name": "EraRate",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "era",
+              "type": "u64"
+            },
+            {
+              "name": "rate",
+              "type": "u64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StakeInfo",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "index",
+              "type": "u32"
+            },
+            {
+              "name": "startAt",
+              "type": "i64"
+            },
+            {
+              "name": "endAt",
+              "type": "i64"
+            },
+            {
+              "name": "amount",
+              "type": "u64"
+            },
+            {
+              "name": "reward",
+              "type": "u64"
+            },
+            {
+              "name": "poolName",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      {
+        "name": "EraStatus",
+        "type": {
+          "kind": "enum",
+          "variants": [
+            {
+              "name": "EraUpdated"
+            },
+            {
+              "name": "Withdrawn"
+            },
+            {
+              "name": "Bonded"
+            },
+            {
+              "name": "ActiveUpdated"
+            }
+          ]
+        }
+      }
+    ],
+    "events": [
+      {
+        "name": "EventEraActive",
+        "fields": [
+          {
+            "name": "era",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "rate",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "platformFee",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "EventEraBond",
+        "fields": [
+          {
+            "name": "era",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "EventEraNew",
+        "fields": [
+          {
+            "name": "newEra",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "EventEraWithdraw",
+        "fields": [
+          {
+            "name": "era",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "index",
+            "type": "u32",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "EventStake",
+        "fields": [
+          {
+            "name": "era",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "staker",
+            "type": "publicKey",
+            "index": false
+          },
+          {
+            "name": "stakeAmount",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "lsdTokenAmount",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "EventUnstake",
+        "fields": [
+          {
+            "name": "era",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "staker",
+            "type": "publicKey",
+            "index": false
+          },
+          {
+            "name": "unstakeAccount",
+            "type": "publicKey",
+            "index": false
+          },
+          {
+            "name": "unstakeAmount",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "sonicAmount",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "EventWithdraw",
+        "fields": [
+          {
+            "name": "era",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "user",
+            "type": "publicKey",
+            "index": false
+          },
+          {
+            "name": "unstakeAccount",
+            "type": "publicKey",
+            "index": false
+          },
+          {
+            "name": "withdrawAmount",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      }
+    ],
+    "errors": [
+      {
+        "code": 6000,
+        "name": "ProgramIdNotMatch",
+        "msg": "Program id not match"
+      },
+      {
+        "code": 6001,
+        "name": "RemainingAccountsNotMatch",
+        "msg": "Remaining accounts not match"
+      },
+      {
+        "code": 6002,
+        "name": "AdminNotMatch",
+        "msg": "Admin not match"
+      },
+      {
+        "code": 6003,
+        "name": "ParamsNotMatch",
+        "msg": "params not match"
+      },
+      {
+        "code": 6004,
+        "name": "PlatformFeeRecipientNotMatch",
+        "msg": "Platform fee recipient not match"
+      },
+      {
+        "code": 6005,
+        "name": "StakeAmountTooLow",
+        "msg": "Stake amount too low"
+      },
+      {
+        "code": 6006,
+        "name": "UnstakeUserNotMatch",
+        "msg": "Unstake user not match"
+      },
+      {
+        "code": 6007,
+        "name": "BalanceNotEnough",
+        "msg": "Balance not enough"
+      },
+      {
+        "code": 6008,
+        "name": "CalculationFail",
+        "msg": "Calulation fail"
+      },
+      {
+        "code": 6009,
+        "name": "EraIsLatest",
+        "msg": "Era is latest"
+      },
+      {
+        "code": 6010,
+        "name": "EraStatusNotMatch",
+        "msg": "Era status not match"
+      },
+      {
+        "code": 6011,
+        "name": "InvalidUnstakeAccount",
+        "msg": "Invalid unstake account"
+      },
+      {
+        "code": 6012,
+        "name": "UnstakeAccountNotClaimable",
+        "msg": "Unstake account not claimable"
+      },
+      {
+        "code": 6013,
+        "name": "UnstakeAccountAmountZero",
+        "msg": "Unstake account amount zero"
+      },
+      {
+        "code": 6014,
+        "name": "PoolBalanceNotEnough",
+        "msg": "Pool balance not enough"
+      },
+      {
+        "code": 6015,
+        "name": "UnstakeAmountIsZero",
+        "msg": "Unstake amount is zero"
+      },
+      {
+        "code": 6016,
+        "name": "RateChangeOverLimit",
+        "msg": "Rate change over limit"
+      },
+      {
+        "code": 6017,
+        "name": "LsdTokenMintAccountNotMatch",
+        "msg": "Lsd token mint account not match"
+      },
+      {
+        "code": 6018,
+        "name": "SonicTokenMintAccountNotMatch",
+        "msg": "Sonic token mint account not match"
+      },
+      {
+        "code": 6019,
+        "name": "SspNotMatch",
+        "msg": "ssp not match"
+      },
+      {
+        "code": 6020,
+        "name": "SspStakePoolNotMatch",
+        "msg": "ssp stake pool not match"
+      },
+      {
+        "code": 6021,
+        "name": "MintAuthorityNotMatch",
+        "msg": "Mint authority not match"
+      },
+      {
+        "code": 6022,
+        "name": "FreezeAuthorityNotMatch",
+        "msg": "Freeze authority not match"
+      },
+      {
+        "code": 6023,
+        "name": "MintSupplyNotEmpty",
+        "msg": "Mint supply not empty"
+      },
+      {
+        "code": 6024,
+        "name": "StakeInfoNotFound",
+        "msg": "Stake info not found"
+      },
+      {
+        "code": 6025,
+        "name": "StakeInfoNotWithdrawable",
+        "msg": "Stake info not withdrawable"
+      },
+      {
+        "code": 6026,
+        "name": "StakeInfosLenOverLimit",
+        "msg": "Stake infos len over limit"
+      }
+    ]
+  }

@@ -73,6 +73,7 @@ import { CronManager } from "../managers/CronManager";
 import { TradingEventPoints } from "../entities/events/TradingEventPoints";
 import { FarmManager } from "../managers/FarmManager";
 import { Farm } from "../entities/Farm";
+import { ChaosManager } from "./solana/svm/ChaosManager";
 
 export class MigrationManager {
 
@@ -203,6 +204,13 @@ export class MigrationManager {
         // COBALTX
         // await this.processTx(Chain.SVMBNB_MAINNET, '2vpxxNevRE5qyU6mwbgx5wAwCedTxPVP2MnG2E8hGz3pzPgDt9z7rBrztXFtZUGuQVHXSxrZqhjN1Dg4tcCuGhtf'); // CobaltX
         // await this.processTx(Chain.SOON_MAINNET, '3QGVcZJduS7pK3RzDUVZcd7zr9FF776ZDK5duKZVYVsE4mdMuT4ufSyP8HEccSupb1E7QtZeKbpZWbZDPN6rcpsw'); // CobaltX
+
+        // CHAOS
+        // await this.processTx(Chain.SONIC, '33y7TbYNoSZ7hkn74TjVkdJbqz21HRRfARUTmN2DLTPHAeLYSKXcoKhr55tN3VbwUGq9Euhpc5Fq5xbYutMaNLWm'); // stake SONIC
+        // await this.processTx(Chain.SONIC, '43Ym5Tcj9xHwtZ1Yamp92twVTTjuexdrdhdK9gKEFrfwpRpLAx8KrSGeuTiP9jwSUvBiMe944eU5opcwd7CoV7xK'); // unstake SONIC
+
+        // CHAOS STAKE VAULT
+        // await this.processTx(Chain.SONIC, '3GG1mnNyCeSVC2psLjiJjyYsN5t884VVwaY5GRLZuozDAAWeKkdrwmiADpdZbB7B6kGeohxCdtTyzY8RukcoXonk'); // stake CHILL
 
         // const digitalAssets = await MetaplexManager.fetchAllDigitalAssets(Chain.SONIC, [
         //     'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', 
@@ -356,6 +364,27 @@ export class MigrationManager {
         //     await FarmManager.tick();
         //     await new Promise((resolve) => setTimeout(resolve, 1000));
         // }
+
+
+
+
+
+        // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(this.kMikeUserId);
+        // if (!traderProfile){
+        //     LogManager.error('!mike', 'traderProfile not found');
+        //     return;
+        // }
+        // const traderProfileId = traderProfile.id;
+        // console.log('!mike', 'traderProfileId', traderProfileId, 'wallet:', traderProfile.encryptedWallet?.publicKey);
+
+        // const wallet = traderProfile.getWallet();
+        // if (!wallet){
+        //     LogManager.error('!mike', 'wallet not found');
+        //     return;
+        // }
+        // const testKeypair = web3.Keypair.fromSecretKey(bs58.decode(wallet.privateKey));
+        // const chaos = await ChaosManager.init(testKeypair);
+
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

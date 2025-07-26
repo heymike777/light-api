@@ -40,6 +40,8 @@ export enum kProgram {
     // SONIC SVM
     SONIC_STAKING = 'g3yMgSB3Q7gNjMfSoCm1PiJihqHdNJeUuPHvRyf45qY',
     SEGA = 'SegazTQwbYWknDZkJ6j2Kgvm5gw3MrHGKtWstZdoNKZ',
+    CHAOS = '3xkSoc4PeFJ8FmVeanwdsKzaByrX6CTNyVTskHe5XCyn',
+    CHAOS_VAULT = 'G4wEnUJZabnFfH3gjzAtTdm6co1nar1eC72EDLz97Mzh',
 
     // SOON, SVMBNB, SOONBASE
     COBALTX = '6f1b3xyVZbnWMHXBjgW1KPwxmPAgXcRdrvKNn4Nmf1Cn',
@@ -357,6 +359,29 @@ export const kPrograms: { [key: string]: {
             // { 'flashFillOrder': {title: 'FILL LIMIT ORDER', priority: 2} },
         ],
         skip: false,
+    },
+    [kProgram.CHAOS]: {
+        name: 'CHAOS',
+        knownInstructions: [
+            { 'stake': {title: 'STAKE', priority: 2} },
+            { 'unstake': {title: 'UNSTAKE', priority: 2} },
+        ],
+        skip: false,
+        customIdl: {
+            path: 'src/idls/chaos.json',
+            type: 'anchor',
+        },
+    },
+    [kProgram.CHAOS_VAULT]: {
+        name: 'CHAOS',
+        knownInstructions: [
+            // { 'initializeOrder': {title: 'LIMIT ORDER', priority: 2} },
+        ],
+        skip: false,
+        customIdl: {
+            path: 'src/idls/chaos_vault.json',
+            type: 'anchorV1',
+        },
     },
     [kProgram.GO_FUND_MEME]: {
         name: 'GO FUND MEME',
