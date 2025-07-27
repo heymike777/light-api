@@ -323,7 +323,33 @@ Quack!`,
 
         const results = await Swap.aggregate(pipeline);
         const usd = results[0]?.usd || 0;
-        await TradingEvent.updateOne({ _id: eventId }, { $set: { volume: usd } });
+
+        const prizes: string[] = [];
+        if (event.id == '68865f648db47a133f8e22bc') {
+            // SONIC SUMMER SURGE
+            let koef = 1;
+            if (usd >= 3000000){ koef = 4; }
+            else if (usd >= 2000000){ koef = 3; }
+            else if (usd >= 1000000){ koef = 2; }
+
+            prizes.push(`$${500 * koef} + NFT`);
+            prizes.push(`$${250 * koef} + NFT`);
+            prizes.push(`$${250 * koef} + NFT`);
+            prizes.push(`$${100 * koef}`);
+            prizes.push(`$${100 * koef}`);
+            prizes.push(`$${100 * koef}`);
+            for (let i = 0; i < 10; i++){
+                prizes.push(`$${50 * koef}`);
+            }
+            for (let i = 0; i < 20; i++){
+                prizes.push(`$${25 * koef}`);
+            }
+            for (let i = 0; i < 20; i++){
+                prizes.push(`$${10 * koef}`);
+            }
+        }
+
+        await TradingEvent.updateOne({ _id: eventId }, { $set: { volume: usd, prizes: prizes } });
     }
 
     static async recalculateLeaderboardForActiveEvents() {
