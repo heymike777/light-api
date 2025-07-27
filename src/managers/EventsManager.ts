@@ -309,8 +309,23 @@ Quack!`,
             {
                 $match: {
                     'status.type': StatusType.COMPLETED,
-                    points: { $gt: 0 },
+                    points: { $exists: true },
                     createdAt: { $gte: event.startAt, $lte: event.endAt }
+                }
+            },
+            {
+                $addFields: {
+                    eventPoints: {
+                        $ifNull: [
+                            { $toDouble: { $getField: { field: eventId, input: '$points' } } },
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                $match: {
+                    eventPoints: { $gt: 0 }
                 }
             },
             {
@@ -322,6 +337,7 @@ Quack!`,
         ];
 
         const results = await Swap.aggregate(pipeline);
+        console.log('recalculateVolume', 'results:', results);
         const usd = results[0]?.usd || 0;
 
         const prizes: string[] = [];
