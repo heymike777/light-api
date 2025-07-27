@@ -133,6 +133,31 @@ export class EventsManager {
         await event.save();
     }
 
+    static async createSonicSummerSurgeEvent() {
+        const event = new TradingEvent();
+        event.title = '🏆 SONIC SUMMER SURGE';
+        event.startAt = new Date('2025-07-27T14:00:00Z');
+        event.endAt = new Date('2025-08-12T20:00:00Z');
+        event.description = `Trade SONIC, CHILL, and FOMO on SonicSVM using Light and share $10,000 prize pool + special prizes!\n\nThe more you trade, the more points you earn.\n\nCheck out the leaderboard and prize pool: <a href="https://sonic.light.app">https://sonic.light.app</a>`;
+        event.status = TradingEventStatus.UPCOMING;
+        event.chains = [Chain.SONIC];
+        event.image = 'https://light.dangervalley.com/events/sonic_summer_surge.png';
+        event.tradingPoints = {
+            'sonic:7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': 100, // 1000 points for each $1 traded of CHILL on Sonic SVM
+            'sonic:mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': 100, 
+            //TODO: add FOMO
+            '*': 0, // 0 points for any other token
+        }
+        event.tokens = [
+            { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', symbol: 'CHILL' },
+            { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', symbol: 'SONIC' }
+            //TODO: add FOMO
+        ];
+        event.webUrl = 'https://sonic.light.app';
+        event.createdAt = new Date();
+        await event.save();
+    }
+
     static async createSoonEvent() {
         const eventTitle = 'SOON RUSH';
         const existingEvent = await TradingEvent.findOne({

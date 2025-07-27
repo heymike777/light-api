@@ -26,7 +26,8 @@ export interface ITradingEvent extends mongoose.Document {
         description: string;
         image?: string;
         shouldAcceptData: boolean;
-    }
+    },
+    webUrl?: string;
     
     updatedAt?: Date;
     createdAt: Date;
@@ -41,7 +42,8 @@ export const TradingEventSchema = new mongoose.Schema<ITradingEvent>({
     image: { type: String },
     chains: { type: Array }, // optional, can be used to filter events by chain
     special: { type: Mixed },
-
+    webUrl: { type: String },
+    
     tradingPoints: { type: Mixed },
     tokens: { type: Array },
 

@@ -178,12 +178,13 @@ export class BotEventsHelper extends BotHelper {
             index++;
         }
 
-        //TODO: add Leaderboard button
         buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: `events|leaderboard|${event.id}`, text: '🏆 Leaderboard' });
+        buttons.push({ id: `events|leaderboard|${event.id}`, text: '🏆 Leaderboard', link: event.webUrl });
 
-        buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: `events|special|${event.id}`, text: '🎁 Special prizes' });
+        if (event.special){
+            buttons.push({ id: 'row', text: '' });
+            buttons.push({ id: `events|special|${event.id}`, text: '🎁 Special prizes' });
+        }
 
         const markup = BotManager.buildInlineKeyboard(buttons);
         return { 
