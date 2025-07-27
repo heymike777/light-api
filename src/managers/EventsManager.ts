@@ -296,12 +296,43 @@ Quack!`,
         }
     }
 
+    static async recalculateVolume(eventId: string) {
+        console.log('recalculateVolume', eventId);
+
+        const event = await EventsManager.getEventById(eventId);
+        if (!event){
+            return;
+        }     
+        
+        // create a pipeline to sum up the usd value of all swaps for the event
+        const pipeline = [
+            {
+                $match: {
+                    'status.type': StatusType.COMPLETED,
+                    points: { $gt: 0 },
+                    createdAt: { $gte: event.startAt, $lte: event.endAt }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    usd: { $sum: '$value.usd' }
+                }
+            }
+        ];
+
+        const results = await Swap.aggregate(pipeline);
+        const usd = results[0]?.usd || 0;
+        await TradingEvent.updateOne({ _id: eventId }, { $set: { volume: usd } });
+    }
+
     static async recalculateLeaderboardForActiveEvents() {
         const activeEvents = await TradingEvent.find({
             status: TradingEventStatus.ACTIVE
         });
         for (const event of activeEvents){
             await EventsManager.recalculateLeaderboard(event.id);
+            await EventsManager.recalculateVolume(event.id);
         }
 
         //recalculate leaderboard for events that ended less than 2 hours ago
@@ -311,6 +342,7 @@ Quack!`,
         });
         for (const event of endedEvents){
             await EventsManager.recalculateLeaderboard(event.id);
+            await EventsManager.recalculateVolume(event.id);
         }
     }
 
