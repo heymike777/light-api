@@ -12,7 +12,7 @@ import { MixpanelManager } from './MixpanelManager';
 import { StringSchemaDefinition } from 'mongoose';
 import { TraderProfilesManager } from './TraderProfilesManager';
 import { SwapManager } from './SwapManager';
-import { Priority } from '../services/solana/types';
+import { Chain, Priority } from '../services/solana/types';
 import { ReferralsManager } from './ReferralsManager';
 
 export enum VerificationService {
@@ -154,6 +154,7 @@ export class AuthManager {
 
         const user = new User();
         user.email = email;
+        user.defaultChain = Chain.SONIC;
         user.createdAt = new Date();
         await user.save();
 

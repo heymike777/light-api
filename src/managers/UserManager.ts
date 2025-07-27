@@ -6,7 +6,7 @@ import { UserTransaction } from "../entities/users/UserTransaction";
 import { Wallet, WalletStatus } from "../entities/Wallet";
 import { BadRequestError } from "../errors/BadRequestError";
 import { YellowstoneManager } from "../services/solana/geyser/YellowstoneManager";
-import { Priority } from "../services/solana/types";
+import { Chain, Priority } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { MixpanelManager } from "./MixpanelManager";
 import { ReferralsManager } from "./ReferralsManager";
@@ -84,6 +84,7 @@ export class UserManager {
         else {
             const newUser = await User.create({
                 telegram: from,
+                defaultChain: Chain.SONIC,
                 createdAt: now,
             });
 

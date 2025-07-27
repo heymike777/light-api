@@ -51,8 +51,11 @@ export class BotAdminHelper extends BotHelper {
             await BotManager.editMessage(ctx, message, markup);
         }
         else if (buttonId && buttonId == 'admin|create_event'){
-            await EventsManager.createSonicSummerSurgeEvent();
-            await BotManager.reply(ctx, 'Event created ✅');
+            await BotManager.reply(ctx, 'No event to create');
+
+            // await EventsManager.createSonicSummerSurgeEvent();
+            // await BotManager.reply(ctx, 'Event created ✅');
+
             // const { message, buttons } = await this.buildAdminMessage(user, ctx);
             // const markup = BotManager.buildInlineKeyboard(buttons);
             // await BotManager.editMessage(ctx, message, markup);
