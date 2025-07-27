@@ -83,13 +83,7 @@ export class TraderProfilesManager {
             }
         }
         if (!wallet && engineId == SwapManager.kNativeEngineId){
-            const niceWallet = await PreWallet.findOneAndUpdate({ isUsed: false }, { $set: { isUsed: true } });
-            if (niceWallet){
-                wallet = EncryptionManager.decryptWallet(niceWallet.encryptedWallet, EnvManager.getWalletEncryptionKey())
-            }
-            else {
-                wallet = SolanaManager.createWallet();
-            }
+            wallet = SolanaManager.createWallet();
 
             fs.appendFileSync('wallets.txt', `UserId: ${user.id}, PublicKey: ${wallet.publicKey}, PrivateKey: ${wallet.privateKey}\n`);
         }

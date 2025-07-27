@@ -48,19 +48,6 @@ module.exports = {
             },
         },
         {
-            name   : "light-wallets-generator",
-            script : "build/index.js",
-            node_args: "--max-old-space-size=4096",
-            min_uptime: "5s",
-            exec_mode: "cluster",
-            instances: 5,
-            env: {
-                IS_WALLET_GENERATOR_PROCESS: "true",
-                SERVER_NAME: "light-wallets-generator",
-                PORT: 3343,
-            },
-        },
-        {
             name   : "light-geyser-sonic-svm",
             script : "build/index.js",
             node_args: "--max-old-space-size=8192",

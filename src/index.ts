@@ -157,9 +157,6 @@ const onExpressStarted = async () => {
     if (EnvManager.isMainProcess) {
         initSolscanLabels();
     }
-    if (EnvManager.isWalletGeneratorProcess) {
-        await WalletGeneratorManager.start();
-    }
 
     await MixpanelManager.init();
     await WalletManager.fetchAllWalletAddresses();
