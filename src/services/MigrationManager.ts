@@ -385,6 +385,9 @@ export class MigrationManager {
         // const testKeypair = web3.Keypair.fromSecretKey(bs58.decode(wallet.privateKey));
         // const chaos = await ChaosManager.init(testKeypair);
 
+        if (EnvManager.isCronProcess){
+            await EventsManager.recalculateLeaderboardForActiveEvents();
+        }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
