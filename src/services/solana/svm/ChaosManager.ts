@@ -2,6 +2,7 @@ import { SonicLSD, SonicLSDConfig } from "@heymike/chaosfinance";
 import { Keypair } from "@solana/web3.js";
 import { Chain } from "../types";
 import { kSonicAddress } from "../Constants";
+import { ChaosStakeTx } from "../../../entities/staking/ChaosStakeTx";
 
 export class ChaosManager {
 
@@ -33,7 +34,16 @@ export class ChaosManager {
         // },
     };
 
-    static async stake(keypair: Keypair, mint: string, amount: number): Promise<SonicLSD> {
+    static async stake(keypair: Keypair, mint: string, amount: number): Promise<SonicLSD | undefined> {
+        if (mint == kSonicAddress){
+            return this.stakeSonic(keypair, mint, amount);
+        }
+        else {
+
+        }
+    }
+
+    static async stakeSonic(keypair: Keypair, mint: string, amount: number): Promise<SonicLSD> {
 
         const token = this.kSupportedTokens[mint];
         if (!token){
@@ -89,6 +99,14 @@ export class ChaosManager {
             const txHash = await chaos.getStaking().stakeSonic(amount);
             console.log(`Keypair staking tx: ${txHash}`);
         
+
+            await ChaosStakeTx.create({
+                walletAddress: keypair.publicKey.toString(),
+                amount: amount,
+                mint: mint,
+                signature: txHash,
+            });
+
             // Get withdrawal info
             // console.log('📋 Getting withdrawal information...');
             // const withdrawInfo1 = await chaos.getStaking().getUserWithdrawInfo();
