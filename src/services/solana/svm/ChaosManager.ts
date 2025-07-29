@@ -72,15 +72,12 @@ export class ChaosManager {
                 throw new Error(`Insufficient SOL balance: ${balance} SOL. You need at least 0.01 SOL to stake`);
             }
 
-            if (token.mint == kSonicAddress){
-                const sonicBalance = await chaos.getLST().getUserSonicBalance();
-                console.log('sonicBalance', sonicBalance, 'amount', amount);
-                if (sonicBalance && parseFloat(sonicBalance) < amount){
-                    throw new Error(`Insufficient SONIC balance: ${sonicBalance} SONIC`);
-                }    
+            let sonicBalance = await chaos.getLST().getUserSonicBalance();
+            if (sonicBalance == undefined || sonicBalance == '0'){
+                sonicBalance = await chaos.getLST().getUserSonicBalance();
             }
-            else {
-                //TODO: check balance of the token (CHILL, FOMO)
+            if (sonicBalance && parseFloat(sonicBalance) < amount){
+                throw new Error(`Insufficient SONIC balance: ${sonicBalance} SONIC`);
             }
         
             // console.log('📊 Getting platform information...');
