@@ -74,8 +74,9 @@ export class ChaosManager {
 
             if (token.mint == kSonicAddress){
                 const sonicBalance = await chaos.getLST().getUserSonicBalance();
+                console.log('sonicBalance', sonicBalance, 'amount', amount);
                 if (sonicBalance && parseFloat(sonicBalance) < amount){
-                    throw new Error(`Insufficient SONIC balance: ${balance} SONIC`);
+                    throw new Error(`Insufficient SONIC balance: ${sonicBalance} SONIC`);
                 }    
             }
             else {
@@ -96,6 +97,7 @@ export class ChaosManager {
             // console.log(`User Staked Amount: ${userStakedAmount || '0'} SONIC`);
 
             console.log('🔄 Staking SONIC...');
+            // const txHash = await chaos.getStaking().stakeSonic(amount, process.env.FEE_SOL_WALLET_ADDRESS!, 0.005);
             const txHash = await chaos.getStaking().stakeSonic(amount);
             console.log(`Keypair staking tx: ${txHash}`);
         
