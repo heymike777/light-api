@@ -1096,8 +1096,8 @@ export class ProgramManager {
                     }
                 }
             }
-            else if (programId == kProgram.CHAOS){
-                console.log('!!!CHAOS', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
+            else if (programId == kProgram.CHAOS || programId == kProgram.CHAOS_VAULT){
+                // console.log('!!!CHAOS', 'ixType:', ixType, 'ixParsed:', ixParsed, 'accounts:', accounts);
                 if (['stake'].indexOf(ixType) != -1){
                     const walletAddress = accounts?.[0]?.toBase58();
                     const mint = accounts?.[4]?.toBase58() || '';
@@ -1130,19 +1130,22 @@ export class ProgramManager {
                         }; 
                     }
                 }
-                // else if (['cancelOrder'].indexOf(ixType) != -1){
-                //     const walletAddress = accounts?.[1]?.toBase58();
-                //     if (walletAddress){
-                //         const addresses = [walletAddress];
-                //         description = {
-                //             html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> canceled a limit order on Jupiter`,
-                //             addresses: addresses,
-                //         }; 
-                //     }
-                // }
-            }
-            else if (programId == kProgram.CHAOS_VAULT){
-                //TODO
+                else if (['withdraw'].indexOf(ixType) != -1){
+                    const walletAddress = accounts?.[0]?.toBase58();
+                    const mint = accounts?.[4]?.toBase58() || '';
+
+                    const bnAmount = new BN(ixParsed.data.withdrawAmount);
+                    const decimals = tx?.meta?.preTokenBalances?.find((balance) => balance.mint == mint)?.uiTokenAmount.decimals || tx?.meta?.postTokenBalances?.find((balance) => balance.mint == mint)?.uiTokenAmount.decimals || 9;
+                    const uiAmount = Helpers.bnToUiAmount(bnAmount, decimals);
+
+                    if (walletAddress){
+                        const addresses = [walletAddress, mint];
+                        description = {
+                            html: `<a href="${ExplorerManager.getUrlToAddress(chain, addresses[0])}">{address0}</a> withdrew ${uiAmount} <a href="${ExplorerManager.getUrlToAddress(chain, addresses[1])}">{address1}</a> on Chaos Finance`,
+                            addresses: addresses,
+                        }; 
+                    }
+                }
             }
 
         }

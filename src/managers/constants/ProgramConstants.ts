@@ -365,6 +365,7 @@ export const kPrograms: { [key: string]: {
         knownInstructions: [
             { 'stake': {title: 'STAKE', priority: 2} },
             { 'unstake': {title: 'UNSTAKE', priority: 2} },
+            { 'withdraw': {title: 'WITHDRAW', priority: 2} },
         ],
         skip: false,
         customIdl: {
@@ -377,11 +378,12 @@ export const kPrograms: { [key: string]: {
         knownInstructions: [
             { 'stake': {title: 'STAKE', priority: 2} },
             { 'unstake': {title: 'UNSTAKE', priority: 2} },
+            { 'withdraw': {title: 'WITHDRAW', priority: 2} },
         ],
         skip: false,
         customIdl: {
             path: 'src/idls/chaos_vault.json',
-            type: 'anchorV1',
+            type: 'anchor',
         },
     },
     [kProgram.GO_FUND_MEME]: {
