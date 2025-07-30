@@ -601,6 +601,7 @@ export class TokenManager {
             if (chain == Chain.SONIC){
                 manualTokens = [
                     { chain, symbol: 'CHILL', mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', sort: 0, isFeatured: true },
+                    { chain, symbol: 'FOMO', mint: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', sort: 0, isFeatured: true },
                 ];
                 hotTokens = await SegaManager.fetchHotTokens(limit);
             }

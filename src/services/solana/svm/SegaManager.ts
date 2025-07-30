@@ -40,6 +40,18 @@ export class SegaManager {
                 from: this.kSonicAddress,
                 to: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3' // CHILL
             }
+        ],
+        'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o': [
+            {
+                poolId: this.kSolSonicPoolId,
+                from: kSolAddress,
+                to: this.kSonicAddress
+            },
+            {
+                poolId: 'ARhj9Tqeejw6t96MujUD5RDaL2szHPYbgaCV23TE4G4K',
+                from: this.kSonicAddress,
+                to: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o' // FOMO
+            }
         ]
     };
 
