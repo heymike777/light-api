@@ -202,8 +202,6 @@ export class BotEventsHelper extends BotHelper {
             return { text: '🚫 Event not found' };
         }
 
-        console.log('event', event);
-
         const leaderboard = await EventsManager.getLeaderboardForEvent(eventId);
 
         let text = '';

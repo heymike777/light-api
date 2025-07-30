@@ -94,19 +94,26 @@ export class SegaManager {
                 });
             }
             else {
+                console.log('SEGA', 'fetchPoolForMints', 'inputMint:', inputMint, 'outputMint:', outputMint);
                 const tokenMint = inputMint == kSolAddress ? outputMint : inputMint;
+                console.log('SEGA', 'tokenMint:', tokenMint);
+                console.log('SEGA', 'this.tradeThroughSonic[tokenMint]:', this.tradeThroughSonic[tokenMint]);
                 if (!this.tradeThroughSonic[tokenMint]){
                     const pool = await this.fetchPoolForMints(this.kSonicAddress, tokenMint);
+                    console.log('SEGA', 'pool:', pool);
                     if (pool){
                         this.tradeThroughSonic[tokenMint] =  this.buildTradeThroughSonic(outputMint, pool.poolId);
                     }
                 }
+                console.log('SEGA', 'this.tradeThroughSonic[tokenMint]:', this.tradeThroughSonic[tokenMint]);
+
 
                 if (inputMint == kSolAddress && this.tradeThroughSonic[outputMint]){
                     tradeThrough = this.tradeThroughSonic[outputMint];
                 }
                 else if (outputMint == kSolAddress && this.tradeThroughSonic[inputMint]){
                     tradeThrough = this.tradeThroughSonic[inputMint];
+                    console.log('SEGA', 'tradeThrough reverse');
                     tradeThrough = tradeThrough.reverse();
                     for (const trade of tradeThrough) {
                         const tmp = trade.from;
@@ -114,6 +121,9 @@ export class SegaManager {
                         trade.to = tmp;
                     }
                 }
+
+                console.log('SEGA', 'tradeThrough:', tradeThrough);
+
             }
         }
 

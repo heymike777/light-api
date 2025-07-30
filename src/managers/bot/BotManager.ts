@@ -210,6 +210,7 @@ export class BotManager {
         if (query.toLowerCase() == 'chill'){ query = '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3'; }
         else if (query.toLowerCase() == 'bonk'){ query = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'; }
         else if (query.toLowerCase() == 'jup'){ query = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'; }
+        else if (query.toLowerCase() == 'fomo'){ query = 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o'; }
 
         const tokens = await SearchManager.search(user.defaultChain || Chain.SOLANA, query, user.id);
         if (tokens.length > 0 && tokens[0].symbol && !TokenManager.excludedTokens.includes(tokens[0].address)){
