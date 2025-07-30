@@ -29,31 +29,24 @@ export class SegaManager {
     static kSonicAddress = 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL';
     static kSolSonicPoolId = 'DgMweMfMbmPFChTuAvTf4nriQDWpf9XX3g66kod9nsR4';
     static tradeThroughSonic: { [key: string]: ITradeThrough[] } = {
-        '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': [
-            {
-                poolId: this.kSolSonicPoolId,
-                from: kSolAddress,
-                to: this.kSonicAddress
-            },
-            {
-                poolId: 'FmH2XRYcq3mL9fXNGq2ko5d4YctB3J2V6u5GYAtAsnm7',
-                from: this.kSonicAddress,
-                to: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3' // CHILL
-            }
-        ],
-        'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o': [
-            {
-                poolId: this.kSolSonicPoolId,
-                from: kSolAddress,
-                to: this.kSonicAddress
-            },
-            {
-                poolId: 'ARhj9Tqeejw6t96MujUD5RDaL2szHPYbgaCV23TE4G4K',
-                from: this.kSonicAddress,
-                to: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o' // FOMO
-            }
-        ]
+        '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': this.buildTradeThroughSonic('7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', 'FmH2XRYcq3mL9fXNGq2ko5d4YctB3J2V6u5GYAtAsnm7'),
+        'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o': this.buildTradeThroughSonic('HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', 'ARhj9Tqeejw6t96MujUD5RDaL2szHPYbgaCV23TE4G4K'),
     };
+
+    static buildTradeThroughSonic(mint: string, poolId: string): ITradeThrough[] {
+        return [
+            {
+                poolId: this.kSolSonicPoolId,
+                from: kSolAddress,
+                to: this.kSonicAddress
+            },
+            {
+                poolId: poolId,
+                from: this.kSonicAddress,
+                to: mint // FOMO
+            }
+        ];
+    }
 
     static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number, poolId?: string, fee?: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
         const tpWallet = traderProfile.getWallet();
@@ -83,31 +76,45 @@ export class SegaManager {
         });
 
         let tradeThrough: ITradeThrough[] = [];
-        if (inputMint == kSolAddress && this.tradeThroughSonic[outputMint]){
-            tradeThrough = this.tradeThroughSonic[outputMint];
-        }
-        else if (outputMint == kSolAddress && this.tradeThroughSonic[inputMint]){
-            tradeThrough = this.tradeThroughSonic[inputMint];
-            tradeThrough = tradeThrough.reverse();
-            for (const trade of tradeThrough) {
-                const tmp = trade.from;
-                trade.from = trade.to;
-                trade.to = tmp;
-            }
-        }
-        else {
-            if (!poolId){
-                const pool = await this.fetchPoolForMints(inputMint, outputMint);
-                if (!pool) {
-                    throw new Error('Pool not found');
-                }
-                poolId = pool.poolId;
-            }
+        if (poolId){
             tradeThrough.push({
                 poolId,
                 from: inputMint,
                 to: outputMint
             });
+        }
+        else {
+            const pool = await this.fetchPoolForMints(inputMint, outputMint);
+            if (pool){
+                poolId = pool.poolId;
+                tradeThrough.push({
+                    poolId,
+                    from: inputMint,
+                    to: outputMint
+                });
+            }
+            else {
+                const tokenMint = inputMint == kSolAddress ? outputMint : inputMint;
+                if (!this.tradeThroughSonic[tokenMint]){
+                    const pool = await this.fetchPoolForMints(this.kSonicAddress, tokenMint);
+                    if (pool){
+                        this.tradeThroughSonic[tokenMint] =  this.buildTradeThroughSonic(outputMint, pool.poolId);
+                    }
+                }
+
+                if (inputMint == kSolAddress && this.tradeThroughSonic[outputMint]){
+                    tradeThrough = this.tradeThroughSonic[outputMint];
+                }
+                else if (outputMint == kSolAddress && this.tradeThroughSonic[inputMint]){
+                    tradeThrough = this.tradeThroughSonic[inputMint];
+                    tradeThrough = tradeThrough.reverse();
+                    for (const trade of tradeThrough) {
+                        const tmp = trade.from;
+                        trade.from = trade.to;
+                        trade.to = tmp;
+                    }
+                }
+            }
         }
 
         let sonicTokenAta: string | undefined = undefined;

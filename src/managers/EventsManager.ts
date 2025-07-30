@@ -145,13 +145,13 @@ export class EventsManager {
         event.tradingPoints = {
             'sonic:7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': 100, // 1000 points for each $1 traded of CHILL on Sonic SVM
             'sonic:mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': 100, 
-            //TODO: add FOMO
+            'sonic:HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o': 100, 
             '*': 0, // 0 points for any other token
         }
         event.tokens = [
             { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', symbol: 'CHILL' },
-            { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', symbol: 'SONIC' }
-            //TODO: add FOMO
+            { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', symbol: 'SONIC' },
+            { mint: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', symbol: 'FOMO' }
         ];
         event.webUrl = 'https://sonic.light.app';
         event.createdAt = new Date();
