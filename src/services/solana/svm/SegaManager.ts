@@ -102,7 +102,7 @@ export class SegaManager {
                     const pool = await this.fetchPoolForMints(this.kSonicAddress, tokenMint);
                     console.log('SEGA', 'pool:', pool);
                     if (pool){
-                        this.tradeThroughSonic[tokenMint] =  this.buildTradeThroughSonic(outputMint, pool.poolId);
+                        this.tradeThroughSonic[tokenMint] =  this.buildTradeThroughSonic(tokenMint, pool.poolId);
                     }
                 }
                 console.log('SEGA', 'this.tradeThroughSonic[tokenMint]:', this.tradeThroughSonic[tokenMint]);
