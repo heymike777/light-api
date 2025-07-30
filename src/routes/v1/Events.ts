@@ -15,7 +15,7 @@ router.get(
         const eventLeaderboard = await EventsManager.getLeaderboardForEvent(eventId);
 
         const volume = event?.volume || 0;
-        const totalPoints = eventLeaderboard.reduce((acc, entry) => acc + entry.points, 0);
+        // const totalPoints = eventLeaderboard.reduce((acc, entry) => acc + entry.points, 0);
 
         const leaderboard: { walletAddress: string, points: number, prize?: string }[] = [];
         
@@ -27,14 +27,8 @@ router.get(
                 points: entry.points, 
                 prize 
             });
+            index++;
         }
-
-
-        // {
-        //     walletAddress: '1234...4321',
-        //     volume: 1234567,
-        //     prize: '$1000 + NFT',
-        // }
 
 		const response = {
 			volume,
