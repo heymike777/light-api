@@ -510,9 +510,8 @@ export class BotManager {
 
         const buttons: InlineButton[] = [];
         buttons.push({ id: `buy|${token.chain}|${token.address}|refresh`, text: '↻ Refresh' });
-        console.log('buildBuyMessageForToken', 'token.chain:', token.chain);
         if (BotFarmHelper.DEXES[token.chain] && BotFarmHelper.DEXES[token.chain].length > 0){
-            buttons.push({ id: `buy|${token.chain}|${token.address}|farm`, text: '⛏️ Pump farm' });
+            buttons.push({ id: `buy|${token.chain}|${token.address}|farm`, text: '🤖 Automations' });
         }
         if (token.chain == Chain.SONIC && ChaosManager.kSupportedTokens[token.address]){
             buttons.push({ id: `stake|${token.chain}|${token.address}`, text: '🪽 Stake' });

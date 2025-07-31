@@ -60,7 +60,7 @@ export class BotFarmHelper extends BotHelper {
 
     constructor() {
         const replyMessage: Message = {
-            text: '⛏️ Pump farm'
+            text: '🤖 Automations'
         };
 
         super('farm', replyMessage, ['my_farm']);
@@ -404,7 +404,7 @@ export class BotFarmHelper extends BotHelper {
         ];
         const markup = BotManager.buildInlineKeyboard(buttons);
         return { 
-            text: '⛏️ Pump farm is only available on Sonic SVM for now.',
+            text: '🤖 Automations are only available on Sonic SVM for now.',
             buttons: buttons,
             markup: markup
         };    
@@ -424,7 +424,7 @@ export class BotFarmHelper extends BotHelper {
         const markup = BotManager.buildInlineKeyboard(buttons);
 
         return {
-            text: '⛏️ Pump farm\n\nDo you want to boost a specific token volume or farm DEX volume?',
+            text: '🤖 Automations\n\nDo you want to boost a specific token volume or farm DEX volume?',
             buttons: buttons,
             markup: markup
         };

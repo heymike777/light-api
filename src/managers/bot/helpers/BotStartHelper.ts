@@ -177,7 +177,7 @@ export class BotStartHelper extends BotHelper {
             {id: 'airdrops', text: '🪂 Airdrops'},
             {id: 'settings', text: '⚙️ Settings'},
             {id: 'row', text: ''}, 
-            {id: 'farm', text: '⛏️ Pump farm'}, 
+            {id: 'farm', text: '🤖 Automations'}, 
             {id: 'row', text: ''}, 
             {id: 'events', text: '🏆 SONIC SUMMER SURGE'},
         ];
