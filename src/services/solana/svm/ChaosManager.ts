@@ -1,17 +1,28 @@
-import { SonicLSD, SonicLSDConfig } from "@heymike/chaosfinance";
+import * as ChaosSonic from "@heymike/chaosfinance";
+import * as ChaosSVM from "@heymike/chaosfinance-svm";
 import { Keypair } from "@solana/web3.js";
-import { Chain } from "../types";
+import { Chain, Status } from "../types";
 import { kSonicAddress } from "../Constants";
 import { ChaosStakeTx } from "../../../entities/staking/ChaosStakeTx";
+import { Transaction } from "@solana/web3.js";
+import { SolanaManager } from "../SolanaManager";
+
+export interface IChaosToken {
+    chain: Chain;
+    mint: string;
+    symbol: string;
+    minStakeAmount: number;
+    stake: { programId: string, stakeManagerAddress: string };
+}
 
 export class ChaosManager {
 
     static kProjectId = 'light-app';
     static kLsdProgramId = '3xkSoc4PeFJ8FmVeanwdsKzaByrX6CTNyVTskHe5XCyn'; // FOR SONIC
     static kStakeVaultProgramId = 'G4wEnUJZabnFfH3gjzAtTdm6co1nar1eC72EDLz97Mzh'; // FOR CHILL & FOMO
-    
+
     // https://docs.chaosfinance.xyz/docs/contract-addresses
-    static kSupportedTokens: { [key: string]: { chain: Chain, mint: string, symbol: string, minStakeAmount: number, 'stake': { programId: string, stakeManagerAddress: string } } } = {
+    static kSupportedTokens: { [key: string]: IChaosToken } = {
         'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': { 
             'chain': Chain.SONIC,
             'mint': 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL',
@@ -22,29 +33,19 @@ export class ChaosManager {
             },
             minStakeAmount: 1,
         },
-        // '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': {
-        //     'chain': Chain.SONIC,
-        //     'mint': '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3',
-        //     'symbol': 'CHILL',
-        //     'stake': {
-        //         'programId': this.kStakeVaultProgramId,
-        //         'stakeManagerAddress': '2n8iJYxsPNDXbHnux1vhvgG6syZKkN36jMFpCWAFVdBN',
-        //     }
-        //     minStakeAmount: 30,
-        // },
+        '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': {
+            'chain': Chain.SONIC,
+            'mint': '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3',
+            'symbol': 'CHILL',
+            'stake': {
+                'programId': this.kStakeVaultProgramId,
+                'stakeManagerAddress': '2n8iJYxsPNDXbHnux1vhvgG6syZKkN36jMFpCWAFVdBN',
+            },
+            minStakeAmount: 30, // min 30 CHILL to stake
+        },
     };
 
-    static async stake(keypair: Keypair, mint: string, amount: number): Promise<SonicLSD | undefined> {
-        if (mint == kSonicAddress){
-            return this.stakeSonic(keypair, mint, amount);
-        }
-        else {
-
-        }
-    }
-
-    static async stakeSonic(keypair: Keypair, mint: string, amount: number): Promise<SonicLSD> {
-
+    static async stake(keypair: Keypair, mint: string, amount: number) {
         const token = this.kSupportedTokens[mint];
         if (!token){
             throw new Error(`Token ${mint} not supported`);
@@ -54,68 +55,112 @@ export class ChaosManager {
             throw new Error(`Minimum stake amount is ${token.minStakeAmount} ${token.symbol}`);
         }
 
-        const stake = token.stake;
+        const balance = await SolanaManager.getWalletSolBalance(token.chain, keypair.publicKey.toString());
+        if (balance && balance.uiAmount < 0.01){
+            throw new Error(`Insufficient SOL balance: ${balance} SOL. You need at least 0.01 SOL to stake`);
+        }
 
-        const config: SonicLSDConfig = {
-            restEndpoint: process.env.SONIC_RPC!,
-            lsdProgramId: stake.programId,
-            stakeManagerAddress: stake.stakeManagerAddress,
-            projectId: this.kProjectId
-        };
+        const tokenBalance = await SolanaManager.getWalletTokenBalance(token.chain, keypair.publicKey.toString(), token.mint);
+        if (tokenBalance && tokenBalance.uiAmount < amount){
+            throw new Error(`Insufficient ${token.symbol} balance: ${tokenBalance} ${token.symbol}`);
+        }
 
-        const chaos = new SonicLSD(config);
-        chaos.setKeypair(keypair);
-        
-        try {
-            const balance = await chaos.getLST().getUserSolBalance();
-            if (balance && parseFloat(balance) < 0.01){
-                throw new Error(`Insufficient SOL balance: ${balance} SOL. You need at least 0.01 SOL to stake`);
-            }
+        let txHash: string | undefined;
+        if (mint == kSonicAddress){
+            txHash = await this.stakeSonic(keypair, token, amount);
+        }
+        else {
+            txHash = await this.stakeToken(keypair, token, amount);
+        }
 
-            let sonicBalance = await chaos.getLST().getUserSonicBalance();
-            if (sonicBalance == undefined || sonicBalance == '0'){
-                sonicBalance = await chaos.getLST().getUserSonicBalance();
-            }
-            if (sonicBalance && parseFloat(sonicBalance) < amount){
-                throw new Error(`Insufficient SONIC balance: ${sonicBalance} SONIC`);
-            }
-        
-            // console.log('📊 Getting platform information...');
-            // const apr = await chaos.getLST().getLstApr();
-            // const rate = await chaos.getLST().getLstRate();
-            // const totalStaked = await chaos.getLST().getTotalStakedAmount();
-            // const sonicBalance = await chaos.getLST().getUserSonicBalance();
-            // const userStakedAmount = await chaos.getLST().getUserStakedAmount();
-            
-            // console.log(`Current APR: ${(apr || 0) * 100}%`);
-            // console.log(`Current LST Rate: ${rate || '0'}`);
-            // console.log(`Total Staked: ${totalStaked || '0'} SONIC\n`);
-            // console.log(`User Sonic Balance: ${sonicBalance || '0'} SONIC`);
-            // console.log(`User Staked Amount: ${userStakedAmount || '0'} SONIC`);
-
-            console.log('🔄 Staking SONIC...');
-            // const txHash = await chaos.getStaking().stakeSonic(amount, process.env.FEE_SOL_WALLET_ADDRESS!, 0.005);
-            const txHash = await chaos.getStaking().stakeSonic(amount);
-            console.log(`Keypair staking tx: ${txHash}`);
-        
-
+        if (txHash){
             await ChaosStakeTx.create({
                 walletAddress: keypair.publicKey.toString(),
                 amount: amount,
-                mint: mint,
+                mint: token.mint,
                 signature: txHash,
             });
+        }
+    }
 
-            // Get withdrawal info
-            // console.log('📋 Getting withdrawal information...');
-            // const withdrawInfo1 = await chaos.getStaking().getUserWithdrawInfo();
-            // console.log('Keypair withdrawal info:', withdrawInfo1);
+    static async stakeSonic(keypair: Keypair, token: IChaosToken, amount: number): Promise<string | undefined> {
+        const config: ChaosSonic.SonicLSDConfig = {
+            restEndpoint: process.env.SONIC_RPC!,
+            lsdProgramId: token.stake.programId,
+            stakeManagerAddress: token.stake.stakeManagerAddress,
+            projectId: this.kProjectId
+        };
+
+        const chaos = new ChaosSonic.SonicLSD(config);
+        chaos.setKeypair(keypair);
+        
+        try {
+            const txHash = await chaos.getStaking().stakeSonic(amount);
+            return txHash;
         } catch (error: any) {
             console.error('❌ Error:', error);
             throw error;
         }
+    }
 
-        return chaos;
+    static async stakeToken(keypair: Keypair, token: IChaosToken, amount: number): Promise<string | undefined> {
+        const provider: ChaosSVM.SolanaProvider = {
+            restEndpoint: process.env.SONIC_RPC!,
+            ...this.makeSigner(keypair),
+        };
+        const programIds: ChaosSVM.ProgramIds = {
+            lsdProgramId: token.stake.programId,
+            stakeManagerAddress: token.stake.stakeManagerAddress,
+        };
+
+        const chaos = new ChaosSVM.LsdClient(provider, programIds, this.kProjectId);
+        
+        try {        
+            const txHash = await chaos.stakeToken(amount);
+            return txHash;
+        } catch (error: any) {
+            console.error('❌ Error:', error);
+            throw error;
+        }
+    }
+
+    /*
+    * Utility: convert a generated Keypair into the signer interface
+    * expected by the SDK.  In real projects you would load an existing
+    * keypair (file, env, secret-manager, …) instead of generating one.
+    */
+    static makeSigner = (kp: Keypair) => ({
+        signTransaction: async (tx: Transaction) => {
+            tx.sign(kp);
+            return tx;
+        },
+        signAllTransactions: async (txs: Transaction[]) => {
+            txs.forEach((tx) => tx.sign(kp));
+            return txs;
+        },
+        publicKey: kp.publicKey,
+    });
+
+    static async receivedConfirmationForSignature(chain: Chain, signature: string) {
+        const stakeTx = await ChaosStakeTx.findOne({ chain: chain, signature: signature });
+        if (!stakeTx) {
+            return;
+        }
+
+        stakeTx.status = Status.COMPLETED;
+        await ChaosStakeTx.updateOne({ _id: stakeTx._id, status: {$ne: stakeTx.status} }, { $set: { status: stakeTx.status } });
+    }
+
+    static async checkPendingStakes() {
+        const chain = Chain.SONIC;
+        const stakes = await ChaosStakeTx.find({ status: Status.CREATED, createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) } });
+        for (const stake of stakes) {
+            const tx = await SolanaManager.getParsedTransaction(chain, stake.signature);
+            if (tx && !tx.meta?.err) {
+                stake.status = Status.COMPLETED;
+                await ChaosStakeTx.updateOne({ _id: stake._id, status: {$ne: stake.status} }, { $set: { status: stake.status } });
+            }
+        }
     }
 
 }

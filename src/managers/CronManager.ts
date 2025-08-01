@@ -16,6 +16,7 @@ import { EventsManager } from './EventsManager';
 import { FarmManager } from './FarmManager';
 import { RateLimitManager } from './RateLimitManager';
 import { LogManager } from './LogManager';
+import { ChaosManager } from '../services/solana/svm/ChaosManager';
 
 export class CronManager {
 
@@ -83,6 +84,8 @@ export class CronManager {
                 // this.printStats();
 
                 EventsManager.updateEventStatusses();
+
+                ChaosManager.checkPendingStakes();
             });
 
             cron.schedule('0 * * * *', () => {

@@ -366,9 +366,6 @@ export class MigrationManager {
         // }
 
 
-
-
-
         // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(this.kMikeUserId);
         // if (!traderProfile){
         //     LogManager.error('!mike', 'traderProfile not found');
@@ -376,7 +373,6 @@ export class MigrationManager {
         // }
         // const traderProfileId = traderProfile.id;
         // console.log('!mike', 'traderProfileId', traderProfileId, 'wallet:', traderProfile.encryptedWallet?.publicKey);
-
         // const wallet = traderProfile.getWallet();
         // if (!wallet){
         //     LogManager.error('!mike', 'wallet not found');
@@ -384,10 +380,11 @@ export class MigrationManager {
         // }
         // const testKeypair = web3.Keypair.fromSecretKey(bs58.decode(wallet.privateKey));
         // const chaos = await ChaosManager.init(testKeypair);
+        // await ChaosManager.stake(testKeypair, '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', 30); // STAKE CHILL
 
-        if (EnvManager.isCronProcess){
-            await EventsManager.recalculateLeaderboardForActiveEvents();
-        }
+        // if (EnvManager.isCronProcess){
+        //     await EventsManager.recalculateLeaderboardForActiveEvents();
+        // }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }

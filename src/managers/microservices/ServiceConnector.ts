@@ -1,5 +1,6 @@
 import { TxParser } from "../../services/solana/geyser/TxParser";
 import { YellowstoneManager } from "../../services/solana/geyser/YellowstoneManager";
+import { ChaosManager } from "../../services/solana/svm/ChaosManager";
 import { Chain } from "../../services/solana/types";
 import { SendMessageData } from "../bot/BotTypes";
 import { RedisManager } from "../db/RedisManager";
@@ -70,6 +71,7 @@ export class ServiceConnector {
             }
 
             SwapManager.receivedConfirmationForSignature(item.chain, item.signature, parsedTransactionWithMeta);
+            ChaosManager.receivedConfirmationForSignature(item.chain, item.signature);
         } catch (error) {
             LogManager.error('ServiceConnector', 'onMainItem', 'Error parsing item:', error);
             return;

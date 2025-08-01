@@ -7,6 +7,7 @@ import { SwapManager } from "../../../managers/SwapManager";
 import { kServiceKey } from "../../../managers/microservices/MicroserviceManager";
 import { Chain } from "../../../services/solana/types";
 import { LogManager } from "../../../managers/LogManager";
+import { ChaosManager } from "../../../services/solana/svm/ChaosManager";
 
 const router = express.Router();
 
@@ -39,6 +40,7 @@ router.post(
             }
 
             SwapManager.receivedConfirmationForSignature(chain, signature, parsedTransactionWithMeta);
+            ChaosManager.receivedConfirmationForSignature(chain, signature);
             success = true;
         } catch (error) {
             LogManager.error('Error in received-tx', error);

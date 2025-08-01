@@ -42,7 +42,6 @@ import { limit } from "@grammyjs/ratelimiter";
 import { SystemNotificationsManager } from "../SytemNotificationsManager";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { run } from "@grammyjs/runner";
-import { RabbitManager } from "../RabbitManager";
 import { BotAirdropHelper } from "./helpers/BotAirdropHelper";
 import { BotTokensHelper } from "./helpers/BotTokensHelper";
 import { BotEventsHelper } from "./helpers/BotEventsHelper";
