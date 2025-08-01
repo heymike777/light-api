@@ -18,10 +18,9 @@ export interface IChaosToken {
 export class ChaosManager {
 
     static kProjectId = 'light-app';
-    static kLsdProgramId = '3xkSoc4PeFJ8FmVeanwdsKzaByrX6CTNyVTskHe5XCyn'; // FOR SONIC
-    static kStakeVaultProgramId = 'G4wEnUJZabnFfH3gjzAtTdm6co1nar1eC72EDLz97Mzh'; // FOR CHILL & FOMO
+    static kLsdProgramId = '3xkSoc4PeFJ8FmVeanwdsKzaByrX6CTNyVTskHe5XCyn'; // for SONIC
+    static kStakeVaultProgramId = 'G4wEnUJZabnFfH3gjzAtTdm6co1nar1eC72EDLz97Mzh'; // for CHILL & FOMO & other tokens
 
-    // https://docs.chaosfinance.xyz/docs/contract-addresses
     static kSupportedTokens: { [key: string]: IChaosToken } = {
         'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': { 
             'chain': Chain.SONIC,
@@ -91,6 +90,8 @@ export class ChaosManager {
             projectId: this.kProjectId
         };
 
+        console.log('config', config);
+
         const chaos = new ChaosSonic.SonicLSD(config);
         chaos.setKeypair(keypair);
         
@@ -153,7 +154,7 @@ export class ChaosManager {
 
     static async checkPendingStakes() {
         const chain = Chain.SONIC;
-        const stakes = await ChaosStakeTx.find({ status: Status.CREATED, createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) } });
+        const stakes = await ChaosStakeTx.find({ status: Status.CREATED, createdAt: { $gte: new Date(Date.now() - 500000 * 60 * 1000) } });
         for (const stake of stakes) {
             const tx = await SolanaManager.getParsedTransaction(chain, stake.signature);
             if (tx && !tx.meta?.err) {
