@@ -11,7 +11,7 @@ import { BN } from "bn.js";
 import { SolanaManager } from "./solana/SolanaManager";
 import { newConnection, newConnectionByChain } from "./solana/lib/solana";
 import { TokenBalance } from "@solana/web3.js";
-import { kSolAddress, kUsdcAddress, kUsdtAddress } from "./solana/Constants";
+import { kSolAddress, kSonicAddress, kUsdcAddress, kUsdtAddress } from "./solana/Constants";
 import { WalletManager } from "../managers/WalletManager";
 import { JupiterManager } from "../managers/JupiterManager";
 import { TokenManager } from "../managers/TokenManager";
@@ -379,7 +379,7 @@ export class MigrationManager {
         //     return;
         // }
         // const testKeypair = web3.Keypair.fromSecretKey(bs58.decode(wallet.privateKey));
-        // const chaos = await ChaosManager.init(testKeypair);
+        // const chaos = await ChaosManager.stake(testKeypair, kSonicAddress, 5);
         // await ChaosManager.stake(testKeypair, '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', 30); // STAKE CHILL
 
         // if (EnvManager.isCronProcess){

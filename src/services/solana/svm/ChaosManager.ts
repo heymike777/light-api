@@ -23,20 +23,20 @@ export class ChaosManager {
 
     static kSupportedTokens: { [key: string]: IChaosToken } = {
         'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': { 
-            'chain': Chain.SONIC,
-            'mint': 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL',
-            'symbol': 'SONIC',
-            'stake': {
+            chain: Chain.SONIC,
+            mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL',
+            symbol: 'SONIC',
+            stake: {
                 'programId': this.kLsdProgramId,
                 'stakeManagerAddress': '6CD17Q4xQVoGktQADZLQXwVife7e8WXn8rzqkgb337hb',
             },
             minStakeAmount: 1,
         },
         '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': {
-            'chain': Chain.SONIC,
-            'mint': '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3',
-            'symbol': 'CHILL',
-            'stake': {
+            chain: Chain.SONIC,
+            mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3',
+            symbol: 'CHILL',
+            stake: {
                 'programId': this.kStakeVaultProgramId,
                 'stakeManagerAddress': '2n8iJYxsPNDXbHnux1vhvgG6syZKkN36jMFpCWAFVdBN',
             },
@@ -87,13 +87,23 @@ export class ChaosManager {
             restEndpoint: process.env.SONIC_RPC!,
             lsdProgramId: token.stake.programId,
             stakeManagerAddress: token.stake.stakeManagerAddress,
-            projectId: this.kProjectId
+            projectId: this.kProjectId,
         };
 
         console.log('config', config);
 
         const chaos = new ChaosSonic.SonicLSD(config);
         chaos.setKeypair(keypair);
+
+        // wait while SDK loads sonicTokenMintAddress and lsdTokenMintAddress. check every 100ms, but max 30s
+        const startTime = Date.now();
+        while (Date.now() - startTime < 30000) {
+            const programIds = chaos.getClient().getProgramIds();
+            if (programIds.sonicTokenMintAddress && programIds.sonicTokenMintAddress!='' && programIds.lsdTokenMintAddress && programIds.lsdTokenMintAddress!='') {
+                break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
         
         try {
             const txHash = await chaos.getStaking().stakeSonic(amount);
@@ -115,7 +125,7 @@ export class ChaosManager {
         };
 
         const chaos = new ChaosSVM.LsdClient(provider, programIds, this.kProjectId);
-        
+    
         try {        
             const txHash = await chaos.stakeToken(amount);
             return txHash;
