@@ -1,9 +1,7 @@
 import axios from "axios";
-import { kSolAddress } from "../services/solana/Constants";
 import { Chain } from "../services/solana/types";
 import { LogManager } from "./LogManager";
 import { JupiterManager } from "./JupiterManager";
-import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { HeliusManager } from "../services/solana/HeliusManager";
 import { TokenManager } from "./TokenManager";
 import { RedisManager } from "./db/RedisManager";
@@ -52,6 +50,9 @@ export class TokenPriceManager {
                 //     }
                 //     mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
                 // }
+            }
+            else if (chain == Chain.SONIC){
+                //TODO: fetch token price from Sega
             }
         } catch (error) {
             // LogManager.error('Error in TokenPriceManager.getTokensPrices', error);

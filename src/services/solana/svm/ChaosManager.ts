@@ -164,7 +164,7 @@ export class ChaosManager {
 
     static async checkPendingStakes() {
         const chain = Chain.SONIC;
-        const stakes = await ChaosStakeTx.find({ status: Status.CREATED, createdAt: { $gte: new Date(Date.now() - 500000 * 60 * 1000) } });
+        const stakes = await ChaosStakeTx.find({ status: Status.CREATED, createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) } });
         for (const stake of stakes) {
             const tx = await SolanaManager.getParsedTransaction(chain, stake.signature);
             if (tx && !tx.meta?.err) {
