@@ -63,7 +63,7 @@ export class BotFarmHelper extends BotHelper {
             text: '🤖 Automations'
         };
 
-        super('farm', replyMessage, ['my_farm']);
+        super('farm', replyMessage, ['my_farm', 'my_bots', 'bot', 'bots']);
     }
 
     async commandReceived(ctx: Context, user: IUser) {
@@ -71,7 +71,7 @@ export class BotFarmHelper extends BotHelper {
 
         const buttonId = ctx.update?.callback_query?.data;
 
-        if (ctx?.update?.message?.text == '/farm' || buttonId == 'farm'){
+        if (ctx?.update?.message?.text == '/farm' || ctx?.update?.message?.text == '/bot' || ctx?.update?.message?.text == '/bots' || buttonId == 'farm' || buttonId == 'bot' || buttonId == 'bots'){
 
             const replyMessage = await BotFarmHelper.buildInitReplyMessage(user);
             return await super.commandReceived(ctx, user, replyMessage);
@@ -80,11 +80,11 @@ export class BotFarmHelper extends BotHelper {
             const replyMessage = await BotFarmHelper.buildFarmDexMessage(user);
             return await super.commandReceived(ctx, user, replyMessage);
         }
-        else if (buttonId == 'farm|my_farms'){
+        else if (buttonId == 'farm|my_farms' || buttonId == 'farm|my_bots'){
             const replyMessage = await BotFarmHelper.buildMyFarmsMessage(user);
             return await super.commandReceived(ctx, user, replyMessage);
         }
-        else if (buttonId == 'farm|my_farms|refresh'){
+        else if (buttonId == 'farm|my_farms|refresh' || buttonId == 'farm|my_bots|refresh'){
             const replyMessage = await BotFarmHelper.buildMyFarmsMessage(user);
             await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);    
         }
@@ -107,7 +107,7 @@ export class BotFarmHelper extends BotHelper {
 
                 const farm = await Farm.findById(farmId);
                 if (!farm || farm.status == FarmStatus.COMPLETED){
-                    await BotManager.reply(ctx, '🟡 Farm not found');
+                    await BotManager.reply(ctx, '🟡 Bot not found');
                     return;
                 }
 
@@ -311,7 +311,7 @@ export class BotFarmHelper extends BotHelper {
             const farmId = user.telegramState.data.farmId;
             const farm = await Farm.findById(farmId);
             if (!farm){
-                await BotManager.reply(ctx, '🟡 Farm not found');
+                await BotManager.reply(ctx, '🟡 Bot not found');
                 return true;
             }
 
@@ -333,7 +333,7 @@ export class BotFarmHelper extends BotHelper {
             const farmId = user.telegramState.data.farmId;
             const farm = await Farm.findById(farmId);
             if (!farm){
-                await BotManager.reply(ctx, '🟡 Farm not found');
+                await BotManager.reply(ctx, '🟡 Bot not found');
                 return true;
             }
 
@@ -416,10 +416,11 @@ export class BotFarmHelper extends BotHelper {
         }
 
         const buttons: InlineButton[] = [
-            { id: 'farm|token', text: '🔥 Token volume' },
-            { id: 'farm|dex', text: '💰 DEX volume' },
+            { id: 'farm|token', text: '🔥 Token' },
+            // { id: 'farm|dex', text: '💰 DEX volume' },
+            { id: 'farm|pool', text: '📈 Pool' },
             { id: 'row', text: '' },
-            { id: 'farm|my_farms', text: '⛏️ My farms' },
+            { id: 'farm|my_bots', text: '🤖 My bots' },
         ];
         const markup = BotManager.buildInlineKeyboard(buttons);
 
@@ -563,7 +564,7 @@ export class BotFarmHelper extends BotHelper {
     static async buildMyFarmsMessage(user: IUser): Promise<Message> {
         const farms = await Farm.find({ userId: user.id, status: { $in: [FarmStatus.ACTIVE, FarmStatus.PAUSED] } });
 
-        let text = '⛏️ My farms';
+        let text = '🤖 My bots';
         if (farms.length == 0){
             text += '\n\nNo active farms found.\nCreate a new farm to get started.';
         }
@@ -579,7 +580,7 @@ export class BotFarmHelper extends BotHelper {
         }
         
         const buttons: InlineButton[] = [];
-        buttons.push({ id: `farm|my_farms|refresh`, text: '↻ Refresh' });
+        buttons.push({ id: `farm|my_bots|refresh`, text: '↻ Refresh' });
         buttons.push({ id: `delete_message`, text: '✕ Close' });
 
         for (const farm of farms) {
@@ -595,7 +596,7 @@ export class BotFarmHelper extends BotHelper {
     static async buildMyFarmMessage(user: IUser, farmId: string): Promise<Message> {
         const farm = await Farm.findById(farmId);
         if (!farm || farm.userId != user.id ){
-            return { text: '🟡 Farm not found' };
+            return { text: '🟡 Bot not found' };
         }
 
         const traderProfile = await TraderProfilesManager.getUserTraderProfile(user.id, farm.traderProfileId);
