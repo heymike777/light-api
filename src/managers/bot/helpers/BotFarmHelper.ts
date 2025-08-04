@@ -76,9 +76,13 @@ export class BotFarmHelper extends BotHelper {
             const replyMessage = await BotFarmHelper.buildInitReplyMessage(user);
             return await super.commandReceived(ctx, user, replyMessage);
         }
-        else if (buttonId == 'farm|dex'){
-            const replyMessage = await BotFarmHelper.buildFarmDexMessage(user);
-            return await super.commandReceived(ctx, user, replyMessage);
+        else if (buttonId == 'farm|pool'){
+            await BotManager.reply(ctx, 'Send pool ID to boost volume');
+            await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_POOL_ID, helper: this.kCommand, data: { messageId: BotManager.getMessageIdFromContext(ctx) } });
+            return;
+
+            // const replyMessage = await BotFarmHelper.buildFarmPoolMessage(user);
+            // return await super.commandReceived(ctx, user, replyMessage);
         }
         else if (buttonId == 'farm|my_farms' || buttonId == 'farm|my_bots'){
             const replyMessage = await BotFarmHelper.buildMyFarmsMessage(user);
@@ -201,7 +205,7 @@ export class BotFarmHelper extends BotHelper {
     }
 
     async refreshFarm(ctx: Context, user: IUser, farm: IFarm, messageId?: number) {
-        const replyMessage = await BotFarmHelper.buildFarmDexMessage(user, farm);
+        const replyMessage = await BotFarmHelper.buildFarmPoolMessage(user, farm);
         await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup, messageId || BotManager.getMessageIdFromContext(ctx));
     }
 
@@ -358,6 +362,22 @@ export class BotFarmHelper extends BotHelper {
 
             return true;
         }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.FARM_POOL_ID){
+            const poolId = message.text.trim();
+            if (!poolId){
+                await BotManager.reply(ctx, 'Invalid pool ID. Please, try again.\n<b>Pool ID must be a valid address</b>');
+                return true;
+            }
+
+            //TODO: check if pool exists on Sega
+
+            const replyMessage = await BotFarmHelper.startFarmForToken(ctx, user, poolId);
+            if (replyMessage){
+                await super.commandReceived(ctx, user, replyMessage);
+            }
+
+            return true;
+        }
 
         return false;
     }
@@ -394,7 +414,7 @@ export class BotFarmHelper extends BotHelper {
         }
         await UserManager.updateTelegramState(user.id, undefined);
         
-        const replyMessage = await BotFarmHelper.buildFarmDexMessage(user, undefined, tokenCa, farmPools);
+        const replyMessage = await BotFarmHelper.buildFarmPoolMessage(user, undefined, tokenCa, farmPools);
         return replyMessage;
     }
 
@@ -418,7 +438,9 @@ export class BotFarmHelper extends BotHelper {
         const buttons: InlineButton[] = [
             { id: 'farm|token', text: '🔥 Token' },
             // { id: 'farm|dex', text: '💰 DEX volume' },
-            { id: 'farm|pool', text: '📈 Pool' },
+            // { id: 'farm|pool', text: '📈 Pool' },
+            // { id: 'farm|chill_chaos_sega', text: 'ARB: stake CHILL → sell sCHILL' },
+            // { id: 'farm|sonic_chaos_sega', text: 'ARB: stake SONIC → sell sSONIC' },
             { id: 'row', text: '' },
             { id: 'farm|my_bots', text: '🤖 My bots' },
         ];
@@ -431,7 +453,7 @@ export class BotFarmHelper extends BotHelper {
         };
     }
 
-    static async buildFarmDexMessage(user: IUser, farm?: IFarm, mint?: string, pools?: IFarmPool[]): Promise<Message> {
+    static async buildFarmPoolMessage(user: IUser, farm?: IFarm, mint?: string, pools?: IFarmPool[]): Promise<Message> {
         const chain = user.defaultChain || Chain.SOLANA;
         const dexes = BotFarmHelper.DEXES[chain];
         if (!dexes){

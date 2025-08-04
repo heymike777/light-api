@@ -35,6 +35,7 @@ export enum TelegramWaitingType {
     FARM_FREQUENCY = 'farm_frequency',
     FARM_VOLUME = 'farm_volume',
     FARM_TOKEN_CA = 'farm_token_ca',
+    FARM_POOL_ID = 'farm_pool_id',
     STAKE_AMOUNT = 'stake_amount',
 }
 
