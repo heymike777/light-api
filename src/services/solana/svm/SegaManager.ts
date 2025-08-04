@@ -85,6 +85,7 @@ export class SegaManager {
         }
         else {
             const pool = await this.fetchPoolForMints(inputMint, outputMint);
+            console.log('SEGA', 'swap', 'pool(1):', pool);
             if (pool){
                 poolId = pool.poolId;
                 tradeThrough.push({
@@ -97,21 +98,26 @@ export class SegaManager {
                 const tokenMint = inputMint == kSolAddress ? outputMint : inputMint;
                 if (!this.tradeThroughSonic[tokenMint]){
                     const pool = await this.fetchPoolForMints(this.kSonicAddress, tokenMint);
+                    console.log('SEGA', 'swap', 'pool(2):', pool);
                     if (pool){
                         this.tradeThroughSonic[tokenMint] =  this.buildTradeThroughSonic(tokenMint, pool.poolId);
+                        console.log('SEGA', 'swap', `this.tradeThroughSonic[${tokenMint}](1):`, this.tradeThroughSonic[tokenMint]);
                     }
                 }
 
-                if (inputMint == kSolAddress && this.tradeThroughSonic[outputMint]){
-                    tradeThrough = this.tradeThroughSonic[outputMint];
-                }
-                else if (outputMint == kSolAddress && this.tradeThroughSonic[inputMint]){
-                    tradeThrough = this.tradeThroughSonic[inputMint];
-                    tradeThrough = tradeThrough.reverse();
-                    for (const trade of tradeThrough) {
-                        const tmp = trade.from;
-                        trade.from = trade.to;
-                        trade.to = tmp;
+                console.log('SEGA', 'swap', `this.tradeThroughSonic[${tokenMint}](2):`, this.tradeThroughSonic[tokenMint]);
+                if (this.tradeThroughSonic[tokenMint]){
+                    if (inputMint == kSolAddress){
+                        tradeThrough = this.tradeThroughSonic[tokenMint];
+                        console.log('SEGA', 'swap', `tradeThrough(1):`, tradeThrough);
+                    }
+                    else if (outputMint == kSolAddress){
+                        tradeThrough = [...this.tradeThroughSonic[tokenMint]].reverse();
+                        for (const trade of tradeThrough) {
+                            [trade.from, trade.to] = [trade.to, trade.from];
+                        }
+                        console.log('SEGA', 'swap', `tradeThrough(3):`, tradeThrough);
+                        console.log('SEGA', 'swap', `tradeThrough(4):`, this.tradeThroughSonic[tokenMint]);
                     }
                 }
             }
