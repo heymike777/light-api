@@ -112,10 +112,15 @@ export class SegaManager {
                         console.log('SEGA', 'swap', `tradeThrough(1):`, tradeThrough);
                     }
                     else if (outputMint == kSolAddress){
-                        tradeThrough = [...this.tradeThroughSonic[tokenMint]].reverse();
-                        for (const trade of tradeThrough) {
-                            [trade.from, trade.to] = [trade.to, trade.from];
+                        tradeThrough = [];
+                        for (const trade of this.tradeThroughSonic[tokenMint]){
+                            tradeThrough.push({
+                                poolId: trade.poolId,
+                                from: trade.to,
+                                to: trade.from
+                            });
                         }
+                        tradeThrough = tradeThrough.reverse();
                         console.log('SEGA', 'swap', `tradeThrough(3):`, tradeThrough);
                         console.log('SEGA', 'swap', `tradeThrough(4):`, this.tradeThroughSonic[tokenMint]);
                     }
