@@ -53,7 +53,7 @@ import { EnvManager } from "../managers/EnvManager";
 import { RaydiumManager } from "./solana/RaydiumManager";
 import { JitoManager } from "./solana/JitoManager";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { StatusType, Swap, SwapDex } from "../entities/payments/Swap";
+import { SolMint, StatusType, Swap, SwapDex, SwapType } from "../entities/payments/Swap";
 import { LpMint } from "../entities/tokens/LpMint";
 import { Raydium } from "@raydium-io/raydium-sdk-v2";
 import { MicroserviceManager } from "../managers/microservices/MicroserviceManager";
@@ -385,6 +385,25 @@ export class MigrationManager {
         // if (EnvManager.isCronProcess){
         //     await EventsManager.recalculateLeaderboardForActiveEvents();
         // }
+
+        if (EnvManager.isCronProcess){            
+            const swaps = await Swap.find({ from: { $exists: false } });
+            for (const swap of swaps) {
+                if (swap.type == SwapType.BUY){
+                    swap.from = SolMint;
+                    swap.to = { mint: swap.mint };    
+                }
+                else if (swap.type == SwapType.SELL){
+                    swap.from = { mint: swap.mint };
+                    swap.to = SolMint;
+                }
+                else {
+                    console.error('MigrationManager', 'migrate', 'swap type not supported', swap.type);
+                    continue;
+                }
+                await swap.save();
+            }
+        }
 
         LogManager.forceLog('MigrationManager', 'migrate', 'done');
     }
