@@ -6,7 +6,8 @@ import { Helpers } from "../services/helpers/Helpers";
 import { SolanaManager } from "../services/solana/SolanaManager";
 import { BotManager } from "./bot/BotManager";
 import { SwapManager } from "./SwapManager";
-import { ISwap } from "../entities/payments/Swap";
+import { IMint, ISwap } from "../entities/payments/Swap";
+import { kSolAddress } from "../services/solana/Constants";
 
 export enum FarmPauseReason {
     NO_SOL = 'NO_SOL',
@@ -81,17 +82,13 @@ export class FarmManager {
             return;
         }
         if (solBalance.uiAmount < this.kMinSolAmount){
-            //TODO: hardcoded for only one pool per swap for now
-            const tokenBalance = await SolanaManager.getWalletTokenBalance(farm.chain, walletAddress, farm.pools[0].tokenB);
-            if  (tokenBalance.uiAmount < 0.000001){
-                await this.pauseFarm(farm, FarmPauseReason.NO_SOL, true);
-                return;
-            }
-            else {
-                // if usdt balance is not zero - make SELL swap
-                buyOrSell = 'sell';
-            }
+            // if SOL balance is less than 0.01 SOL - pause the farm
+            await this.pauseFarm(farm, FarmPauseReason.NO_SOL, true);
+            return;
         }
+
+        const tokenBalance1 = farm.pools[0].tokenA == kSolAddress ? solBalance : await SolanaManager.getWalletTokenBalance(farm.chain, walletAddress, farm.pools[0].tokenA);
+        const tokenBalance2 = await SolanaManager.getWalletTokenBalance(farm.chain, walletAddress, farm.pools[0].tokenB);        
 
         if (buyOrSell === 'buy' && farm.progress?.buysInARow && farm.progress.buysInARow >= farm.progress.maxBuysInARow){
             buyOrSell = 'sell';
@@ -117,33 +114,36 @@ export class FarmManager {
             'progress.maxBuysInARow': farm.progress.maxBuysInARow 
         }});
 
+        //TODO: makeSwap
         if (buyOrSell === 'buy'){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
 
-            // const amountMin = this.kMinSolAmount * LAMPORTS_PER_SOL;
-            const amountMin1 = Math.floor(solBalance.amount.toNumber() * 0.2);
-            const amountMin2 = this.kMinSolAmount * LAMPORTS_PER_SOL; // 20 SOL is the minimum amount for a buy swap
-            const amountMin = Math.max(amountMin1, amountMin2);
-            console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin1:', amountMin1, 'amountMin2:', amountMin2, 'amountMin:', amountMin);
+            let amountMin = Math.floor(tokenBalance1.amount.toNumber() * 0.2);
+            let amountMax = tokenBalance1.amount.toNumber();
+            if (farm.pools[0].tokenA == kSolAddress){
+                if (amountMin < this.kMinSolAmount * LAMPORTS_PER_SOL){
+                    amountMin = this.kMinSolAmount * LAMPORTS_PER_SOL;
+                }
 
-            const amountMax1 = Math.floor(solBalance.amount.toNumber() * 0.9);
-            const amountMax2 = solBalance.amount.toNumber() - 0.01 * LAMPORTS_PER_SOL;
-            const amountMax = Math.min(amountMax1, amountMax2);
-            console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMax1:', amountMax1, 'amountMax2:', amountMax2, 'amountMax:', amountMax);
+                if (amountMax > tokenBalance1.amount.toNumber() - 0.01 * LAMPORTS_PER_SOL){
+                    amountMax = tokenBalance1.amount.toNumber() - 0.01 * LAMPORTS_PER_SOL;
+                }
+            }
             
             if (amountMin > amountMax){
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is greater than amountMax. Skipping the swap.');
                 return;
             }
-            const amount = Helpers.getRandomInt(amountMin, amountMax) / LAMPORTS_PER_SOL;
+            const amount = Helpers.getRandomInt(amountMin, amountMax) / (10 ** (tokenBalance1.decimals || 0));
             if (amount < 0){
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amount is negative. Skipping the swap.');
                 return;
             }
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap amount', amount);
-            const mint = farm.pools[0].tokenB;
+            const from: IMint = { mint: farm.pools[0].tokenA, decimals: tokenBalance1.decimals };
+            const to: IMint = { mint: farm.pools[0].tokenB, decimals: tokenBalance2.decimals };
             const poolId = farm.pools[0].address;
-            const { signature, swap } = await SwapManager.initiateBuy(user, farm.chain, farm.traderProfileId, mint, amount, false, farm.id, poolId);
+            const { signature, swap } = await SwapManager.initiateBuy(user, farm.chain, farm.traderProfileId, from, to, amount, false, farm.id, poolId);
 
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap.value?.usd', swap.value?.usd);
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'signature', signature);
@@ -153,10 +153,12 @@ export class FarmManager {
         else {
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making SELL swap');
 
-            //TODO: hardcoded for only one pool per swap for now
-            const mint = farm.pools[0].tokenB;
+            //TODO: hardcoded for only one pool PER BOT for now
+
+            const from: IMint = { mint: farm.pools[0].tokenB, decimals: tokenBalance2.decimals };
+            const to: IMint = { mint: farm.pools[0].tokenA, decimals: tokenBalance1.decimals };
             const poolId = farm.pools[0].address;
-            const { signature, swap } = await SwapManager.initiateSell(user, farm.chain, farm.traderProfileId, mint, 100, false, farm.id, poolId);
+            const { signature, swap } = await SwapManager.initiateSell(user, farm.chain, farm.traderProfileId, from, to, 100, false, farm.id, poolId);
 
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap.value?.usd', swap.value?.usd);
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'signature', signature);

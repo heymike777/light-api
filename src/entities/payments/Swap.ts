@@ -1,16 +1,25 @@
 import * as mongoose from 'mongoose';
 import { Currency } from '../../models/types';
 import { Chain, WalletModel } from '../../services/solana/types';
+import { kSolAddress } from '../../services/solana/Constants';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
 export let Mixed = mongoose.Schema.Types.Mixed;
+
+export const SolMint: IMint = { mint: kSolAddress, decimals: 9 };
+
+export interface IMint {
+    mint: string;
+    decimals?: number;
+}
 
 export enum SwapType {
     BUY = 'buy',
     SELL = 'sell',
     BUY_HONEYPOT = 'buy_honeypot',
     SELL_HONEYPOT = 'sell_honeypot',
+    SWAP = 'swap',
 }
 
 export enum StatusType {
@@ -43,6 +52,8 @@ export interface ISwap extends mongoose.Document {
     type: SwapType;
     dex: SwapDex;
     currency: Currency;
+    from: IMint;
+    to: IMint;
     mint: string;
     amountIn: string; // lamports
     amountPercents?: number;
@@ -89,7 +100,9 @@ export const SwapSchema = new mongoose.Schema<ISwap>({
     type: { type: String },
     dex: { type: String },
     currency: { type: String },
-    mint: { type: String },
+    from: { type: Mixed },
+    to: { type: Mixed },
+    mint: { type: String }, // TODO: remove
     amountIn: { type: String },
     amountPercents: { type: Number },
     value: { type: Mixed },

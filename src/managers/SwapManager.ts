@@ -7,7 +7,7 @@ import * as web3 from "@solana/web3.js";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { newConnectionByChain, newConnectionForLandingTxs } from "../services/solana/lib/solana";
 import { SolanaManager } from "../services/solana/SolanaManager";
-import { ISwap, StatusType, Swap, SwapDex, SwapType } from "../entities/payments/Swap";
+import { IMint, ISwap, StatusType, Swap, SwapDex, SwapType } from "../entities/payments/Swap";
 import { LogManager } from "./LogManager";
 import { TraderProfilesManager } from "./TraderProfilesManager";
 import { UserTransaction } from "../entities/users/UserTransaction";
@@ -160,7 +160,6 @@ export class SwapManager {
             await Swap.updateOne({ _id: swap._id, 'status.type': StatusType.START_PROCESSING }, { $set: { status: swap.status } });
             return;
         }
-        const mint = swap.mint;
         const amount = swap.amountIn;
 
         const stakedConnection = newConnectionForLandingTxs(swap.chain);
@@ -169,11 +168,10 @@ export class SwapManager {
         let signature: string | undefined;
         let blockhash: string | undefined;
         const currency = traderProfile.currency || Currency.SOL;
-        const currencyMintAddress = currency == Currency.SOL ? kSolAddress : kUsdcAddress;
 
         try {
-            const inputMint = swap.type == SwapType.BUY ? currencyMintAddress : mint;
-            const outputMint = swap.type == SwapType.BUY ? mint : currencyMintAddress;
+            const inputMint = swap.from.mint;// swap.type == SwapType.BUY ? currencyMintAddress : mint;
+            const outputMint = swap.to.mint;// swap.type == SwapType.BUY ? mint : currencyMintAddress;
             const slippage = (swap.type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
             LogManager.log('SwapManager', 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
 
@@ -210,7 +208,7 @@ export class SwapManager {
 
                     swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
 
-                    // add 1% fee instruction to tx
+                    // add 0.5% fee instruction to tx
                     const fee = SwapManager.getFeeSize(user, swap.chain);
                     instructions.push(this.createFeeInstruction(Chain.SOLANA, +swapAmountInLamports, tpWallet.publicKey, currency, fee));
 
@@ -516,47 +514,47 @@ export class SwapManager {
             return;
         }
 
-        const token = await TokenManager.getToken(swap.chain, swap.mint);
+        // const token = await TokenManager.getToken(swap.chain, swap.mint);
 
-        let internalMessage = `${swap.type} tx`;
-        if (token){
-            const bnAmount = new BN(swap.amountIn);
-            const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(getNativeToken(swap.chain).lamportsPerSol) : new BN(10 ** (token.decimals || 0))
-            // const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
-            // const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
+        // let internalMessage = `${swap.type} tx`;
+        // if (token){
+        //     const bnAmount = new BN(swap.amountIn);
+        //     const bnDecimalsAmount = swap.type == SwapType.BUY ? new BN(getNativeToken(swap.chain).lamportsPerSol) : new BN(10 ** (token.decimals || 0))
+        //     // const { div, mod } = bnAmount.divmod(bnDecimalsAmount);
+        //     // const amountIn = div.toString() + (mod.eqn(0) ? '' : '.' + mod.toString());
 
-            const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, getNativeToken(swap.chain).decimals);
-            const actionString = swap.type == SwapType.BUY 
-                ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} ${getNativeToken(swap.chain).symbol}` 
-                : `sell ${Helpers.prettyNumberFromString(amountIn, 6)} ${token.symbol}`;
-            internalMessage = `tx to ${actionString}`
-        }
-        const message = `We tried to process your ${internalMessage}, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.`
+        //     const amountIn = '' + Helpers.bnDivBnWithDecimals(bnAmount, bnDecimalsAmount, getNativeToken(swap.chain).decimals);
+        //     const actionString = swap.type == SwapType.BUY 
+        //         ? `buy ${token.symbol} for ${Helpers.prettyNumberFromString(amountIn, 6)} ${getNativeToken(swap.chain).symbol}` 
+        //         : `sell ${Helpers.prettyNumberFromString(amountIn, 6)} ${token.symbol}`;
+        //     internalMessage = `tx to ${actionString}`
+        // }
+        const message = `We tried to process your swap, but it failed every time. Check that your trader wallet is funded, double check your slippage, and try again.`
 
-        const userTx = new UserTransaction();
-        userTx.geyserId = 'manual';
-        userTx.chain = swap.chain;
-        userTx.userId = swap.userId;
-        userTx.title = swap.type == SwapType.BUY ? 'BUY ERROR' : 'SELL ERROR';
-        userTx.description = message;
-        userTx.createdAt = new Date();
-        userTx.tokens = token ? [token] : [];
-        userTx.signature = `manual_${swap.userId}_${Date.now()}`;
+        // const userTx = new UserTransaction();
+        // userTx.geyserId = 'manual';
+        // userTx.chain = swap.chain;
+        // userTx.userId = swap.userId;
+        // userTx.title = swap.type == SwapType.BUY ? 'BUY ERROR' : 'SELL ERROR';
+        // userTx.description = message;
+        // userTx.createdAt = new Date();
+        // userTx.tokens = token ? [token] : [];
+        // userTx.signature = `manual_${swap.userId}_${Date.now()}`;
 
-        let addedTx: boolean = false;
-        try {
-            addedTx = await RedisManager.saveUserTransaction(userTx);
-            // LogManager.forceLog('addedToRedis:', addedTx);  
-        }
-        catch (err: any) {
-            addedTx = true;
-            await userTx.save();
-            LogManager.error('WalletManager', 'processTxForChats', 'Error saving to Redis:', err);
-            SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 Error saving to Redis: ' + err.message);
-        }
+        // let addedTx: boolean = false;
+        // try {
+            // addedTx = await RedisManager.saveUserTransaction(userTx);
+        //     // LogManager.forceLog('addedToRedis:', addedTx);  
+        // }
+        // catch (err: any) {
+        //     addedTx = true;
+        //     await userTx.save();
+        //     LogManager.error('WalletManager', 'processTxForChats', 'Error saving to Redis:', err);
+        //     SystemNotificationsManager.sendSystemMessage('🔴🔴🔴 Error saving to Redis: ' + err.message);
+        // }
 
-        if (addedTx){
-            let isTelegramSent = false;
+        // if (addedTx){
+            // let isTelegramSent = false;
             if (user.telegram?.id){
                 BotManager.sendMessage({ 
                     id: `user_${user.id}_swap_${swap.id}_${Helpers.makeid(12)}`,
@@ -564,13 +562,13 @@ export class SwapManager {
                     chatId: user.telegram?.id, 
                     text: message, 
                 });
-                isTelegramSent = true;
+                // isTelegramSent = true;
             }
     
-            let isPushSent = await FirebaseManager.sendPushToUser(swap.userId, `[SWAP ERROR]`, message, undefined, { open: 'transactions' });
+            // let isPushSent = await FirebaseManager.sendPushToUser(swap.userId, `[SWAP ERROR]`, message, undefined, { open: 'transactions' });
     
             MixpanelManager.trackError(swap.userId, { text: message });    
-        }
+        // }
     }
 
     static async trackSwapInMixpanel(swap: ISwap) {
@@ -589,7 +587,7 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, mint: string, amount: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{signature?: string, swap: ISwap}>{
+    static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amount: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{signature?: string, swap: ISwap}>{
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
             dex = SwapDex.JUPITER;
@@ -659,8 +657,11 @@ export class SwapManager {
             }
         }
 
-        const decimals = currency == Currency.SOL ? kSOL.decimals : 6;
-        const amountInLamports = amount * (10 ** decimals);
+        if (from.decimals == undefined){
+            throw new BadRequestError('From mint decimals is not defined');
+        }
+
+        const amountInLamports = amount * (10 ** from.decimals);
 
         const swap = new Swap();
         swap.chain = chain;
@@ -670,7 +671,9 @@ export class SwapManager {
         swap.userId = userId;
         swap.traderProfileId = traderProfileId;
         swap.amountIn = amountInLamports.toString();
-        swap.mint = mint;
+        swap.from = from;
+        swap.to = to;
+        swap.mint = to.mint;
         swap.createdAt = new Date();
         swap.status = {
             type: StatusType.CREATED,
@@ -692,7 +695,7 @@ export class SwapManager {
         return { signature, swap };
     }
 
-    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, mint: string, amountPercents: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{ signature?: string, swap: ISwap }>{ 
+    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amountPercents: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{ signature?: string, swap: ISwap }>{ 
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
             dex = SwapDex.JUPITER;
@@ -707,7 +710,7 @@ export class SwapManager {
             throw new BadRequestError('Unsupported chain');
         }
         const kSOL = getNativeToken(chain);
-        LogManager.log('initiateSell', dex, traderProfileId, mint, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
+        LogManager.log('initiateSell', dex, traderProfileId, 'from:', from, 'to:', to, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
@@ -721,10 +724,6 @@ export class SwapManager {
         const tpWallet = traderProfile.getWallet();
         if (!tpWallet){
             throw new BadRequestError('Trader profile wallet not found');
-        }
-
-        if (mint == kSolAddress){
-            throw new BadRequestError(`Selling ${kSOL.symbol} is not supported`);
         }
 
         if (amountPercents <= 0 || amountPercents > 100){
@@ -746,12 +745,15 @@ export class SwapManager {
         let amountInLamports = new BN(0);
         if (!isHoneypot){
             // if not honeypot, then we need to check balance
-            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, mint);
+            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, from.mint);
             if (!balance){
                 throw new BadRequestError('Insufficient balance');
             }
 
-            const decimals = balance.decimals || 0;
+            if (balance.decimals != undefined){
+                from.decimals = balance.decimals;
+            }
+
             amountInLamports = amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100);
             const balanceAmount = new BN(balance.amount || 0);
 
@@ -773,7 +775,9 @@ export class SwapManager {
         }
 
         swap.currency = currency;
-        swap.mint = mint;
+        swap.from = from;
+        swap.to = to;
+        swap.mint = from.mint;
         swap.createdAt = new Date();
         swap.status = {
             type: StatusType.CREATED,

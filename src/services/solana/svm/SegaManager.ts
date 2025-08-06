@@ -11,7 +11,7 @@ import { Currency } from '../../../models/types';
 import { newConnectionByChain } from '../lib/solana';
 import { TokenManager } from '../../../managers/TokenManager';
 import { kProgram } from '../../../managers/constants/ProgramConstants';
-import { TokenPair } from '../../../entities/tokens/TokenPair';
+import { ITokenPair, TokenPair } from '../../../entities/tokens/TokenPair';
 import { IUser } from '../../../entities/users/User';
 import { IHotTokenModel } from '../../../entities/tokens/HotToken';
 import { BadRequestError } from '../../../errors/BadRequestError';
@@ -100,7 +100,7 @@ export class SegaManager {
                     const pool = await this.fetchPoolForMints(this.kSonicAddress, tokenMint);
                     console.log('SEGA', 'swap', 'pool(2):', pool);
                     if (pool){
-                        this.tradeThroughSonic[tokenMint] =  this.buildTradeThroughSonic(tokenMint, pool.poolId);
+                        this.tradeThroughSonic[tokenMint] = this.buildTradeThroughSonic(tokenMint, pool.poolId);
                         console.log('SEGA', 'swap', `this.tradeThroughSonic[${tokenMint}](1):`, this.tradeThroughSonic[tokenMint]);
                     }
                 }
@@ -241,8 +241,6 @@ export class SegaManager {
             endInstructions: [feeIx],
         });
 
-        // console.log('buildProps:', buildProps);
-
         const blockhash = (await SolanaManager.getRecentBlockhash(this.chain)).blockhash;
         const result = await txBuilder.buildV0({
             recentBlockhash: blockhash,
@@ -286,6 +284,49 @@ export class SegaManager {
                         await TokenManager.createTokenPair(this.chain, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, kProgram.SEGA, pool.lpMint.address);
                         
                         return { poolId: pool.id };
+                    }
+                }
+
+                if (pools.length < pageSize){
+                    // No more pools to fetch
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+
+            page++;
+        }
+
+    }
+
+    static async fetchPoolById(poolId: string): Promise<ITokenPair | undefined> {
+        const existing = await TokenPair.findOne({
+            chain: this.chain,
+            pairAddress: poolId,
+        });
+        if (existing) {
+            // console.log('Pool already exists in DB:', existing);
+            return existing;
+        }
+
+        let page = 1;
+        const pageSize = 100;
+        while (page < 10){
+            const url = `https://api.sega.so/api/pools/info/list?poolType=all&poolSortField=default&sortType=desc&pageSize=${pageSize}&page=${page}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                return undefined;
+            }
+
+            const data: any = await response.json();
+            if (data && data.data && data.data.data) {
+                const pools = data.data.data;
+                for (const pool of pools) {
+                    if (pool.id == poolId) {
+                        const pair = await TokenManager.createTokenPair(this.chain, pool.id, pool.mintA.address, pool.mintB.address, undefined, undefined, kProgram.SEGA, pool.lpMint.address);
+                        return pair;
                     }
                 }
 

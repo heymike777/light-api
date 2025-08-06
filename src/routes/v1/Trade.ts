@@ -5,9 +5,12 @@ import { NotAuthorizedError } from "../../errors/NotAuthorizedError";
 import { validateRequest } from "../../middlewares/ValidateRequest";
 import { body } from "express-validator";
 import { SwapManager } from "../../managers/SwapManager";
-import { SwapDex } from "../../entities/payments/Swap";
+import { IMint, SolMint, SwapDex } from "../../entities/payments/Swap";
 import { Chain } from "../../services/solana/types";
 import { UserManager } from "../../managers/UserManager";
+import { kSolAddress } from "../../services/solana/Constants";
+import { TokenManager } from "../../managers/TokenManager";
+import { LogManager } from "../../managers/LogManager";
 
 const router = express.Router();
 
@@ -33,7 +36,17 @@ router.post(
         if (!user){
             throw new NotAuthorizedError();
         }
-        const { signature, swap } = await SwapManager.initiateBuy(user, chain, traderProfileId, mint, amount);
+
+        let tokenDecimals: number | undefined = undefined;
+        try {
+            const token = await TokenManager.getToken(chain, mint);
+            tokenDecimals = token?.decimals;
+        } catch (error: any) {
+            LogManager.error('Error getting token', error);
+        }
+        
+        const to: IMint = { mint, decimals: tokenDecimals };
+        const { signature, swap } = await SwapManager.initiateBuy(user, chain, traderProfileId, SolMint, to, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }
@@ -61,7 +74,18 @@ router.post(
         if (!user){
             throw new NotAuthorizedError();
         }
-        const { signature, swap } = await SwapManager.initiateSell(user, chain, traderProfileId, mint, amount);
+
+        let tokenDecimals: number | undefined = undefined;
+        try {
+            const token = await TokenManager.getToken(chain, mint);
+            tokenDecimals = token?.decimals;
+        } catch (error: any) {
+            LogManager.error('Error getting token', error);
+        }
+
+        const from: IMint = { mint, decimals: tokenDecimals };
+        const to: IMint = SolMint;
+        const { signature, swap } = await SwapManager.initiateSell(user, chain, traderProfileId, from, to, amount);
 
         res.status(200).send({ success: signature ? true : false, signature });
     }

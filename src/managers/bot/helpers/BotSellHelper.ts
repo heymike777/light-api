@@ -9,7 +9,7 @@ import { TokenManager } from "../../TokenManager";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
-import { SwapDex } from "../../../entities/payments/Swap";
+import { IMint, SolMint, SwapDex } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { Chain } from "../../../services/solana/types";
 
@@ -112,17 +112,21 @@ export class BotSellHelper extends BotHelper {
     async sell(ctx: Context, user: IUser, chain: Chain, mint: string, amountPercent: number, currency: Currency, traderProfileId: string, isHoneypot: boolean) {
         console.log('sell', 'isHoneypot:', isHoneypot, 'amountPercent:', amountPercent, 'chain:', chain, 'mint:', mint, 'currency:', currency, 'traderProfileId:', traderProfileId);
         let tokenName: string | undefined = mint;
+        let tokenDecimals: number | undefined = undefined;
         try {
             const token = await TokenManager.getToken(chain, mint);
             if (token?.symbol){
                 tokenName = token.symbol;
             }
+            tokenDecimals = token?.decimals;
         } catch (error: any) {}
 
         const message = await BotManager.reply(ctx, `Selling ${amountPercent}% of <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.\n\nPlease, wait...`);      
 
-        try {            
-            const { signature, swap } = await SwapManager.initiateSell(user, chain, traderProfileId, mint, amountPercent, isHoneypot);
+        try {
+            const from: IMint = { mint, decimals: tokenDecimals };
+            const to: IMint = SolMint;
+            const { signature, swap } = await SwapManager.initiateSell(user, chain, traderProfileId, from, to, amountPercent, isHoneypot);
 
             // let msg = `🟢 Sold <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a>.`
             let msg = `🟡 Transaction sent. Waiting for confirmation.`;

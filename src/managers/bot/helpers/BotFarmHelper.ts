@@ -17,6 +17,7 @@ import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { Swap } from "../../../entities/payments/Swap";
 import { SegaManager } from "../../../services/solana/svm/SegaManager";
 import { TokenManager } from "../../TokenManager";
+import { ITokenPair } from "../../../entities/tokens/TokenPair";
 
 type Dex = {
     id: DexId;
@@ -44,18 +45,23 @@ export class BotFarmHelper extends BotHelper {
         { seconds: 3600, title: '1h', default: false },
         { seconds: 21600, title: '6h', default: false },
         { seconds: 43200, title: '12h', default: false },
-        { seconds: -1, title: 'Custom', default: false },
+        { seconds: 86400, title: '24h', default: false },
+        // { seconds: -1, title: 'Custom', default: false },
 
     ];
 
-    private static VOLUMES: ({usd: number, title: string, default: boolean, minSolAmount: number} | undefined)[] = [
-        { usd: 50000, title: '$50k', default: false, minSolAmount: 2.5 },
-        { usd: 100000, title: '$100k', default: true, minSolAmount: 5 },
-        { usd: 500000, title: '$500k', default: false, minSolAmount: 25 },
+    private static VOLUMES: ({usd: number, title: string, default: boolean} | undefined)[] = [
+        { usd: 1000, title: '$1k', default: true },
+        { usd: 5000, title: '$5k', default: false },
+        { usd: 10000, title: '$10k', default: false },
         undefined,
-        { usd: 1000000, title: '$1M', default: false, minSolAmount: 50 },
-        { usd: 5000000, title: '$5M', default: false, minSolAmount: 250 },
-        { usd: -1, title: 'Custom', default: false, minSolAmount: 0 },
+        { usd: 50000, title: '$50k', default: false },
+        { usd: 100000, title: '$100k', default: false },
+        { usd: 500000, title: '$500k', default: false },
+        undefined,
+        { usd: 1000000, title: '$1M', default: false },
+        { usd: 5000000, title: '$5M', default: false },
+        { usd: -1, title: 'Custom', default: false },
     ];
 
     constructor() {
@@ -229,28 +235,34 @@ export class BotFarmHelper extends BotHelper {
 
         const kSOL = getNativeToken(farm.chain);
 
-        let text = `🏁 New farm\n\n`;
-        text += `Chain: ${ChainManager.getChainTitle(farm.chain)}\n`;
+        let text = `🏁 New bot\n\n`;
+        // text += `Chain: ${ChainManager.getChainTitle(farm.chain)}\n`;
         text += `DEX: ${dex?.name || 'Unknown'}\n`;
         text += `Frequency: ${frequencyTitle}\n`;
         text += `Volume: ~$${farm.volume}\n`;
         text += `Trader profile: ${traderProfile.title}\n`;
 
         if (farm.pools.length > 0){
-            text += `Pools: ${farm.pools.map(p => `<a href="${ExplorerManager.getUrlToAddress(farm.chain, p.address)}">${p.title || p.address}</a>`).join(', ')}\n`;
+            // text += `Pools: ${farm.pools.map(p => `${p.title || p.address}`).join(', ')}\n`;
+            if (farm.pools.length == 1){
+                text += `Pool: ${farm.pools[0].title || farm.pools[0].address}\n`;
+            }
+            else {
+                text += 'Pools:';
+                for (const pool of farm.pools){
+                    text += `\n• ${pool.title || pool.address}`;
+                }
+            }
         }
         
         text += '\n';
         text += `Wallet: <code>${traderProfile.encryptedWallet.publicKey}</code>\n`;
         const solBalance = await SolanaManager.getWalletSolBalance(farm.chain, traderProfile.encryptedWallet?.publicKey);
         text += `Balance: ${solBalance?.uiAmount || 0} ${kSOL.symbol}\n`;
-        if (volume && volume.minSolAmount > 0 && (solBalance?.uiAmount || 0) < volume.minSolAmount){
-            text += `Suggested balance: ${volume.minSolAmount} ${kSOL.symbol}\n`;
-        }
 
         const farms = await Farm.find({ userId: user.id, traderProfileId: farm.traderProfileId, status: FarmStatus.ACTIVE });
         if (farms.length > 0){
-            text += `\n\n🔴 This trader profile already has an active farm. Please, select other trader profile.`;
+            text += `\n\n🔴 This trader profile already has an active bot. Please, select other trader profile.`;
         }
 
         const buttons: InlineButton[] = [
@@ -264,14 +276,13 @@ export class BotFarmHelper extends BotHelper {
     async startFarm(ctx: Context, user: IUser, farm: IFarm) {
         const farms = await Farm.find({ userId: user.id, traderProfileId: farm.traderProfileId, status: FarmStatus.ACTIVE });
         if (farms.length > 0){
-            await BotManager.reply(ctx, '🔴 This trader profile already has an active farm. Please, select other trader profile.');
+            await BotManager.reply(ctx, '🔴 This trader profile already has an active bot. Please, select other trader profile.');
             return;
         }
 
-
         farm.status = FarmStatus.ACTIVE;
         await Farm.updateOne({ _id: farm.id }, { status: farm.status });
-        await BotManager.reply(ctx, '🏁 Starting the farm...');
+        await BotManager.reply(ctx, '🏁 Starting the bot...');
     }
 
     async createTraderProfile(ctx: Context, user: IUser): Promise<IUserTraderProfile | undefined> {
@@ -369,9 +380,13 @@ export class BotFarmHelper extends BotHelper {
                 return true;
             }
 
-            //TODO: check if pool exists on Sega
+            const pool = await SegaManager.fetchPoolById(poolId);
+            if (!pool){
+                await BotManager.reply(ctx, '🔴 Pool not found. Please, try again.\n\n<b>Pool ID must be a valid address and exist on Sega</b>');
+                return true;
+            } 
 
-            const replyMessage = await BotFarmHelper.startFarmForToken(ctx, user, poolId);
+            const replyMessage = await BotFarmHelper.startFarmForPool(ctx, user, pool);
             if (replyMessage){
                 await super.commandReceived(ctx, user, replyMessage);
             }
@@ -418,6 +433,26 @@ export class BotFarmHelper extends BotHelper {
         return replyMessage;
     }
 
+    static async startFarmForPool(ctx: Context, user: IUser, pair: ITokenPair): Promise<Message | undefined> {
+        const chain = user.defaultChain || Chain.SOLANA;
+        const token1 = await TokenManager.getToken(chain, pair.token1);
+        const token2 = await TokenManager.getToken(chain, pair.token2);
+
+        if (!token1 || !token2){
+            await BotManager.reply(ctx, '🔴 Invalid token CA. Please, try again.\n\n<b>Token CA must be a valid address and have a liquidity pool</b>');
+            return undefined;
+        }
+
+        let farmPools: IFarmPool[] | undefined = [];
+        const title = `${token1.symbol || token1.address}-${token2.symbol || token2.address}`;
+        farmPools.push({ address: pair.pairAddress, tokenA: token1.address, tokenB: token2.address, title: title });
+
+        await UserManager.updateTelegramState(user.id, undefined);
+        
+        const replyMessage = await BotFarmHelper.buildFarmPoolMessage(user, undefined, undefined, farmPools);
+        return replyMessage;
+    }
+
     static async buildLimitChainMessage(): Promise<Message> {
         const buttons: InlineButton[] = [
             { id: `settings|set_chain|${Chain.SONIC}`, text: `🔗 Switch to Sonic SVM` }
@@ -438,7 +473,7 @@ export class BotFarmHelper extends BotHelper {
         const buttons: InlineButton[] = [
             { id: 'farm|token', text: '🔥 Token' },
             // { id: 'farm|dex', text: '💰 DEX volume' },
-            // { id: 'farm|pool', text: '📈 Pool' },
+            { id: 'farm|pool', text: '📈 Pool' },
             // { id: 'farm|chill_chaos_sega', text: 'ARB: stake CHILL → sell sCHILL' },
             // { id: 'farm|sonic_chaos_sega', text: 'ARB: stake SONIC → sell sSONIC' },
             { id: 'row', text: '' },
@@ -487,12 +522,7 @@ export class BotFarmHelper extends BotHelper {
                 maxBuysInARow: 0,
             };
             farm.failedSwapsCount = 0;
-
-            //TODO: hardcoded pools for SOL/USDT on SonicSVM
-            farm.pools = pools || [
-                { address: 'CKkoETT652fNFs8tYncMokW6SFwKENpTTDndAo1HkR7J', tokenA: kSolAddress, tokenB: 'qPzdrTCvxK3bxoh2YoTZtDcGVgRUwm37aQcC3abFgBy', title: 'SOL/USDT' }
-            ];    
-
+            farm.pools = pools || [];
             await farm.save();
         }
 
@@ -554,7 +584,6 @@ export class BotFarmHelper extends BotHelper {
                 buttons.push({ id: 'row', text: '' });
             }            
         }
-        // buttons.push(...BotFarmHelper.VOLUMES.map(v => (v ? { id: `farm|${farm.id}|volume|${v.usd}`, text: (farm.volume == v.usd ? '🟢 ' : '') + v.title } : { id: 'row', text: '' })));
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: 'none', text: '--------------- ACTIONS ---------------' });
         buttons.push({ id: 'row', text: '' });
@@ -565,10 +594,24 @@ export class BotFarmHelper extends BotHelper {
 
         const markup = BotManager.buildInlineKeyboard(buttons);
 
-        let text = '⛏️ Create a farm';
+        console.log('FARM', 'farm.pools', farm.pools);
+
+        let text = '🤖 Create a bot';
         text += '\n\n';
-        text += 'Select a DEX, frequency and expected volume.'
+        text += 'Select a DEX, trader profile, frequency and expected volume.';
         text += '\n\n';
+        if (farm.pools && farm.pools.length > 0){
+            if (farm.pools.length == 1){
+                text += `Pool: ${farm.pools[0].title}`;
+            }
+            else {
+                text += 'Pools:';
+                for (const pool of farm.pools){
+                    text += `\n• ${pool.title}`;
+                }
+            }
+            text += '\n\n';
+        }
         if (farm.mint){
             text += `CA: <code>${farm.mint}</code>`;
             text += '\n\n';
@@ -588,7 +631,7 @@ export class BotFarmHelper extends BotHelper {
 
         let text = '🤖 My bots';
         if (farms.length == 0){
-            text += '\n\nNo active farms found.\nCreate a new farm to get started.';
+            text += '\n\nNo active bots found.\nCreate a new bot to get started.';
         }
         else {
             for (const farm of farms) {
@@ -664,12 +707,12 @@ export class BotFarmHelper extends BotHelper {
         buttons.push({ id: `my_farm|${farmId}|refresh`, text: '↻ Refresh' });
 
         if (farm.status == FarmStatus.ACTIVE){
-            buttons.push({ id: `my_farm|${farmId}|pause`, text: '⏸️ Pause farm' });
+            buttons.push({ id: `my_farm|${farmId}|pause`, text: '⏸️ Pause bot' });
         }
         else if (farm.status == FarmStatus.PAUSED){
-            buttons.push({ id: `my_farm|${farmId}|resume`, text: '▶️ Resume farm' });
+            buttons.push({ id: `my_farm|${farmId}|resume`, text: '▶️ Resume bot' });
         }
-        buttons.push({ id: `my_farm|${farmId}|delete`, text: '🗑️ Delete farm' });
+        buttons.push({ id: `my_farm|${farmId}|delete`, text: '🗑️ Delete bot' });
         
         return { text: text, buttons: buttons, markup: BotManager.buildInlineKeyboard(buttons) };
     }

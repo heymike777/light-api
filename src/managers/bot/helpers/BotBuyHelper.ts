@@ -9,10 +9,10 @@ import { TokenManager } from "../../TokenManager";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
-import { SwapDex } from "../../../entities/payments/Swap";
+import { IMint, SolMint, SwapDex } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { Chain } from "../../../services/solana/types";
-import { getNativeToken } from "../../../services/solana/Constants";
+import { getNativeToken, kSolAddress } from "../../../services/solana/Constants";
 import { BotFarmHelper } from "./BotFarmHelper";
 
 export class BotBuyHelper extends BotHelper {
@@ -109,8 +109,10 @@ export class BotBuyHelper extends BotHelper {
 
     async buy(ctx: Context, user: IUser, chain: Chain, mint: string, amount: number, currency: Currency, traderProfileId: string) {
         let tokenName: string | undefined = mint;
+        let tokenDecimals: number | undefined = undefined;
         try {
             const token = await TokenManager.getToken(chain, mint);
+            tokenDecimals = token?.decimals;
             if (token?.symbol){
                 tokenName = token.symbol;
             }
@@ -124,7 +126,8 @@ export class BotBuyHelper extends BotHelper {
         const message = await BotManager.reply(ctx, `Buying <a href="${ExplorerManager.getUrlToAddress(chain, mint)}">${tokenName}</a> for ${amount} ${currencyName}.\n\nPlease, wait...`);      
 
         try {
-            const { signature, swap } = await SwapManager.initiateBuy(user, chain, traderProfileId, mint, amount);
+            const to: IMint = { mint, decimals: tokenDecimals };
+            const { signature, swap } = await SwapManager.initiateBuy(user, chain, traderProfileId, SolMint, to, amount);
 
             let msg = `🟡 Transaction sent. Waiting for confirmation.`
             if (swap.intermediateWallet){
