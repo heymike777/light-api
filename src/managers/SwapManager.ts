@@ -33,6 +33,7 @@ import { CobaltxManager } from "../services/solana/svm/CobaltxManager";
 import { EventsManager } from "./EventsManager";
 import { TradingEventStatus } from "../entities/events/TradingEvent";
 import { FarmManager } from "./FarmManager";
+import { TokenPriceManager } from "./TokenPriceManager";
 
 export class SwapManager {
 
@@ -234,16 +235,31 @@ export class SwapManager {
                 console.log('CobaltxManager swap results:', cobaltxResults);
             }
 
-            if (currency == Currency.SOL){
+            if (swap.from.mint == kSolAddress || swap.to.mint == kSolAddress){
                 swap.value = {
                     sol: +swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol,
                     usd : Math.round((+swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
                 }
             }
-            else if (currency == Currency.USDC){
-                swap.value = {
-                    sol: Math.round(+swapAmountInLamports * 1000 / TokenManager.getNativeTokenPrice(swap.chain)) / getNativeToken(swap.chain).lamportsPerSol, // 10**6 / 10**9
-                    usd: +swapAmountInLamports / (10 ** 6),
+            else {
+                const prices = await TokenPriceManager.getTokensPrices(swap.chain, [swap.from.mint, swap.to.mint]);
+                const fromPrice = prices.find(price => price.address == swap.from.mint)?.price || 0;
+                const toPrice = prices.find(price => price.address == swap.to.mint)?.price || 0;
+                if (fromPrice > 0 && swap.from.decimals != undefined){
+                    const tmp = new BN(amount).mul(new BN(fromPrice));
+                    const usd = +Helpers.bnToUiAmount(tmp, swap.from.decimals);
+                    const sol = usd / TokenManager.getNativeTokenPrice(swap.chain);
+                    swap.value = {
+                        sol: sol,
+                        usd: +usd,
+                    }
+                    // const sol = usd.div(new BN(TokenManager.getNativeTokenPrice(swap.chain))).div(new BN(10 ** 6));
+                    // swap.value = {
+                    //     sol: +swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol,
+                    //     usd : Math.round((+swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
+                    // }
+                }
+                else if (toPrice > 0){
                 }
             }
 
@@ -251,8 +267,11 @@ export class SwapManager {
             let points: { [eventId: string]: number } | undefined = undefined;
             const event = await EventsManager.getActiveEvent(true);
             if (event && event.status == TradingEventStatus.ACTIVE && (!event.chains || event.chains.includes(swap.chain)) && event.tradingPoints){
-                const tmpPoints = event.tradingPoints[`${swap.chain}:${swap.mint}`] || event.tradingPoints['*'];
-                if (tmpPoints){
+                const fromPoints = event.tradingPoints[`${swap.chain}:${swap.from.mint}`] || 0;
+                const toPoints = event.tradingPoints[`${swap.chain}:${swap.to.mint}`] || 0;
+                const allPoints = event.tradingPoints['*'] || 0;
+                const tmpPoints = Math.max(fromPoints, toPoints, allPoints);
+                if (tmpPoints > 0){
                     if (!points){
                         points = {};
                     }

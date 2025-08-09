@@ -52,7 +52,14 @@ export class TokenPriceManager {
                 // }
             }
             else if (chain == Chain.SONIC){
-                //TODO: fetch token price from Sega
+                // fetch token price from Sega
+                if (mints.length > 0){
+                    const tmpPrices = await this.getPricesFromSega(chain, mints);
+                    if (tmpPrices.length > 0){
+                        prices.push(...tmpPrices);
+                    }
+                    mints = mints.filter(mint => !tmpPrices.map(price => price.address).includes(mint));
+                }
             }
         } catch (error) {
             // LogManager.error('Error in TokenPriceManager.getTokensPrices', error);
@@ -130,6 +137,42 @@ export class TokenPriceManager {
 
         if (prices.length > 0){
             await this.savePricesToCache(Chain.SOLANA, prices);
+        }
+
+        return prices;
+    }
+
+    static async getPricesFromSega(chain: Chain, mints: string[]): Promise<{address: string, price: number}[]>{
+        const prices: {address: string, price: number}[] = [];
+        try {
+            const url = `https://api.sega.so/api/mint/price?mints=${mints.join(',')}`;
+            const response = await axios.get(url);
+            if (response.status === 200) {
+                const data = response?.data?.data;
+                if (data) {
+                    for (const key in data) {
+                        if (data[key]){
+                            const price = +data[key];
+                            if (price > 0){
+                                prices.push({
+                                    address: key,
+                                    price: price,
+                                });
+                            }
+                        }
+                    }
+
+                }
+            }
+        } catch (error: any) {
+            // LogManager.error('Error in TokenPriceManager.getPricesFromRaydium', error);
+            // SystemNotificationsManager.sendSystemMessage('TokenPriceManager.getPricesFromRaydium error:' + error.message);
+        }
+
+        console.log('TokenPriceManager', 'getPricesFromSega', `found ${prices.length} prices`);
+
+        if (prices.length > 0){
+            await this.savePricesToCache(chain, prices);
         }
 
         return prices;
