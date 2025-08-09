@@ -208,6 +208,7 @@ export class MigrationManager {
         // CHAOS
         // await this.processTx(Chain.SONIC, '33y7TbYNoSZ7hkn74TjVkdJbqz21HRRfARUTmN2DLTPHAeLYSKXcoKhr55tN3VbwUGq9Euhpc5Fq5xbYutMaNLWm'); // stake SONIC
         // await this.processTx(Chain.SONIC, '43Ym5Tcj9xHwtZ1Yamp92twVTTjuexdrdhdK9gKEFrfwpRpLAx8KrSGeuTiP9jwSUvBiMe944eU5opcwd7CoV7xK'); // unstake SONIC
+        // await this.processTx(Chain.SONIC, '59ZF1NFXKEC23iUnf7NWNperbwzodarp3qkygvZyksRqyBgFaPrTjPZP6sfwkwsc1rqVX2sac9RNV9rW1dUQgdj8'); // withdraw SONIC
 
         // CHAOS STAKE VAULT
         // await this.processTx(Chain.SONIC, '3GG1mnNyCeSVC2psLjiJjyYsN5t884VVwaY5GRLZuozDAAWeKkdrwmiADpdZbB7B6kGeohxCdtTyzY8RukcoXonk'); // stake CHILL
