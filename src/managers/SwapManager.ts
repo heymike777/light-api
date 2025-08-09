@@ -248,18 +248,19 @@ export class SwapManager {
                 if (fromPrice > 0 && swap.from.decimals != undefined){
                     const tmp = new BN(amount).mul(new BN(fromPrice));
                     const usd = +Helpers.bnToUiAmount(tmp, swap.from.decimals);
-                    const sol = usd / TokenManager.getNativeTokenPrice(swap.chain);
                     swap.value = {
-                        sol: sol,
-                        usd: +usd,
+                        sol: usd / TokenManager.getNativeTokenPrice(swap.chain),
+                        usd: usd,
                     }
-                    // const sol = usd.div(new BN(TokenManager.getNativeTokenPrice(swap.chain))).div(new BN(10 ** 6));
-                    // swap.value = {
-                    //     sol: +swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol,
-                    //     usd : Math.round((+swapAmountInLamports / getNativeToken(swap.chain).lamportsPerSol) * TokenManager.getNativeTokenPrice(swap.chain) * 100) / 100,
-                    // }
                 }
-                else if (toPrice > 0){
+                else if (toPrice > 0 && swap.to.decimals != undefined){
+                    //TODO: amount is wrong here. I should get amount from segaResults.swapAmountInLamports
+                    // const tmp = new BN(amount).mul(new BN(toPrice));
+                    // const usd = +Helpers.bnToUiAmount(tmp, swap.to.decimals);
+                    // swap.value = {
+                    //     sol: usd / TokenManager.getNativeTokenPrice(swap.chain),
+                    //     usd: usd,
+                    // }
                 }
             }
 
