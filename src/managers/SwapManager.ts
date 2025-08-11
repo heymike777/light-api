@@ -608,6 +608,7 @@ export class SwapManager {
     }
 
     static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amount: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{signature?: string, swap: ISwap}>{
+        console.log('initiateBuy', 'traderProfileId:', traderProfileId, 'from:', from, 'to:', to, 'amount:', amount, 'poolId:', poolId);
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
             dex = SwapDex.JUPITER;
@@ -664,15 +665,15 @@ export class SwapManager {
         if (!farmId){
             // no need to check balance if farmId is provided. we already checked it in FarmManager.makeSwap
             const balance = await SolanaManager.getWalletSolBalance(chain, tpWallet.publicKey);
-            const minSolRequired = [Chain.SOON_MAINNET, Chain.SOONBASE_MAINNET, Chain.SVMBNB_MAINNET].includes(chain) ? (currency == Currency.SOL ? amount * 1.01 + 0.005 : 0.005) : (currency == Currency.SOL ? amount * 1.01 + 0.01 : 0.01);
+            const minSolRequired = from.mint == kSolAddress ? amount  + 0.01 : 0.01;
             if (!balance || balance.uiAmount < minSolRequired){
                 throw new BadRequestError(`Insufficient ${kSOL.symbol} balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${minSolRequired}`);
             }
 
-            if (currency == Currency.USDC){
-                const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, kUsdcAddress);
+            if (from.mint != kSolAddress){
+                const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, from.mint);
                 if (!balance || balance.uiAmount < amount){
-                    throw new BadRequestError('Insufficient USDC balance');
+                    throw new BadRequestError(`Insufficient ${from.mint} balance.\nBalance: ${balance?.uiAmount || 0}\nMin required: ${amount}`);
                 }    
             }
         }

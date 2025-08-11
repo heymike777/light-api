@@ -114,7 +114,6 @@ export class FarmManager {
             'progress.maxBuysInARow': farm.progress.maxBuysInARow 
         }});
 
-        //TODO: makeSwap
         if (buyOrSell === 'buy'){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
 

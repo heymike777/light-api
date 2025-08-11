@@ -74,6 +74,7 @@ import { TradingEventPoints } from "../entities/events/TradingEventPoints";
 import { FarmManager } from "../managers/FarmManager";
 import { Farm } from "../entities/Farm";
 import { ChaosManager } from "./solana/svm/ChaosManager";
+import { amountToNumber } from "@metaplex-foundation/umi";
 
 export class MigrationManager {
 
@@ -387,6 +388,21 @@ export class MigrationManager {
         //     await EventsManager.recalculateLeaderboardForActiveEvents();
         // }
 
+        // initiateBuy traderProfileId: 6849f0d4e82d106d3e1538be from: { mint: 'So11111111111111111111111111111111111111112', decimals: 9 } to: { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', decimals: 9 } amount: 0.02 poolId: undefined
+
+        // const user = await UserManager.getUserById(this.kMikeUserId);
+        // if (user){
+        //     const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
+        //     if (traderProfile){
+        //         console.log('initiateBuy', 'traderProfile wallet', traderProfile.getWallet()?.publicKey);
+        //         const from = { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', decimals: 9 };//SONIC
+        //         const to = { mint: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', decimals: 9 };//FOMO
+        //         const amount = 5;
+        //         const poolId = 'ARhj9Tqeejw6t96MujUD5RDaL2szHPYbgaCV23TE4G4K';
+        //         await SwapManager.initiateBuy(user, Chain.SONIC, traderProfile.id, from, to, amount, false, undefined, poolId);
+        //     }
+        // }
+        
         if (EnvManager.isCronProcess){            
             const swaps = await Swap.find({ from: { $exists: false } });
             for (const swap of swaps) {
