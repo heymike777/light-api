@@ -142,7 +142,7 @@ export class FarmManager {
             const from: IMint = { mint: farm.pools[0].tokenA, decimals: tokenBalance1.decimals };
             const to: IMint = { mint: farm.pools[0].tokenB, decimals: tokenBalance2.decimals };
             const poolId = farm.pools[0].address;
-            const { signature, swap } = await SwapManager.initiateBuy(user, farm.chain, farm.traderProfileId, from, to, amount, false, farm.id, poolId);
+            const { signature, swap } = await SwapManager.initiateBuy(user, farm.chain, farm.traderProfileId, from, to, amount, farm.id, poolId);
 
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap.value?.usd', swap.value?.usd);
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'signature', signature);
@@ -157,7 +157,7 @@ export class FarmManager {
             const from: IMint = { mint: farm.pools[0].tokenB, decimals: tokenBalance2.decimals };
             const to: IMint = { mint: farm.pools[0].tokenA, decimals: tokenBalance1.decimals };
             const poolId = farm.pools[0].address;
-            const { signature, swap } = await SwapManager.initiateSell(user, farm.chain, farm.traderProfileId, from, to, 100, false, farm.id, poolId);
+            const { signature, swap } = await SwapManager.initiateSell(user, farm.chain, farm.traderProfileId, from, to, 100, farm.id, poolId);
 
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap.value?.usd', swap.value?.usd);
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'signature', signature);

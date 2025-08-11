@@ -17,8 +17,6 @@ export interface IMint {
 export enum SwapType {
     BUY = 'buy',
     SELL = 'sell',
-    BUY_HONEYPOT = 'buy_honeypot',
-    SELL_HONEYPOT = 'sell_honeypot',
     SWAP = 'swap',
 }
 

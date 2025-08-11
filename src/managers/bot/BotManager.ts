@@ -569,32 +569,6 @@ export class BotManager {
                 buttons.push({ id: `sell|${token.chain}|${token.address}|X`, text: `Sell X%` });
             }
             message += ` — <b>${traderProfile.title}</b> ✏️`;
-
-            if (token.chain == Chain.SOLANA){
-                const lpBalances = await TraderProfilesManager.fetchTokenLpMintBalance(token.chain, SwapDex.RAYDIUM_AMM, token.address, walletAddress);
-                if (lpBalances && lpBalances.balances.length > 0){
-                    const solBalance = lpBalances.balances.find(b => b.mint == kSolAddress);
-                    const tokenBalance = lpBalances.balances.find(b => b.mint == token.address);
-                    const usdValue = (tokenBalance?.uiAmount || 0) * (token.price || 0) + (solBalance?.uiAmount || 0) * TokenManager.getNativeTokenPrice(token.chain);
-
-                    if (solBalance?.uiAmount || tokenBalance?.uiAmount){
-                        const solBalanceString = Helpers.prettyNumberFromString('' + (solBalance?.uiAmount || 0), 3);
-                        const tokenBalanceString = Helpers.prettyNumberFromString('' + (tokenBalance?.uiAmount || 0), 3);
-
-                        message += `\nLP: ${tokenBalanceString} ${token.symbol} + ${solBalanceString} ${kSOL.symbol} = $${Helpers.numberFormatter(usdValue, 2)}`;
-
-                        let btnIndex = 0;
-                        for (const amount of sellAmounts) {
-                            if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
-
-                            buttons.push({ id: `sell_lp|${token.chain}|${token.address}|${amount}`, text: `Sell (LP) ${amount}%` });
-                            btnIndex++;                    
-                        }
-                        if (btnIndex % 2 == 0){ buttons.push({ id: 'row', text: '' }); }
-                        buttons.push({ id: `sell_lp|${token.chain}|${token.address}|X`, text: `Sell (LP) X%` });
-                    }
-                }
-            }
         }
 
         const metricsMessage = BotManager.buildTokenMetricsMessage(token);

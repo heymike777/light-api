@@ -517,12 +517,6 @@ export class SwapManager {
                 else if (swap.type === SwapType.SELL) {
                     await this.buyAndSell(user, swap, traderProfile);
                 }
-                else if (swap.type === SwapType.BUY_HONEYPOT) {
-                    //TODO: retry buy honeypot
-                }
-                else if (swap.type === SwapType.SELL_HONEYPOT) {
-                    //TODO: retry sell honeypot
-                }
             }
         }
     }
@@ -607,7 +601,7 @@ export class SwapManager {
         });
     }
 
-    static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amount: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{signature?: string, swap: ISwap}>{
+    static async initiateBuy(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amount: number, farmId?: string, poolId?: string): Promise<{signature?: string, swap: ISwap}>{
         console.log('initiateBuy', 'traderProfileId:', traderProfileId, 'from:', from, 'to:', to, 'amount:', amount, 'poolId:', poolId);
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
@@ -623,16 +617,6 @@ export class SwapManager {
             throw new BadRequestError('Unsupported chain');
         }
         const kSOL = getNativeToken(chain);
-
-        // console.log('initiateBuy (1)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
-        // if (chain == Chain.SOLANA){
-        //     const isFreezeAuthorityRevoked = await SolanaManager.getFreezeAuthorityRevoked(chain, mint);
-        //     if (!isFreezeAuthorityRevoked){
-        //         dex = SwapDex.RAYDIUM_AMM;
-        //         isHoneypot = true;
-        //     }
-        //     LogManager.log('initiateBuy (2)', dex, traderProfileId, mint, amount, 'isHoneypot:', isHoneypot);
-        // }
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
@@ -652,10 +636,6 @@ export class SwapManager {
 
         if (amount <= 0.0001){
             throw new BadRequestError('Amount should be greater than 0');
-        }
-
-        if (isHoneypot && currency != Currency.SOL){
-            throw new BadRequestError(`Honeypot is supported only for ${kSOL.symbol}`);
         }
 
         if (chain != Chain.SOLANA && currency != Currency.SOL){
@@ -686,7 +666,7 @@ export class SwapManager {
 
         const swap = new Swap();
         swap.chain = chain;
-        swap.type = isHoneypot ? SwapType.BUY_HONEYPOT : SwapType.BUY;
+        swap.type = SwapType.BUY;
         swap.dex = dex;
         swap.currency = currency;
         swap.userId = userId;
@@ -710,13 +690,10 @@ export class SwapManager {
         if (swap.type == SwapType.BUY){
             signature = await SwapManager.buyAndSell(user, swap, traderProfile);
         }
-        else if (swap.type == SwapType.BUY_HONEYPOT){
-            signature = await RaydiumManager.buyHoneypot(user, swap, traderProfile);
-        }
         return { signature, swap };
     }
 
-    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amountPercents: number, isHoneypot = false, farmId?: string, poolId?: string): Promise<{ signature?: string, swap: ISwap }>{ 
+    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amountPercents: number, farmId?: string, poolId?: string): Promise<{ signature?: string, swap: ISwap }>{ 
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
             dex = SwapDex.JUPITER;
@@ -731,7 +708,7 @@ export class SwapManager {
             throw new BadRequestError('Unsupported chain');
         }
         const kSOL = getNativeToken(chain);
-        LogManager.log('initiateSell', dex, traderProfileId, 'from:', from, 'to:', to, `${amountPercents}%`, 'isHoneypot:', isHoneypot);
+        LogManager.log('initiateSell', dex, traderProfileId, 'from:', from, 'to:', to, `${amountPercents}%`);
 
         const traderProfile = await TraderProfilesManager.findById(traderProfileId);
         if (!traderProfile){
@@ -764,37 +741,29 @@ export class SwapManager {
         }
 
         let amountInLamports = new BN(0);
-        if (!isHoneypot){
-            // if not honeypot, then we need to check balance
-            const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, from.mint);
-            if (!balance){
-                throw new BadRequestError('Insufficient balance');
-            }
+        const balance = await SolanaManager.getWalletTokenBalance(chain, tpWallet.publicKey, from.mint);
+        if (!balance){
+            throw new BadRequestError('Insufficient balance');
+        }
 
-            if (balance.decimals != undefined){
-                from.decimals = balance.decimals;
-            }
+        if (balance.decimals != undefined){
+            from.decimals = balance.decimals;
+        }
 
-            amountInLamports = amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100);
-            const balanceAmount = new BN(balance.amount || 0);
+        amountInLamports = amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100);
+        const balanceAmount = new BN(balance.amount || 0);
 
-            if (amountInLamports.gt(balanceAmount)){
-                throw new BadRequestError('Insufficient balance');
-            }
+        if (amountInLamports.gt(balanceAmount)){
+            throw new BadRequestError('Insufficient balance');
         }
 
         const swap = new Swap();
         swap.chain = chain;
-        swap.type = isHoneypot ? SwapType.SELL_HONEYPOT : SwapType.SELL;
+        swap.type = SwapType.SELL;
         swap.dex = dex;
         swap.userId = userId;
         swap.traderProfileId = traderProfileId;
         swap.amountIn = amountInLamports.toString();
-
-        if (isHoneypot){
-            swap.amountPercents = amountPercents;
-        }
-
         swap.currency = currency;
         swap.from = from;
         swap.to = to;
@@ -804,7 +773,7 @@ export class SwapManager {
             type: StatusType.CREATED,
             tryIndex: 0,
         };
-        swap.intermediateWallet = isHoneypot ? SolanaManager.createWallet() : undefined;
+        swap.intermediateWallet = undefined;
         swap.farmId = farmId;
         swap.poolId = poolId;
         await swap.save();
@@ -814,9 +783,6 @@ export class SwapManager {
         let signature: string | undefined;
         if (swap.type == SwapType.SELL){
             signature = await SwapManager.buyAndSell(user, swap, traderProfile);
-        }
-        else if (swap.type == SwapType.SELL_HONEYPOT){
-            signature = await RaydiumManager.sellHoneypot(user, swap, traderProfile);
         }
 
         return { signature, swap };

@@ -28,7 +28,6 @@ export enum TelegramWaitingType {
     TRADER_PROFILE_IMPORT_PRIVATE_KEY = 'trader_profile_import_private_key',
     BUY_AMOUNT = 'buy_amount',
     SELL_AMOUNT = 'SELL_amount',
-    SELL_LP_AMOUNT = 'SELL_LP_amount',
     ADD_REFCODE = 'add_refcode',
     AIRDROP_WALLETS = 'airdrop_wallets',
     EVENT_SPECIAL_PRIZE_INFO = 'event_special_prize_info',
