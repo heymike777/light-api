@@ -599,6 +599,8 @@ export class SwapManager {
             to: swap.to.mint,
             solValue,
             usdValue,
+            farmId: swap.farmId,
+            poolId: swap.poolId,
             // currency: swap.currency,
         });
     }
