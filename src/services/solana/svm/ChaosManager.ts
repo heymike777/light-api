@@ -3,9 +3,12 @@ import * as ChaosSVM from "@heymike/chaosfinance-svm";
 import { Keypair } from "@solana/web3.js";
 import { Chain, Status } from "../types";
 import { kSonicAddress } from "../Constants";
-import { ChaosStakeTx } from "../../../entities/staking/ChaosStakeTx";
+import { ChaosStakeTx, IChaosStakeTx } from "../../../entities/staking/ChaosStakeTx";
 import { Transaction } from "@solana/web3.js";
 import { SolanaManager } from "../SolanaManager";
+import { MixpanelManager } from "../../../managers/MixpanelManager";
+import { SegaManager } from "./SegaManager";
+import { TokenPriceManager } from "../../../managers/TokenPriceManager";
 
 export interface IChaosToken {
     chain: Chain;
@@ -44,7 +47,7 @@ export class ChaosManager {
         },
     };
 
-    static async stake(keypair: Keypair, mint: string, amount: number) {
+    static async stake(userId: string, keypair: Keypair, mint: string, amount: number) {
         const token = this.kSupportedTokens[mint];
         if (!token){
             throw new Error(`Token ${mint} not supported`);
@@ -73,12 +76,14 @@ export class ChaosManager {
         }
 
         if (txHash){
-            await ChaosStakeTx.create({
+            const item: IChaosStakeTx = await ChaosStakeTx.create({
+                userId: userId,
                 walletAddress: keypair.publicKey.toString(),
                 amount: amount,
                 mint: token.mint,
                 signature: txHash,
             });
+            await this.trackStakeInMixpanel(item);
         }
     }
 
@@ -172,6 +177,21 @@ export class ChaosManager {
                 await ChaosStakeTx.updateOne({ _id: stake._id, status: {$ne: stake.status} }, { $set: { status: stake.status } });
             }
         }
+    }
+
+    static async trackStakeInMixpanel(stake: IChaosStakeTx) {
+        const prices = await TokenPriceManager.getTokensPrices(Chain.SONIC, [stake.mint]);
+        const price = prices.find(p => p.address == stake.mint)?.price || 0;
+        const usdValue = stake.amount * price;
+        
+        MixpanelManager.track(`Stake`, stake.userId, { 
+            chain: Chain.SONIC,
+            platform: 'chaos-finance', 
+            walletAddress: stake.walletAddress,
+            mint: stake.mint,
+            amount: stake.amount,
+            usdValue,
+        });
     }
 
 }

@@ -6,6 +6,7 @@ export let ObjectId = mongoose.Schema.Types.ObjectId;
 export let Mixed = mongoose.Schema.Types.Mixed;
 
 export interface IChaosStakeTx extends mongoose.Document {
+    userId: string;
     walletAddress: string;
     amount: number;
     mint: string;
@@ -15,6 +16,7 @@ export interface IChaosStakeTx extends mongoose.Document {
 }
 
 export const ChaosStakeTxSchema = new mongoose.Schema<IChaosStakeTx>({
+    userId: { type: String },
     walletAddress: { type: String },
     amount: { type: Number },
     mint: { type: String },

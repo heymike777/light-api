@@ -82,7 +82,7 @@ export class BotStakeHelper extends BotHelper {
 
             try {
                 const keypair = Keypair.fromSecretKey(bs58.decode(privateKey));
-                await ChaosManager.stake(keypair, mint, amount);
+                await ChaosManager.stake(user.id, keypair, mint, amount);
             }
             catch (error: any){
                 await BotManager.reply(ctx, `🔴 ${error.message}`);
