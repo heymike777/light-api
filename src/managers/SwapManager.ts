@@ -588,13 +588,16 @@ export class SwapManager {
     static async trackSwapInMixpanel(swap: ISwap) {
         const solValue = swap.value?.sol || 0;
         const usdValue = swap.value?.usd || 0;
+        const mint = (swap.from.mint == kSolAddress || swap.to.mint == kSolAddress) 
+            ? (swap.from.mint == kSolAddress ? swap.to.mint : swap.from.mint) 
+            : undefined;
 
         MixpanelManager.track(`Swap`, swap.userId, { 
             chain: swap.chain, 
             type: swap.type,
             traderProfileId: swap.traderProfileId,
             dex: swap.dex,
-            // mint: swap.mint,
+            mint,
             from: swap.from.mint,
             to: swap.to.mint,
             solValue,

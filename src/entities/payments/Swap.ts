@@ -17,7 +17,6 @@ export interface IMint {
 export enum SwapType {
     BUY = 'buy',
     SELL = 'sell',
-    SWAP = 'swap',
 }
 
 export enum StatusType {
