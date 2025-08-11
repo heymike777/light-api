@@ -594,10 +594,12 @@ export class SwapManager {
             type: swap.type,
             traderProfileId: swap.traderProfileId,
             dex: swap.dex,
-            mint: swap.mint,
+            // mint: swap.mint,
+            from: swap.from.mint,
+            to: swap.to.mint,
             solValue,
             usdValue,
-            currency: swap.currency,
+            // currency: swap.currency,
         });
     }
 

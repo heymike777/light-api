@@ -8,18 +8,10 @@ import { newConnectionByChain } from "./lib/solana";
 import { LogManager } from "../../managers/LogManager";
 import { SolanaManager } from "./SolanaManager";
 import { BadRequestError } from "../../errors/BadRequestError";
-import { getNativeToken, kSolAddress, kUsdcAddress } from "./Constants";
+import { getNativeToken, kSolAddress } from "./Constants";
 import { MemoryManager } from "../../managers/MemoryManager";
 import Decimal from "decimal.js";
-import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { IUserTraderProfile } from "../../entities/users/TraderProfile";
-import { JitoManager } from "./JitoManager";
-import { SwapManager } from "../../managers/SwapManager";
-import { Currency } from "../../models/types";
-import { ISwap, StatusType, Swap, SwapType } from "../../entities/payments/Swap";
-import { TokenManager } from "../../managers/TokenManager";
 import { Helpers } from "../helpers/Helpers";
-import { IUser } from "../../entities/users/User";
 
 const VALID_PROGRAM_ID = new Set([
     AMM_V4.toBase58(),

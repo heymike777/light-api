@@ -9,7 +9,7 @@ import { TokenManager } from "../../TokenManager";
 import { LogManager } from "../../LogManager";
 import { TgMessage } from "../BotTypes";
 import { SwapManager } from "../../SwapManager";
-import { IMint, SolMint, SwapDex } from "../../../entities/payments/Swap";
+import { IMint, SolMint } from "../../../entities/payments/Swap";
 import { ExplorerManager } from "../../../services/explorers/ExplorerManager";
 import { Chain } from "../../../services/solana/types";
 
