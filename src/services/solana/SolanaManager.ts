@@ -213,8 +213,6 @@ export class SolanaManager {
         const fromTokenAddress = await spl.getAssociatedTokenAddress(splTokenMintPublicKey, fromPublicKey, undefined, programId, associatedTokenProgramId);
         const toTokenAddress = await spl.getAssociatedTokenAddress(splTokenMintPublicKey, toPublicKey, undefined, programId, associatedTokenProgramId);
 
-        console.log('createSplTransferInstructions2', 'splTokenMintPublicKey', splTokenMintPublicKey.toBase58(), 'lamports', lamports, 'fromPublicKey', fromPublicKey.toBase58(), 'toPublicKey', toPublicKey.toBase58(), 'feePayerPublicKey', feePayerPublicKey.toBase58(), 'programId', programId.toBase58(), 'associatedTokenProgramId', associatedTokenProgramId.toBase58(), 'fromTokenAddress', fromTokenAddress.toBase58(), 'toTokenAddress', toTokenAddress.toBase58());
-
         const instructions: web3.TransactionInstruction[] = [
             this.getInstrucionToCreateTokenAccount2(splTokenMintPublicKey, fromTokenAddress, fromPublicKey, feePayerPublicKey, programId, associatedTokenProgramId),
             this.getInstrucionToCreateTokenAccount2(splTokenMintPublicKey, toTokenAddress, toPublicKey, feePayerPublicKey, programId, associatedTokenProgramId),
@@ -298,7 +296,7 @@ export class SolanaManager {
         programId: web3.PublicKey = spl.TOKEN_PROGRAM_ID,
         associatedTokenProgramId: web3.PublicKey = spl.ASSOCIATED_TOKEN_PROGRAM_ID
     ): web3.TransactionInstruction {
-        return spl.createAssociatedTokenAccountInstruction(
+        return spl.createAssociatedTokenAccountIdempotentInstruction(
             feePayerPublicKey,
             tokenAccountAddressPublicKey,
             ownerAddressPublicKey,

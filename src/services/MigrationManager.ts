@@ -395,11 +395,14 @@ export class MigrationManager {
         //     const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(user.id);
         //     if (traderProfile){
         //         console.log('initiateBuy', 'traderProfile wallet', traderProfile.getWallet()?.publicKey);
-        //         const from = { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', decimals: 9 };//SONIC
-        //         const to = { mint: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', decimals: 9 };//FOMO
-        //         const amount = 5;
+        //         // const from = { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', decimals: 9 };//SONIC
+        //         // const to = { mint: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', decimals: 9 };//FOMO
+        //         const from = { mint: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', decimals: 9 };//FOMO
+        //         const to = { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', decimals: 9 };//SONIC
+        //         const amount = 800;
         //         const poolId = 'ARhj9Tqeejw6t96MujUD5RDaL2szHPYbgaCV23TE4G4K';
-        //         await SwapManager.initiateBuy(user, Chain.SONIC, traderProfile.id, from, to, amount, false, undefined, poolId);
+        //         const tmp = await SwapManager.initiateBuy(user, Chain.SONIC, traderProfile.id, from, to, amount, undefined, poolId);
+        //         console.log('!tmp', tmp);
         //     }
         // }
         
