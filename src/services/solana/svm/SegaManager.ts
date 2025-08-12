@@ -23,6 +23,13 @@ export interface ITradeThrough {
     to: string;
 }
 
+export interface ISegaSwapResult {
+    swapAmountInLamports: number;
+    tx: web3.VersionedTransaction;
+    blockhash: string;
+    lamports?: {input: number, output: number};
+}
+
 export class SegaManager {
 
     static chain = Chain.SONIC;
@@ -48,7 +55,7 @@ export class SegaManager {
         ];
     }
 
-    static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number, poolId?: string, fee?: number): Promise<{ swapAmountInLamports: number, tx: web3.VersionedTransaction, blockhash: string }> {
+    static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number, poolId?: string, fee?: number): Promise<ISegaSwapResult> {
         const tpWallet = traderProfile.getWallet();
         if (!tpWallet) {
             throw new Error('Wallet not found');
@@ -62,7 +69,6 @@ export class SegaManager {
         console.log('SEGA', 'swap', 'inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
 
         const connection = newConnectionByChain(this.chain);
-        const currency = Currency.SOL;
 
         const wallet = web3.Keypair.fromSecretKey(bs58.decode(tpWallet.privateKey))
         const sega = await Sega.load({
@@ -141,6 +147,8 @@ export class SegaManager {
         let prevSwapResult: SwapResult | undefined = undefined;
         const isBuyTrade = inputMint == kSolAddress;
 
+        let swapResultLamports: {input: number, output: number} = {input: 0, output: 0};
+
         for (const trade of tradeThrough) {
             const data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);
             const poolInfo = data.poolInfo;
@@ -161,6 +169,21 @@ export class SegaManager {
                 baseIn ? rpcData.quoteReserve : rpcData.baseReserve,
                 rpcData.configInfo!.tradeFeeRate
             );
+            console.log('SEGA', 'swap', 'swapResult:', swapResult);
+
+            if (trade.from == inputMint){
+                swapResultLamports.input = swapResult.sourceAmountSwapped.toNumber();
+            }
+            else if (trade.from == outputMint){
+                swapResultLamports.output = swapResult.sourceAmountSwapped.toNumber();
+            }
+
+            if (trade.to == inputMint){
+                swapResultLamports.input = swapResult.destinationAmountSwapped.toNumber();
+            }
+            else if (trade.to == outputMint){
+                swapResultLamports.output = swapResult.destinationAmountSwapped.toNumber();
+            }
 
             if (outputMint == kSolAddress && trade.to == kSolAddress){
                 swapAmountInLamports = swapResult.destinationAmountSwapped.toNumber();
@@ -170,7 +193,6 @@ export class SegaManager {
             if (fixedOut){
                 sourceAmount = swapResult.destinationAmountSwapped;
             }
-
 
             if (tradeThrough.length > 1){
                 if (sonicTokenAta){
@@ -235,11 +257,21 @@ export class SegaManager {
             throw new BadRequestError('Tx builder not found');
         }
 
-        // add 1% fee instruction to tx
-        const feeIx = SwapManager.createFeeInstruction(this.chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
-        txBuilder.addInstruction({
-            endInstructions: [feeIx],
-        });
+        // add 0.5% fee instruction to tx
+        let feeIxs: web3.TransactionInstruction[] = [];
+        if (inputMint == kSolAddress || outputMint == kSolAddress){
+            const ix = SwapManager.createSolFeeInstruction(this.chain, +swapAmountInLamports, tpWallet.publicKey, fee);
+            feeIxs = [ix];
+        }
+        else {
+            feeIxs = await SwapManager.createSplFeeInstructions(this.chain, outputMint, swapResultLamports.output, tpWallet.publicKey, fee);
+        }
+
+        if (feeIxs.length > 0){
+            txBuilder.addInstruction({
+                endInstructions: feeIxs,
+            });
+        }
 
         const blockhash = (await SolanaManager.getRecentBlockhash(this.chain)).blockhash;
         const result = await txBuilder.buildV0({
@@ -249,7 +281,7 @@ export class SegaManager {
         });
 
         const tx = result.transaction;
-        return { swapAmountInLamports, tx, blockhash };
+        return { swapAmountInLamports, tx, blockhash, lamports: swapResultLamports };
     }
 
     static async fetchPoolForMints(mintA: string, mintB: string): Promise<{poolId: string} | undefined> {

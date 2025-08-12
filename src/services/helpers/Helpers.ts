@@ -29,6 +29,11 @@ export const uint8ArrayToBase64 = (uint8Array: Uint8Array): string => {
 
 export class Helpers {
 
+    static round(value: number, decimals: number): number {
+        const tmp = 10 ** decimals;
+        return Math.round(value * tmp) / tmp;
+    }
+
     static async sleep(seconds: number) {
         return new Promise(resolve => setTimeout(resolve, seconds * 1000));
     }

@@ -209,6 +209,27 @@ export class SolanaManager {
         return instructions;
     }  
 
+    static async createSplTransferInstructions2(splTokenMintPublicKey: web3.PublicKey, lamports: number, fromPublicKey: web3.PublicKey, toPublicKey: web3.PublicKey, feePayerPublicKey: web3.PublicKey, programId: web3.PublicKey = spl.TOKEN_PROGRAM_ID, associatedTokenProgramId: web3.PublicKey = spl.ASSOCIATED_TOKEN_PROGRAM_ID): Promise<web3.TransactionInstruction[]>{
+        const fromTokenAddress = await spl.getAssociatedTokenAddress(splTokenMintPublicKey, fromPublicKey, undefined, programId, associatedTokenProgramId);
+        const toTokenAddress = await spl.getAssociatedTokenAddress(splTokenMintPublicKey, toPublicKey, undefined, programId, associatedTokenProgramId);
+
+        console.log('createSplTransferInstructions2', 'splTokenMintPublicKey', splTokenMintPublicKey.toBase58(), 'lamports', lamports, 'fromPublicKey', fromPublicKey.toBase58(), 'toPublicKey', toPublicKey.toBase58(), 'feePayerPublicKey', feePayerPublicKey.toBase58(), 'programId', programId.toBase58(), 'associatedTokenProgramId', associatedTokenProgramId.toBase58(), 'fromTokenAddress', fromTokenAddress.toBase58(), 'toTokenAddress', toTokenAddress.toBase58());
+
+        const instructions: web3.TransactionInstruction[] = [
+            this.getInstrucionToCreateTokenAccount2(splTokenMintPublicKey, fromTokenAddress, fromPublicKey, feePayerPublicKey, programId, associatedTokenProgramId),
+            this.getInstrucionToCreateTokenAccount2(splTokenMintPublicKey, toTokenAddress, toPublicKey, feePayerPublicKey, programId, associatedTokenProgramId),
+            spl.createTransferInstruction(
+                fromTokenAddress, 
+                toTokenAddress, 
+                fromPublicKey, 
+                lamports,
+                undefined,
+                programId,
+            )
+        ];
+        return instructions;
+    }  
+
     static async getAtaAddress(walletAddress: web3.PublicKey, mint: web3.PublicKey): Promise<web3.PublicKey> {
         const publicKey = await spl.getAssociatedTokenAddress(mint, walletAddress);
         return publicKey;
@@ -267,6 +288,24 @@ export class SolanaManager {
                 throw error;
             }
         }
+    }
+
+    static getInstrucionToCreateTokenAccount2(
+        tokenMintPublicKey: web3.PublicKey, 
+        tokenAccountAddressPublicKey: web3.PublicKey, 
+        ownerAddressPublicKey: web3.PublicKey, 
+        feePayerPublicKey: web3.PublicKey,
+        programId: web3.PublicKey = spl.TOKEN_PROGRAM_ID,
+        associatedTokenProgramId: web3.PublicKey = spl.ASSOCIATED_TOKEN_PROGRAM_ID
+    ): web3.TransactionInstruction {
+        return spl.createAssociatedTokenAccountInstruction(
+            feePayerPublicKey,
+            tokenAccountAddressPublicKey,
+            ownerAddressPublicKey,
+            tokenMintPublicKey,
+            programId,
+            associatedTokenProgramId
+        );
     }
 
     static async closeEmptyTokenAccounts(web3Conn: web3.Connection, keypair: web3.Keypair): Promise<number | undefined> {

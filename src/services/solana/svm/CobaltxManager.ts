@@ -160,7 +160,7 @@ export class CobaltxManager {
         const txData = await SolanaManager.extractTransactionComponents(connection, swapTransactions[0].transaction)
 
         // add fee instruction
-        const feeIx = SwapManager.createFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, currency, fee);
+        const feeIx = SwapManager.createSolFeeInstruction(chain, +swapAmountInLamports, tpWallet.publicKey, fee);
         txData.instructions.push(feeIx);
 
         const txMessage = new TransactionMessage({
