@@ -240,8 +240,6 @@ Quack!`,
         if (!event){
             return;
         }        
-
-        // console.log('recalculateLeaderboard', event.title);
         
         const pipeline = [
             {
@@ -278,6 +276,11 @@ Quack!`,
             const traderProfileId = result._id;
             const userId = result.userId;
             const points = result.totalPoints;
+
+            const traderProfile = await UserTraderProfile.findById(traderProfileId);
+            if (!traderProfile || traderProfile.active == false){
+                continue;
+            }
 
             const existingTradingEventPoints = await TradingEventPoints.findOne({ eventId: eventId, traderProfileId: traderProfileId });
             if (existingTradingEventPoints){
