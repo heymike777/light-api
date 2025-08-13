@@ -103,11 +103,6 @@ export class BotFarmHelper extends BotHelper {
             await BotManager.editMessage(ctx, replyMessage.text, replyMessage.markup);    
         }
         else if (buttonId == 'farm|token'){
-            if (user.telegram?.username != 'heymike777'){
-                await BotManager.reply(ctx, '🔴 This feature is in beta and only available for a few users. Please, contact support.');
-                return;
-            }
-
             await BotManager.reply(ctx, 'Send token CA address to boost volume');
             await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_TOKEN_CA, helper: this.kCommand, data: { messageId: BotManager.getMessageIdFromContext(ctx) } });
             return;
