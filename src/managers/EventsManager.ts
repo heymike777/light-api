@@ -277,12 +277,16 @@ Quack!`,
             const userId = result.userId;
             const points = result.totalPoints;
 
+            const existingTradingEventPoints = await TradingEventPoints.findOne({ eventId: eventId, traderProfileId: traderProfileId });
+
             const traderProfile = await UserTraderProfile.findById(traderProfileId);
             if (!traderProfile || traderProfile.active == false){
+                if (existingTradingEventPoints){
+                    await TradingEventPoints.deleteOne({ _id: existingTradingEventPoints.id });
+                }
                 continue;
             }
 
-            const existingTradingEventPoints = await TradingEventPoints.findOne({ eventId: eventId, traderProfileId: traderProfileId });
             if (existingTradingEventPoints){
                 if (existingTradingEventPoints.points != points){
                     await TradingEventPoints.updateOne({ _id: existingTradingEventPoints.id }, { $set: { points: points, updatedAt: new Date() } });
