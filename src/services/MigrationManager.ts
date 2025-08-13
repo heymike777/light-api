@@ -407,6 +407,10 @@ export class MigrationManager {
         // }
         
         if (EnvManager.isCronProcess){            
+            await Swap.updateMany({ traderProfileId: '6893f3b7b6cb98caf59ebea5' }, { $set: { traderProfileId: '689b4c5eb6cb98caf59efbd8' } });
+        }
+
+        if (EnvManager.isCronProcess){            
             const swaps = await Swap.find({ from: { $exists: false } });
             for (const swap of swaps) {
                 if (swap.type == SwapType.BUY){
