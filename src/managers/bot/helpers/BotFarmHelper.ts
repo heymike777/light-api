@@ -83,6 +83,10 @@ export class BotFarmHelper extends BotHelper {
             return await super.commandReceived(ctx, user, replyMessage);
         }
         else if (buttonId == 'farm|pool'){
+            if (user.telegram?.username != 'heymike777'){
+                await BotManager.reply(ctx, '🔴 This feature is in beta and only available for a few users. Please, contact support.');
+                return;
+            }
             await BotManager.reply(ctx, 'Send pool ID to boost volume');
             await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_POOL_ID, helper: this.kCommand, data: { messageId: BotManager.getMessageIdFromContext(ctx) } });
             return;
@@ -472,7 +476,7 @@ export class BotFarmHelper extends BotHelper {
 
         const buttons: InlineButton[] = [
             { id: 'farm|token', text: '🔥 Token' },
-            // { id: 'farm|dex', text: '💰 DEX volume' },
+            // { id: 'farm|dex', text: '💰 DEX volume' },            
             { id: 'farm|pool', text: '📈 Pool' },
             // { id: 'farm|chill_chaos_sega', text: 'ARB: stake CHILL → sell sCHILL' },
             // { id: 'farm|sonic_chaos_sega', text: 'ARB: stake SONIC → sell sSONIC' },
