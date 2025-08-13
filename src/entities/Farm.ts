@@ -22,6 +22,7 @@ export interface IFarmPool {
     tokenA: string;
     tokenB: string;
     title?: string;
+    solBased?: boolean;
 }
 
 export interface IFarm extends mongoose.Document {

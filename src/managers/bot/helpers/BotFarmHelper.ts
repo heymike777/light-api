@@ -107,7 +107,7 @@ export class BotFarmHelper extends BotHelper {
                 await BotManager.reply(ctx, '🔴 This feature is in beta and only available for a few users. Please, contact support.');
                 return;
             }
-            
+
             await BotManager.reply(ctx, 'Send token CA address to boost volume');
             await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_TOKEN_CA, helper: this.kCommand, data: { messageId: BotManager.getMessageIdFromContext(ctx) } });
             return;
@@ -418,7 +418,7 @@ export class BotFarmHelper extends BotHelper {
                 if (poolInfo){
                     isValid = true;
                     const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
-                    farmPools.push({ address: poolInfo.poolId, tokenA: kSolAddress, tokenB: tokenCa, title: title });
+                    farmPools.push({ address: poolInfo.poolId, tokenA: kSolAddress, tokenB: tokenCa, title: title, solBased: true });
                 }
             }
 
@@ -427,7 +427,7 @@ export class BotFarmHelper extends BotHelper {
                 if (poolInfo){
                     isValid = true;
                     const title = token?.symbol ? `SOL/${token.symbol}` : undefined;
-                    farmPools.push({ address: poolInfo.poolId, tokenA: kSonicAddress, tokenB: tokenCa, title: title });
+                    farmPools.push({ address: poolInfo.poolId, tokenA: kSonicAddress, tokenB: tokenCa, title: title, solBased: true });
                 }
             }
         }
