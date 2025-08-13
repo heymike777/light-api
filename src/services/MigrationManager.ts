@@ -444,9 +444,9 @@ export class MigrationManager {
     }
 
     static async testTick() {
-        setInterval(() => {
-            LogManager.forceLog('test_tick');
-        }, 10000);
+        // setInterval(() => {
+        //     LogManager.forceLog('test_tick');
+        // }, 10000);
     }
 
     static async testGeyserTx() {

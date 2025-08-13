@@ -142,13 +142,13 @@ export class SegaManager {
         let txBuilder: TxBuilder | undefined = undefined;
         let txBuildProps: { lookupTableCache?: CacheLTA; lookupTableAddress?: string[]; } | undefined = undefined;
         console.log('inputAmount:', inputAmount.toString());
-        let swapAmountInLamports = inputMint == kSolAddress ? inputAmount.toNumber() : 0;
         let tradeIndex = 0;
         let prevSwapResult: SwapResult | undefined = undefined;
         const isBuyTrade = inputMint == kSolAddress;
 
         let swapResultLamports: {input: number, output: number} = {input: 0, output: 0};
 
+        let swapsMade = 0;
         for (const trade of tradeThrough) {
             const data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);
             const poolInfo = data.poolInfo;
@@ -183,10 +183,6 @@ export class SegaManager {
             }
             else if (trade.to == outputMint){
                 swapResultLamports.output = swapResult.destinationAmountSwapped.toNumber();
-            }
-
-            if (outputMint == kSolAddress && trade.to == kSolAddress){
-                swapAmountInLamports = swapResult.destinationAmountSwapped.toNumber();
             }
 
             let fixedOut = tradeThrough.length > 1 && tradeIndex == 0 && isBuyTrade; // true only for first trade and only for BUY trades
@@ -249,8 +245,16 @@ export class SegaManager {
                 }
             }
 
+            if (builder.allInstructions.length > 0){
+                swapsMade++;
+            }
+
             prevSwapResult = swapResult;
             tradeIndex++;
+        }
+
+        if (swapsMade < tradeThrough.length){
+            throw new BadRequestError('Not enough swaps made');
         }
 
         if (!txBuilder){
@@ -258,9 +262,11 @@ export class SegaManager {
         }
 
         // add 0.5% fee instruction to tx
-        let feeIxs: web3.TransactionInstruction[] = [];
+        let feeIxs: web3.TransactionInstruction[] = [];        
+        let swapAmountInLamports = 0;
         if (inputMint == kSolAddress || outputMint == kSolAddress){
-            const ix = SwapManager.createSolFeeInstruction(this.chain, +swapAmountInLamports, tpWallet.publicKey, fee);
+            swapAmountInLamports = inputMint == kSolAddress ? swapResultLamports.input : swapResultLamports.output;
+            const ix = SwapManager.createSolFeeInstruction(this.chain, swapAmountInLamports, tpWallet.publicKey, fee);
             feeIxs = [ix];
         }
         else {
