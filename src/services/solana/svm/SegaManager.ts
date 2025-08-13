@@ -209,7 +209,11 @@ export class SegaManager {
                 }
             }
 
-            const swapSlippage = (tradeThrough.length > 1 && tradeIndex == 0 && !isBuyTrade) ? 0 : slippage / 100; // it should be 0 only for the first trade when multiple trades, and only for SELL trades
+            let swapSlippage = slippage / 100; // it should be 0 only for the first trade when multiple trades, and only for SELL trades
+            if (tradeThrough.length > 1 && tradeIndex == 0){
+                swapSlippage = isBuyTrade ? 0.01 : 0;
+            }
+            console.log('SEGA', 'swap', 'sourceAmount:', sourceAmount.toString(), 'swapResult:', swapResult, 'swapSlippage:', swapSlippage, 'baseIn:', baseIn, 'fixedOut:', fixedOut);
 
             const { builder, buildProps } = await sega.cpmm.swap({
                 poolInfo,
