@@ -283,28 +283,28 @@ export class FarmManager {
         await Farm.updateOne({ _id: farm.id }, { $set: { status: FarmStatus.COMPLETED } });
 
         const user = await User.findById(farm.userId);
-            if (!user){
-                console.log('FarmManager.pauseFarm', 'farm', farm.id, 'user not found');
-                return;
-            }
-            else if (!user.telegram?.id){
-                console.log('FarmManager.pauseFarm', 'farm', farm.id, 'user has no telegram id');
-                return;
-            }
+        if (!user){
+            console.log('FarmManager.pauseFarm', 'farm', farm.id, 'user not found');
+            return;
+        }
+        else if (!user.telegram?.id){
+            console.log('FarmManager.pauseFarm', 'farm', farm.id, 'user has no telegram id');
+            return;
+        }
 
-            const tradingProfile = await UserTraderProfile.findById(farm.traderProfileId);
+        const tradingProfile = await UserTraderProfile.findById(farm.traderProfileId);
 
-            let message = `⛏️ Farm is completed.`;
-            if (tradingProfile?.encryptedWallet?.publicKey) {
-                message += `\nWallet: <code>${tradingProfile.encryptedWallet.publicKey}</code>`;
-            }
-            message += `\nTotal volume: $${farm.progress?.currentVolume.toFixed(2)}`;
+        let message = `🤖 Bot is completed.`;
+        if (tradingProfile?.encryptedWallet?.publicKey) {
+            message += `\nWallet: <code>${tradingProfile.encryptedWallet.publicKey}</code>`;
+        }
+        message += `\nTotal volume: $${farm.progress?.currentVolume.toFixed(2)}`;
 
-            BotManager.sendMessage({ 
-                id: `user_${user.id}_farm_${farm.id}_${Helpers.makeid(12)}`,
-                userId: user.id,
-                chatId: user.telegram?.id, 
-                text: message, 
-            });
+        BotManager.sendMessage({ 
+            id: `user_${user.id}_farm_${farm.id}_${Helpers.makeid(12)}`,
+            userId: user.id,
+            chatId: user.telegram?.id, 
+            text: message, 
+        }, 5);
     }
 }

@@ -310,18 +310,24 @@ export class BotManager {
         }
     }
 
-    static async sendMessage(data: SendMessageData){
+    static async sendMessage(data: SendMessageData, delay: number = 0){
         if (EnvManager.isTelegramProcess){
             const defaultBot = await this.getUserDefaultBot(data.userId);
             if (defaultBot){
                 const botManager = await BotManager.getInstance(defaultBot);
                 if (botManager){
+                    if (delay > 0){
+                        await Helpers.sleep(delay);
+                    }
                     await botManager.sendMessage(data);    
                 }
             }
         }
         else {
             // await RabbitManager.publishTelegramMessage(data);
+            if (delay > 0){
+                await Helpers.sleep(delay);
+            }
             await MicroserviceManager.sendMessageToTelegram(JSON.stringify(data));
         }
     }
