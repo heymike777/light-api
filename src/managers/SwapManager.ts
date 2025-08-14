@@ -223,6 +223,7 @@ export class SwapManager {
                 }
             }
             else if (swap.dex == SwapDex.SEGA){
+                console.log('SwapManager', 'user:', user.id, 'farm:', swap.farmId, 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage, 'swap.poolId:', swap.poolId);
                 const segaResults = await SegaManager.swap(user, traderProfile, inputMint, outputMint, new BN(amount), slippage, swap.poolId);
                 swapAmountInLamports = segaResults.swapAmountInLamports.toString();
                 tx = segaResults.tx;
@@ -299,7 +300,8 @@ export class SwapManager {
             LogManager.log('SwapManager', 'signature', signature);
         }
         catch (error: any) {
-            LogManager.error('!catched SwapManager', 'user:', user.id, 'farm:', swap.farmId, 'swap.type:', swap.type, 'error:', error);       
+
+            LogManager.error('!catched SwapManager', 'user:', user.id, 'farm:', swap.farmId, 'swap.type:', swap.type, 'amount:', amount, 'error:', error);       
             
             if (triesLeft <= 0) {
                 swap.status.type = StatusType.CANCELLED;

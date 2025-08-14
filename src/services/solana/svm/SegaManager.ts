@@ -56,6 +56,7 @@ export class SegaManager {
     }
 
     static async swap(user: IUser, traderProfile: IUserTraderProfile, inputMint: string, outputMint: string, inputAmount: BN, slippage: number, poolId?: string, fee?: number): Promise<ISegaSwapResult> {
+        console.log('SEGA', 'swap', '!!!inputMint:', inputMint, 'outputMint:', outputMint, 'inputAmount:', inputAmount.toString(), 'slippage:', slippage);
         const tpWallet = traderProfile.getWallet();
         if (!tpWallet) {
             throw new Error('Wallet not found');
@@ -163,12 +164,15 @@ export class SegaManager {
             // Calculate swap parameters
             let sourceAmount = tradeIndex == 0 ? inputAmount : prevSwapResult!.destinationAmountSwapped;
             const baseIn = trade.from === poolInfo.mintA.address;
+            console.log('SEGA', 'swap', 'CurveCalculator:start');
             const swapResult = CurveCalculator.swap(
                 sourceAmount,
                 baseIn ? rpcData.baseReserve : rpcData.quoteReserve,
                 baseIn ? rpcData.quoteReserve : rpcData.baseReserve,
                 rpcData.configInfo!.tradeFeeRate
             );
+            console.log('SEGA', 'swap', 'CurveCalculator:end');
+
             console.log('SEGA', 'swap', 'swapResult:', swapResult);
 
             if (trade.from == inputMint){
@@ -213,9 +217,8 @@ export class SegaManager {
             if (tradeThrough.length > 1 && tradeIndex == 0){
                 swapSlippage = isBuyTrade ? 0.01 : 0;
             }
-            console.log('SEGA', 'swap', 'sourceAmount:', sourceAmount.toString(), 'swapResult:', swapResult, 'swapSlippage:', swapSlippage, 'baseIn:', baseIn, 'fixedOut:', fixedOut);
+            console.log('!SEGA', 'swap', 'sourceAmount:', sourceAmount.toString(), 'swapResult:', swapResult, 'swapSlippage:', swapSlippage, 'baseIn:', baseIn, 'fixedOut:', fixedOut);
 
-            console.log('!SEGA', 'sourceAmount', sourceAmount.toString());
             const { builder, buildProps } = await sega.cpmm.swap({
                 poolInfo,
                 poolKeys,
