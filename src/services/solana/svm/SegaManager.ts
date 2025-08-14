@@ -215,6 +215,7 @@ export class SegaManager {
             }
             console.log('SEGA', 'swap', 'sourceAmount:', sourceAmount.toString(), 'swapResult:', swapResult, 'swapSlippage:', swapSlippage, 'baseIn:', baseIn, 'fixedOut:', fixedOut);
 
+            console.log('!SEGA', 'sourceAmount', sourceAmount.toString());
             const { builder, buildProps } = await sega.cpmm.swap({
                 poolInfo,
                 poolKeys,
@@ -225,6 +226,8 @@ export class SegaManager {
                 txVersion: TxVersion.V0,
                 fixedOut: fixedOut,
             });
+            console.log('!SEGA', 'sourceAmount', sourceAmount.toString(), 'all good!');
+
 
             if (!txBuilder){
                 txBuilder = builder;
