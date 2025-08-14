@@ -708,14 +708,18 @@ export class SolanaManager {
     }
 
     static async getTokenMint(chain: Chain, mint: string): Promise<spl.Mint | undefined> {
-        try {
-            const connection = newConnectionByChain(chain);
-            const mintPublicKey = new web3.PublicKey(mint);
-            const mintInfo = await spl.getMint(connection, mintPublicKey);
-            return mintInfo;    
-        }
-        catch (err){
-            LogManager.error('getTokenMint', 'chain:', chain, 'err:', err);
+        const connection = newConnectionByChain(chain);
+        const programIds = chain == Chain.SONIC ? [spl.TOKEN_2022_PROGRAM_ID, spl.TOKEN_PROGRAM_ID] : [spl.TOKEN_PROGRAM_ID, spl.TOKEN_2022_PROGRAM_ID];
+        
+        for (const programId of programIds){
+            try {
+                const mintPublicKey = new web3.PublicKey(mint);
+                const mintInfo = await spl.getMint(connection, mintPublicKey, 'confirmed', programId);
+                return mintInfo;    
+            }
+            catch (err){
+                LogManager.error('getTokenMint', 'chain:', chain, 'err:', err);
+            }
         }
         return undefined;
     }
