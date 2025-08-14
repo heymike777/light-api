@@ -239,7 +239,10 @@ Quack!`,
         const event = await EventsManager.getEventById(eventId);
         if (!event){
             return;
-        }        
+        }    
+        
+        console.log('recalculateLeaderboard', eventId, 'event:', event);
+
         
         const pipeline = [
             {
@@ -271,11 +274,13 @@ Quack!`,
         ];
 
         const results = await Swap.aggregate(pipeline);
-        // console.log('recalculateLeaderboard', 'results:', results);
+        console.log('recalculateLeaderboard', eventId, 'results:', results);
         for (const result of results){
             const traderProfileId = result._id;
             const userId = result.userId;
             const points = result.totalPoints;
+
+            console.log('recalculateLeaderboard', eventId, 'traderProfileId:', traderProfileId);
 
             const existingTradingEventPoints = await TradingEventPoints.findOne({ eventId: eventId, traderProfileId: traderProfileId });
             if (traderProfileId == '6893f3b7b6cb98caf59ebea5'){
