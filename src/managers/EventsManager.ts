@@ -278,8 +278,13 @@ Quack!`,
             const points = result.totalPoints;
 
             const existingTradingEventPoints = await TradingEventPoints.findOne({ eventId: eventId, traderProfileId: traderProfileId });
-
+            if (traderProfileId == '6893f3b7b6cb98caf59ebea5'){
+                console.log('recalculateLeaderboard', 'traderProfileId:', traderProfileId, 'points:', points, 'existingTradingEventPoints:', existingTradingEventPoints);
+            }
             const traderProfile = await UserTraderProfile.findById(traderProfileId);
+            if (traderProfileId == '6893f3b7b6cb98caf59ebea5'){
+                console.log('recalculateLeaderboard', 'traderProfileId:', traderProfileId, 'traderProfile:', traderProfile);
+            }
             if (!traderProfile || traderProfile.active == false){
                 if (existingTradingEventPoints){
                     console.log('recalculateLeaderboard', 'traderProfile not active. Deleting points.', 'traderProfileId:', traderProfileId, 'existingTradingEventPoints:', existingTradingEventPoints);
