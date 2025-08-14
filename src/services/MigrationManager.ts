@@ -357,16 +357,10 @@ export class MigrationManager {
         //     console.log('MigrationManager', 'migrate', 'no active event found');
         // }
 
-        // const event = await EventsManager.getActiveEvent();
-        // if (event){
-        //     await EventsManager.recalculateLeaderboard(event.id);
-        // }
-
         // while (true){
         //     await FarmManager.tick();
         //     await new Promise((resolve) => setTimeout(resolve, 1000));
         // }
-
 
         // const traderProfile = await TraderProfilesManager.getUserDefaultTraderProfile(this.kMikeUserId);
         // if (!traderProfile){
@@ -384,9 +378,9 @@ export class MigrationManager {
         // const chaos = await ChaosManager.stake(testKeypair, kSonicAddress, 5);
         // await ChaosManager.stake(testKeypair, '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', 30); // STAKE CHILL
 
-        // if (EnvManager.isCronProcess){
-        //     await EventsManager.recalculateLeaderboardForActiveEvents();
-        // }
+        if (EnvManager.isCronProcess){
+            await EventsManager.recalculateLeaderboardForActiveEvents();
+        }
 
         // initiateBuy traderProfileId: 6849f0d4e82d106d3e1538be from: { mint: 'So11111111111111111111111111111111111111112', decimals: 9 } to: { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', decimals: 9 } amount: 0.02 poolId: undefined
 
@@ -406,10 +400,6 @@ export class MigrationManager {
         //     }
         // }
         
-        // if (EnvManager.isCronProcess){            
-        //     await Swap.updateMany({ traderProfileId: '6893f3b7b6cb98caf59ebea5' }, { $set: { traderProfileId: '689b4c5eb6cb98caf59efbd8' } });
-        // }
-
         // if (EnvManager.isCronProcess){            
         //     const swaps = await Swap.find({ from: { $exists: false } });
         //     for (const swap of swaps) {

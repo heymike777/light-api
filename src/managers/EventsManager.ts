@@ -282,6 +282,7 @@ Quack!`,
             const traderProfile = await UserTraderProfile.findById(traderProfileId);
             if (!traderProfile || traderProfile.active == false){
                 if (existingTradingEventPoints){
+                    console.log('recalculateLeaderboard', 'traderProfile not active. Deleting points.', 'traderProfileId:', traderProfileId, 'existingTradingEventPoints:', existingTradingEventPoints);
                     await TradingEventPoints.deleteOne({ _id: existingTradingEventPoints.id });
                 }
                 continue;
