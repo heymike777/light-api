@@ -44,6 +44,29 @@ export class Helpers {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    static getRandomBn(min: BN, max: BN): BN {
+        if (min.gte(max)) {
+            throw new Error("min must be less than max");
+        }
+    
+        const range = max.sub(min).addn(1); // inclusive range
+        const bytes = range.byteLength();
+    
+        let random: BN;
+        do {
+            // Generate random bytes with same size as range
+            const buf = Buffer.alloc(bytes);
+            for (let i = 0; i < bytes; i++) {
+                buf[i] = Math.floor(Math.random() * 256);
+            }
+            random = new BN(buf);
+    
+            // If random >= range, retry (to avoid modulo bias)
+        } while (random.gte(range));
+    
+        return min.add(random);
+    }
+
     static getProbability(winProbability: number): boolean {
         return this.getRandomInt(1, 10000) <= winProbability * 100;
     }   

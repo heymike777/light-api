@@ -209,7 +209,7 @@ export class SolanaManager {
         return instructions;
     }  
 
-    static async createSplTransferInstructions2(splTokenMintPublicKey: web3.PublicKey, lamports: number, fromPublicKey: web3.PublicKey, toPublicKey: web3.PublicKey, feePayerPublicKey: web3.PublicKey, programId: web3.PublicKey = spl.TOKEN_PROGRAM_ID, associatedTokenProgramId: web3.PublicKey = spl.ASSOCIATED_TOKEN_PROGRAM_ID): Promise<web3.TransactionInstruction[]>{
+    static async createSplTransferInstructions2(splTokenMintPublicKey: web3.PublicKey, lamports: BN, fromPublicKey: web3.PublicKey, toPublicKey: web3.PublicKey, feePayerPublicKey: web3.PublicKey, programId: web3.PublicKey = spl.TOKEN_PROGRAM_ID, associatedTokenProgramId: web3.PublicKey = spl.ASSOCIATED_TOKEN_PROGRAM_ID): Promise<web3.TransactionInstruction[]>{
         const fromTokenAddress = await spl.getAssociatedTokenAddress(splTokenMintPublicKey, fromPublicKey, undefined, programId, associatedTokenProgramId);
         const toTokenAddress = await spl.getAssociatedTokenAddress(splTokenMintPublicKey, toPublicKey, undefined, programId, associatedTokenProgramId);
 
@@ -220,7 +220,7 @@ export class SolanaManager {
                 fromTokenAddress, 
                 toTokenAddress, 
                 fromPublicKey, 
-                lamports,
+                BigInt(lamports.toString()),
                 undefined,
                 programId,
             )

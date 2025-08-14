@@ -8,6 +8,7 @@ import { BotManager } from "./bot/BotManager";
 import { SwapManager } from "./SwapManager";
 import { IMint, ISwap } from "../entities/payments/Swap";
 import { kSolAddress } from "../services/solana/Constants";
+import { BN } from "bn.js";
 
 export enum FarmPauseReason {
     NO_SOL = 'NO_SOL',
@@ -17,6 +18,7 @@ export enum FarmPauseReason {
 export class FarmManager {
 
     static kMinSolAmount = 0.01;
+    static kMinSolLamports = this.kMinSolAmount * LAMPORTS_PER_SOL;
 
     static async tick() {
         console.log('FarmManager.tick');
@@ -144,15 +146,15 @@ export class FarmManager {
         if (buyOrSell === 'buy'){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
 
-            let amountMin = Math.floor(tokenBalance1.amount.toNumber() * 0.2);
-            let amountMax = tokenBalance1.amount.toNumber();
+            let amountMin = tokenBalance1.amount.muln(0.2);
+            let amountMax = tokenBalance1.amount;
             if (tokenA == kSolAddress){
-                if (amountMin < this.kMinSolAmount * LAMPORTS_PER_SOL){
-                    amountMin = this.kMinSolAmount * LAMPORTS_PER_SOL;
+                if (amountMin.lt(new BN(this.kMinSolLamports))){
+                    amountMin = new BN(this.kMinSolAmount * LAMPORTS_PER_SOL);
                 }
 
-                if (amountMax > tokenBalance1.amount.toNumber() - 0.01 * LAMPORTS_PER_SOL){
-                    amountMax = tokenBalance1.amount.toNumber() - 0.01 * LAMPORTS_PER_SOL;
+                if (amountMax.gt(tokenBalance1.amount.subn(this.kMinSolLamports))){
+                    amountMax = tokenBalance1.amount.subn(this.kMinSolLamports);
                 }
             }
             
@@ -160,11 +162,11 @@ export class FarmManager {
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is greater than amountMax. Skipping the swap.');
                 return;
             }
-            if (amountMin == amountMax && amountMin <= 0){
+            if (amountMin.eq(amountMax) && amountMin.lte(new BN(0))){
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is equal to amountMax and is less than or equal to 0. Skipping the swap.');
                 return;
             }
-            const amount = Helpers.getRandomInt(amountMin, amountMax) / (10 ** (tokenBalance1.decimals || 0));
+            const amount = +Helpers.bnToUiAmount(Helpers.getRandomBn(amountMin, amountMax), tokenBalance1.decimals || 0);
             if (amount < 0){
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amount is negative. Skipping the swap.');
                 return;

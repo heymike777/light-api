@@ -18,7 +18,6 @@ import { Helpers } from "../services/helpers/Helpers";
 import { SystemNotificationsManager } from "./SytemNotificationsManager";
 import { Currency } from "../models/types";
 import { SwapMode } from "@jup-ag/api";
-import { BN } from "bn.js";
 import { SegaManager } from "../services/solana/svm/SegaManager";
 import { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { IUser, User } from "../entities/users/User";
@@ -31,6 +30,12 @@ import { TradingEventStatus } from "../entities/events/TradingEvent";
 import { FarmManager } from "./FarmManager";
 import { TokenPriceManager } from "./TokenPriceManager";
 import * as spl from '@solana/spl-token';
+import BN from "bn.js";
+
+export interface ISwapLamports {
+    input: BN;
+    output: BN;
+}
 
 export class SwapManager {
 
@@ -165,7 +170,6 @@ export class SwapManager {
         const connection = newConnectionByChain(swap.chain);
         let signature: string | undefined;
         let blockhash: string | undefined;
-        const currency = traderProfile.currency || Currency.SOL;
 
         try {
             const inputMint = swap.from.mint;// swap.type == SwapType.BUY ? currencyMintAddress : mint;
@@ -177,7 +181,7 @@ export class SwapManager {
             let swapAmountInLamports: string = '0';
             let addressLookupTableAccounts: web3.AddressLookupTableAccount[] | undefined = undefined;
             let tx: web3.VersionedTransaction | undefined = undefined;
-            let swapLamports: { input: number, output: number } | undefined = undefined;
+            let swapLamports: ISwapLamports | undefined = undefined;
 
             if (swap.dex == SwapDex.JUPITER){
                 try {
@@ -259,7 +263,7 @@ export class SwapManager {
                 }
                 else if (toPrice > 0 && swap.to.decimals != undefined){
                     if (swapLamports){
-                        const output = swapLamports.output / (10 ** swap.to.decimals);
+                        const output = +Helpers.bnToUiAmount(swapLamports.output, swap.to.decimals);
                         const usd = output * toPrice;
                         swap.value = {
                             sol: Helpers.round(usd / TokenManager.getNativeTokenPrice(swap.chain), 9),
@@ -346,7 +350,7 @@ export class SwapManager {
         return feeInstruction;
     }
 
-    static async createSplFeeInstructions(chain: Chain, mint: string, swapLamports: number, walletAddress: string, fee = 0.01): Promise<web3.TransactionInstruction[]> {        
+    static async createSplFeeInstructions(chain: Chain, mint: string, swapLamports: BN, walletAddress: string, fee = 0.01): Promise<web3.TransactionInstruction[]> {        
         const feeWalletAddress = process.env.FEE_SOL_WALLET_ADDRESS;
         if (!feeWalletAddress) {
             throw new BadRequestError('Fee wallet address not found');
@@ -355,7 +359,7 @@ export class SwapManager {
         const programId = chain == Chain.SOLANA ? spl.TOKEN_PROGRAM_ID : spl.TOKEN_2022_PROGRAM_ID;
         const associatedTokenProgramId = spl.ASSOCIATED_TOKEN_PROGRAM_ID;
 
-        const feeAmount = Math.round(swapLamports * fee);
+        const feeAmount = swapLamports.muln(fee * 1000000).div(new BN(1000000)); // Math.round(swapLamports * fee);
         const feeInstructions = await SolanaManager.createSplTransferInstructions2(new web3.PublicKey(mint), feeAmount, new web3.PublicKey(walletAddress), new web3.PublicKey(feeWalletAddress), new web3.PublicKey(walletAddress), programId, associatedTokenProgramId);
         return feeInstructions;
     }

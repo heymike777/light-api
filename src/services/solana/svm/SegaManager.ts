@@ -27,7 +27,7 @@ export interface ISegaSwapResult {
     swapAmountInLamports: number;
     tx: web3.VersionedTransaction;
     blockhash: string;
-    lamports?: {input: number, output: number};
+    lamports?: {input: BN, output: BN};
 }
 
 export class SegaManager {
@@ -146,7 +146,7 @@ export class SegaManager {
         let prevSwapResult: SwapResult | undefined = undefined;
         const isBuyTrade = inputMint == kSolAddress;
 
-        let swapResultLamports: {input: number, output: number} = {input: 0, output: 0};
+        let swapResultLamports: {input: BN, output: BN} = {input: new BN(0), output: new BN(0)};
 
         let swapsMade = 0;
         for (const trade of tradeThrough) {
@@ -172,17 +172,17 @@ export class SegaManager {
             console.log('SEGA', 'swap', 'swapResult:', swapResult);
 
             if (trade.from == inputMint){
-                swapResultLamports.input = swapResult.sourceAmountSwapped.toNumber();
+                swapResultLamports.input = swapResult.sourceAmountSwapped;
             }
             else if (trade.from == outputMint){
-                swapResultLamports.output = swapResult.sourceAmountSwapped.toNumber();
+                swapResultLamports.output = swapResult.sourceAmountSwapped;
             }
 
             if (trade.to == inputMint){
-                swapResultLamports.input = swapResult.destinationAmountSwapped.toNumber();
+                swapResultLamports.input = swapResult.destinationAmountSwapped;
             }
             else if (trade.to == outputMint){
-                swapResultLamports.output = swapResult.destinationAmountSwapped.toNumber();
+                swapResultLamports.output = swapResult.destinationAmountSwapped;
             }
 
             let fixedOut = tradeThrough.length > 1 && tradeIndex == 0 && isBuyTrade; // true only for first trade and only for BUY trades
@@ -269,7 +269,7 @@ export class SegaManager {
         let feeIxs: web3.TransactionInstruction[] = [];        
         let swapAmountInLamports = 0;
         if (inputMint == kSolAddress || outputMint == kSolAddress){
-            swapAmountInLamports = inputMint == kSolAddress ? swapResultLamports.input : swapResultLamports.output;
+            swapAmountInLamports = inputMint == kSolAddress ? swapResultLamports.input.toNumber() : swapResultLamports.output.toNumber();
             const ix = SwapManager.createSolFeeInstruction(this.chain, swapAmountInLamports, tpWallet.publicKey, fee);
             feeIxs = [ix];
         }
