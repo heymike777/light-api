@@ -213,7 +213,7 @@ export class SwapManager {
 
                     // add 0.5% fee instruction to tx
                     const fee = SwapManager.getFeeSize(user, swap.chain);
-                    instructions.push(this.createSolFeeInstruction(Chain.SOLANA, +swapAmountInLamports, tpWallet.publicKey, fee));
+                    instructions.push(this.createSolFeeInstruction(Chain.SOLANA, new BN(swapAmountInLamports), tpWallet.publicKey, fee));
 
                     blockhash = (await SolanaManager.getRecentBlockhash(swap.chain)).blockhash;
                     tx = await SolanaManager.createVersionedTransaction(swap.chain, instructions, keypair, addressLookupTableAccounts, blockhash, false)
@@ -334,17 +334,17 @@ export class SwapManager {
         return signature;
     }
 
-    static createSolFeeInstruction(chain: Chain, swapAmountInLamports: number, walletAddress: string, fee = 0.01): web3.TransactionInstruction {        
+    static createSolFeeInstruction(chain: Chain, swapAmountInLamports: BN, walletAddress: string, fee = 0.01): web3.TransactionInstruction {        
         const feeWalletAddress = process.env.FEE_SOL_WALLET_ADDRESS;
         if (!feeWalletAddress) {
             throw new BadRequestError('Fee wallet address not found');
         }
 
-        const feeAmount = Math.round(swapAmountInLamports * fee);
+        const feeAmount = swapAmountInLamports.muln(fee * 1000000).div(new BN(1000000)); // Math.round(swapAmountInLamports * fee);
         const feeInstruction = web3.SystemProgram.transfer({
             fromPubkey: new web3.PublicKey(walletAddress),
             toPubkey: new web3.PublicKey(feeWalletAddress),
-            lamports: feeAmount,
+            lamports: BigInt(feeAmount.toString()),
         });
 
         return feeInstruction;

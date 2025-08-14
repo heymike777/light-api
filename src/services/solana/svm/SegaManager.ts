@@ -24,7 +24,7 @@ export interface ITradeThrough {
 }
 
 export interface ISegaSwapResult {
-    swapAmountInLamports: number;
+    swapAmountInLamports: BN;
     tx: web3.VersionedTransaction;
     blockhash: string;
     lamports?: {input: BN, output: BN};
@@ -270,9 +270,9 @@ export class SegaManager {
 
         // add 0.5% fee instruction to tx
         let feeIxs: web3.TransactionInstruction[] = [];        
-        let swapAmountInLamports = 0;
+        let swapAmountInLamports = new BN(0);
         if (inputMint == kSolAddress || outputMint == kSolAddress){
-            swapAmountInLamports = inputMint == kSolAddress ? swapResultLamports.input.toNumber() : swapResultLamports.output.toNumber();
+            swapAmountInLamports = inputMint == kSolAddress ? swapResultLamports.input : swapResultLamports.output;
             const ix = SwapManager.createSolFeeInstruction(this.chain, swapAmountInLamports, tpWallet.publicKey, fee);
             feeIxs = [ix];
         }
