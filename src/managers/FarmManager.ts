@@ -96,7 +96,26 @@ export class FarmManager {
         }
 
         const tokenBalance1 = tokenA == kSolAddress ? solBalance : await SolanaManager.getWalletTokenBalance(farm.chain, walletAddress, tokenA);
-        const tokenBalance2 = tokenB == kSolAddress ? solBalance : await SolanaManager.getWalletTokenBalance(farm.chain, walletAddress, tokenB);        
+        const tokenBalance2 = tokenB == kSolAddress ? solBalance : await SolanaManager.getWalletTokenBalance(farm.chain, walletAddress, tokenB);
+
+        let shouldPauseFarm = false;
+        if (tokenA == kSolAddress && tokenBalance1.uiAmount <= 0.03 && tokenBalance2.uiAmount <= 0.01){
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'shouldPauseFarm because of SOL balance (1)');
+            shouldPauseFarm = true;
+        }
+        else if (tokenB == kSolAddress && tokenBalance2.uiAmount <= 0.03 && tokenBalance1.uiAmount <= 0.01){
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'shouldPauseFarm because of SOL balance (2)');
+            shouldPauseFarm = true;
+        }
+        else if (tokenA!=kSolAddress && tokenB!=kSolAddress && tokenBalance1.uiAmount <= 0.01 && tokenBalance2.uiAmount <= 0.01){
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'shouldPauseFarm because of token balances (3)');
+            shouldPauseFarm = true;
+        }
+        if (shouldPauseFarm){
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'shouldPauseFarm', shouldPauseFarm);
+            await this.pauseFarm(farm, FarmPauseReason.NO_SOL, true);
+            return;
+        }
 
         if (buyOrSell === 'buy' && farm.progress?.buysInARow && farm.progress.buysInARow >= farm.progress.maxBuysInARow){
             buyOrSell = 'sell';
