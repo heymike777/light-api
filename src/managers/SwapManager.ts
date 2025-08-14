@@ -175,7 +175,7 @@ export class SwapManager {
             const inputMint = swap.from.mint;// swap.type == SwapType.BUY ? currencyMintAddress : mint;
             const outputMint = swap.to.mint;// swap.type == SwapType.BUY ? mint : currencyMintAddress;
             const slippage = (swap.type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
-            LogManager.log('SwapManager', 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
+            console.log('SwapManager', 'user:', user.id, 'farm:', swap.farmId, 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
 
             let instructions: web3.TransactionInstruction[] = [];
             let swapAmountInLamports: string = '0';
@@ -207,7 +207,7 @@ export class SwapManager {
                     const addressLookupTableAddresses = swapData.addressLookupTableAddresses;
                     addressLookupTableAccounts = await SolanaManager.getAddressLookupTableAccounts(connection, addressLookupTableAddresses);
 
-                    LogManager.log('SwapManager', 'swapData', swapData);
+                    console.log('SwapManager', 'user:', user.id, 'farm:', swap.farmId, 'swapData', swapData);
 
                     swapAmountInLamports = swap.type == SwapType.BUY ? amount : quote.quoteResponse.outAmount;
 
@@ -299,7 +299,7 @@ export class SwapManager {
             LogManager.log('SwapManager', 'signature', signature);
         }
         catch (error: any) {
-            LogManager.error('!catched SwapManager', swap.type, error);       
+            LogManager.error('!catched SwapManager', 'user:', user.id, 'farm:', swap.farmId, 'swap.type:', swap.type, 'error:', error);       
             
             if (triesLeft <= 0) {
                 swap.status.type = StatusType.CANCELLED;
