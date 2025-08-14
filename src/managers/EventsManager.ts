@@ -414,7 +414,7 @@ Quack!`,
         const result: { userId: string, traderProfileId: string, walletAddress: string, points: number }[] = [];
         for (const point of points){
             const traderProfile = traderProfiles.find(tp => tp.id == point.traderProfileId);
-            if (traderProfile){
+            if (traderProfile && traderProfile.active){
                 result.push({ userId: point.userId, traderProfileId: point.traderProfileId, walletAddress: traderProfile.encryptedWallet?.publicKey || 'unknown', points: point.points });
             }
         }
