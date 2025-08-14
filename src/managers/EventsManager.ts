@@ -241,7 +241,7 @@ Quack!`,
             return;
         }    
         
-        console.log('recalculateLeaderboard', eventId, 'event:', event);
+        // console.log('recalculateLeaderboard', eventId, 'event:', event);
 
         
         const pipeline = [
@@ -274,23 +274,17 @@ Quack!`,
         ];
 
         const results = await Swap.aggregate(pipeline);
-        console.log('recalculateLeaderboard', eventId, 'results:', results);
+        // console.log('recalculateLeaderboard', eventId, 'results:', results);
         for (const result of results){
             const traderProfileId = result._id;
             const userId = result.userId;
             const points = result.totalPoints;
 
-            console.log('recalculateLeaderboard', eventId, 'traderProfileId:', traderProfileId);
+            // console.log('recalculateLeaderboard', eventId, 'traderProfileId:', traderProfileId);
 
             const existingTradingEventPoints = await TradingEventPoints.findOne({ eventId: eventId, traderProfileId: traderProfileId });
-            if (traderProfileId == '6893f3b7b6cb98caf59ebea5'){
-                console.log('recalculateLeaderboard', 'traderProfileId:', traderProfileId, 'points:', points, 'existingTradingEventPoints:', existingTradingEventPoints);
-            }
             const traderProfile = await UserTraderProfile.findById(traderProfileId);
-            if (traderProfileId == '6893f3b7b6cb98caf59ebea5'){
-                console.log('recalculateLeaderboard', 'traderProfileId:', traderProfileId, 'traderProfile:', traderProfile);
-            }
-            if (!traderProfile || traderProfile.active == false){
+            if (!traderProfile || traderProfile.active!=true){
                 if (existingTradingEventPoints){
                     console.log('recalculateLeaderboard', 'traderProfile not active. Deleting points.', 'traderProfileId:', traderProfileId, 'existingTradingEventPoints:', existingTradingEventPoints);
                     await TradingEventPoints.deleteOne({ _id: existingTradingEventPoints.id });
@@ -407,7 +401,7 @@ Quack!`,
     }
 
     static async getLeaderboardForEvent(eventId: string): Promise<{ userId: string, traderProfileId: string, walletAddress: string, points: number }[]> {
-        const points = await TradingEventPoints.find({ eventId: eventId }).sort({ points: -1 }).limit(20);
+        const points = await TradingEventPoints.find({ eventId: eventId }).sort({ points: -1 }).limit(100);
         const traderProfileIds = points.map(p => p.traderProfileId);
         const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfileIds } });
 
@@ -416,6 +410,9 @@ Quack!`,
             const traderProfile = traderProfiles.find(tp => tp.id == point.traderProfileId);
             if (traderProfile && traderProfile.active){
                 result.push({ userId: point.userId, traderProfileId: point.traderProfileId, walletAddress: traderProfile.encryptedWallet?.publicKey || 'unknown', points: point.points });
+                if (result.length >= 30){
+                    break;
+                }
             }
         }
         return result;
