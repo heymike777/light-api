@@ -141,6 +141,10 @@ export class FarmManager {
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is greater than amountMax. Skipping the swap.');
                 return;
             }
+            if (amountMin == amountMax && amountMin <= 0){
+                console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is equal to amountMax and is less than or equal to 0. Skipping the swap.');
+                return;
+            }
             const amount = Helpers.getRandomInt(amountMin, amountMax) / (10 ** (tokenBalance1.decimals || 0));
             if (amount < 0){
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amount is negative. Skipping the swap.');
