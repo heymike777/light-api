@@ -384,6 +384,11 @@ export class BotFarmHelper extends BotHelper {
                 return true;
             }
 
+            if (poolId == 'HgmANJC2jLdKcp9tAr3iSabnDfFo7efJPEJNvCKne4qB'){
+                await BotManager.reply(ctx, '🔴 sCHILL-CHILL pool is not supported yet. Please, try again with another pool.');
+                return true;
+            }
+
             const pool = await SegaManager.fetchPoolById(poolId);
             if (!pool){
                 await BotManager.reply(ctx, '🔴 Pool not found. Please, try again.\n\n<b>Pool ID must be a valid address and exist on Sega</b>');
@@ -676,13 +681,26 @@ export class BotFarmHelper extends BotHelper {
         const farmTitle = farm.title || `Bot #${farm.id}`;
         const kSOL = getNativeToken(farm.chain);
 
-        let text = `⛏️ <b>${farmTitle}</b>\n`;
+        let text = `🤖 <b>${farmTitle}</b>\n`;
 
         text += `\nChain: ${ChainManager.getChainTitle(farm.chain)}`;
         text += `\nDEX: ${BotFarmHelper.DEXES[farm.chain].find(d => d.id == farm.dexId)?.name || 'Unknown'}`;
         text += `\nTrader profile: ${traderProfile.title}`;
         text += `\nFrequency: ${BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency)?.title || `${farm.frequency}s`}`;
         text += `\nExpected volume: $${farm.volume}`;
+        if (farm.pools.length > 0){
+            text += `\n`;
+            if (farm.pools.length == 1){
+                text += `Pool: ${farm.pools[0].title || farm.pools[0].address}\n`;
+            }
+            else {
+                text += 'Pools:';
+                for (const pool of farm.pools){
+                    text += `\n• ${pool.title || pool.address}`;
+                }
+            }
+        }
+
         text += `\n`;
 
         text += `\nConfirmed volume: $${farm.progress?.currentVolume.toFixed(2)}`;
