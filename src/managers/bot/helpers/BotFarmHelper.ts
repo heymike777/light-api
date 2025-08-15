@@ -84,10 +84,10 @@ export class BotFarmHelper extends BotHelper {
             return await super.commandReceived(ctx, user, replyMessage);
         }
         else if (buttonId == 'farm|pool'){
-            if (user.telegram?.username != 'heymike777'){
-                await BotManager.reply(ctx, '🔴 This feature is in beta and only available for a few users. Please, contact support.');
-                return;
-            }
+            // if (user.telegram?.username != 'heymike777'){
+            //     await BotManager.reply(ctx, '🔴 This feature is in beta and only available for a few users. Please, contact support.');
+            //     return;
+            // }
             await BotManager.reply(ctx, 'Send pool ID to boost volume');
             await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_POOL_ID, helper: this.kCommand, data: { messageId: BotManager.getMessageIdFromContext(ctx) } });
             return;
@@ -263,7 +263,7 @@ export class BotFarmHelper extends BotHelper {
         text += '\n';
         text += `Wallet: <code>${traderProfile.encryptedWallet.publicKey}</code>\n`;
         const solBalance = await SolanaManager.getWalletSolBalance(farm.chain, traderProfile.encryptedWallet?.publicKey);
-        text += `Balance:\n${solBalance?.uiAmount || 0} ${kSOL.symbol}\n`;
+        text += `Balance:\n${solBalance?.uiAmount || 0} ${kSOL.symbol}`;
 
         const mints: string[] = [];
         for (const pool of farm.pools){
