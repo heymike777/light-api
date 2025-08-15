@@ -145,6 +145,7 @@ export class FarmManager {
 
         if (buyOrSell === 'buy'){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance1', tokenBalance1.uiAmount, 'tokenBalance2', tokenBalance2.uiAmount);
 
             let amountMin = tokenBalance1.amount.muln(0.2);
             let amountMax = tokenBalance1.amount;
@@ -159,11 +160,11 @@ export class FarmManager {
             }
             
             if (amountMin > amountMax){
-                console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is greater than amountMax. Skipping the swap.');
+                console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is greater than amountMax. Skipping the swap.', 'amountMin', amountMin.toString(), 'amountMax', amountMax.toString());
                 return;
             }
             if (amountMin.eq(amountMax) && amountMin.lte(new BN(0))){
-                console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is equal to amountMax and is less than or equal to 0. Skipping the swap.');
+                console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is equal to amountMax and is less than or equal to 0. Skipping the swap.', 'amountMin', amountMin.toString(), 'amountMax', amountMax.toString());
                 return;
             }
 
