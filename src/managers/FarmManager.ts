@@ -142,7 +142,7 @@ export class FarmManager {
             'progress.buysInARow': farm.progress.buysInARow, 
             'progress.maxBuysInARow': farm.progress.maxBuysInARow 
         }});
-
+        
         if (buyOrSell === 'buy'){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'making BUY swap');
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance1', tokenBalance1.uiAmount, 'tokenBalance2', tokenBalance2.uiAmount);
@@ -159,7 +159,7 @@ export class FarmManager {
                 }
             }
             
-            if (amountMin > amountMax){
+            if (amountMin.gt(amountMax)){
                 console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMin is greater than amountMax. Skipping the swap.', 'amountMin', amountMin.toString(), 'amountMax', amountMax.toString());
                 return;
             }
