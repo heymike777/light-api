@@ -172,8 +172,8 @@ export class SwapManager {
         let blockhash: string | undefined;
 
         try {
-            const inputMint = swap.from.mint;// swap.type == SwapType.BUY ? currencyMintAddress : mint;
-            const outputMint = swap.to.mint;// swap.type == SwapType.BUY ? mint : currencyMintAddress;
+            const inputMint = swap.from.mint;
+            const outputMint = swap.to.mint;
             const slippage = (swap.type == SwapType.BUY ? traderProfile.buySlippage : (traderProfile.sellSlippage || traderProfile.buySlippage)) || 50;
             console.log('SwapManager', 'user:', user.id, 'farm:', swap.farmId, 'inputMint', inputMint, 'outputMint', outputMint, 'amount', amount, 'slippage', slippage);
 
