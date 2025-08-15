@@ -150,11 +150,11 @@ export class SegaManager {
         let swapResultLamports: {input: BN, output: BN} = {input: new BN(0), output: new BN(0)};
 
         let swapsMade = 0;
-        console.log('SEGA', 'swap', 'tradeThrough:', tradeThrough);
+        console.log('SEGA_1', 'swap', 'tradeThrough:', tradeThrough);
         for (const trade of tradeThrough) {
-            console.log('SEGA', 'swap', 'tradeIndex:', tradeIndex, '!0', 'trade:', trade, );
-            const data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);
-            console.log('SEGA', 'swap', 'tradeIndex:', tradeIndex, '!1');
+            console.log('SEGA_2', 'swap', 'tradeIndex:', tradeIndex, '!0', 'trade:', trade, );
+            const data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);//TODO: it crashes here
+            console.log('SEGA_3', 'swap', 'tradeIndex:', tradeIndex, '!1');
 
             const poolInfo = data.poolInfo;
             const poolKeys = data.poolKeys;
