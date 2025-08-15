@@ -695,7 +695,7 @@ export class BotFarmHelper extends BotHelper {
         if (farm.pools.length > 0){
             text += `\n`;
             if (farm.pools.length == 1){
-                text += `Pool: ${farm.pools[0].title || farm.pools[0].address}\n`;
+                text += `Pool: ${farm.pools[0].title || farm.pools[0].address}`;
             }
             else {
                 text += 'Pools:';
