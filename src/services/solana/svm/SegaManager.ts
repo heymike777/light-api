@@ -1,4 +1,4 @@
-import { CacheLTA, CurveCalculator, Network, Sega, SwapResult, TokenAccount, TokenAccountRaw, TxBuilder, TxVersion } from '@sega-so/sega-sdk';
+import { ApiV3PoolInfoStandardItemCpmm, CacheLTA, CpmmKeys, CpmmRpcData, CurveCalculator, Sega, SwapResult, TokenAccount, TokenAccountRaw, TxBuilder, TxVersion } from '@sega-so/sega-sdk';
 import BN from 'bn.js';
 import { SwapManager } from '../../../managers/SwapManager';
 import { Chain } from '../types';
@@ -7,7 +7,6 @@ import * as web3 from '@solana/web3.js';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { kSolAddress } from '../Constants';
 import { SolanaManager } from '../SolanaManager';
-import { Currency } from '../../../models/types';
 import { newConnectionByChain } from '../lib/solana';
 import { TokenManager } from '../../../managers/TokenManager';
 import { kProgram } from '../../../managers/constants/ProgramConstants';
@@ -153,8 +152,18 @@ export class SegaManager {
         console.log('SEGA_1', 'swap', 'tradeThrough:', tradeThrough);
         for (const trade of tradeThrough) {
             console.log('SEGA_2', 'swap', 'tradeIndex:', tradeIndex, '!0', 'trade:', trade, );
-            const data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);//TODO: it crashes here
+            let data: {poolInfo: ApiV3PoolInfoStandardItemCpmm, poolKeys: CpmmKeys, rpcData: CpmmRpcData} | undefined = undefined;
+            try {
+                data = await sega.cpmm.getPoolInfoFromRpc(trade.poolId);//TODO: it crashes here
+            }
+            catch (error){
+                console.log('!catched', 'crash on sega.cpmm.getPoolInfoFromRpc', 'trade.poolId:', trade.poolId, 'error:', error);
+            }
             console.log('SEGA_3', 'swap', 'tradeIndex:', tradeIndex, '!1');
+
+            if (!data){
+                throw new Error(`Pool info not found for poolId: ${trade.poolId}`);
+            }
 
             const poolInfo = data.poolInfo;
             const poolKeys = data.poolKeys;
