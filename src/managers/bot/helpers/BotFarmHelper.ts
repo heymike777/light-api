@@ -683,6 +683,10 @@ export class BotFarmHelper extends BotHelper {
 
         let text = `🤖 <b>${farmTitle}</b>\n`;
 
+        if (user.telegram?.username == 'heymike777'){
+            text += `\nID: ${farm.id}`;
+        }
+
         text += `\nChain: ${ChainManager.getChainTitle(farm.chain)}`;
         text += `\nDEX: ${BotFarmHelper.DEXES[farm.chain].find(d => d.id == farm.dexId)?.name || 'Unknown'}`;
         text += `\nTrader profile: ${traderProfile.title}`;
