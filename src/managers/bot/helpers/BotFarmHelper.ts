@@ -18,6 +18,7 @@ import { Swap } from "../../../entities/payments/Swap";
 import { SegaManager } from "../../../services/solana/svm/SegaManager";
 import { TokenManager } from "../../TokenManager";
 import { ITokenPair } from "../../../entities/tokens/TokenPair";
+import { ITokenModel } from "../../../entities/tokens/Token";
 
 type Dex = {
     id: DexId;
@@ -262,7 +263,37 @@ export class BotFarmHelper extends BotHelper {
         text += '\n';
         text += `Wallet: <code>${traderProfile.encryptedWallet.publicKey}</code>\n`;
         const solBalance = await SolanaManager.getWalletSolBalance(farm.chain, traderProfile.encryptedWallet?.publicKey);
-        text += `Balance: ${solBalance?.uiAmount || 0} ${kSOL.symbol}\n`;
+        text += `Balance:\n${solBalance?.uiAmount || 0} ${kSOL.symbol}\n`;
+
+        const mints: string[] = [];
+        for (const pool of farm.pools){
+            if (pool.tokenA && !mints.includes(pool.tokenA)){
+                mints.push(pool.tokenA);
+            }
+            if (pool.tokenB && !mints.includes(pool.tokenB)){
+                mints.push(pool.tokenB);
+            }
+        }
+
+        let emptyWallet = true;
+        const tokens: ITokenModel[] = [];
+        for (const mint of mints) {
+            const token = await TokenManager.getToken(farm.chain, mint);
+            if (token){
+                tokens.push(token);
+            }
+
+            const balance = await SolanaManager.getWalletTokenBalance(farm.chain, traderProfile.encryptedWallet.publicKey, mint);
+            text += `\n${balance?.uiAmount || 0} ${token?.symbol || mint}`;
+            if (balance?.uiAmount && balance.uiAmount > 0){
+                emptyWallet = false;
+            }
+        }
+
+        if (emptyWallet && mints.length > 0){
+            const tokenNames = tokens.map(t => t.symbol || t.address).join(', ');
+            text += `\n\n🔴 This wallet is empty. Please, add some tokens to the wallet: ${tokenNames}`;
+        }
 
         const farms = await Farm.find({ userId: user.id, traderProfileId: farm.traderProfileId, status: FarmStatus.ACTIVE });
         if (farms.length > 0){

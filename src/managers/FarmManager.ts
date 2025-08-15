@@ -298,7 +298,10 @@ export class FarmManager {
 
             let message = `🔴🔴🔴 Farm is paused.`;
             if (reason === FarmPauseReason.NO_SOL){
-                message += `\nReason: Not enough SOL in the wallet.`;
+                message += `\nReason: Not enough SOL or tokens in the wallet.`;
+                if (!farm.mint){
+                    message += `\nSince you are making a bot for a specific pool, make sure you have at least one of the tokens in the wallet, and also enough SOL to cover gas fees.`;
+                }
             }
             else if (reason === FarmPauseReason.MULTIPLE_FAILED_TXS){
                 message += `\nReason: Multiple failed transactions. We paused the farm to prevent wallet from being drained with gas fees. Make sure your farm is configured correctly, there are no network congestion issues, etc, and try to resume the farm.`;
