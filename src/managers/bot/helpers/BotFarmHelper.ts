@@ -512,13 +512,20 @@ export class BotFarmHelper extends BotHelper {
 
         const buttons: InlineButton[] = [
             { id: 'farm|token', text: '🔥 Token' },
-            // { id: 'farm|dex', text: '💰 DEX volume' },            
             { id: 'farm|pool', text: '📈 Pool' },
-            // { id: 'farm|chill_chaos_sega', text: 'ARB: stake CHILL → sell sCHILL' },
-            // { id: 'farm|sonic_chaos_sega', text: 'ARB: stake SONIC → sell sSONIC' },
-            { id: 'row', text: '' },
-            { id: 'farm|my_bots', text: '🤖 My bots' },
         ];
+        if (user.telegram?.username == 'heymike777'){
+            buttons.push({ id: 'row', text: '' });
+            buttons.push({ id: 'farm|arb_chill_1', text: 'ARB: stake CHILL → sell sCHILL' });
+            buttons.push({ id: 'row', text: '' });
+            buttons.push({ id: 'farm|arb_chill_2', text: 'ARB: buy sCHILL → unstake CHILL' });
+            buttons.push({ id: 'row', text: '' });
+            buttons.push({ id: 'farm|arb_sonic_1', text: 'ARB: stake SONIC → sell sSONIC' });
+            buttons.push({ id: 'row', text: '' });
+            buttons.push({ id: 'farm|arb_sonc_2', text: 'ARB: buy sSONIC → unstake SONIC' });
+        }
+        buttons.push({ id: 'row', text: '' });
+        buttons.push({ id: 'farm|my_bots', text: '🤖 My bots' });
         const markup = BotManager.buildInlineKeyboard(buttons);
 
         return {
