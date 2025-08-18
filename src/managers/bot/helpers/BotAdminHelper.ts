@@ -6,7 +6,6 @@ import { UserManager } from "../../UserManager";
 import { BotManager } from "../BotManager";
 import { InlineButton, TgMessage } from "../BotTypes";
 import { ConfigManager } from "../../ConfigManager";
-import { EventsManager } from "../../EventsManager";
 import { StatusType, Swap } from "../../../entities/payments/Swap";
 import { ChainManager } from "../../chains/ChainManager";
 import { Chain } from "../../../services/solana/types";
@@ -59,6 +58,18 @@ export class BotAdminHelper extends BotHelper {
             // const { message, buttons } = await this.buildAdminMessage(user, ctx);
             // const markup = BotManager.buildInlineKeyboard(buttons);
             // await BotManager.editMessage(ctx, message, markup);
+        }
+        else if (buttonId && buttonId == 'admin|event|leaderboard|chill'){
+            await BotManager.reply(ctx, 'CHILL LEADERBOARD');
+        }
+        else if (buttonId && buttonId == 'admin|event|leaderboard|chaos'){
+            await BotManager.reply(ctx, 'CHAOS LEADERBOARD');
+        }
+        else if (buttonId && buttonId == 'admin|event|leaderboard|fomo'){
+            await BotManager.reply(ctx, 'FOMO LEADERBOARD');
+        }
+        else if (buttonId && buttonId == 'admin|event|leaderboard|sonic'){
+            await BotManager.reply(ctx, 'SONIC LEADERBOARD');
         }
         else {
             await super.commandReceived(ctx, user);
@@ -129,7 +140,12 @@ export class BotAdminHelper extends BotHelper {
         }
         buttons.push({ id: `row`, text: '' });
         buttons.push({ id: `admin|create_event`, text: '➕ Create event' });
-
+        buttons.push({ id: `row`, text: '' });
+        buttons.push({ id: `admin|event|leaderboard|chill`, text: '🦔 Chill' });
+        buttons.push({ id: `admin|event|leaderboard|chaos`, text: '🪽 Chaos' });
+        buttons.push({ id: `row`, text: '' });
+        buttons.push({ id: `admin|event|leaderboard|fomo`, text: '🎮 Fomo' });
+        buttons.push({ id: `admin|event|leaderboard|sonic`, text: '🔹 Sonic' });
 
         return { message, buttons };
     }
