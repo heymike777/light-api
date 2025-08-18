@@ -102,7 +102,7 @@ export class BotAdminHelper extends BotHelper {
             const traderProfile = traderProfiles.find(tp => tp._id == entry.traderProfileId);
             const user = users.find(u => u._id == traderProfile?.userId);
             leaderboard.push({ 
-                walletAddress: entry.walletAddress, 
+                walletAddress: Helpers.prettyWallet(entry.walletAddress), 
                 points: entry.points, 
                 prize,
                 user,
