@@ -102,7 +102,7 @@ export class BotAdminHelper extends BotHelper {
             const traderProfile = traderProfiles.find(tp => tp._id == entry.traderProfileId);
             const user = users.find(u => u._id == traderProfile?.userId);
             leaderboard.push({ 
-                walletAddress: Helpers.prettyWallet(entry.walletAddress), 
+                walletAddress: entry.walletAddress, 
                 points: entry.points, 
                 prize,
                 user,
@@ -113,7 +113,8 @@ export class BotAdminHelper extends BotHelper {
         let message = `🔹 Sonic leaderboard\n\n`;
         let index2 = 1;
         for (const entry of leaderboard){
-            message += `${index2}. ${entry.walletAddress} (${entry.user?.telegram?.username || entry.user?.id || 'N/A'}) - points: ${entry.points} prize: ${entry.prize}\n`;
+            const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : (entry.user?.id || 'N/A');
+            message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize}\n`;
             index2++;
         }
 
