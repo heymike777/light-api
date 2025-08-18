@@ -90,10 +90,8 @@ export class BotAdminHelper extends BotHelper {
         const eventId = '' + event._id;
         const eventLeaderboard = await EventsManager.getLeaderboardForEvent(eventId, 100);
         const traderProfilesIds = eventLeaderboard.map(entry => entry.traderProfileId);
-        console.log('traderProfilesIds:', traderProfilesIds);
         const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfilesIds } });
         const usersIds = traderProfiles.map(tp => tp.userId);
-        console.log('usersIds:', usersIds);
         const users = await User.find({ _id: { $in: usersIds } });
         const leaderboard: { walletAddress: string, points: number, prize?: string, user?: IUser }[] = [];
         
@@ -161,8 +159,10 @@ export class BotAdminHelper extends BotHelper {
                     _id: '$traderProfileId',
                     userId: { $first: '$userId' },
                     totalPoints: { $sum: '$eventPoints' }
-                },
-                $sort: { totalPoints: -1 }
+                }
+            },
+            {
+                $sort: { totalPoints: -1 as const }
             }
         ];
 
