@@ -400,8 +400,8 @@ Quack!`,
         }
     }
 
-    static async getLeaderboardForEvent(eventId: string): Promise<{ userId: string, traderProfileId: string, walletAddress: string, points: number }[]> {
-        const points = await TradingEventPoints.find({ eventId: eventId }).sort({ points: -1 }).limit(100);
+    static async getLeaderboardForEvent(eventId: string, limit = 30): Promise<{ userId: string, traderProfileId: string, walletAddress: string, points: number }[]> {
+        const points = await TradingEventPoints.find({ eventId: eventId }).sort({ points: -1 }).limit(limit * 2);
         const traderProfileIds = points.map(p => p.traderProfileId);
         const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfileIds } });
 
@@ -410,7 +410,7 @@ Quack!`,
             const traderProfile = traderProfiles.find(tp => tp.id == point.traderProfileId);
             if (traderProfile && traderProfile.active){
                 result.push({ userId: point.userId, traderProfileId: point.traderProfileId, walletAddress: traderProfile.encryptedWallet?.publicKey || 'unknown', points: point.points });
-                if (result.length >= 30){
+                if (result.length >= limit){
                     break;
                 }
             }

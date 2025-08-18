@@ -87,7 +87,7 @@ export class BotAdminHelper extends BotHelper {
             return;
         }
         const eventId = '' + event._id;
-        const eventLeaderboard = await EventsManager.getLeaderboardForEvent(eventId);
+        const eventLeaderboard = await EventsManager.getLeaderboardForEvent(eventId, 100);
         const traderProfilesIds = eventLeaderboard.map(entry => entry.traderProfileId);
         console.log('traderProfilesIds:', traderProfilesIds);
         const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfilesIds } });
@@ -99,8 +99,8 @@ export class BotAdminHelper extends BotHelper {
         let index = 0;
         for (const entry of eventLeaderboard){
             const prize = event?.prizes?.[index] || undefined;
-            const traderProfile = traderProfiles.find(tp => tp.userId == entry.traderProfileId);
-            const user = users.find(u => u.id == traderProfile?.userId);
+            const traderProfile = traderProfiles.find(tp => tp._id == entry.traderProfileId);
+            const user = users.find(u => u._id == traderProfile?.userId);
             leaderboard.push({ 
                 walletAddress: Helpers.prettyWallet(entry.walletAddress), 
                 points: entry.points, 
@@ -111,8 +111,10 @@ export class BotAdminHelper extends BotHelper {
         }
 
         let message = `🔹 Sonic leaderboard\n\n`;
+        let index2 = 1;
         for (const entry of leaderboard){
-            message += `${entry.walletAddress} (${entry.user?.telegram?.username || entry.user?.id || 'N/A'}) - points: ${entry.points} prize: ${entry.prize}\n`;
+            message += `${index2}. ${entry.walletAddress} (${entry.user?.telegram?.username || entry.user?.id || 'N/A'}) - points: ${entry.points} prize: ${entry.prize}\n`;
+            index2++;
         }
 
         await BotManager.reply(ctx, message);
