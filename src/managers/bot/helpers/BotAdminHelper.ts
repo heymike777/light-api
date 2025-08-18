@@ -161,7 +161,8 @@ export class BotAdminHelper extends BotHelper {
                     _id: '$traderProfileId',
                     userId: { $first: '$userId' },
                     totalPoints: { $sum: '$eventPoints' }
-                }
+                },
+                $sort: { totalPoints: -1 }
             }
         ];
 
@@ -169,12 +170,17 @@ export class BotAdminHelper extends BotHelper {
         console.log('CHILL results:', results);
 
         let message = `🦔 Chill leaderboard\n\n`;
-        // let index2 = 1;
-        // for (const entry of leaderboard){
-        //     const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : entry.walletAddress;
-        //     message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize}\n`;
-        //     index2++;
-        // }
+        let index2 = 1;
+        for (const entry of results){
+            const traderProfile = await UserTraderProfile.findById(entry._id);
+            const user = await User.findById(traderProfile?.userId);
+            const walletAddress = traderProfile?.encryptedWallet?.publicKey ? Helpers.prettyWallet(traderProfile?.encryptedWallet?.publicKey) : 'unknown';
+
+            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : walletAddress;
+            const gift = index2 <= 10 ? '🎁' : '';
+            message += `${index2}. ${username} (${walletAddress}) - vol: $${entry.totalPoints/100} ${gift}\n`;
+            index2++;
+        }
 
         await BotManager.reply(ctx, message);
     }
