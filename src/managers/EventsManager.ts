@@ -400,7 +400,7 @@ Quack!`,
         }
     }
 
-    static async getLeaderboardForEvent(eventId: string, limit = 30): Promise<{ userId: string, traderProfileId: string, walletAddress: string, points: number }[]> {
+    static async getLeaderboardForEvent(eventId: string, limit = 100): Promise<{ userId: string, traderProfileId: string, walletAddress: string, points: number }[]> {
         const points = await TradingEventPoints.find({ eventId: eventId }).sort({ points: -1 }).limit(limit * 2);
         const traderProfileIds = points.map(p => p.traderProfileId);
         const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfileIds } });
