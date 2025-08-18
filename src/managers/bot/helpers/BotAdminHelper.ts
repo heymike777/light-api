@@ -1,7 +1,7 @@
 import { Context } from "grammy";
 import { LogManager } from "../../LogManager";
 import { BotHelper, Message } from "./BotHelper";
-import { IUser } from "../../../entities/users/User";
+import { IUser, User } from "../../../entities/users/User";
 import { UserManager } from "../../UserManager";
 import { BotManager } from "../BotManager";
 import { InlineButton, TgMessage } from "../BotTypes";
@@ -9,6 +9,9 @@ import { ConfigManager } from "../../ConfigManager";
 import { StatusType, Swap } from "../../../entities/payments/Swap";
 import { ChainManager } from "../../chains/ChainManager";
 import { Chain } from "../../../services/solana/types";
+import { EventsManager } from "../../EventsManager";
+import { Helpers } from "../../../services/helpers/Helpers";
+import { UserTraderProfile } from "../../../entities/users/TraderProfile";
 
 export class BotAdminHelper extends BotHelper {
 
@@ -69,11 +72,50 @@ export class BotAdminHelper extends BotHelper {
             await BotManager.reply(ctx, 'FOMO LEADERBOARD');
         }
         else if (buttonId && buttonId == 'admin|event|leaderboard|sonic'){
-            await BotManager.reply(ctx, 'SONIC LEADERBOARD');
+            await this.replyWithSonicLeaderboard(ctx, user);
         }
         else {
             await super.commandReceived(ctx, user);
         }
+    }
+
+    async replyWithSonicLeaderboard(ctx: Context, user: IUser){
+        console.log('replyWithSonicLeaderboard');
+        const event = await EventsManager.getActiveEvent();
+        if (!event){
+            await BotManager.reply(ctx, 'No active event');
+            return;
+        }
+        const eventId = '' + event._id;
+        const eventLeaderboard = await EventsManager.getLeaderboardForEvent(eventId);
+        const traderProfilesIds = eventLeaderboard.map(entry => entry.traderProfileId);
+        console.log('traderProfilesIds:', traderProfilesIds);
+        const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfilesIds } });
+        const usersIds = traderProfiles.map(tp => tp.userId);
+        console.log('usersIds:', usersIds);
+        const users = await User.find({ _id: { $in: usersIds } });
+        const leaderboard: { walletAddress: string, points: number, prize?: string, user?: IUser }[] = [];
+        
+        let index = 0;
+        for (const entry of eventLeaderboard){
+            const prize = event?.prizes?.[index] || undefined;
+            const traderProfile = traderProfiles.find(tp => tp.userId == entry.traderProfileId);
+            const user = users.find(u => u.id == traderProfile?.userId);
+            leaderboard.push({ 
+                walletAddress: Helpers.prettyWallet(entry.walletAddress), 
+                points: entry.points, 
+                prize,
+                user,
+            });
+            index++;
+        }
+
+        let message = `🔹 Sonic leaderboard\n\n`;
+        for (const entry of leaderboard){
+            message += `${entry.walletAddress} (${entry.user?.telegram?.username || entry.user?.id || 'N/A'}) - points: ${entry.points} prize: ${entry.prize}\n`;
+        }
+
+        await BotManager.reply(ctx, message);
     }
 
     async messageReceived(message: TgMessage, ctx: Context, user: IUser): Promise<boolean> {
