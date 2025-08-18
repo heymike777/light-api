@@ -12,6 +12,7 @@ import { Chain } from "../../../services/solana/types";
 import { EventsManager } from "../../EventsManager";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { UserTraderProfile } from "../../../entities/users/TraderProfile";
+import { kChillAddress } from "../../../services/solana/Constants";
 
 export class BotAdminHelper extends BotHelper {
 
@@ -63,7 +64,7 @@ export class BotAdminHelper extends BotHelper {
             // await BotManager.editMessage(ctx, message, markup);
         }
         else if (buttonId && buttonId == 'admin|event|leaderboard|chill'){
-            await BotManager.reply(ctx, 'CHILL LEADERBOARD');
+            await this.replyWithChillLeaderboard(ctx, user);
         }
         else if (buttonId && buttonId == 'admin|event|leaderboard|chaos'){
             await BotManager.reply(ctx, 'CHAOS LEADERBOARD');
@@ -117,6 +118,63 @@ export class BotAdminHelper extends BotHelper {
             message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize}\n`;
             index2++;
         }
+
+        await BotManager.reply(ctx, message);
+    }
+
+    async replyWithChillLeaderboard(ctx: Context, user: IUser){
+        console.log('replyWithChillLeaderboard');
+        const event = await EventsManager.getActiveEvent();
+        if (!event){
+            await BotManager.reply(ctx, 'No active event');
+            return;
+        }
+        const eventId = '' + event._id;
+
+        const pipeline = [
+            {
+                $match: {
+                    'status.type': StatusType.COMPLETED,
+                    points: { $exists: true },
+                    createdAt: { $gte: event.startAt, $lte: event.endAt },
+                    $or: [
+                        { 'mint': kChillAddress },
+                        { 'from.mint': kChillAddress },
+                        { 'to.mint': kChillAddress }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    traderProfileId: 1,
+                    userId: 1,
+                    eventPoints: {
+                        $ifNull: [
+                            { $toDouble: { $getField: { field: event.id, input: '$points' } } },
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: '$traderProfileId',
+                    userId: { $first: '$userId' },
+                    totalPoints: { $sum: '$eventPoints' }
+                }
+            }
+        ];
+
+        const results = await Swap.aggregate(pipeline);
+        console.log('CHILL results:', results);
+
+        let message = `🦔 Chill leaderboard\n\n`;
+        // let index2 = 1;
+        // for (const entry of leaderboard){
+        //     const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : entry.walletAddress;
+        //     message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize}\n`;
+        //     index2++;
+        // }
 
         await BotManager.reply(ctx, message);
     }
