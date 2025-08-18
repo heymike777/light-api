@@ -113,7 +113,7 @@ export class BotAdminHelper extends BotHelper {
         let message = `🔹 Sonic leaderboard\n\n`;
         let index2 = 1;
         for (const entry of leaderboard){
-            const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : (entry.user?.id || 'N/A');
+            const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : entry.walletAddress;
             message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize}\n`;
             index2++;
         }
