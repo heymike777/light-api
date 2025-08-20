@@ -73,7 +73,7 @@ export class BotAdminHelper extends BotHelper {
             await this.replyWithChaosLeaderboard(ctx, user);
         }
         else if (buttonId && buttonId == 'admin|event|leaderboard|fomo'){
-            await BotManager.reply(ctx, 'FOMO LEADERBOARD');
+            await this.replyWithFomoLeaderboard(ctx, user);
         }
         else if (buttonId && buttonId == 'admin|event|leaderboard|sonic'){
             await this.replyWithSonicLeaderboard(ctx, user);
@@ -130,7 +130,6 @@ export class BotAdminHelper extends BotHelper {
             await BotManager.reply(ctx, 'No active event');
             return;
         }
-        const eventId = '' + event._id;
 
         const pipeline = [
             {
@@ -170,9 +169,12 @@ export class BotAdminHelper extends BotHelper {
         ];
 
         const results = await Swap.aggregate(pipeline);
+        const totalVolume = results.reduce((acc, entry) => acc + entry.totalPoints, 0);
         console.log('CHILL results:', results);
 
         let message = `🦔 Chill leaderboard\n\n`;
+        message += `Total volume: $${Helpers.round(totalVolume/100, 2)}\n\n`;
+        message += `---\n`;
         let index2 = 1;
         for (const entry of results){
             const traderProfile = await UserTraderProfile.findById(entry._id);
@@ -244,6 +246,75 @@ export class BotAdminHelper extends BotHelper {
             message += `${index2}. ${username} (${walletAddress}) - stake: $${usdString} (${chillString} CHILL, ${sonicString} SONIC)\n`;
             message += `---\n`;
             index2++;
+        }
+
+        await BotManager.reply(ctx, message);
+    }
+
+    async replyWithFomoLeaderboard(ctx: Context, user: IUser){
+        console.log('replyWithChillLeaderboard');
+        const event = await EventsManager.getActiveEvent();
+        if (!event){
+            await BotManager.reply(ctx, 'No active event');
+            return;
+        }
+        const eventId = '' + event._id;
+
+        const pipeline = [
+            {
+                $match: {
+                    'status.type': StatusType.COMPLETED,
+                    points: { $exists: true },
+                    createdAt: { $gte: event.startAt, $lte: event.endAt },
+                    $or: [
+                        { 'mint': kChillAddress },
+                        { 'from.mint': kChillAddress },
+                        { 'to.mint': kChillAddress }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    traderProfileId: 1,
+                    userId: 1,
+                    eventPoints: {
+                        $ifNull: [
+                            { $toDouble: { $getField: { field: event.id, input: '$points' } } },
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: '$traderProfileId',
+                    userId: { $first: '$userId' },
+                    totalPoints: { $sum: '$eventPoints' }
+                }
+            },
+            {
+                $sort: { totalPoints: -1 as const }
+            }
+        ];
+
+        const results = await Swap.aggregate(pipeline);
+        console.log('CHILL results:', results);
+
+        let message = `🦔 Chill leaderboard\n\n`;
+        let index2 = 1;
+        for (const entry of results){
+            const traderProfile = await UserTraderProfile.findById(entry._id);
+            const user = await User.findById(traderProfile?.userId);
+            const walletAddress = traderProfile?.encryptedWallet?.publicKey ? Helpers.prettyWallet(traderProfile?.encryptedWallet?.publicKey) : 'unknown';
+
+            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : walletAddress;
+            const gift = index2 <= 10 ? '🎁' : '';
+            message += `${index2}. ${username} (${walletAddress}) - vol: $${entry.totalPoints/100} ${gift}\n`;
+            index2++;
+
+            if (index2 == 30){
+                break;
+            }
         }
 
         await BotManager.reply(ctx, message);
