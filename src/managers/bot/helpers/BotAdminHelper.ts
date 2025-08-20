@@ -180,6 +180,10 @@ export class BotAdminHelper extends BotHelper {
             const gift = index2 <= 10 ? '🎁' : '';
             message += `${index2}. ${username} (${walletAddress}) - vol: $${entry.totalPoints/100} ${gift}\n`;
             index2++;
+
+            if (index2 == 30){
+                break;
+            }
         }
 
         await BotManager.reply(ctx, message);

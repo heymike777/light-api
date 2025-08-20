@@ -834,7 +834,7 @@ export class SwapManager {
             return;
         }
         const feeWalletPublicKey = new web3.PublicKey(feeWalletAddress);
-        if (swap.currency == Currency.SOL){
+        if (swap.from.mint == kSolAddress || swap.to.mint == kSolAddress){
             const feeAccountIndex = tx.transaction.message.accountKeys.findIndex((key) => key.pubkey.equals(feeWalletPublicKey));
             if (feeAccountIndex === -1) {
                 LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet not found in transaction', { swap });
@@ -860,27 +860,27 @@ export class SwapManager {
                 users: {},
             };
         }
-        else if (swap.currency == Currency.USDC){
-            const preTokenBalance = tx.meta?.preTokenBalances?.find((balance) => balance.owner === feeWalletAddress);
-            const postTokenBalance = tx.meta?.postTokenBalances?.find((balance) => balance.owner === feeWalletAddress);
+        // else if (swap.currency == Currency.USDC){
+        //     const preTokenBalance = tx.meta?.preTokenBalances?.find((balance) => balance.owner === feeWalletAddress);
+        //     const postTokenBalance = tx.meta?.postTokenBalances?.find((balance) => balance.owner === feeWalletAddress);
 
-            if (!preTokenBalance || !postTokenBalance) {
-                LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet not found in transaction', { swap });
-                MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: fee wallet not found in transaction' });
-                return;
-            }
-            const feeLamports = +postTokenBalance.uiTokenAmount.amount - +preTokenBalance.uiTokenAmount.amount;
-            console.log('saveReferralRewards (3)', signature, 'feeLamports', feeLamports, 'lamports (USDC)');
-            const feeUsdc = feeLamports / (10 ** kUsdcMintDecimals);
+        //     if (!preTokenBalance || !postTokenBalance) {
+        //         LogManager.error('SwapManager', 'saveReferralRewards', 'Fee wallet not found in transaction', { swap });
+        //         MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: fee wallet not found in transaction' });
+        //         return;
+        //     }
+        //     const feeLamports = +postTokenBalance.uiTokenAmount.amount - +preTokenBalance.uiTokenAmount.amount;
+        //     console.log('saveReferralRewards (3)', signature, 'feeLamports', feeLamports, 'lamports (USDC)');
+        //     const feeUsdc = feeLamports / (10 ** kUsdcMintDecimals);
 
-            swap.referralRewards = {
-                fee: {
-                    usdc: feeUsdc,
-                    usd: feeUsdc,
-                },
-                users: {},
-            };
-        }
+        //     swap.referralRewards = {
+        //         fee: {
+        //             usdc: feeUsdc,
+        //             usd: feeUsdc,
+        //         },
+        //         users: {},
+        //     };
+        // }
         else {
             LogManager.error('SwapManager', 'saveReferralRewards', 'Currency not supported', { swap });
             MixpanelManager.trackError(swap.userId, { text: 'saveReferralRewards: currency not supported' });
