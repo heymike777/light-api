@@ -130,13 +130,29 @@ export class BotAdminHelper extends BotHelper {
             index++;
         }
 
-        let message = `🔹 Sonic leaderboard\n\n`;
+        let part = 1;
+        let message = '';
         let index2 = 1;
+
         for (const entry of leaderboard){
+            if (message == ''){
+                message = `🔹 Sonic leaderboard (part ${part})\n\n`;
+            }
+
             const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : Helpers.prettyWallet(entry.walletAddress);
             message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize} - stake: $${Helpers.round(entry.stake.usd, 2)} (${Helpers.round(entry.stake.sonic, 2)} SONIC, ${Helpers.round(entry.stake.chill, 2)} CHILL)\n`;
             index2++;
             message += `---\n`;
+
+            if (index2 % 20 == 0){
+                await BotManager.reply(ctx, message);
+                part++;
+                message = '';
+            }
+        }
+
+        if (message.length > 0){
+            await BotManager.reply(ctx, message);
         }
 
         await BotManager.reply(ctx, message);
