@@ -238,7 +238,11 @@ export class BotAdminHelper extends BotHelper {
             const traderProfile = await UserTraderProfile.findOne({ "encryptedWallet.publicKey": walletAddress });
             const user = await User.findById(traderProfile?.userId);
             const username = user?.telegram?.username ? `@${user?.telegram?.username}` : Helpers.prettyWallet(walletAddress);
-            message += `${index2}. ${username} (${walletAddress}) - stake: $${entry[1]['usd']} (${entry[1][kChillAddress]} chill, ${entry[1][kSonicAddress]} sonic)\n`;
+            const usdString = Helpers.round(entry[1]['usd'], 2);
+            const chillString = entry[1][kChillAddress] ? Helpers.round(entry[1][kChillAddress], 2) : '0';
+            const sonicString = entry[1][kSonicAddress] ? Helpers.round(entry[1][kSonicAddress], 2) : '0';
+            message += `${index2}. ${username} (${walletAddress}) - stake: $${usdString} (${chillString} CHILL, ${sonicString} SONIC)\n`;
+            message += `---\n`;
             index2++;
         }
 
