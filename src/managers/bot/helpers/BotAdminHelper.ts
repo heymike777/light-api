@@ -179,9 +179,9 @@ export class BotAdminHelper extends BotHelper {
         for (const entry of results){
             const traderProfile = await UserTraderProfile.findById(entry._id);
             const user = await User.findById(traderProfile?.userId);
-            const walletAddress = traderProfile?.encryptedWallet?.publicKey ? Helpers.prettyWallet(traderProfile?.encryptedWallet?.publicKey) : 'unknown';
+            const walletAddress = traderProfile?.encryptedWallet?.publicKey || 'unknown';
 
-            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : walletAddress;
+            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : Helpers.prettyWallet(walletAddress);
             const gift = index2 <= 10 ? '🎁' : '';
             message += `${index2}. ${username} (${walletAddress}) - vol: $${entry.totalPoints/100} ${gift}\n`;
             index2++;
