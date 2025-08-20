@@ -12,7 +12,7 @@ import { Chain, Status } from "../../../services/solana/types";
 import { EventsManager } from "../../EventsManager";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { UserTraderProfile } from "../../../entities/users/TraderProfile";
-import { kChillAddress, kSonicAddress } from "../../../services/solana/Constants";
+import { kChillAddress, kFomoAddress, kSonicAddress } from "../../../services/solana/Constants";
 import { ChaosStakeTx, IChaosStakeTx } from "../../../entities/staking/ChaosStakeTx";
 import { ChaosManager } from "../../../services/solana/svm/ChaosManager";
 import { TokenPriceManager } from "../../TokenPriceManager";
@@ -252,13 +252,12 @@ export class BotAdminHelper extends BotHelper {
     }
 
     async replyWithFomoLeaderboard(ctx: Context, user: IUser){
-        console.log('replyWithChillLeaderboard');
+        console.log('replyWithFomoLeaderboard');
         const event = await EventsManager.getActiveEvent();
         if (!event){
             await BotManager.reply(ctx, 'No active event');
             return;
         }
-        const eventId = '' + event._id;
 
         const pipeline = [
             {
@@ -267,54 +266,46 @@ export class BotAdminHelper extends BotHelper {
                     points: { $exists: true },
                     createdAt: { $gte: event.startAt, $lte: event.endAt },
                     $or: [
-                        { 'mint': kChillAddress },
-                        { 'from.mint': kChillAddress },
-                        { 'to.mint': kChillAddress }
+                        { 'mint': kFomoAddress },
+                        { 'from.mint': kFomoAddress },
+                        { 'to.mint': kFomoAddress }
                     ]
                 }
-            },
-            {
-                $project: {
-                    traderProfileId: 1,
-                    userId: 1,
-                    eventPoints: {
-                        $ifNull: [
-                            { $toDouble: { $getField: { field: event.id, input: '$points' } } },
-                            0
-                        ]
-                    }
-                }
-            },
-            {
-                $group: {
-                    _id: '$traderProfileId',
-                    userId: { $first: '$userId' },
-                    totalPoints: { $sum: '$eventPoints' }
-                }
-            },
-            {
-                $sort: { totalPoints: -1 as const }
             }
         ];
 
-        const results = await Swap.aggregate(pipeline);
-        console.log('CHILL results:', results);
+        const swaps = await Swap.aggregate(pipeline);
+        console.log('FOMO swaps.length:', swaps.length);
 
-        let message = `🦔 Chill leaderboard\n\n`;
+        const totalVolume = swaps.reduce((acc, swap) => acc + (swap.value?.usd || 0), 0);
+
+        let message = `🎮 FOMO leaderboard\n\n`;
+        message += `Total volume: $${Helpers.round(totalVolume, 2)}\n\n`;
+        message += `---\n`;
         let index2 = 1;
-        for (const entry of results){
-            const traderProfile = await UserTraderProfile.findById(entry._id);
-            const user = await User.findById(traderProfile?.userId);
-            const walletAddress = traderProfile?.encryptedWallet?.publicKey ? Helpers.prettyWallet(traderProfile?.encryptedWallet?.publicKey) : 'unknown';
-
-            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : walletAddress;
-            const gift = index2 <= 10 ? '🎁' : '';
-            message += `${index2}. ${username} (${walletAddress}) - vol: $${entry.totalPoints/100} ${gift}\n`;
-            index2++;
-
-            if (index2 == 30){
-                break;
+        const pointsByProfileId: { [key: string]: number } = {};
+        for (const swap of swaps){
+            const points = swap.value?.usd || 0;
+            if (swap.from.mint == kFomoAddress){
+                pointsByProfileId[swap.traderProfileId] = points;
             }
+            else if (swap.to.mint == kFomoAddress){
+                pointsByProfileId[swap.traderProfileId] = -points;
+            }
+            else{
+                throw new Error(`Invalid FOMO swap: ${JSON.stringify(swap)}`);
+            }
+        }
+
+        const pointsByProfileIdSorted = Object.entries(pointsByProfileId).sort((a, b) => b[1] - a[1]);
+        console.log('FOMO pointsByProfileIdSorted:', pointsByProfileIdSorted);
+        for (const entry of pointsByProfileIdSorted){
+            const traderProfileId = entry[0];
+            const traderProfile = await UserTraderProfile.findById(traderProfileId);
+            const user = await User.findById(traderProfile?.userId);
+            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : Helpers.prettyWallet(traderProfile?.encryptedWallet?.publicKey || 'unknown');
+            message += `${index2}. ${username} (${traderProfile?.encryptedWallet?.publicKey}) - fomopoints: ${entry[1]}\n`;
+            index2++;
         }
 
         await BotManager.reply(ctx, message);
