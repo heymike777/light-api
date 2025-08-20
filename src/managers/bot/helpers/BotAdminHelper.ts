@@ -16,6 +16,7 @@ import { kChillAddress, kFomoAddress, kSonicAddress } from "../../../services/so
 import { ChaosStakeTx, IChaosStakeTx } from "../../../entities/staking/ChaosStakeTx";
 import { ChaosManager } from "../../../services/solana/svm/ChaosManager";
 import { TokenPriceManager } from "../../TokenPriceManager";
+import { SolanaManager } from "../../../services/solana/SolanaManager";
 
 export class BotAdminHelper extends BotHelper {
 
@@ -96,18 +97,35 @@ export class BotAdminHelper extends BotHelper {
         const traderProfiles = await UserTraderProfile.find({ _id: { $in: traderProfilesIds } });
         const usersIds = traderProfiles.map(tp => tp.userId);
         const users = await User.find({ _id: { $in: usersIds } });
-        const leaderboard: { walletAddress: string, points: number, prize?: string, user?: IUser }[] = [];
+        const leaderboard: { walletAddress: string, points: number, prize?: string, user?: IUser, stake: { sonic: number, chill: number, usd: number } }[] = [];
         
+        const prices = await TokenPriceManager.getTokensPrices(Chain.SONIC, [kChillAddress, kSonicAddress]);
+        const chillPrice = prices.find(p => p.address == kChillAddress)?.price;
+        const sonicPrice = prices.find(p => p.address == kSonicAddress)?.price;
+        if (!chillPrice || !sonicPrice){
+            await BotManager.reply(ctx, 'No token prices found. Please, try again later.');
+            return;
+        }
+
         let index = 0;
         for (const entry of eventLeaderboard){
+            const sSONIC = await SolanaManager.getWalletTokenBalance(Chain.SONIC, entry.walletAddress, '8zAn1EQvcAntL8jZtN31t7Dag3pqHvdbCtu7AtCiw4QC');
+            const sCHILL = await SolanaManager.getWalletTokenBalance(Chain.SONIC, entry.walletAddress, '2UwuebsViufFRiKETPpLkoDVdfashom6Yr3fbkoFAYrD');
+            const sUSD = sSONIC.uiAmount * sonicPrice + sCHILL.uiAmount * chillPrice;
+
             const prize = event?.prizes?.[index] || undefined;
             const traderProfile = traderProfiles.find(tp => tp._id == entry.traderProfileId);
             const user = users.find(u => u._id == traderProfile?.userId);
             leaderboard.push({ 
-                walletAddress: Helpers.prettyWallet(entry.walletAddress), 
+                walletAddress: entry.walletAddress, 
                 points: entry.points, 
                 prize,
                 user,
+                stake: {
+                    sonic: sSONIC.uiAmount,
+                    chill: sCHILL.uiAmount,
+                    usd: sUSD
+                }
             });
             index++;
         }
@@ -115,9 +133,10 @@ export class BotAdminHelper extends BotHelper {
         let message = `🔹 Sonic leaderboard\n\n`;
         let index2 = 1;
         for (const entry of leaderboard){
-            const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : entry.walletAddress;
-            message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize}\n`;
+            const username = entry.user?.telegram?.username ? `@${entry.user?.telegram?.username}` : Helpers.prettyWallet(entry.walletAddress);
+            message += `${index2}. ${username} (${entry.walletAddress}) - vol: $${entry.points/100} 🎁 ${entry.prize} - stake: $${Helpers.round(entry.stake.usd, 2)} (${Helpers.round(entry.stake.sonic, 2)} SONIC, ${Helpers.round(entry.stake.chill, 2)} CHILL)\n`;
             index2++;
+            message += `---\n`;
         }
 
         await BotManager.reply(ctx, message);
