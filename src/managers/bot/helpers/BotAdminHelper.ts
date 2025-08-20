@@ -234,9 +234,11 @@ export class BotAdminHelper extends BotHelper {
 
         let index2 = 1;
         for (const entry of userStakesSorted){
-            const user = await User.findById(entry[0]);
-            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : entry[0];
-            message += `${index2}. ${username} (${entry[0]}) - stake: $${entry[1]['usd']} (${entry[1][kChillAddress]} chill, ${entry[1][kSonicAddress]} sonic)\n`;
+            const userId = entry[0];
+            console.log('userId:', userId);
+            const user = await User.findById(userId);
+            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : userId;
+            message += `${index2}. ${username} (${userId}) - stake: $${entry[1]['usd']} (${entry[1][kChillAddress]} chill, ${entry[1][kSonicAddress]} sonic)\n`;
             index2++;
         }
 
