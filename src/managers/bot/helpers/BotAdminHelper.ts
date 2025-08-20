@@ -208,10 +208,10 @@ export class BotAdminHelper extends BotHelper {
 
         const userStakes: { [key: string]: { [key: string]: number } } = {};
         for (const tx of stakeTxs){
-            if (!userStakes[tx.userId]){
-                userStakes[tx.userId] = {};
+            if (!userStakes[tx.walletAddress]){
+                userStakes[tx.walletAddress] = {};
             }
-            userStakes[tx.userId][tx.mint] = (userStakes[tx.userId][tx.mint] || 0) + tx.amount;
+            userStakes[tx.walletAddress][tx.mint] = (userStakes[tx.walletAddress][tx.mint] || 0) + tx.amount;
         }
 
         const prices = await TokenPriceManager.getTokensPrices(Chain.SONIC, [kChillAddress, kSonicAddress]);
@@ -222,8 +222,8 @@ export class BotAdminHelper extends BotHelper {
             return;
         }
 
-        for (const userId in userStakes){
-            userStakes[userId]['usd'] = (userStakes[userId][kChillAddress] || 0) * chillPrice + (userStakes[userId][kSonicAddress] || 0) * sonicPrice;
+        for (const walletAddress in userStakes){
+            userStakes[walletAddress]['usd'] = (userStakes[walletAddress][kChillAddress] || 0) * chillPrice + (userStakes[walletAddress][kSonicAddress] || 0) * sonicPrice;
         }
 
         const userStakesSorted = Object.entries(userStakes).sort((a, b) => b[1]['usd'] - a[1]['usd']);
@@ -234,11 +234,11 @@ export class BotAdminHelper extends BotHelper {
 
         let index2 = 1;
         for (const entry of userStakesSorted){
-            const userId = entry[0];
-            console.log('userId:', userId);
-            const user = await User.findById(userId);
-            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : userId;
-            message += `${index2}. ${username} (${userId}) - stake: $${entry[1]['usd']} (${entry[1][kChillAddress]} chill, ${entry[1][kSonicAddress]} sonic)\n`;
+            const walletAddress = entry[0];
+            const traderProfile = await UserTraderProfile.findOne({ "encryptedWallet.publicKey": walletAddress });
+            const user = await User.findById(traderProfile?.userId);
+            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : Helpers.prettyWallet(walletAddress);
+            message += `${index2}. ${username} (${walletAddress}) - stake: $${entry[1]['usd']} (${entry[1][kChillAddress]} chill, ${entry[1][kSonicAddress]} sonic)\n`;
             index2++;
         }
 
