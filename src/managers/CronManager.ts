@@ -85,7 +85,7 @@ export class CronManager {
 
                 EventsManager.updateEventStatusses();
 
-                ChaosManager.checkPendingStakes();
+                ChaosManager.checkPendingStakes(5 * 60);
             });
 
             cron.schedule('0 * * * *', () => {

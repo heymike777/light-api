@@ -167,9 +167,16 @@ export class ChaosManager {
         await ChaosStakeTx.updateOne({ _id: stakeTx._id, status: {$ne: stakeTx.status} }, { $set: { status: stakeTx.status } });
     }
 
-    static async checkPendingStakes() {
+    static async checkPendingStakes(seconds = -1) {
         const chain = Chain.SONIC;
-        const stakes = await ChaosStakeTx.find({ status: Status.CREATED, createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) } });
+        let stakes: IChaosStakeTx[] = [];
+        if (seconds > 0){
+            stakes = await ChaosStakeTx.find({ status: Status.CREATED, createdAt: { $gte: new Date(Date.now() - seconds * 1000) } });
+        }
+        else {
+            stakes = await ChaosStakeTx.find({ status: Status.CREATED })
+        }
+        
         for (const stake of stakes) {
             const tx = await SolanaManager.getParsedTransaction(chain, stake.signature);
             if (tx && !tx.meta?.err) {

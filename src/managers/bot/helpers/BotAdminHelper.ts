@@ -12,7 +12,10 @@ import { Chain } from "../../../services/solana/types";
 import { EventsManager } from "../../EventsManager";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { UserTraderProfile } from "../../../entities/users/TraderProfile";
-import { kChillAddress } from "../../../services/solana/Constants";
+import { kChillAddress, kSonicAddress } from "../../../services/solana/Constants";
+import { ChaosStakeTx, IChaosStakeTx } from "../../../entities/staking/ChaosStakeTx";
+import { ChaosManager } from "../../../services/solana/svm/ChaosManager";
+import { TokenPriceManager } from "../../TokenPriceManager";
 
 export class BotAdminHelper extends BotHelper {
 
@@ -67,7 +70,7 @@ export class BotAdminHelper extends BotHelper {
             await this.replyWithChillLeaderboard(ctx, user);
         }
         else if (buttonId && buttonId == 'admin|event|leaderboard|chaos'){
-            await BotManager.reply(ctx, 'CHAOS LEADERBOARD');
+            await this.replyWithChaosLeaderboard(ctx, user);
         }
         else if (buttonId && buttonId == 'admin|event|leaderboard|fomo'){
             await BotManager.reply(ctx, 'FOMO LEADERBOARD');
@@ -184,6 +187,57 @@ export class BotAdminHelper extends BotHelper {
             if (index2 == 30){
                 break;
             }
+        }
+
+        await BotManager.reply(ctx, message);
+    }
+
+    async replyWithChaosLeaderboard(ctx: Context, user: IUser){
+        console.log('replyWithChaosLeaderboard');
+        const event = await EventsManager.getActiveEvent();
+        if (!event){
+            await BotManager.reply(ctx, 'No active event');
+            return;
+        }
+        const eventId = '' + event._id;
+
+        await ChaosManager.checkPendingStakes();
+
+        const stakeTxs = await ChaosStakeTx.find({ status: StatusType.COMPLETED });
+        console.log('CHAOS txs:', stakeTxs.length);
+
+        const userStakes: { [key: string]: { [key: string]: number } } = {};
+        for (const tx of stakeTxs){
+            if (!userStakes[tx.userId]){
+                userStakes[tx.userId] = {};
+            }
+            userStakes[tx.userId][tx.mint] = (userStakes[tx.userId][tx.mint] || 0) + tx.amount;
+        }
+
+        const prices = await TokenPriceManager.getTokensPrices(Chain.SONIC, [kChillAddress, kSonicAddress]);
+        const chillPrice = prices.find(p => p.address == kChillAddress)?.price;
+        const sonicPrice = prices.find(p => p.address == kSonicAddress)?.price;
+        if (!chillPrice || !sonicPrice){
+            await BotManager.reply(ctx, 'No token prices found. Please, try again later.');
+            return;
+        }
+
+        for (const userId in userStakes){
+            userStakes[userId]['usd'] = (userStakes[userId][kChillAddress] || 0) * chillPrice + (userStakes[userId][kSonicAddress] || 0) * sonicPrice;
+        }
+
+        const userStakesSorted = Object.entries(userStakes).sort((a, b) => b[1]['usd'] - a[1]['usd']);
+
+        console.log('CHAOS stakeTxsByUser:', userStakes);
+
+        let message = `🪽 Chaos leaderboard\n\n`;
+
+        let index2 = 1;
+        for (const entry of userStakesSorted){
+            const user = await User.findById(entry[0]);
+            const username = user?.telegram?.username ? `@${user?.telegram?.username}` : entry[0];
+            message += `${index2}. ${username} (${entry[0]}) - stake: $${entry[1]['usd']} (${entry[1][kChillAddress]} chill, ${entry[1][kSonicAddress]} sonic)\n`;
+            index2++;
         }
 
         await BotManager.reply(ctx, message);
