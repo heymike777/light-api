@@ -122,7 +122,7 @@ export const kChains: {[key: string]: ChainConfig} = {
         websocket: process.env.SONIC_RPC_WSS!,
         tracker: {
             useWss: true,
-            useHttp: false,
+            useHttp: true,
         },
         bridge: {
             url: 'https://bridge.sonic.game/'
