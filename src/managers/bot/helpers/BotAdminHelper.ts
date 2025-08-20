@@ -8,7 +8,7 @@ import { InlineButton, TgMessage } from "../BotTypes";
 import { ConfigManager } from "../../ConfigManager";
 import { StatusType, Swap } from "../../../entities/payments/Swap";
 import { ChainManager } from "../../chains/ChainManager";
-import { Chain } from "../../../services/solana/types";
+import { Chain, Status } from "../../../services/solana/types";
 import { EventsManager } from "../../EventsManager";
 import { Helpers } from "../../../services/helpers/Helpers";
 import { UserTraderProfile } from "../../../entities/users/TraderProfile";
@@ -203,7 +203,7 @@ export class BotAdminHelper extends BotHelper {
 
         await ChaosManager.checkPendingStakes();
 
-        const stakeTxs = await ChaosStakeTx.find({ status: StatusType.COMPLETED });
+        const stakeTxs = await ChaosStakeTx.find({ status: Status.COMPLETED, createdAt: { $gte: event.startAt, $lte: event.endAt } });
         console.log('CHAOS txs:', stakeTxs.length);
 
         const userStakes: { [key: string]: { [key: string]: number } } = {};
