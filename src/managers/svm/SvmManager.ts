@@ -66,6 +66,12 @@ export class SvmManager {
         for (const s of sigs) {
             if (this.seen.has(s.signature)) continue;   // already processed (and still fresh)
 
+            const blockTime = s.blockTime;
+            if (!blockTime) continue;
+            const blockDate = new Date(blockTime * 1000);
+            const isLast5Minutes = blockDate.getTime() > Date.now() - 5 * 60 * 1000;
+            if (!isLast5Minutes) continue;
+
             this.seen.set(s.signature, now);            
             
             await this.processTransaction(s.signature);

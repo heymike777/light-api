@@ -378,9 +378,9 @@ export class MigrationManager {
         // const chaos = await ChaosManager.stake(testKeypair, kSonicAddress, 5);
         // await ChaosManager.stake(testKeypair, '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', 30); // STAKE CHILL
 
-        if (EnvManager.isCronProcess){
-            await EventsManager.recalculateLeaderboardForActiveEvents();
-        }
+        // if (EnvManager.isCronProcess){
+        //     await EventsManager.recalculateLeaderboardForActiveEvents();
+        // }
 
         // initiateBuy traderProfileId: 6849f0d4e82d106d3e1538be from: { mint: 'So11111111111111111111111111111111111111112', decimals: 9 } to: { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', decimals: 9 } amount: 0.02 poolId: undefined
 
