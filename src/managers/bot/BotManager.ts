@@ -28,7 +28,7 @@ import { SolanaManager, TokenBalance } from "../../services/solana/SolanaManager
 import { TokenManager } from "../TokenManager";
 import { Helpers } from "../../services/helpers/Helpers";
 import { BotSellHelper } from "./helpers/BotSellHelper";
-import { getNativeToken, kSolAddress } from "../../services/solana/Constants";
+import { getNativeToken, kChillAddress, kFomoAddress, kMoneyAddress, kSolAddress, kSonicAddress } from "../../services/solana/Constants";
 import { Chain } from "../../services/solana/types";
 import { BotReferralProgramHelper } from "./helpers/BotReferralProgramHelper";
 import { BotUpgradeHelper } from "./helpers/BotUpgradeHelper";
@@ -206,10 +206,13 @@ export class BotManager {
     }
 
     static async tryToSendTokenInfo(ctx: Context, query: string, user: IUser){
-        if (query.toLowerCase() == 'chill'){ query = '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3'; }
-        else if (query.toLowerCase() == 'bonk'){ query = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'; }
+        
+        if (query.toLowerCase() == 'bonk'){ query = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'; }
         else if (query.toLowerCase() == 'jup'){ query = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'; }
-        else if (query.toLowerCase() == 'fomo'){ query = 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o'; }
+        else if (query.toLowerCase() == 'chill'){ query = kChillAddress; }
+        else if (query.toLowerCase() == 'fomo'){ query = kFomoAddress; }
+        else if (query.toLowerCase() == 'money'){ query = kMoneyAddress; }
+        else if (query.toLowerCase() == 'sonic'){ query = kSonicAddress; }
 
         const tokens = await SearchManager.search(user.defaultChain || Chain.SOLANA, query, user.id);
         if (tokens.length > 0 && tokens[0].symbol && !TokenManager.excludedTokens.includes(tokens[0].address)){

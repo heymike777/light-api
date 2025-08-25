@@ -12,6 +12,7 @@ export const kJupAddress = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN';
 export const kSonicAddress = 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL';
 export const kChillAddress = '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3';
 export const kFomoAddress = 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o';
+export const kMoneyAddress = '4atQffe9q6xwcv5YmZKapSRofHFtJXtG6jJvdiVojqt7';
 
 export const kPumpfunLiquidityWalletAddress = '39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg';
 
