@@ -45,6 +45,16 @@ export class ChaosManager {
             },
             minStakeAmount: 30, // min 30 CHILL to stake
         },
+        '4atQffe9q6xwcv5YmZKapSRofHFtJXtG6jJvdiVojqt7': {
+            chain: Chain.SONIC,
+            mint: '4atQffe9q6xwcv5YmZKapSRofHFtJXtG6jJvdiVojqt7',
+            symbol: 'MONEY',
+            stake: {
+                'programId': this.kStakeVaultProgramId,
+                'stakeManagerAddress': 'Atb46K31LyBV45FXrhvaKZBKWmtWvaYXn4FC8q7Naiug',
+            },
+            minStakeAmount: 10, // min 10 MONEY to stake
+        },
     };
 
     static async stake(userId: string, keypair: Keypair, mint: string, amount: number) {
