@@ -163,7 +163,7 @@ export class EventsManager {
         event.title = '🏆 SONIC LIGHTWAVE';
         event.startAt = new Date('2025-09-08T00:00:00Z');
         event.endAt = new Date('2025-10-08T20:00:00Z');
-        event.description = `Trade any token on SonicSVM using Light and share $10,000 prize pool + special prizes!\n\nThe more you trade, the more points you earn.\n\nCheck out the leaderboard and prize pool: <a href="https://sonic.light.app">https://sonic.light.app</a>`;
+        event.description = `Trade any token on SonicSVM using Light and share $10,000 prize pool + special prizes!\n\nWe will also select a few winners for special prizes each week.\n\nThe more you trade, the more points you earn.\n\nCheck out the leaderboard and prize pool: <a href="https://sonic.light.app">https://sonic.light.app</a>`;
         event.status = TradingEventStatus.ACTIVE;
         event.chains = [Chain.SONIC];
         event.image = 'https://light.dangervalley.com/events/sonic_lightwave.png';
@@ -402,6 +402,29 @@ Quack!`,
                 prizes.push(`$${10 * koef}`);
             }
         }
+        // else if (event.id == '68865f648db47a133f8e22bc') {
+        //     // SONIC LIGHTWAVE
+        //     let koef = 1;
+        //     if (usd >= 3000000){ koef = 4; }
+        //     else if (usd >= 2000000){ koef = 3; }
+        //     else if (usd >= 1000000){ koef = 2; }
+
+        //     prizes.push(`$${500 * koef} + NFT`);
+        //     prizes.push(`$${250 * koef} + NFT`);
+        //     prizes.push(`$${250 * koef} + NFT`);
+        //     prizes.push(`$${100 * koef}`);
+        //     prizes.push(`$${100 * koef}`);
+        //     prizes.push(`$${100 * koef}`);
+        //     for (let i = 0; i < 10; i++){
+        //         prizes.push(`$${50 * koef}`);
+        //     }
+        //     for (let i = 0; i < 20; i++){
+        //         prizes.push(`$${25 * koef}`);
+        //     }
+        //     for (let i = 0; i < 20; i++){
+        //         prizes.push(`$${10 * koef}`);
+        //     }
+        // }
 
         await TradingEvent.updateOne({ _id: eventId }, { $set: { volume: usd, prizes: prizes } });
     }

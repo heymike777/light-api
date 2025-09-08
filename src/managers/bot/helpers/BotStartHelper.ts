@@ -179,7 +179,7 @@ export class BotStartHelper extends BotHelper {
             {id: 'row', text: ''}, 
             {id: 'farm', text: '🤖 Automations'}, 
             {id: 'row', text: ''}, 
-            {id: 'events', text: '🏆 SONIC SUMMER SURGE'},
+            {id: 'events', text: '🏆 SONIC LIGHTWAVE'},
         ];
 
         const replyMessage: Message = {
