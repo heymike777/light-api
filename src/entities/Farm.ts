@@ -8,6 +8,7 @@ export let Mixed = mongoose.Schema.Types.Mixed;
 export enum FarmType {
     DEX = 'dex',
     TOKEN = 'token',
+    ARB_CHAOS_SONIC_TO_SSONIC = 'arb_chaos_sonic_to_ssonic',
 }
 
 export enum FarmStatus {

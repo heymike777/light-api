@@ -1,5 +1,5 @@
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { Farm, FarmStatus, IFarm } from "../entities/Farm";
+import { Farm, FarmStatus, FarmType, IFarm } from "../entities/Farm";
 import { IUserTraderProfile, UserTraderProfile } from "../entities/users/TraderProfile";
 import { User } from "../entities/users/User";
 import { Helpers } from "../services/helpers/Helpers";
@@ -49,7 +49,7 @@ export class FarmManager {
     static async makeSwap(farm: IFarm) {
         const currentVolume = farm.progress?.currentVolume || 0;
         const processingVolume = farm.progress?.processingVolume || 0;
-        if (currentVolume + processingVolume > farm.volume){
+        if ((farm.type == FarmType.DEX || farm.type == FarmType.TOKEN) && currentVolume + processingVolume > farm.volume){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'skipping. Volume limit reached. Waiting for swaps confirmations to complete the farm.');
             return;
         }

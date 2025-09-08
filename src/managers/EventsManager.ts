@@ -158,6 +158,32 @@ export class EventsManager {
         await event.save();
     }
 
+    static async createSonicLightwaveEvent() {
+        const event = new TradingEvent();
+        event.title = '🏆 SONIC LIGHTWAVE';
+        event.startAt = new Date('2025-09-08T00:00:00Z');
+        event.endAt = new Date('2025-10-06T20:00:00Z');
+        event.description = `Trade any token on SonicSVM using Light and share $10,000 prize pool + special prizes!\n\nThe more you trade, the more points you earn.\n\nCheck out the leaderboard and prize pool: <a href="https://sonic.light.app">https://sonic.light.app</a>`;
+        event.status = TradingEventStatus.ACTIVE;
+        event.chains = [Chain.SONIC];
+        event.image = 'https://light.dangervalley.com/events/sonic_lightwave.png';
+        event.tradingPoints = {
+            // 'sonic:7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': 100, // 1000 points for each $1 traded of CHILL on Sonic SVM
+            // 'sonic:mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': 100, 
+            // 'sonic:HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o': 100, 
+            '*': 1, // 0 points for any other token
+        }
+        event.tokens = [
+            { mint: '7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3', symbol: 'CHILL' },
+            { mint: 'mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL', symbol: 'SONIC' },
+            { mint: 'HpWK1V8U3wTyt4Gcbh9qSqaLqzVjf3UEXDPgHfUFm5o', symbol: 'FOMO' },
+            { mint: '4atQffe9q6xwcv5YmZKapSRofHFtJXtG6jJvdiVojqt7', symbol: 'MONEY' }
+        ];
+        event.webUrl = 'https://sonic.light.app';
+        event.createdAt = new Date();
+        await event.save();
+    }
+
     static async createSoonEvent() {
         const eventTitle = 'SOON RUSH';
         const existingEvent = await TradingEvent.findOne({

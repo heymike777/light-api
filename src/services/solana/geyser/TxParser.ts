@@ -1,11 +1,7 @@
-import base58 from "bs58";
 import * as web3 from '@solana/web3.js';
-import { SolanaManager } from "../SolanaManager";
 import { } from "@solana/buffer-layout";
 import { SystemInstruction } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
-import { Ix } from "../../../managers/ProgramManager";
-import { LogManager } from "../../../managers/LogManager";
 
 export interface JsonParsedInstruction {
     program?: string;

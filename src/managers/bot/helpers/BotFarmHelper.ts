@@ -1,7 +1,7 @@
 import { Context } from "grammy";
 import { UserManager } from "../../UserManager";
 import { BotHelper, Message } from "./BotHelper";
-import { IUser, TelegramWaitingType, User } from "../../../entities/users/User";
+import { IUser, TelegramWaitingType } from "../../../entities/users/User";
 import { BotManager } from "../BotManager";
 import { TraderProfilesManager } from "../../TraderProfilesManager";
 import { LogManager } from "../../LogManager";
@@ -107,6 +107,13 @@ export class BotFarmHelper extends BotHelper {
             await BotManager.reply(ctx, 'Send token CA address to boost volume');
             await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_TOKEN_CA, helper: this.kCommand, data: { messageId: BotManager.getMessageIdFromContext(ctx) } });
             return;
+        }
+        else if (buttonId == 'farm|' + FarmType.ARB_CHAOS_SONIC_TO_SSONIC){
+            const pools: IFarmPool[] = [
+                { address: '3u4MzG42ubQxp8ghbzWaJvJMvdqNYf7Z9XjZStts1srk', tokenA: kSonicAddress, tokenB: '8zAn1EQvcAntL8jZtN31t7Dag3pqHvdbCtu7AtCiw4QC', title: 'SONIC-sSONIC', solBased: false },
+            ];
+            const replyMessage = await BotFarmHelper.buildFarmPoolMessage(user, undefined, kSonicAddress, pools, FarmType.ARB_CHAOS_SONIC_TO_SSONIC);
+            return await super.commandReceived(ctx, user, replyMessage);
         }
         else if (buttonId && buttonId.startsWith('farm|')){
             const parts = buttonId.split('|');
@@ -244,8 +251,11 @@ export class BotFarmHelper extends BotHelper {
         // text += `Chain: ${ChainManager.getChainTitle(farm.chain)}\n`;
         text += `DEX: ${dex?.name || 'Unknown'}\n`;
         text += `Frequency: ${frequencyTitle}\n`;
-        text += `Volume: ~$${farm.volume}\n`;
+        if (farm.volume > 0) { text += `Volume: ~$${farm.volume}\n`; }
         text += `Trader profile: ${traderProfile.title}\n`;
+        if (farm.type == FarmType.ARB_CHAOS_SONIC_TO_SSONIC){
+            text += `Type: buy sSONIC → unstake SONIC\n`;
+        }
 
         if (farm.pools.length > 0){
             // text += `Pools: ${farm.pools.map(p => `${p.title || p.address}`).join(', ')}\n`;
@@ -516,13 +526,7 @@ export class BotFarmHelper extends BotHelper {
         ];
         if (user.telegram?.username == 'heymike777'){
             buttons.push({ id: 'row', text: '' });
-            buttons.push({ id: 'farm|arb_chill_1', text: 'ARB: stake CHILL → sell sCHILL' });
-            buttons.push({ id: 'row', text: '' });
-            buttons.push({ id: 'farm|arb_chill_2', text: 'ARB: buy sCHILL → unstake CHILL' });
-            buttons.push({ id: 'row', text: '' });
-            buttons.push({ id: 'farm|arb_sonic_1', text: 'ARB: stake SONIC → sell sSONIC' });
-            buttons.push({ id: 'row', text: '' });
-            buttons.push({ id: 'farm|arb_sonc_2', text: 'ARB: buy sSONIC → unstake SONIC' });
+            buttons.push({ id: 'farm|' + FarmType.ARB_CHAOS_SONIC_TO_SSONIC, text: '🔁 buy sSONIC → unstake SONIC' });
         }
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: 'farm|my_bots', text: '🤖 My bots' });
@@ -535,7 +539,7 @@ export class BotFarmHelper extends BotHelper {
         };
     }
 
-    static async buildFarmPoolMessage(user: IUser, farm?: IFarm, mint?: string, pools?: IFarmPool[]): Promise<Message> {
+    static async buildFarmPoolMessage(user: IUser, farm?: IFarm, mint?: string, pools?: IFarmPool[], type?: FarmType): Promise<Message> {
         const chain = user.defaultChain || Chain.SOLANA;
         const dexes = BotFarmHelper.DEXES[chain];
         if (!dexes){
@@ -548,7 +552,10 @@ export class BotFarmHelper extends BotHelper {
             const traderProfile = traderProfiles.find(tp => tp.default);
 
             const countAll = await Farm.countDocuments({ userId: user.id });
-            const title = `Bot #${countAll+1}`;
+            let title = `Bot #${countAll+1}`;
+            if (type == FarmType.ARB_CHAOS_SONIC_TO_SSONIC){
+                title += ' - ARB SONIC→SSONIC';
+            }
 
             farm = new Farm();
             farm.chain = chain;
@@ -556,7 +563,7 @@ export class BotFarmHelper extends BotHelper {
             farm.title = title;
             farm.traderProfileId = traderProfile?.id;
             farm.status = FarmStatus.CREATED;
-            farm.type = FarmType.DEX;
+            farm.type = type || FarmType.DEX;
             farm.dexId = dexes[0].id;
             farm.frequency = BotFarmHelper.FREQUENCIES.find(f => f?.default)?.seconds || 5;
             farm.volume = BotFarmHelper.VOLUMES.find(v => v?.default)?.usd || 100000;
@@ -592,46 +599,52 @@ export class BotFarmHelper extends BotHelper {
         }
         buttons.push({ id: `farm|${farm.id}|prof|create`, text: '➕ Add' }); 
         buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: 'none', text: '----- SELECT TIME BETWEEN SWAPS -----' });
-        buttons.push({ id: 'row', text: '' });
-        const isCustomFrequency = BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency) == undefined;
-        for (const frequency of BotFarmHelper.FREQUENCIES) {
-            if (frequency){
-                const isSelected = farm.frequency == frequency.seconds || (isCustomFrequency && frequency.seconds == -1);
-                let title = (isSelected ? '🟢 ' : '');
-                if (isSelected && isCustomFrequency){
-                    title += `${farm.frequency}s`;
+
+        if (type == FarmType.DEX || type == FarmType.TOKEN){
+            buttons.push({ id: 'none', text: '----- SELECT TIME BETWEEN SWAPS -----' });
+            buttons.push({ id: 'row', text: '' });
+            const isCustomFrequency = BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency) == undefined;
+            for (const frequency of BotFarmHelper.FREQUENCIES) {
+                if (frequency){
+                    const isSelected = farm.frequency == frequency.seconds || (isCustomFrequency && frequency.seconds == -1);
+                    let title = (isSelected ? '🟢 ' : '');
+                    if (isSelected && isCustomFrequency){
+                        title += `${farm.frequency}s`;
+                    }
+                    else {
+                        title += frequency.title;
+                    }
+                    buttons.push({ id: `farm|${farm.id}|frequency|${frequency.seconds}`, text: title });
                 }
                 else {
-                    title += frequency.title;
-                }
-                buttons.push({ id: `farm|${farm.id}|frequency|${frequency.seconds}`, text: title });
+                    buttons.push({ id: 'row', text: '' });
+                }            
             }
-            else {
-                buttons.push({ id: 'row', text: '' });
-            }            
+            buttons.push({ id: 'row', text: '' });
         }
-        buttons.push({ id: 'row', text: '' });
-        buttons.push({ id: 'none', text: '------------- SELECT VOLUME -------------' });
-        buttons.push({ id: 'row', text: '' });
-        const isCustomVolume = BotFarmHelper.VOLUMES.find(v => v?.usd == farm.volume) == undefined;
-        for (const volume of BotFarmHelper.VOLUMES) {
-            if (volume){
-                const isSelected = farm.volume == volume.usd || (isCustomVolume && volume.usd == -1);
-                let title = (isSelected ? '🟢 ' : '');
-                if (isSelected && isCustomVolume){
-                    title += `$${farm.volume}`;
+
+        if (type == FarmType.DEX || type == FarmType.TOKEN){
+            buttons.push({ id: 'none', text: '------------- SELECT VOLUME -------------' });
+            buttons.push({ id: 'row', text: '' });
+            const isCustomVolume = BotFarmHelper.VOLUMES.find(v => v?.usd == farm.volume) == undefined;
+            for (const volume of BotFarmHelper.VOLUMES) {
+                if (volume){
+                    const isSelected = farm.volume == volume.usd || (isCustomVolume && volume.usd == -1);
+                    let title = (isSelected ? '🟢 ' : '');
+                    if (isSelected && isCustomVolume){
+                        title += `$${farm.volume}`;
+                    }
+                    else {
+                        title += volume.title;
+                    }
+                    buttons.push({ id: `farm|${farm.id}|volume|${volume.usd}`, text: title });
                 }
                 else {
-                    title += volume.title;
-                }
-                buttons.push({ id: `farm|${farm.id}|volume|${volume.usd}`, text: title });
+                    buttons.push({ id: 'row', text: '' });
+                }            
             }
-            else {
-                buttons.push({ id: 'row', text: '' });
-            }            
+            buttons.push({ id: 'row', text: '' });
         }
-        buttons.push({ id: 'row', text: '' });
         buttons.push({ id: 'none', text: '--------------- ACTIONS ---------------' });
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: `farm|${farm.id}|refresh`, text: '↻ Refresh' });
@@ -645,7 +658,12 @@ export class BotFarmHelper extends BotHelper {
 
         let text = '🤖 Create a bot';
         text += '\n\n';
-        text += 'Select a DEX, trader profile, frequency and expected volume.';
+        if (type == FarmType.ARB_CHAOS_SONIC_TO_SSONIC){
+            text += 'ARB: buy sSONIC on Sega → unstake SONIC from Chaos';
+        }
+        else {
+            text += 'Select a DEX, trader profile, frequency and expected volume.';
+        }
         text += '\n\n';
         if (farm.pools && farm.pools.length > 0){
             if (farm.pools.length == 1){
