@@ -162,7 +162,7 @@ export class EventsManager {
         const event = new TradingEvent();
         event.title = '🏆 SONIC LIGHTWAVE';
         event.startAt = new Date('2025-09-08T00:00:00Z');
-        event.endAt = new Date('2025-10-06T20:00:00Z');
+        event.endAt = new Date('2025-10-08T20:00:00Z');
         event.description = `Trade any token on SonicSVM using Light and share $10,000 prize pool + special prizes!\n\nThe more you trade, the more points you earn.\n\nCheck out the leaderboard and prize pool: <a href="https://sonic.light.app">https://sonic.light.app</a>`;
         event.status = TradingEventStatus.ACTIVE;
         event.chains = [Chain.SONIC];
