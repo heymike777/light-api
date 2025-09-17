@@ -166,7 +166,7 @@ export class EventsManager {
         event.description = `Trade any token on SonicSVM using Light and share $10,000 prize pool + special prizes!\n\nWe will also select a few winners for special prizes each week.\n\nThe more you trade, the more points you earn.\n\nCheck out the leaderboard and prize pool: <a href="https://sonic.light.app">https://sonic.light.app</a>`;
         event.status = TradingEventStatus.UPCOMING;
         event.chains = [Chain.SONIC];
-        event.image = 'https://light.dangervalley.com/events/sonic_lightwave.png';
+        event.image = 'https://light.dangervalley.com/events/sonic_lightwave_new.png';
         event.tradingPoints = {
             // 'sonic:7yt6vPUrSCxEq3cQpQ6XKynttH5MMPfT93N1AqnosyQ3': 100, // 1000 points for each $1 traded of CHILL on Sonic SVM
             // 'sonic:mrujEYaN1oyQXDHeYNxBYpxWKVkQ2XsGxfznpifu4aL': 100, 
