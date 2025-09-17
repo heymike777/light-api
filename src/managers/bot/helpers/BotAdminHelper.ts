@@ -58,10 +58,10 @@ export class BotAdminHelper extends BotHelper {
             await BotManager.editMessage(ctx, message, markup);
         }
         else if (buttonId && buttonId == 'admin|create_event'){
-            // await BotManager.reply(ctx, 'No event to create');
+            await BotManager.reply(ctx, 'No event to create');
 
-            await EventsManager.createSonicLightwaveEvent();
-            await BotManager.reply(ctx, 'Event created ✅');
+            // await EventsManager.createSonicLightwaveEvent();
+            // await BotManager.reply(ctx, 'Event created ✅');
 
             // await EventsManager.createSonicSummerSurgeEvent();
             // await BotManager.reply(ctx, 'Event created ✅');
