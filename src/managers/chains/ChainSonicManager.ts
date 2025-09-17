@@ -3,7 +3,6 @@ import { IUserTraderProfile } from "../../entities/users/TraderProfile";
 import { BadRequestError } from "../../errors/BadRequestError";
 import { PortfolioAsset } from "../../models/types";
 import { getNativeToken, kSolAddress } from "../../services/solana/Constants";
-import { newConnectionByChain } from "../../services/solana/lib/solana";
 import { SolanaManager } from "../../services/solana/SolanaManager";
 import { Chain } from "../../services/solana/types";
 import { LogManager } from "../LogManager";
