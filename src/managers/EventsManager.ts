@@ -402,29 +402,27 @@ Quack!`,
                 prizes.push(`$${10 * koef}`);
             }
         }
-        // else if (event.id == '68865f648db47a133f8e22bc') {
-        //     // SONIC LIGHTWAVE
-        //     let koef = 1;
-        //     if (usd >= 3000000){ koef = 4; }
-        //     else if (usd >= 2000000){ koef = 3; }
-        //     else if (usd >= 1000000){ koef = 2; }
+        else if (event.id == '68cb1235975467e58f710c63') {
+            // SONIC LIGHTWAVE
+            let koef = 1;
+            if (usd >= 3000000){ koef = 4; }
+            else if (usd >= 2000000){ koef = 3; }
+            else if (usd >= 1000000){ koef = 2; }
 
-        //     prizes.push(`$${500 * koef} + NFT`);
-        //     prizes.push(`$${250 * koef} + NFT`);
-        //     prizes.push(`$${250 * koef} + NFT`);
-        //     prizes.push(`$${100 * koef}`);
-        //     prizes.push(`$${100 * koef}`);
-        //     prizes.push(`$${100 * koef}`);
-        //     for (let i = 0; i < 10; i++){
-        //         prizes.push(`$${50 * koef}`);
-        //     }
-        //     for (let i = 0; i < 20; i++){
-        //         prizes.push(`$${25 * koef}`);
-        //     }
-        //     for (let i = 0; i < 20; i++){
-        //         prizes.push(`$${10 * koef}`);
-        //     }
-        // }
+            prizes.push(`$${500 * koef}`);
+            prizes.push(`$${250 * koef}`);
+            prizes.push(`$${250 * koef}`);
+            prizes.push(`$${125 * koef}`);
+            prizes.push(`$${125 * koef}`);
+            prizes.push(`$${125 * koef}`);
+            prizes.push(`$${125 * koef}`);
+            for (let i = 0; i < 10; i++){
+                prizes.push(`$${50 * koef}`);
+            }
+            for (let i = 0; i < 20; i++){
+                prizes.push(`$${25 * koef}`);
+            }
+        }
 
         await TradingEvent.updateOne({ _id: eventId }, { $set: { volume: usd, prizes: prizes } });
     }
