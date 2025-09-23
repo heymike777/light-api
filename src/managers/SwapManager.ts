@@ -715,7 +715,7 @@ export class SwapManager {
         return { signature, swap };
     }
 
-    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amountPercents: number, farmId?: string, poolId?: string): Promise<{ signature?: string, swap: ISwap }>{ 
+    static async initiateSell(user: IUser, chain: Chain, traderProfileId: string, from: IMint, to: IMint, amountPercents: number, farmId?: string, poolId?: string, amount?: BN): Promise<{ signature?: string, swap: ISwap }>{ 
         let dex: SwapDex;
         if (chain == Chain.SOLANA){
             dex = SwapDex.JUPITER;
@@ -772,7 +772,7 @@ export class SwapManager {
             from.decimals = balance.decimals;
         }
 
-        amountInLamports = amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100);
+        amountInLamports = amount ? amount : (amountPercents == 100 ? balance.amount : balance.amount.muln(amountPercents).divn(100));
         const balanceAmount = new BN(balance.amount || 0);
 
         if (amountInLamports.gt(balanceAmount)){

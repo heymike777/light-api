@@ -101,15 +101,15 @@ export class FarmManager {
         const tokenBalance2 = tokenB == kSolAddress ? solBalance : await SolanaManager.getWalletTokenBalance(farm.chain, walletAddress, tokenB);
 
         let shouldPauseFarm = false;
-        if (tokenA == kSolAddress && tokenBalance1.uiAmount <= 0.03 && tokenBalance2.uiAmount <= 0.01){
+        if (tokenA == kSolAddress && tokenBalance1.uiAmount <= (0.03 + this.getKeepSomeAmount(farm, tokenA)) && tokenBalance2.uiAmount <= 0.01 + this.getKeepSomeAmount(farm, tokenB)){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'shouldPauseFarm because of SOL balance (1)');
             shouldPauseFarm = true;
         }
-        else if (tokenB == kSolAddress && tokenBalance2.uiAmount <= 0.03 && tokenBalance1.uiAmount <= 0.01){
+        else if (tokenB == kSolAddress && tokenBalance2.uiAmount <= (0.03 + this.getKeepSomeAmount(farm, tokenB)) && tokenBalance1.uiAmount <= (0.01 + this.getKeepSomeAmount(farm, tokenA))){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'shouldPauseFarm because of SOL balance (2)');
             shouldPauseFarm = true;
         }
-        else if (tokenA!=kSolAddress && tokenB!=kSolAddress && tokenBalance1.uiAmount <= 0.01 && tokenBalance2.uiAmount <= 0.01){
+        else if (tokenA!=kSolAddress && tokenB!=kSolAddress && tokenBalance1.uiAmount <= (0.01 + this.getKeepSomeAmount(farm, tokenA)) && tokenBalance2.uiAmount <= (0.01 + this.getKeepSomeAmount(farm, tokenB))){
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'shouldPauseFarm because of token balances (3)');
             shouldPauseFarm = true;
         }
@@ -148,7 +148,7 @@ export class FarmManager {
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance1', tokenBalance1.uiAmount, 'tokenBalance2', tokenBalance2.uiAmount);
 
             let amountMin = tokenBalance1.amount.muln(0.2);
-            let amountMax = tokenBalance1.amount;
+            let amountMax = tokenBalance1.amount.subn(this.getKeepSomeAmount(farm, tokenA) * (10 ** (tokenBalance1.decimals || 0)));
             if (tokenA == kSolAddress){
                 if (amountMin.lt(new BN(this.kMinSolLamports))){
                     amountMin = new BN(this.kMinSolAmount * LAMPORTS_PER_SOL);
@@ -191,7 +191,8 @@ export class FarmManager {
 
             const from: IMint = { mint: tokenB, decimals: tokenBalance2.decimals };
             const to: IMint = { mint: tokenA, decimals: tokenBalance1.decimals };
-            const { signature, swap } = await SwapManager.initiateSell(user, farm.chain, farm.traderProfileId, from, to, 100, farm.id, poolId);
+            const amountToSell = tokenBalance2.amount.subn(this.getKeepSomeAmount(farm, tokenB) * (10 ** (tokenBalance2.decimals || 0)));
+            const { signature, swap } = await SwapManager.initiateSell(user, farm.chain, farm.traderProfileId, from, to, 100, farm.id, poolId, amountToSell);
 
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap.value?.usd', swap.value?.usd);
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'signature', signature);
@@ -344,4 +345,10 @@ export class FarmManager {
             text: message, 
         }, 5);
     }
+
+    static getKeepSomeAmount(farm: IFarm, token: string): number {
+        const keepSome = farm.keepSome || {};
+        return keepSome[token] || 0;
+    }
+
 }

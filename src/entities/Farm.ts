@@ -47,6 +47,7 @@ export interface IFarm extends mongoose.Document {
         maxBuysInARow: number;
     }
     failedSwapsCount: number;
+    keepSome?: { [key: string]: number };
 
     updatedAt?: Date;
     createdAt: Date;
@@ -68,6 +69,7 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
     lastSwapAt: { type: Date },
     progress: { type: Mixed },
     failedSwapsCount: { type: Number, default: 0 },
+    keepSome: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }
