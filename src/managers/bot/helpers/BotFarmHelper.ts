@@ -65,6 +65,13 @@ export class BotFarmHelper extends BotHelper {
         { usd: -1, title: 'Custom', default: false },
     ];
 
+    private static KEEP_SOME: ({amount: number, title: string} | undefined)[] = [
+        { amount: 0, title: '0' },
+        { amount: 100, title: '100' },
+        { amount: 1000, title: '1000' },
+        { amount: -1, title: 'Custom' },
+    ];
+
     constructor() {
         const replyMessage: Message = {
             text: '🤖 Automations'
@@ -123,7 +130,7 @@ export class BotFarmHelper extends BotHelper {
                 const replyMessage = await BotFarmHelper.buildMyFarmMessage(user, farmId);
                 return await super.commandReceived(ctx, user, replyMessage);
             }
-            else if (parts.length == 3 || parts.length == 4){
+            else if (parts.length == 3 || parts.length == 4 || parts.length == 5){
                 const farmId: string = parts[1];
                 const action = parts[2];
 
@@ -183,6 +190,24 @@ export class BotFarmHelper extends BotHelper {
                     else {
                         farm.volume = volume;
                         await Farm.updateOne({ _id: farmId }, { volume: farm.volume });
+                        await this.refreshFarm(ctx, user, farm);
+                    }
+                }
+                else if (action == 'keepSome'){
+                    const tokenIndex = parseInt(parts[3]);
+                    const amount = parseInt(parts[4]);
+                    const mint = farm.tokens?.[tokenIndex]?.address || 'unknown';
+                    if (amount == -1){
+                        await BotManager.reply(ctx, 'Enter the amount');
+                        await UserManager.updateTelegramState(user.id, { waitingFor: TelegramWaitingType.FARM_KEEP_SOME_AMOUNT, helper: this.kCommand, data: { farmId, mint, messageId: BotManager.getMessageIdFromContext(ctx) } });
+                        return;
+                    }
+                    else {
+                        if (!farm.keepSome) {
+                            farm.keepSome = {};
+                        }
+                        farm.keepSome[mint] = amount;
+                        await Farm.updateOne({ _id: farmId }, { keepSome: farm.keepSome });
                         await this.refreshFarm(ctx, user, farm);
                     }
                 }
@@ -404,6 +429,31 @@ export class BotFarmHelper extends BotHelper {
             await UserManager.updateTelegramState(user.id, undefined);
             return true;
         }
+        else if (user.telegramState?.waitingFor == TelegramWaitingType.FARM_KEEP_SOME_AMOUNT){
+            const amountString = message.text.trim().replaceAll(',', '.');
+            const amount = parseFloat(amountString);
+            if (isNaN(amount) || amount < 0){
+                await BotManager.reply(ctx, 'Invalid amount. Please, try again.</b>');
+                return true;
+            }
+
+            const farmId = user.telegramState.data.farmId;
+            const farm = await Farm.findById(farmId);
+            if (!farm){
+                await BotManager.reply(ctx, '🟡 Bot not found');
+                return true;
+            }
+
+            if (!farm.keepSome) {
+                farm.keepSome = {};
+            }
+            farm.keepSome[user.telegramState.data.mint] = amount;
+            await Farm.updateOne({ _id: farmId }, { keepSome: farm.keepSome });
+            await this.refreshFarm(ctx, user, farm, user.telegramState.data.messageId);
+
+            await UserManager.updateTelegramState(user.id, undefined);
+            return true;
+        }
         else if (user.telegramState?.waitingFor == TelegramWaitingType.FARM_TOKEN_CA){
             const tokenCa = message.text.trim();
             if (!tokenCa){
@@ -577,6 +627,22 @@ export class BotFarmHelper extends BotHelper {
             };
             farm.failedSwapsCount = 0;
             farm.pools = pools || [];
+
+            const mints: string[] = [];
+            if (farm.mint){
+                mints.push(farm.mint);
+            }
+            for (const pool of farm.pools){
+                if (mints.includes(pool.tokenA) == false) { mints.push(pool.tokenA); }
+                if (mints.includes(pool.tokenB) == false) { mints.push(pool.tokenB); }
+            }
+            const tokens = await TokenManager.getTokens(chain, mints);
+            farm.tokens = tokens || undefined;
+            farm.keepSome = {};
+            for (const token of tokens || []){
+                farm.keepSome[token.address] = 0;
+            }
+            console.log('FARM', 'create farm - farm.tokens', farm.tokens, 'mints', mints);
             await farm.save();
         }
 
@@ -600,7 +666,7 @@ export class BotFarmHelper extends BotHelper {
         buttons.push({ id: `farm|${farm.id}|prof|create`, text: '➕ Add' }); 
         buttons.push({ id: 'row', text: '' });
 
-        if (type == FarmType.DEX || type == FarmType.TOKEN){
+        if (farm.type == FarmType.DEX || farm.type == FarmType.TOKEN){
             buttons.push({ id: 'none', text: '----- SELECT TIME BETWEEN SWAPS -----' });
             buttons.push({ id: 'row', text: '' });
             const isCustomFrequency = BotFarmHelper.FREQUENCIES.find(f => f?.seconds == farm.frequency) == undefined;
@@ -623,7 +689,7 @@ export class BotFarmHelper extends BotHelper {
             buttons.push({ id: 'row', text: '' });
         }
 
-        if (type == FarmType.DEX || type == FarmType.TOKEN){
+        if (farm.type == FarmType.DEX || farm.type == FarmType.TOKEN){
             buttons.push({ id: 'none', text: '------------- SELECT VOLUME -------------' });
             buttons.push({ id: 'row', text: '' });
             const isCustomVolume = BotFarmHelper.VOLUMES.find(v => v?.usd == farm.volume) == undefined;
@@ -645,6 +711,43 @@ export class BotFarmHelper extends BotHelper {
             }
             buttons.push({ id: 'row', text: '' });
         }
+
+        console.log('FARM', 'farm.tokens', farm.tokens);
+        console.log('FARM', '!type', farm.type);
+
+        if (farm.type == FarmType.DEX || farm.type == FarmType.TOKEN){
+            console.log('FARM', 'type', type);
+            
+            let tokenIndex = 0;
+            for (const token of farm.tokens || []){
+                console.log('FARM', 'token', token);
+                const tokenTitle = token.symbol || token.address;
+                buttons.push({ id: 'none', text: `------------- KEEP SOME ${tokenTitle} AFTER SELL -------------` });
+                buttons.push({ id: 'row', text: '' });
+                const amount = farm.keepSome?.[token.address] || 0;
+                const isCustom = BotFarmHelper.KEEP_SOME.find(v => v?.amount == amount) == undefined;
+                for (const keepSome of BotFarmHelper.KEEP_SOME) {
+                    if (keepSome){
+                        const isSelected = amount == keepSome.amount || (isCustom && keepSome.amount == -1);
+                        let title = (isSelected ? '🟢 ' : '');
+                        if (isSelected && isCustom){
+                            title += `${amount}`;
+                        }
+                        else {
+                            title += keepSome.title;
+                        }
+                        buttons.push({ id: `farm|${farm.id}|keepSome|${tokenIndex}|${keepSome.amount}`, text: title });
+                    }
+                    else {
+                        buttons.push({ id: 'row', text: '' });
+                    }            
+                }
+                buttons.push({ id: 'row', text: '' });
+                tokenIndex++;
+            }
+
+        }
+
         buttons.push({ id: 'none', text: '--------------- ACTIONS ---------------' });
         buttons.push({ id: 'row', text: '' });
         buttons.push({ id: `farm|${farm.id}|refresh`, text: '↻ Refresh' });
@@ -658,7 +761,7 @@ export class BotFarmHelper extends BotHelper {
 
         let text = '🤖 Create a bot';
         text += '\n\n';
-        if (type == FarmType.ARB_CHAOS_SONIC_TO_SSONIC){
+        if (farm.type == FarmType.ARB_CHAOS_SONIC_TO_SSONIC){
             text += 'ARB: buy sSONIC on Sega → unstake SONIC from Chaos';
         }
         else {

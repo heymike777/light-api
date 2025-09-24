@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Chain, DexId } from '../services/solana/types';
+import { IToken, ITokenModel } from './tokens/Token';
 
 export let Schema = mongoose.Schema;
 export let ObjectId = mongoose.Schema.Types.ObjectId;
@@ -48,6 +49,7 @@ export interface IFarm extends mongoose.Document {
     }
     failedSwapsCount: number;
     keepSome?: { [key: string]: number };
+    tokens?: ITokenModel[];
 
     updatedAt?: Date;
     createdAt: Date;
@@ -70,6 +72,7 @@ export const FarmSchema = new mongoose.Schema<IFarm>({
     progress: { type: Mixed },
     failedSwapsCount: { type: Number, default: 0 },
     keepSome: { type: Mixed },
+    tokens: { type: Mixed },
 
     updatedAt: { type: Date, default: new Date() },
     createdAt: { type: Date, default: new Date() }

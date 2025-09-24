@@ -36,6 +36,7 @@ export enum TelegramWaitingType {
     FARM_TOKEN_CA = 'farm_token_ca',
     FARM_POOL_ID = 'farm_pool_id',
     STAKE_AMOUNT = 'stake_amount',
+    FARM_KEEP_SOME_AMOUNT = 'farm_keep_some_amount',
 }
 
 export interface TelegramState {
