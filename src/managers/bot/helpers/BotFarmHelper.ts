@@ -722,7 +722,7 @@ export class BotFarmHelper extends BotHelper {
             for (const token of farm.tokens || []){
                 console.log('FARM', 'token', token);
                 const tokenTitle = token.symbol || token.address;
-                buttons.push({ id: 'none', text: `------------- KEEP SOME ${tokenTitle} AFTER SELL -------------` });
+                buttons.push({ id: 'none', text: `--- KEEP SOME ${tokenTitle} AFTER SELL ---` });
                 buttons.push({ id: 'row', text: '' });
                 const amount = farm.keepSome?.[token.address] || 0;
                 const isCustom = BotFarmHelper.KEEP_SOME.find(v => v?.amount == amount) == undefined;
