@@ -149,9 +149,9 @@ export class FarmManager {
 
             let amountMin = tokenBalance1.amount.muln(0.2);
             const keepSomeAmount = this.getKeepSomeAmount(farm, tokenA) * (10 ** (tokenBalance1.decimals || 0));
-            console.log('FarmManager.makeSwap', 'farm', farm.id, 'keepSomeAmount', keepSomeAmount);
-            let amountMax = tokenBalance1.amount.subn(keepSomeAmount);
-            console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance1.amount:', tokenBalance1.amount.toString(), 'amountMax:', amountMax.toString());
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance1.amount:', tokenBalance1.amount.toString(), 'keepSomeAmount', keepSomeAmount);
+            let amountMax = tokenBalance1.amount.sub(new BN(keepSomeAmount));
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountMax:', amountMax.toString());
             if (tokenA == kSolAddress){
                 if (amountMin.lt(new BN(this.kMinSolLamports))){
                     amountMin = new BN(this.kMinSolAmount * LAMPORTS_PER_SOL);
@@ -194,7 +194,10 @@ export class FarmManager {
 
             const from: IMint = { mint: tokenB, decimals: tokenBalance2.decimals };
             const to: IMint = { mint: tokenA, decimals: tokenBalance1.decimals };
-            const amountToSell = tokenBalance2.amount.subn(this.getKeepSomeAmount(farm, tokenB) * (10 ** (tokenBalance2.decimals || 0)));
+            const keepSomeAmount = this.getKeepSomeAmount(farm, tokenB) * (10 ** (tokenBalance2.decimals || 0));
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance2.amount:', tokenBalance2.amount.toString(), 'keepSomeAmount', keepSomeAmount);
+            const amountToSell = tokenBalance2.amount.sub(new BN(keepSomeAmount));
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'amountToSell:', amountToSell.toString());
             const { signature, swap } = await SwapManager.initiateSell(user, farm.chain, farm.traderProfileId, from, to, 100, farm.id, poolId, amountToSell);
 
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'swap.value?.usd', swap.value?.usd);
