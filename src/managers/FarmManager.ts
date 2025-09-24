@@ -148,7 +148,10 @@ export class FarmManager {
             console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance1', tokenBalance1.uiAmount, 'tokenBalance2', tokenBalance2.uiAmount);
 
             let amountMin = tokenBalance1.amount.muln(0.2);
-            let amountMax = tokenBalance1.amount.subn(this.getKeepSomeAmount(farm, tokenA) * (10 ** (tokenBalance1.decimals || 0)));
+            const keepSomeAmount = this.getKeepSomeAmount(farm, tokenA) * (10 ** (tokenBalance1.decimals || 0));
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'keepSomeAmount', keepSomeAmount);
+            let amountMax = tokenBalance1.amount.subn(keepSomeAmount);
+            console.log('FarmManager.makeSwap', 'farm', farm.id, 'tokenBalance1.amount:', tokenBalance1.amount.toString(), 'amountMax:', amountMax.toString());
             if (tokenA == kSolAddress){
                 if (amountMin.lt(new BN(this.kMinSolLamports))){
                     amountMin = new BN(this.kMinSolAmount * LAMPORTS_PER_SOL);
