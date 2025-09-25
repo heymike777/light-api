@@ -223,12 +223,14 @@ export class TokenPriceManager {
         if (solPrice!=undefined){
             TokenManager.solPrice = solPrice;
             await RedisManager.saveNativeTokenPrice(Chain.SOLANA, solPrice);
+            await RedisManager.saveNativeTokenPrice(Chain.SONIC, solPrice);
         }
 
         const ethPrice = await this.fetchTokenPriceOnBinance('ETH');
         if (ethPrice!=undefined){
             TokenManager.ethPrice = ethPrice;
             await RedisManager.saveNativeTokenPrice(Chain.SOON_MAINNET, ethPrice);
+            await RedisManager.saveNativeTokenPrice(Chain.SOONBASE_MAINNET, ethPrice);
         }
 
         const bnbPrice = await this.fetchTokenPriceOnBinance('BNB');
